@@ -1,0 +1,434 @@
+/* Stage 5 redesign: daily court, rankings, and my cases */
+.daily-redesign-host,
+.my-cases-redesign-host {
+  min-height: 100%;
+}
+
+/* Daily court */
+.daily-redesign-host .daily-court-page {
+  width: 100%;
+  max-width: var(--promo-page-max) !important;
+  padding: 25px 22px 112px !important;
+}
+
+.daily-redesign-host .daily-court-intro {
+  position: relative;
+  overflow: hidden;
+  padding: 27px 24px;
+  background:
+    radial-gradient(circle at 94% 8%,rgba(210,168,61,.23),transparent 31%),
+    var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 28px;
+  box-shadow: var(--promo-shadow);
+}
+
+.daily-redesign-host .daily-court-intro::after {
+  content: "🔨";
+  position: absolute;
+  right: 22px;
+  bottom: -7px;
+  font-size: 78px;
+  opacity: .08;
+}
+
+.daily-redesign-host .daily-court-kicker {
+  color: var(--promo-gold-deep) !important;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.daily-redesign-host .daily-court-intro h1 {
+  position: relative;
+  z-index: 1;
+  margin-top: 7px;
+  color: var(--promo-text);
+  font-size: clamp(25px,6vw,34px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+
+.daily-redesign-host .daily-court-intro p {
+  position: relative;
+  z-index: 1;
+  max-width: 490px;
+  margin-top: 9px;
+  color: var(--promo-muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.daily-redesign-host .daily-progress-head {
+  position: relative;
+  z-index: 1;
+  margin-top: 21px;
+  color: var(--promo-muted);
+}
+
+.daily-redesign-host .daily-progress-head strong {
+  color: var(--promo-gold-deep);
+}
+
+.daily-redesign-host .daily-progress-track {
+  position: relative;
+  z-index: 1;
+  height: 9px;
+  margin-top: 9px;
+  background: rgba(210,168,61,.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.daily-redesign-host .daily-progress-fill {
+  background: linear-gradient(90deg,var(--promo-gold-deep),var(--promo-gold-light));
+}
+
+.daily-redesign-host .daily-case-nav {
+  display: grid !important;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 10px !important;
+  margin: 15px 0 !important;
+}
+
+.daily-redesign-host .daily-case-tab {
+  min-height: 82px;
+  padding: 13px 10px !important;
+  color: var(--promo-muted) !important;
+  background: var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 18px !important;
+  box-shadow: var(--promo-card-shadow);
+  font-weight: 900;
+}
+
+.daily-redesign-host .daily-case-tab span {
+  display: block;
+  margin-top: 4px;
+  color: var(--promo-muted);
+  font-size: 10px;
+}
+
+.daily-redesign-host .daily-case-tab.active {
+  color: var(--promo-text) !important;
+  border-color: var(--promo-gold) !important;
+  background: rgba(210,168,61,.13) !important;
+  box-shadow: 0 0 0 2px rgba(210,168,61,.08),var(--promo-card-shadow);
+}
+
+.daily-redesign-host .daily-case-tab.done::after {
+  content: "완료";
+  display: inline-flex;
+  margin-left: 4px;
+  color: #2f8d55;
+  font-size: 9px;
+}
+
+.daily-redesign-host .daily-court-case {
+  padding: 25px 23px !important;
+  border-radius: 27px !important;
+  background: var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.daily-redesign-host .daily-court-meta {
+  gap: 6px !important;
+}
+
+.daily-redesign-host .daily-court-chip {
+  color: var(--promo-gold-deep) !important;
+  background: rgba(210,168,61,.09) !important;
+  border-color: rgba(210,168,61,.22) !important;
+  border-radius: 999px !important;
+}
+
+.daily-redesign-host .daily-court-title {
+  margin-top: 19px !important;
+  color: var(--promo-text) !important;
+  font-size: clamp(23px,5.5vw,31px) !important;
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+
+.daily-redesign-host .daily-court-summary {
+  margin-top: 12px !important;
+  padding: 17px;
+  color: var(--promo-muted) !important;
+  background: color-mix(in srgb,var(--promo-page-soft) 64%,transparent);
+  border: 1px solid var(--promo-line);
+  border-radius: 18px;
+  line-height: 1.8 !important;
+}
+
+.daily-redesign-host .daily-court-question {
+  margin-top: 19px !important;
+  color: var(--promo-text) !important;
+  font-size: 18px !important;
+  font-weight: 900;
+}
+
+.daily-redesign-host .daily-evidence {
+  display: grid;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.daily-redesign-host .daily-evidence-btn {
+  min-height: 51px;
+  padding: 13px 15px !important;
+  color: var(--promo-muted) !important;
+  background: color-mix(in srgb,var(--promo-page-soft) 61%,transparent) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 16px !important;
+  text-align: left;
+}
+
+.daily-redesign-host .daily-evidence-btn.revealed {
+  color: var(--promo-text) !important;
+  background: rgba(210,168,61,.09) !important;
+}
+
+.daily-redesign-host .daily-evidence-note {
+  color: var(--promo-muted) !important;
+}
+
+.daily-redesign-host .daily-choice-list {
+  display: grid !important;
+  gap: 10px !important;
+  margin-top: 17px !important;
+}
+
+.daily-redesign-host .daily-choice {
+  min-height: 56px;
+  padding: 15px 17px !important;
+  color: var(--promo-text) !important;
+  background: color-mix(in srgb,var(--promo-page-soft) 64%,transparent) !important;
+  border: 1.5px solid var(--promo-line) !important;
+  border-radius: 17px !important;
+  text-align: left;
+  font-weight: 800;
+}
+
+.daily-redesign-host .daily-choice.selected {
+  border-color: var(--promo-gold) !important;
+  background: rgba(210,168,61,.13) !important;
+  box-shadow: 0 0 0 3px rgba(210,168,61,.08);
+}
+
+.daily-redesign-host .daily-next-btn,
+.daily-redesign-host #daily-court-submit {
+  min-height: 54px;
+  margin-top: 15px !important;
+  border-radius: 17px;
+}
+
+.daily-redesign-host .daily-complete {
+  margin-top: 15px;
+  padding: 24px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 0,rgba(210,168,61,.18),transparent 45%),
+    var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 24px;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.daily-redesign-host .daily-complete strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--promo-text);
+  font-size: 20px;
+}
+
+.daily-redesign-host .daily-complete p {
+  margin-top: 5px;
+  color: var(--promo-muted);
+}
+
+.daily-redesign-host .daily-profile,
+.daily-redesign-host .daily-ranking {
+  margin-top: 15px !important;
+  padding: 22px !important;
+  background: var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 24px !important;
+  box-shadow: var(--promo-card-shadow) !important;
+}
+
+.daily-redesign-host .daily-ranking-head h2 {
+  color: var(--promo-text);
+  font-size: 22px;
+}
+
+.daily-redesign-host .daily-ranking-head > span {
+  color: var(--promo-muted);
+}
+
+.daily-redesign-host .daily-ranking-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(3,1fr);
+  gap: 7px !important;
+  padding: 5px;
+  margin-top: 15px !important;
+  background: rgba(210,168,61,.08);
+  border-radius: 16px;
+}
+
+.daily-redesign-host .daily-ranking-tab {
+  min-height: 42px;
+  border: 0 !important;
+  border-radius: 12px !important;
+  color: var(--promo-muted) !important;
+  background: transparent !important;
+  font-weight: 900;
+}
+
+.daily-redesign-host .daily-ranking-tab.active {
+  color: #251804 !important;
+  background: linear-gradient(135deg,var(--promo-gold),var(--promo-gold-light)) !important;
+  box-shadow: 0 7px 16px rgba(146,96,12,.18);
+}
+
+.daily-redesign-host .daily-ranking-panel {
+  margin-top: 12px;
+}
+
+.daily-redesign-host .daily-rank-row {
+  min-height: 62px;
+  padding: 12px 13px !important;
+  border-bottom: 1px solid var(--promo-line) !important;
+}
+
+.daily-redesign-host .daily-rank-row.me {
+  background: rgba(210,168,61,.10) !important;
+  border-radius: 15px;
+}
+
+.daily-redesign-host .daily-rank-number,
+.daily-redesign-host .daily-rank-score {
+  color: var(--promo-gold-deep) !important;
+  font-weight: 900;
+}
+
+.daily-redesign-host .daily-rank-name {
+  color: var(--promo-text) !important;
+}
+
+.daily-redesign-host .daily-rank-name small {
+  color: var(--promo-muted) !important;
+}
+
+/* My cases */
+.my-cases-redesign-host > div > .container {
+  width: 100%;
+  max-width: var(--promo-page-max);
+  padding: 25px 22px 112px !important;
+}
+
+.my-cases-redesign-host .container > .card:first-child {
+  padding: 16px 18px !important;
+  border-radius: 20px !important;
+  background: var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.my-cases-redesign-host #my-game-profile {
+  position: relative;
+  overflow: hidden;
+  padding: 24px !important;
+  margin-bottom: 16px !important;
+  background:
+    radial-gradient(circle at 94% 8%,rgba(210,168,61,.22),transparent 32%),
+    var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 27px !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.my-cases-redesign-host #my-game-profile::after {
+  content: "🗂️";
+  position: absolute;
+  right: 20px;
+  bottom: -5px;
+  font-size: 72px;
+  opacity: .07;
+}
+
+.my-cases-redesign-host #my-game-profile .court-title {
+  color: var(--promo-text) !important;
+  font-size: 23px !important;
+  font-weight: 900 !important;
+}
+
+.my-cases-redesign-host #my-game-profile .court-desc {
+  color: var(--promo-muted) !important;
+}
+
+.my-cases-redesign-host #my-game-profile .court-ledger {
+  position: relative;
+  z-index: 1;
+  margin-top: 17px;
+  padding-top: 17px;
+  border-top: 1px solid var(--promo-line);
+}
+
+.my-cases-redesign-host #my-game-profile .court-ledger strong {
+  color: var(--promo-gold-deep) !important;
+  font-size: 21px;
+}
+
+.my-cases-redesign-host #my-game-profile .court-ledger span {
+  color: var(--promo-muted) !important;
+}
+
+.my-cases-redesign-host [data-case-list] {
+  gap: 12px !important;
+}
+
+.my-cases-redesign-host [data-case-row] {
+  padding: 19px !important;
+  background: var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-left-width: 4px !important;
+  border-radius: 21px !important;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.my-cases-redesign-host [data-case-row] > div:first-child > div:first-child {
+  color: var(--promo-text);
+  font-size: 16px !important;
+  font-weight: 900 !important;
+}
+
+.my-cases-redesign-host [data-case-row] .btn {
+  min-height: 40px;
+  border-radius: 13px;
+}
+
+@media(max-width:580px) {
+  .daily-redesign-host .daily-court-page,
+  .my-cases-redesign-host > div > .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .daily-redesign-host .daily-court-intro,
+  .daily-redesign-host .daily-court-case,
+  .my-cases-redesign-host #my-game-profile {
+    padding: 21px 18px !important;
+    border-radius: 23px !important;
+  }
+
+  .daily-redesign-host .daily-case-tab {
+    min-height: 76px;
+    padding: 11px 6px !important;
+    font-size: 12px;
+  }
+
+  .daily-redesign-host .daily-profile,
+  .daily-redesign-host .daily-ranking {
+    padding: 18px !important;
+  }
+}
