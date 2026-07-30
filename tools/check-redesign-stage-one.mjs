@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// Stage 1 gate: do not continue the redesign until this check and the full suite pass.
 const errors = [];
 const read = path => fs.readFileSync(path, 'utf8');
 const requireText = (source, text, label) => {
