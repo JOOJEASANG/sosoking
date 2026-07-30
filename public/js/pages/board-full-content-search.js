@@ -88,7 +88,28 @@ function installFullContentSearch(container) {
   });
 }
 
+function applyBoardRedesign(container) {
+  container.classList.add('board-redesign-host');
+  const intro = container.querySelector('#court-board-intro');
+  if (!intro) return;
+
+  intro.querySelector('.arena-rank-tabs')?.remove();
+  const kicker = intro.querySelector('.court-kicker');
+  const title = intro.querySelector('.court-title');
+  if (kicker) kicker.textContent = 'SOSOKING VERDICT ARCHIVE';
+  if (title) title.textContent = '공개 판결기록';
+
+  if (!intro.querySelector('.board-redesign-description')) {
+    const description = document.createElement('p');
+    description.className = 'board-redesign-description';
+    description.textContent = '사건명과 판결문 내용을 검색하고, 공개된 생활판결을 읽은 뒤 사건별 토론장으로 이동할 수 있습니다.';
+    intro.appendChild(description);
+  }
+}
+
 export async function renderBoard(container) {
+  container.classList.add('board-redesign-host');
   await renderBaseBoard(container);
   installFullContentSearch(container);
+  applyBoardRedesign(container);
 }
