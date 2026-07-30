@@ -35,9 +35,10 @@ const rules = read('firestore.rules');
 for (const required of [
   'request.auth.uid == adminId',
   'adminEmail() == adminId',
-  'allow read: if signedIn()'
+  'allow read: if signedIn()',
+  'allow list: if isAdmin() || isPublicResultListData(resource.data);'
 ]) {
-  if (!rules.includes(required)) errors.push(`firestore.rules: administrator self-lookup permission missing ${required}`);
+  if (!rules.includes(required)) errors.push(`firestore.rules: administrator access requirement missing ${required}`);
 }
 
 const bootstrap = read('public/admin/admin-bootstrap.js');
@@ -47,6 +48,37 @@ for (const required of [
   'await mountDashboard(user)'
 ]) {
   if (!bootstrap.includes(required)) errors.push(`public/admin/admin-bootstrap.js: administrator dashboard authorization missing ${required}`);
+}
+
+const adminPolicy = read('public/admin/admin-policy-defaults.js');
+for (const required of [
+  "import { renderPolicy } from '../js/pages/policy.js?v=20260729-brand-policy-1'",
+  'async function currentSitePolicy(type)',
+  "root.querySelector('#policy-content')",
+  'textarea.value = content',
+  '수정 후 저장하면 공개 정책 페이지에 바로 적용됩니다.',
+  'new MutationObserver'
+]) {
+  if (!adminPolicy.includes(required)) errors.push(`public/admin/admin-policy-defaults.js: policy editor bridge missing ${required}`);
+}
+
+const adminDashboard = read('public/admin/admin.js');
+for (const required of [
+  "setDoc(doc(db, 'policy_docs', active)",
+  'content,',
+  "toast('정책 문서를 저장했습니다.'"
+]) {
+  if (!adminDashboard.includes(required)) errors.push(`public/admin/admin.js: managed policy save path missing ${required}`);
+}
+
+const publicPolicy = read('public/js/pages/policy.js');
+if (!publicPolicy.includes("getDoc(doc(db, 'policy_docs', safeType))")) {
+  errors.push('public/js/pages/policy.js: public policy page is not connected to managed policy documents');
+}
+
+const adminIndex = read('public/admin/index.html');
+if (!adminIndex.includes('/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1')) {
+  errors.push('public/admin/index.html: administrator policy defaults helper is not loaded');
 }
 
 const index = read('public/index.html');
@@ -70,4 +102,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator login routing validation passed: normal-site admin sign-in redirects to the shared authenticated dashboard and cache versions are synchronized.');
+console.log('Administrator validation passed: login redirects, complete verdict data access, and managed policy editing remain connected and cache-safe.');
