@@ -50,7 +50,7 @@ for (const required of [
 
 const app = read('public/js/app.js');
 for (const moduleUrl of [
-  './pages/home-court.js?v=20260730-public-records-2',
+  './pages/home-court.js?v=20260730-configurable-limit-1',
   './pages/board-court.js?v=20260730-public-records-2'
 ]) {
   if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: active module version is stale: ${moduleUrl}`);
@@ -68,7 +68,7 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active app cache versions are inconsistent');
 }
 for (const required of [
-  '/js/pages/home-court.js?v=20260730-public-records-2',
+  '/js/pages/home-court.js?v=20260730-configurable-limit-1',
   '/js/pages/board-court.js?v=20260730-public-records-2',
   '/js/pages/board.js?v=20260730-public-records-2',
   '/js/utils/public-results.js?v=20260730-public-records-2'
