@@ -1,5 +1,7 @@
-const CACHE_NAME = 'sosoking-app-v20260730-judge-board-search-1';
+const CACHE_NAME = 'sosoking-app-v20260730-search-scope-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-judge-board-search-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
+// Cache lineage: /js/app.js?v=20260730-judge-board-search-1
 // Cache lineage: /js/app.js?v=20260730-discussion-court-1
 const APP_SHELL = [
   '/',
@@ -11,8 +13,9 @@ const APP_SHELL = [
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/css/sans-font.css?v=20260729-sans-font-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
-  '/js/app.js?v=20260730-judge-board-search-1',
+  '/js/app.js?v=20260730-search-scope-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
+  '/js/pages/home-no-search.js?v=20260730-search-scope-1',
   '/js/pages/home-judge-assignment.js?v=20260730-judge-board-search-1',
   '/js/pages/home-court.js?v=20260730-configurable-limit-1',
   '/js/pages/home.js?v=20260729-brand-policy-1',
@@ -23,6 +26,7 @@ const APP_SHELL = [
   '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
   '/js/pages/submit.js?v=20260730-configurable-limit-1',
   '/js/pages/daily-real-court.js?v=20260729-daily-real-court-1',
+  '/js/pages/board-full-content-search.js?v=20260730-search-scope-1',
   '/js/pages/board-search-pagination.js?v=20260730-judge-board-search-1',
   '/js/pages/board-court.js?v=20260730-discussion-court-1',
   '/js/pages/board.js?v=20260730-discussion-court-1',
