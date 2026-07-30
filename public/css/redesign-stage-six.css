@@ -1,0 +1,319 @@
+/* Stage 6 redesign: account, guide, policy, and final responsive polish */
+.auth-redesign-host,
+.guide-redesign-host,
+.policy-redesign-host {
+  min-height: 100%;
+}
+
+/* Account */
+.auth-redesign-host > div > .container {
+  width: 100%;
+  max-width: var(--promo-page-max);
+  padding: 27px 22px 112px !important;
+}
+
+.auth-redesign-host .auth-card {
+  position: relative;
+  overflow: hidden;
+  width: min(100%,530px);
+  margin: 0 auto;
+  padding: 29px 25px !important;
+  background:
+    radial-gradient(circle at 50% -5%,rgba(210,168,61,.18),transparent 31%),
+    var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 29px !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.auth-redesign-host .auth-card::after {
+  content: "⚖️";
+  position: absolute;
+  right: 18px;
+  bottom: -7px;
+  font-size: 77px;
+  opacity: .045;
+  pointer-events: none;
+}
+
+.auth-redesign-host .auth-brand-logo {
+  width: 126px !important;
+  height: 126px !important;
+  filter: drop-shadow(0 14px 20px rgba(91,58,9,.16));
+}
+
+.auth-redesign-host .auth-card > div:first-child,
+.auth-redesign-host .auth-card > form,
+.auth-redesign-host .auth-card > button,
+.auth-redesign-host .auth-card > a,
+.auth-redesign-host .auth-card > .auth-divider {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-redesign-host .auth-card [style*="color:var(--gold)"] {
+  color: var(--promo-gold-deep) !important;
+}
+
+.auth-redesign-host .auth-card [style*="color:var(--cream-dim)"] {
+  color: var(--promo-muted) !important;
+}
+
+.auth-redesign-host .auth-card .form-group {
+  margin-bottom: 15px;
+}
+
+.auth-redesign-host .auth-card .form-label {
+  color: var(--promo-gold-deep) !important;
+  font-weight: 900;
+}
+
+.auth-redesign-host .auth-card .form-input {
+  min-height: 51px;
+  color: var(--promo-text);
+  background: color-mix(in srgb,var(--promo-page-soft) 64%,transparent) !important;
+  border-color: var(--promo-line) !important;
+  border-radius: 16px !important;
+}
+
+.auth-redesign-host .auth-card .form-input:focus {
+  border-color: rgba(210,168,61,.66) !important;
+  box-shadow: 0 0 0 4px rgba(210,168,61,.10);
+}
+
+.auth-redesign-host .auth-divider {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 !important;
+}
+
+.auth-redesign-host .auth-divider span {
+  height: 1px;
+  background: var(--promo-line);
+}
+
+.auth-redesign-host .auth-divider b {
+  color: var(--promo-muted);
+  font-size: 11px;
+}
+
+.auth-redesign-host .auth-card .btn {
+  min-height: 52px;
+  border-radius: 17px;
+}
+
+.auth-redesign-host .profile-avatar,
+.auth-redesign-host .avatar-wrap {
+  border-color: rgba(210,168,61,.38) !important;
+}
+
+/* Guide */
+.guide-redesign-host .guide-container {
+  width: 100%;
+  max-width: var(--promo-page-max);
+  padding: 26px 22px 112px !important;
+}
+
+.guide-redesign-host .guide-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 30px 23px;
+  margin-bottom: 19px !important;
+  background:
+    radial-gradient(circle at 50% 0,rgba(210,168,61,.21),transparent 38%),
+    var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 28px;
+  box-shadow: var(--promo-shadow);
+}
+
+.guide-redesign-host .guide-hero h1 {
+  color: var(--promo-text) !important;
+  font-size: 27px !important;
+  font-weight: 900 !important;
+  letter-spacing: -.04em;
+}
+
+.guide-redesign-host .guide-hero > div:last-child {
+  color: var(--promo-muted) !important;
+}
+
+.guide-redesign-host .guide-section {
+  margin-bottom: 28px !important;
+  padding: 22px;
+  background: var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 25px;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.guide-redesign-host .guide-section > h2 {
+  color: var(--promo-text) !important;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+}
+
+.guide-redesign-host .guide-section > p {
+  color: var(--promo-muted) !important;
+  line-height: 1.7;
+}
+
+.guide-redesign-host .guide-card-list {
+  display: grid !important;
+  gap: 11px !important;
+}
+
+.guide-redesign-host .guide-step-card {
+  padding: 17px !important;
+  background: color-mix(in srgb,var(--promo-page-soft) 63%,transparent) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 19px !important;
+  box-shadow: none !important;
+}
+
+.guide-redesign-host .guide-step-icon,
+.guide-redesign-host .guide-step-number {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 15px !important;
+  background: rgba(210,168,61,.11) !important;
+  border-color: rgba(210,168,61,.24) !important;
+  color: var(--promo-gold-deep) !important;
+}
+
+.guide-redesign-host .guide-step-card [style*="color:var(--cream)"] {
+  color: var(--promo-text) !important;
+}
+
+.guide-redesign-host .guide-step-card [style*="color:var(--cream-dim)"] {
+  color: var(--promo-muted) !important;
+}
+
+.guide-redesign-host .guide-faq-list {
+  gap: 9px !important;
+}
+
+.guide-redesign-host .guide-faq-card {
+  background: color-mix(in srgb,var(--promo-page-soft) 63%,transparent) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+}
+
+.guide-redesign-host .guide-faq-card summary {
+  min-height: 57px;
+  color: var(--promo-text) !important;
+}
+
+.guide-redesign-host .guide-faq-card[open] {
+  border-color: rgba(210,168,61,.48) !important;
+  background: rgba(210,168,61,.08) !important;
+}
+
+.guide-redesign-host .guide-faq-card > div {
+  color: var(--promo-muted) !important;
+}
+
+.guide-redesign-host .guide-section .btn,
+.guide-redesign-host .guide-container > .btn {
+  min-height: 53px;
+  border-radius: 17px;
+}
+
+/* Policies */
+.policy-redesign-host > .container,
+.policy-redesign-host > div > .container {
+  width: 100%;
+  max-width: var(--promo-page-max);
+  padding: 26px 22px 112px !important;
+}
+
+.policy-redesign-host .container > div:first-child:not(.loading-dots) {
+  padding: 28px 25px;
+  color: var(--promo-muted) !important;
+  background: var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 25px;
+  box-shadow: var(--promo-card-shadow);
+  line-height: 2 !important;
+}
+
+.policy-redesign-host .container > div:first-child:not(.loading-dots)::first-line {
+  color: var(--promo-text);
+  font-weight: 900;
+}
+
+.policy-redesign-host .container > div:first-child [style*="margin-top:32px"] {
+  margin-top: 28px !important;
+  padding: 18px !important;
+  background: rgba(210,168,61,.08) !important;
+  border-color: rgba(210,168,61,.24) !important;
+  border-radius: 17px !important;
+}
+
+/* Final responsive and accessibility polish */
+:where(.btn,.nav-item,.judge-card,.home-feature-card,.daily-case-tab,.daily-choice,.discussion-choice):focus-visible {
+  outline: 3px solid rgba(210,168,61,.58) !important;
+  outline-offset: 3px;
+}
+
+img {
+  max-width: 100%;
+}
+
+@media(min-width:900px) {
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    z-index: -1;
+    width: 290px;
+    height: 100vh;
+    top: 0;
+    opacity: .07;
+    pointer-events: none;
+  }
+
+  body::before {
+    left: 0;
+    background: linear-gradient(90deg,rgba(210,168,61,.65),transparent);
+    clip-path: polygon(0 0,68% 0,28% 100%,0 100%);
+  }
+
+  body::after {
+    right: 0;
+    background: linear-gradient(270deg,rgba(210,168,61,.65),transparent);
+    clip-path: polygon(32% 0,100% 0,100% 100%,72% 100%);
+  }
+}
+
+@media(max-width:580px) {
+  .auth-redesign-host > div > .container,
+  .guide-redesign-host .guide-container,
+  .policy-redesign-host > .container,
+  .policy-redesign-host > div > .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .auth-redesign-host .auth-card,
+  .guide-redesign-host .guide-hero,
+  .guide-redesign-host .guide-section,
+  .policy-redesign-host .container > div:first-child:not(.loading-dots) {
+    padding: 21px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  .auth-redesign-host .auth-brand-logo {
+    width: 106px !important;
+    height: 106px !important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    scroll-behavior:auto !important;
+  }
+}
