@@ -63,20 +63,19 @@ for (const text of [
 
 const index = read('public/index.html');
 const worker = read('public/sw.js');
+need(index, '/css/redesign-stage-five.css?v=20260730-redesign-stage-5', 'index');
+need(worker, '/css/redesign-stage-five.css?v=20260730-redesign-stage-5', 'service worker');
 for (const text of [
-  '/css/redesign-stage-five.css?v=20260730-redesign-stage-5',
-  '/js/app.js?v=20260730-redesign-stage-5'
-]) {
-  need(index, text, 'index');
-  need(worker, text, 'service worker');
-}
-for (const text of [
-  "const CACHE_NAME = 'sosoking-app-v20260730-redesign-stage-5';",
   '/js/pages/daily-real-court-redesign.js?v=20260730-redesign-stage-5',
   '/js/pages/daily-real-court-layout.js?v=20260730-home-layout-route-1',
   '/js/pages/my-cases-redesign.js?v=20260730-redesign-stage-5',
   '/js/pages/my-cases-game.js?v=20260729-dark-record-participation-1'
 ]) need(worker, text, 'service worker');
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('index and service worker active app versions differ');
+}
+need(worker, "const CACHE_NAME = 'sosoking-app-v", 'service worker');
 
 const packageJson = read('package.json');
 need(packageJson, 'node tools/check-redesign-stage-five.mjs', 'validation chain');
