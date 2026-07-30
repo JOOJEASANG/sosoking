@@ -1,0 +1,466 @@
+/* Stage 3 redesign: verdict document and public records */
+.result-redesign-host,
+.board-redesign-host {
+  min-height: 100%;
+}
+
+/* Verdict document */
+.result-redesign-host .result-document-page {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 50% 0, rgba(210,168,61,.13), transparent 30%),
+    transparent;
+}
+
+.result-redesign-host .result-document-container {
+  width: 100%;
+  max-width: var(--promo-page-max) !important;
+  padding: 26px 22px 112px !important;
+}
+
+.result-redesign-host .result-cover.card {
+  position: relative;
+  overflow: hidden;
+  padding: 36px 28px 30px !important;
+  margin-bottom: 18px !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(170,122,32,.24) !important;
+  box-shadow: 0 24px 58px rgba(86,55,9,.14), inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+
+.result-redesign-host .result-cover::before {
+  content: "";
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  top: -165px;
+  left: 50%;
+  border: 1px solid rgba(169,121,39,.14);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.result-redesign-host .result-cover::after {
+  content: "⚖️";
+  position: absolute;
+  right: 22px;
+  bottom: -10px;
+  font-size: 85px;
+  opacity: .055;
+  pointer-events: none;
+}
+
+.result-redesign-host .result-court-name {
+  color: #815b16 !important;
+  letter-spacing: .18em !important;
+}
+
+.result-redesign-host .result-title-rule {
+  width: 62px !important;
+  height: 3px !important;
+  margin: 16px auto !important;
+  border-radius: 999px;
+  background: linear-gradient(90deg,#8c6013,#dfbd62) !important;
+}
+
+.result-redesign-host .result-cover h1 {
+  font-size: clamp(28px,7vw,38px) !important;
+  font-weight: 900 !important;
+  letter-spacing: .24em !important;
+}
+
+.result-redesign-host .result-cover h2 {
+  margin-top: 17px !important;
+  font-size: clamp(23px,5.6vw,31px) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.035em;
+}
+
+.result-redesign-host .result-case-meta {
+  margin-top: 11px;
+  font-size: 12px !important;
+}
+
+.result-redesign-host .judge-summary {
+  position: relative;
+  z-index: 1;
+  grid-template-columns: 70px minmax(0,1fr) auto !important;
+  gap: 15px !important;
+  margin-top: 27px !important;
+  padding: 19px !important;
+  border-radius: 21px !important;
+  background: linear-gradient(145deg,#fbf5e9,#f3e5c9) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.result-redesign-host .judge-character {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 20px !important;
+  font-size: 32px !important;
+}
+
+.result-redesign-host .judge-label,
+.result-redesign-host .grievance-label {
+  color: #85601d !important;
+}
+
+.result-redesign-host .judge-name {
+  font-size: 18px !important;
+  letter-spacing: -.02em;
+}
+
+.result-redesign-host .result-comedy-notice {
+  margin: 0 0 18px !important;
+  padding: 17px 19px !important;
+  color: var(--promo-text) !important;
+  background: rgba(210,168,61,.09) !important;
+  border: 1px dashed rgba(210,168,61,.5) !important;
+  border-radius: 19px !important;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.result-redesign-host .result-document-stack {
+  gap: 14px !important;
+}
+
+.result-redesign-host .result-paper.card,
+.result-redesign-host .result-paper.verdict-card {
+  padding: 29px 28px 32px !important;
+  border-radius: 25px !important;
+  border-color: rgba(170,122,32,.21) !important;
+  box-shadow: 0 15px 36px rgba(86,55,9,.11), inset 0 1px 0 rgba(255,255,255,.82) !important;
+}
+
+.result-redesign-host .result-paper::before {
+  width: 5px !important;
+  background: linear-gradient(180deg,#90610f,#e6ca79) !important;
+}
+
+.result-redesign-host .result-paper-header {
+  margin-bottom: 24px !important;
+  padding-bottom: 17px !important;
+}
+
+.result-redesign-host .result-paper-number {
+  color: #815b16 !important;
+  font-size: 10px !important;
+}
+
+.result-redesign-host .result-paper-title {
+  font-size: 24px !important;
+  letter-spacing: -.035em;
+}
+
+.result-redesign-host .result-paper-badge {
+  padding: 8px 13px !important;
+  border-radius: 999px !important;
+}
+
+.result-redesign-host .result-paper-body {
+  font-size: 15.5px !important;
+  line-height: 2.03 !important;
+}
+
+.result-redesign-host .doc-order-item {
+  border-radius: 0 13px 13px 0;
+}
+
+.result-redesign-host .result-actions {
+  gap: 9px !important;
+  margin-top: 22px !important;
+  padding: 19px;
+  background: var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 22px;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.result-redesign-host .result-actions .btn {
+  min-height: 52px;
+  border-radius: 16px;
+}
+
+.result-redesign-host .result-audience,
+.result-redesign-host .court-comments-card,
+.result-redesign-host [id*="comment"] .card {
+  border-radius: 23px !important;
+}
+
+[data-theme="dark"] .result-redesign-host .result-cover.card,
+[data-theme="dark"] .result-redesign-host .result-paper.card,
+[data-theme="dark"] .result-redesign-host .result-paper.verdict-card {
+  background: linear-gradient(145deg,#1d2533,#111722) !important;
+  border-color: rgba(210,168,61,.28) !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+
+[data-theme="dark"] .result-redesign-host .judge-summary {
+  background: linear-gradient(145deg,rgba(210,168,61,.12),rgba(255,255,255,.035)) !important;
+  border-color: rgba(210,168,61,.25) !important;
+}
+
+/* Public verdict records */
+.board-redesign-host .court-board-page {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 50% 0, rgba(210,168,61,.13), transparent 32%),
+    transparent !important;
+}
+
+.board-redesign-host .court-board-page > .container {
+  max-width: var(--promo-page-max);
+  padding: 25px 22px 112px !important;
+}
+
+.board-redesign-host #court-board-intro {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 17px !important;
+  padding: 25px 23px !important;
+  background:
+    radial-gradient(circle at 94% 8%,rgba(210,168,61,.20),transparent 31%),
+    var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 27px !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.board-redesign-host #court-board-intro::after {
+  content: "📜";
+  position: absolute;
+  right: 22px;
+  bottom: 7px;
+  font-size: 66px;
+  opacity: .09;
+}
+
+.board-redesign-host #court-board-intro .court-seal {
+  width: 58px !important;
+  height: 58px !important;
+  display: grid;
+  place-items: center;
+  border-radius: 19px;
+  background: rgba(210,168,61,.11);
+  border: 1px solid rgba(210,168,61,.24);
+}
+
+.board-redesign-host #court-board-intro .court-title {
+  color: var(--promo-text) !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  letter-spacing: -.035em;
+}
+
+.board-redesign-host #court-board-intro .court-kicker {
+  color: var(--promo-gold-deep) !important;
+}
+
+.board-redesign-host .board-redesign-description {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  margin-top: 11px;
+  color: var(--promo-muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.board-redesign-host .arena-rank-tabs {
+  display: none !important;
+}
+
+.board-redesign-host #board-search-panel {
+  position: sticky;
+  top: 70px;
+  z-index: 20;
+  margin-bottom: 17px !important;
+  padding: 17px !important;
+  background: color-mix(in srgb,var(--promo-surface-strong) 95%,transparent) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 21px !important;
+  box-shadow: 0 13px 32px rgba(0,0,0,.12) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.board-redesign-host #board-search-panel label {
+  color: var(--promo-gold-deep) !important;
+}
+
+.board-redesign-host #board-search-input {
+  min-height: 49px;
+  padding: 13px 15px !important;
+  color: var(--promo-text) !important;
+  background: color-mix(in srgb,var(--promo-page-soft) 64%,transparent) !important;
+  border: 1.5px solid var(--promo-line) !important;
+  border-radius: 16px !important;
+  outline: none;
+}
+
+.board-redesign-host #board-search-input:focus {
+  border-color: rgba(210,168,61,.65) !important;
+  box-shadow: 0 0 0 4px rgba(210,168,61,.10);
+}
+
+.board-redesign-host #board-search-clear {
+  width: auto !important;
+  min-height: 48px;
+  border-radius: 15px;
+}
+
+.board-redesign-host #board-search-status {
+  color: var(--promo-muted) !important;
+}
+
+.board-redesign-host #today-pick .board-featured-card {
+  border-radius: 25px !important;
+  background:
+    radial-gradient(circle at 92% 8%,rgba(210,168,61,.18),transparent 32%),
+    var(--promo-surface) !important;
+  border-color: rgba(210,168,61,.39) !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.board-redesign-host .court-stamp {
+  display: inline-flex;
+  padding: 5px 10px;
+  border: 1px solid rgba(151,94,16,.45);
+  border-radius: 999px;
+  color: var(--promo-gold-deep);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.board-redesign-host #board-list > div:first-child:not(.loading-dots) {
+  margin: 23px 0 11px !important;
+  color: var(--promo-muted) !important;
+  font-size: 12px !important;
+  font-weight: 800;
+}
+
+.board-redesign-host #board-list > div:last-child {
+  gap: 12px !important;
+}
+
+.board-redesign-host .court-board-row {
+  overflow: hidden;
+  border: 1px solid var(--promo-line) !important;
+  border-left: 4px solid var(--promo-gold) !important;
+  border-radius: 22px !important;
+  background: var(--promo-surface) !important;
+  box-shadow: var(--promo-card-shadow) !important;
+  transition: transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+
+.board-redesign-host .court-board-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(210,168,61,.48) !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.board-redesign-host .court-board-row:nth-child(1) {
+  border-color: var(--promo-line) !important;
+  box-shadow: var(--promo-card-shadow) !important;
+}
+
+.board-redesign-host .court-board-row:nth-child(1)::after {
+  display: none !important;
+}
+
+.board-redesign-host .rank-medal {
+  width: auto !important;
+  height: auto !important;
+  margin-right: 5px !important;
+  padding: 0 !important;
+  color: var(--promo-gold-deep) !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  font-size: 11px;
+}
+
+.board-redesign-host .court-board-row > .court-kicker {
+  color: var(--promo-gold-deep) !important;
+  font-size: 9px;
+}
+
+.board-redesign-host .board-judge-chip,
+.board-redesign-host .board-grievance-chip {
+  color: var(--promo-muted) !important;
+  background: rgba(210,168,61,.08) !important;
+  border-color: rgba(210,168,61,.22) !important;
+  border-radius: 999px !important;
+}
+
+.board-redesign-host #board-pagination {
+  gap: 7px !important;
+  margin: 22px 0 0 !important;
+}
+
+.board-redesign-host #board-pagination .btn {
+  width: auto;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 9px 12px !important;
+  border-radius: 13px;
+}
+
+@media (max-width:640px) {
+  .result-redesign-host .result-document-container,
+  .board-redesign-host .court-board-page > .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .result-redesign-host .result-cover.card {
+    padding: 30px 18px 23px !important;
+    border-radius: 25px !important;
+  }
+
+  .result-redesign-host .judge-summary {
+    grid-template-columns: 54px minmax(0,1fr) !important;
+    padding: 15px !important;
+  }
+
+  .result-redesign-host .judge-character {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 16px !important;
+    font-size: 26px !important;
+  }
+
+  .result-redesign-host .grievance-box {
+    grid-column: 1 / -1;
+  }
+
+  .result-redesign-host .result-paper.card,
+  .result-redesign-host .result-paper.verdict-card {
+    padding: 24px 19px 27px !important;
+    border-radius: 21px !important;
+  }
+
+  .board-redesign-host #court-board-intro {
+    padding: 21px 18px !important;
+  }
+
+  .board-redesign-host #board-search-panel {
+    top: 65px;
+    padding: 14px !important;
+  }
+
+  .board-redesign-host #board-search-panel > div {
+    align-items: stretch !important;
+  }
+
+  .board-redesign-host #board-search-clear {
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .board-redesign-host .court-board-row {
+    transition:none !important;
+  }
+}
