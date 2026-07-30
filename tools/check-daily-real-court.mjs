@@ -34,6 +34,7 @@ const page = read('public/js/pages/daily-real-court.js');
 const brand = read('public/css/brand-logo.css');
 const firebase = read('firebase.json');
 const rules = read('firestore.rules');
+const indexes = JSON.parse(read('firestore.indexes.json'));
 const deploy = read('.github/workflows/firebase-deploy.yml');
 const sync = read('tools/sync-daily-real-court-catalog.mjs');
 const submit = read('functions/submit-secure.js');
@@ -52,6 +53,7 @@ for (const expected of [
   'daily_court_players',
   'daily_court_catalog',
   'loadRankings',
+  "where('completed', '==', true).orderBy(scoreField, 'desc')",
   "completed: raw.completed === true"
 ]) {
   if (!(functionsMain + gameFunction).includes(expected)) errors.push(`Functions integration missing: ${expected}`);
@@ -86,6 +88,11 @@ if (!firebase.includes('{ "source": "/daily-court", "destination": "/index.html"
 for (const collection of ['daily_court_catalog', 'daily_court_config', 'daily_court_days', 'daily_court_weeks', 'daily_court_players']) {
   if (!rules.includes(`match /${collection}/`)) errors.push(`firestore.rules: ${collection} protection missing`);
 }
+const completedScoreIndex = indexes.indexes?.some(item => item.collectionGroup === 'votes'
+  && item.fields?.some(field => field.fieldPath === 'completed' && field.order === 'ASCENDING')
+  && item.fields?.some(field => field.fieldPath === 'score' && field.order === 'DESCENDING'));
+if (!completedScoreIndex) errors.push('firestore.indexes.json: completed daily ranking index missing');
+
 for (const functionName of ['functions:getDailyRealCourt', 'functions:submitDailyRealCourtVerdict']) {
   if (!deploy.includes(functionName)) errors.push(`deploy workflow missing: ${functionName}`);
 }
@@ -123,4 +130,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Daily real court validation passed: ${catalog.length} verified cases, three daily judgments, protected scores, and daily/weekly/all-time rankings.`);
+console.log(`Daily real court validation passed: ${catalog.length} verified cases, three daily judgments, completed-only daily ranking query, protected scores, and daily/weekly/all-time rankings.`);
