@@ -1,13 +1,13 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
-import { renderHome } from './pages/home-court.js?v=20260730-public-records-2';
+import { renderHome } from './pages/home-court.js?v=20260730-configurable-limit-1';
 // Cache lineage marker for the CSP regression check: ./pages/home-court.js?v=20260729-brand-unified-1
-import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
+import { renderSubmit } from './pages/submit-guard.js?v=20260730-configurable-limit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260729-dark-record-participation-1';
 import { renderResult } from './pages/result-comments.js?v=20260730-natural-story-humor-1';
-import { renderPolicy } from './pages/policy.js?v=20260729-brand-policy-1';
+import { renderPolicy } from './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260729-dark-record-participation-1';
-import { renderGuide } from './pages/guide.js?v=20260729-brand-policy-1';
+import { renderGuide } from './pages/guide.js?v=20260730-configurable-limit-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
 import { renderBoard } from './pages/board-court.js?v=20260730-public-records-2';
 // Cache lineage marker for the CSP regression check: ./pages/board-court.js?v=20260729-script-csp-1

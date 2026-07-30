@@ -50,8 +50,8 @@ for (const expected of [
 }
 
 for (const expected of [
-  "renderDailyRealCourt",
-  "#/daily-court",
+  'renderDailyRealCourt',
+  '#/daily-court',
   "path === '/daily-court'"
 ]) {
   if (!app.includes(expected)) errors.push(`public/js/app.js integration missing: ${expected}`);
@@ -76,11 +76,23 @@ for (const functionName of ['functions:getDailyRealCourt', 'functions:submitDail
 if (!deploy.includes('sync-daily-real-court-catalog.mjs') || !sync.includes('orderedCaseIds')) {
   errors.push('daily real court catalog deployment sync is incomplete');
 }
-if (!submit.includes('const DEFAULT_DAILY_LIMIT = 1') || !submit.includes('1, 1)')) {
-  errors.push('functions/submit-secure.js: member daily case limit is not fixed to one');
+
+// AI 생활사건 접수 한도는 오늘의 재판 1회 투표 규칙과 별개이며 관리자 설정을 따른다.
+for (const expected of [
+  'const dailyLimitEnabled = settings.dailyLimitEnabled === true;',
+  'if (dailyLimitEnabled && count >= dailyLimit)',
+  'clampNumber(settings.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 1000)'
+]) {
+  if (!submit.includes(expected)) errors.push(`functions/submit-secure.js: configurable AI case limit missing ${expected}`);
 }
-if (!publicConfig.includes('const dailyLimit = 1')) {
-  errors.push('tools/sync-public-config.mjs: public daily limit is not one');
+for (const expected of [
+  'const dailyLimitEnabled = data.dailyLimitEnabled === true;',
+  'numberInRange(data.dailyLimit, 3, 1, 1000)'
+]) {
+  if (!publicConfig.includes(expected)) errors.push(`tools/sync-public-config.mjs: configurable public limit sync missing ${expected}`);
+}
+if (submit.includes('1, 1)') || publicConfig.includes('const dailyLimit = 1')) {
+  errors.push('AI 생활사건 접수 한도가 다시 하루 1회로 고정되었습니다.');
 }
 
 const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
@@ -95,4 +107,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Daily real court validation passed: ${catalog.length} verified cases, one-vote game flow, protected answers, and one daily AI submission.`);
+console.log(`Daily real court validation passed: ${catalog.length} verified cases, one-vote game flow, protected answers, and administrator-controlled AI case limits.`);

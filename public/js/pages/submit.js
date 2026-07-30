@@ -71,13 +71,20 @@ async function loadSubmitSettings() {
     const snap = await getDoc(doc(db, 'site_public', 'config'));
     const data = snap.exists() ? snap.data() : {};
     return {
-      dailyLimit: clampNumber(data.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 20),
+      dailyLimitEnabled: data.dailyLimitEnabled === true,
+      dailyLimit: clampNumber(data.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 1000),
       cooldownSec: clampNumber(data.cooldownSec, 45, 0, 300)
     };
   } catch (err) {
     console.warn('submit settings load failed:', err);
-    return { dailyLimit: DEFAULT_DAILY_LIMIT, cooldownSec: 45 };
+    return { dailyLimitEnabled: false, dailyLimit: DEFAULT_DAILY_LIMIT, cooldownSec: 45 };
   }
+}
+
+function submissionLimitText(settings) {
+  return settings.dailyLimitEnabled
+    ? `계정당 <strong>${settings.dailyLimit}건</strong>`
+    : '<strong>제한 없음</strong> <span style="font-size:10px;opacity:.72;">(테스트 운영 중)</span>';
 }
 
 export async function renderSubmit(container) {
@@ -121,7 +128,7 @@ export async function renderSubmit(container) {
 
           <div class="disclaimer" style="margin-bottom:24px;">
             <strong>⚠️ 접수 전 확인사항</strong><br>
-            · 하루 접수 한도: 계정당 <strong>${settings.dailyLimit}건</strong><br>
+            · 하루 접수 한도: ${submissionLimitText(settings)}<br>
             · 재접수 대기: <strong>${settings.cooldownSec}초</strong><br>
             · 실명·연락처·주민번호 등 개인정보 입력 금지<br>
             · 실제 분쟁 해결이 아닌 AI 오락 콘텐츠이며 법적 효력이 없습니다

@@ -6,7 +6,7 @@ const { inspectContent } = require('./content-safety');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const MAX_DESC = 600;
-const DEFAULT_DAILY_LIMIT = 1;
+const DEFAULT_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
@@ -97,8 +97,9 @@ exports.submitCase = onCall({
   }
 
   const settings = await loadSettings();
-  // 운영비를 예측할 수 있도록 회원별 사건 접수는 하루 1건으로 고정한다.
-  const dailyLimit = clampNumber(settings.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 1);
+  // 기존 설정에는 dailyLimitEnabled가 없으므로 배포 직후에는 제한 없이 테스트할 수 있다.
+  const dailyLimitEnabled = settings.dailyLimitEnabled === true;
+  const dailyLimit = clampNumber(settings.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 1000);
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
   const bannedWords = Array.isArray(settings.bannedWords) ? settings.bannedWords : [];
 
@@ -117,7 +118,7 @@ exports.submitCase = onCall({
     const current = limitSnap.exists ? limitSnap.data() : {};
     const count = current.date === today ? Number(current.count || 0) : 0;
 
-    if (count >= dailyLimit) {
+    if (dailyLimitEnabled && count >= dailyLimit) {
       throw new HttpsError('resource-exhausted', `오늘 접수 한도 ${dailyLimit}건을 초과했습니다.`);
     }
 
@@ -151,12 +152,19 @@ exports.submitCase = onCall({
 
     tx.set(limitRef, {
       date: today,
-      count: count + 1,
+      count: dailyLimitEnabled ? count + 1 : 0,
+      dailyLimitEnabled,
       dailyLimit,
       lastSubmittedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
   });
 
-  return { caseId, docketNumber, dailyLimit, cooldownSec };
+  return {
+    caseId,
+    docketNumber,
+    dailyLimitEnabled,
+    dailyLimit: dailyLimitEnabled ? dailyLimit : 0,
+    cooldownSec
+  };
 });

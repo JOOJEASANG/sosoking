@@ -48,7 +48,7 @@ function addCourtEntrance(container) {
           </div>
         </div>
         <div class="court-ledger">
-          <div><strong>하루 1건</strong><span>AI 사건 접수</span></div>
+          <div><strong data-home-daily-limit>설정 확인</strong><span>AI 사건 접수</span></div>
           <div><strong>7명</strong><span>판사 자동 배정</span></div>
           <div><strong>1판</strong><span>오늘의 재판</span></div>
         </div>
@@ -101,6 +101,30 @@ function fixLegacyHomeCopy(container) {
   if (feedTitle) feedTitle.textContent = '최근 공개 판결 5건';
   const searchElement = container.querySelector('#feed-search');
   if (searchElement) searchElement.placeholder = '🔍 최근 5건에서 사건명 검색...';
+}
+
+async function applySubmissionLimit(container) {
+  const heroDisclaimer = container.querySelector('.hero-disclaimer');
+  const ledgerLimit = container.querySelector('[data-home-daily-limit]');
+
+  try {
+    const snapshot = await getDoc(doc(db, 'site_public', 'config'));
+    if (!container.isConnected) return;
+    const settings = snapshot.exists() ? snapshot.data() : {};
+    const enabled = settings.dailyLimitEnabled === true;
+    const limit = Math.max(1, Math.min(1000, Math.floor(Number(settings.dailyLimit) || 3)));
+
+    if (heroDisclaimer) {
+      heroDisclaimer.textContent = enabled
+        ? `회원당 하루 ${limit}회 · 오락용 AI 판결 · 법적 효력 없음`
+        : '현재 사건 접수 제한 없음 · 오락용 AI 판결 · 법적 효력 없음';
+    }
+    if (ledgerLimit) ledgerLimit.textContent = enabled ? `하루 ${limit}건` : '제한 없음';
+  } catch (error) {
+    console.warn('public submission limit load failed:', error?.code || error);
+    if (heroDisclaimer) heroDisclaimer.textContent = '접수 한도는 운영 설정에 따라 적용 · 오락용 AI 판결 · 법적 효력 없음';
+    if (ledgerLimit) ledgerLimit.textContent = '운영 설정';
+  }
 }
 
 function formatDate(value) {
@@ -210,6 +234,7 @@ export async function renderHome(container) {
   addProcedureSeal(container);
   fixLegacyHomeCopy(container);
   await Promise.all([
+    applySubmissionLimit(container),
     applyPublicStatistics(container),
     applySafePublicFeed(container)
   ]);

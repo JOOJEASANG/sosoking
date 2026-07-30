@@ -1,4 +1,4 @@
-import { renderPolicy } from '../js/pages/policy.js?v=20260729-brand-policy-1';
+import { renderPolicy } from '../js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';
 
 const DEFAULT_CACHE = new Map();
 let loadSequence = 0;
