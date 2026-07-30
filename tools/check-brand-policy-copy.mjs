@@ -28,15 +28,18 @@ const guide = read('public/js/pages/guide.js');
 for (const phrase of [
   '접수 횟수와 대기시간은 운영 설정에 따라 달라질 수 있으며',
   '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다.',
-  '오늘의 실제 판례 읽기',
+  '오늘의 실제 판례 3건 읽기',
+  '매일 실제 법원 판례 3건',
   '실제 판단과 민심 비교하기',
+  '세 사건을 완료하면 일간 랭킹',
+  '매일 판례 3건이 제공되며',
   '검색엔진에 노출될 수 있으며',
   '개별 회원의 선택은 공개하지 않고'
 ]) {
   if (!guide.includes(phrase)) errors.push(`public/js/pages/guide.js: 이용 안내 누락: ${phrase}`);
 }
-if (guide.includes('회원당 하루 1회입니다.')) {
-  errors.push('public/js/pages/guide.js: 고정 하루 1회 안내가 남아 있습니다.');
+for (const legacy of ['회원당 하루 1회입니다.', '매일 실제 법원 판례 한 건', '매일 한 사건이 제공되며']) {
+  if (guide.includes(legacy)) errors.push(`public/js/pages/guide.js: 구버전 안내가 남아 있습니다: ${legacy}`);
 }
 
 const policy = read('public/js/pages/policy.js');
@@ -66,10 +69,16 @@ const policyLimit = read('public/js/pages/policy-configurable-limit.js');
 for (const phrase of [
   '접수 횟수와 재접수 대기시간은 서비스 화면에 표시된 현재 운영 설정을 따릅니다.',
   '제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.',
+  '매일 실제 판례 3건',
+  '각 사건에 한 번씩',
+  '일간·주간·누적 랭킹',
   'replaceLegacyLimitCopy',
+  'replaceCurrentPolicyCopy',
+  'OLD_DAILY_COPY',
+  'NEW_DAILY_COPY',
   "getDoc(doc(db, 'policy_docs', 'terms'))"
 ]) {
-  if (!policyLimit.includes(phrase)) errors.push(`public/js/pages/policy-configurable-limit.js: 가변 한도 약관 문구 누락: ${phrase}`);
+  if (!policyLimit.includes(phrase)) errors.push(`public/js/pages/policy-configurable-limit.js: 최신 약관 문구 누락: ${phrase}`);
 }
 
 const index = read('public/index.html');
@@ -91,8 +100,8 @@ if (!homeCourtVersion) {
 for (const moduleUrl of [
   './pages/home-court.js?v=20260730-configurable-limit-1',
   './pages/submit-guard.js?v=20260730-configurable-limit-1',
-  './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',
-  './pages/guide.js?v=20260730-configurable-limit-1',
+  './pages/policy-configurable-limit.js?v=20260730-final-audit-1',
+  './pages/guide.js?v=20260730-final-audit-1',
   './components/footer.js?v=20260729-brand-policy-1'
 ]) {
   if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: 최신 문구·한도 모듈 버전 누락: ${moduleUrl}`);
@@ -116,9 +125,9 @@ if (!homeCourtVersion || !sw.includes(`/js/pages/home-court.js?v=${homeCourtVers
 }
 for (const asset of [
   '/js/pages/home.js?v=20260729-brand-policy-1',
-  '/js/pages/guide.js?v=20260730-configurable-limit-1',
-  '/js/pages/policy.js?v=20260729-brand-policy-1',
-  '/js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',
+  '/js/pages/guide.js?v=20260730-final-audit-1',
+  '/js/pages/policy.js?v=20260730-final-audit-1',
+  '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',
   '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
   '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
   '/js/pages/submit.js?v=20260730-configurable-limit-1',
@@ -138,4 +147,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: dynamic submission limits, real-case game, privacy disclosures, AI notice, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: dynamic submission limits, three-case real-court guidance, privacy disclosures, AI notice, and synchronized cache versions.');
