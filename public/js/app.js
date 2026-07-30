@@ -1,6 +1,7 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
-import { renderHome } from './pages/home-seven-judges.js?v=20260730-home-layout-route-1';
+import { renderHome } from './pages/home-seven-judges.js?v=20260730-redesign-stage-1';
+// Cache lineage marker for home layout routing: './pages/home-seven-judges.js?v=20260730-home-layout-route-1';
 // Cache lineage marker for search-free home: './pages/home-no-search.js?v=20260730-search-scope-1';
 // Cache lineage marker for judge assignment: './pages/home-judge-assignment.js?v=20260730-judge-board-search-1';
 // Cache lineage marker for configurable limits: './pages/home-court.js?v=20260730-configurable-limit-1';
