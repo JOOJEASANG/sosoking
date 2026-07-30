@@ -59,7 +59,7 @@ for (const required of [
 
 const adminPolicy = read('public/admin/admin-policy-defaults.js');
 for (const required of [
-  "import { renderPolicy } from '../js/pages/policy.js?v=20260729-brand-policy-1'",
+  "import { renderPolicy } from '../js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1'",
   'async function currentSitePolicy(type)',
   "root.querySelector('#policy-content')",
   'textarea.value = content',
@@ -67,6 +67,21 @@ for (const required of [
   'new MutationObserver'
 ]) {
   if (!adminPolicy.includes(required)) errors.push(`public/admin/admin-policy-defaults.js: policy editor bridge missing ${required}`);
+}
+
+const adminLimit = read('public/admin/admin-daily-limit.js');
+for (const required of [
+  'settings.dailyLimitEnabled === true',
+  "form.querySelector('#daily-limit-enabled')",
+  '회원별 일일 사건 접수 제한 사용',
+  '끄면 제한 없이 계속 테스트할 수 있습니다.',
+  "setDoc(doc(db, 'site_settings', 'config')",
+  "setDoc(doc(db, 'site_public', 'config')",
+  'dailyLimitEnabled,',
+  'dailyLimit,',
+  'new MutationObserver'
+]) {
+  if (!adminLimit.includes(required)) errors.push(`public/admin/admin-daily-limit.js: configurable case limit control missing ${required}`);
 }
 
 const adminDashboard = read('public/admin/admin.js');
@@ -86,7 +101,8 @@ if (!publicPolicy.includes("getDoc(doc(db, 'policy_docs', safeType))")) {
 const adminIndex = read('public/admin/index.html');
 for (const required of [
   '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
-  '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1'
+  '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1',
+  '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1'
 ]) {
   if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);
 }
@@ -94,16 +110,16 @@ for (const required of [
 const index = read('public/index.html');
 const worker = read('public/sw.js');
 for (const required of [
-  '/js/app.js?v=20260730-admin-redirect-1',
+  '/js/app.js?v=20260730-configurable-limit-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: missing ${required}`);
 }
-if (!index.includes('/js/app.js?v=20260730-admin-redirect-1')) {
-  errors.push('public/index.html: administrator redirect app cache version is stale');
+if (!index.includes('/js/app.js?v=20260730-configurable-limit-1')) {
+  errors.push('public/index.html: configurable limit app cache version is stale');
 }
-if (!worker.includes("sosoking-app-v20260730-admin-redirect-1")) {
-  errors.push('public/sw.js: administrator redirect cache name is stale');
+if (!worker.includes("sosoking-app-v20260730-configurable-limit-1")) {
+  errors.push('public/sw.js: configurable limit cache name is stale');
 }
 
 if (errors.length) {
@@ -112,4 +128,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator validation passed: login and logout redirects, complete verdict data access, and managed policy editing remain connected and cache-safe.');
+console.log('Administrator validation passed: login/logout routing, configurable case limits, verdict access, and managed policy editing remain connected and cache-safe.');
