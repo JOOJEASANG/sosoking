@@ -5,7 +5,7 @@ const read = file => fs.readFileSync(file, 'utf8');
 
 const adminIndex = read('public/admin/index.html');
 const adminAppCheckPath = '/admin/admin-app-check.js?v=20260730-security-hardening-1';
-const adminBootstrapPath = '/admin/admin-bootstrap.js?v=20260730-admin-logout-home-1';
+const adminBootstrapPath = '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1';
 const appCheckIndex = adminIndex.indexOf(adminAppCheckPath);
 const bootstrapIndex = adminIndex.indexOf(adminBootstrapPath);
 if (appCheckIndex < 0) errors.push('public/admin/index.html: administrator App Check bootstrap is missing');
