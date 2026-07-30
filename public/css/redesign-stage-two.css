@@ -1,0 +1,365 @@
+/* Stage 2 redesign: case submission and processing flow */
+.submit-redesign-shell,
+.trial-redesign-host {
+  min-height: 100%;
+}
+
+.submit-redesign-shell .page-header,
+.trial-redesign-host .page-header {
+  border-radius: 0 0 22px 22px;
+}
+
+.submit-page {
+  padding-top: 26px !important;
+  padding-bottom: 104px !important;
+}
+
+.submit-intro {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 24px !important;
+  margin-bottom: 18px !important;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(210, 168, 61, 0.22), transparent 30%),
+    var(--promo-surface) !important;
+  border-color: var(--promo-line) !important;
+  border-radius: 26px !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.submit-intro::after {
+  content: "🖋️";
+  position: absolute;
+  right: 21px;
+  bottom: 15px;
+  font-size: 52px;
+  opacity: 0.13;
+  transform: rotate(-9deg);
+}
+
+.submit-intro-kicker {
+  color: var(--promo-gold-deep) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.14em !important;
+}
+
+.submit-intro-title {
+  max-width: 430px;
+  margin-top: 6px;
+  color: var(--promo-text);
+  font-size: clamp(25px, 6vw, 34px) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em;
+  line-height: 1.34 !important;
+}
+
+.submit-intro-description {
+  max-width: 470px;
+  margin-top: 10px !important;
+  color: var(--promo-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.8 !important;
+}
+
+.submit-redesign-shell #submit-form {
+  display: grid;
+  gap: 14px;
+}
+
+.submit-redesign-shell #submit-form > .form-group {
+  margin: 0;
+  padding: 22px;
+  background: var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 24px;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.submit-redesign-shell .form-label {
+  margin-bottom: 11px;
+  color: var(--promo-gold-deep);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.submit-redesign-shell #case-desc {
+  min-height: 230px !important;
+  padding: 18px !important;
+  color: var(--promo-text);
+  background: color-mix(in srgb, var(--promo-page-soft) 62%, transparent) !important;
+  border: 1.5px solid var(--promo-line) !important;
+  border-radius: 19px !important;
+  font-size: 15px;
+  line-height: 1.8 !important;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.submit-redesign-shell #case-desc:focus {
+  border-color: rgba(210, 168, 61, 0.68) !important;
+  box-shadow: 0 0 0 4px rgba(210, 168, 61, 0.11), inset 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.submit-redesign-shell #desc-help,
+.submit-redesign-shell .char-counter {
+  color: var(--promo-muted) !important;
+}
+
+.submit-flow-card,
+.submit-public-card {
+  margin: 0 !important;
+  padding: 19px !important;
+  background: var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 22px !important;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.submit-flow-card > div:first-child {
+  color: var(--promo-text) !important;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.submit-document-flow {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.submit-document-flow span {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 5px;
+  color: var(--promo-muted);
+  background: color-mix(in srgb, var(--promo-page-soft) 64%, transparent);
+  border: 1px solid var(--promo-line);
+  border-radius: 15px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.submit-public-card {
+  background:
+    linear-gradient(145deg, rgba(210, 168, 61, 0.10), transparent 62%),
+    var(--promo-surface) !important;
+}
+
+.submit-public-card label {
+  color: var(--promo-text) !important;
+}
+
+.submit-public-card input[type="checkbox"] {
+  accent-color: var(--promo-gold);
+}
+
+.submit-public-card b {
+  color: var(--promo-gold-deep) !important;
+}
+
+.submit-public-card label span span {
+  color: var(--promo-muted) !important;
+}
+
+.submit-redesign-shell .submit-notice {
+  margin: 0 !important;
+  padding: 17px 18px;
+  color: var(--promo-muted);
+  background: rgba(178, 83, 54, 0.07);
+  border-color: rgba(178, 83, 54, 0.18);
+  border-radius: 19px;
+}
+
+.submit-redesign-shell #submit-btn {
+  min-height: 58px;
+  margin-top: 2px;
+  border-radius: 19px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+/* Processing page */
+.trial-redesign-host > div {
+  min-height: 100%;
+}
+
+.trial-redesign-host .container {
+  padding-top: 25px !important;
+  padding-bottom: 108px !important;
+}
+
+.trial-redesign-host #docket-card {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 17px !important;
+  padding: 25px 23px !important;
+  background:
+    radial-gradient(circle at 95% 10%, rgba(210, 168, 61, 0.23), transparent 31%),
+    var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 27px !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.trial-redesign-host #docket-card::after {
+  content: "⚖️";
+  position: absolute;
+  right: 22px;
+  bottom: -9px;
+  font-size: 76px;
+  opacity: 0.08;
+}
+
+.trial-redesign-host #docket-title {
+  color: var(--promo-text);
+  font-size: clamp(22px, 5.5vw, 30px) !important;
+  letter-spacing: -0.035em;
+}
+
+.trial-redesign-host #docket-meta {
+  color: var(--promo-muted) !important;
+}
+
+.trial-redesign-host #docket-status {
+  display: inline-flex;
+  margin-top: 4px;
+  padding: 5px 9px;
+  color: var(--promo-gold-deep) !important;
+  background: rgba(210, 168, 61, 0.12);
+  border: 1px solid rgba(210, 168, 61, 0.26);
+  border-radius: 999px;
+}
+
+.trial-redesign-host #docket-timeline {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  overflow: visible !important;
+  margin-bottom: 18px !important;
+  padding: 0 !important;
+}
+
+.trial-redesign-host #docket-timeline > div {
+  min-width: 0 !important;
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 13px;
+  padding: 13px 15px !important;
+  background: var(--promo-surface) !important;
+  border-radius: 19px !important;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.trial-redesign-host #docket-timeline > div > div:first-child {
+  width: 43px;
+  height: 43px;
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  margin: 0 !important;
+  background: rgba(210, 168, 61, 0.11);
+  border: 1px solid rgba(210, 168, 61, 0.22);
+  border-radius: 15px;
+  font-size: 18px !important;
+}
+
+.trial-redesign-host #docket-timeline > div > div:nth-child(2) {
+  align-self: end;
+  font-size: 13px !important;
+}
+
+.trial-redesign-host #docket-timeline > div > div:nth-child(3) {
+  align-self: start;
+  margin-top: 2px !important;
+  color: var(--promo-muted) !important;
+  font-size: 11px !important;
+}
+
+.trial-redesign-host #loading-area {
+  margin-top: 16px;
+  padding: 34px 22px !important;
+  background:
+    radial-gradient(circle at 50% 0, rgba(210, 168, 61, 0.13), transparent 42%),
+    var(--promo-surface);
+  border: 1px solid var(--promo-line);
+  border-radius: 24px;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.trial-redesign-host #loading-text {
+  max-width: 440px;
+  margin: 11px auto 0 !important;
+  color: var(--promo-muted) !important;
+  line-height: 1.75;
+}
+
+.trial-redesign-host #steps-container .court-document {
+  padding: 23px !important;
+  margin-bottom: 13px !important;
+  border-radius: 23px !important;
+  background: var(--promo-surface) !important;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.trial-redesign-host #steps-container .step-content {
+  color: var(--promo-text);
+}
+
+@media (min-width: 620px) {
+  .submit-redesign-shell #submit-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .submit-redesign-shell #submit-form > .form-group,
+  .submit-flow-card,
+  .submit-redesign-shell .submit-notice,
+  .submit-redesign-shell #submit-btn {
+    grid-column: 1 / -1;
+  }
+
+  .submit-public-card {
+    grid-column: 1 / -1;
+  }
+
+  .trial-redesign-host #docket-timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .trial-redesign-host #docket-timeline > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 430px) {
+  .submit-page,
+  .trial-redesign-host .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .submit-intro,
+  .submit-redesign-shell #submit-form > .form-group {
+    padding: 20px 18px !important;
+  }
+
+  .submit-document-flow {
+    grid-template-columns: repeat(5, 92px) !important;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .submit-document-flow span {
+    min-height: 68px;
+  }
+
+  .trial-redesign-host #docket-card {
+    padding: 21px 18px !important;
+  }
+}
