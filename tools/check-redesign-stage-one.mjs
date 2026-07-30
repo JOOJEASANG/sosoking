@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-// Stage 1 gate: do not continue the redesign until this check and the full suite pass.
+// Stage 1 gate: shared foundation must remain active throughout later redesign stages.
 const errors = [];
 const read = path => fs.readFileSync(path, 'utf8');
 const requireText = (source, text, label) => {
@@ -40,15 +40,14 @@ requireText(app, "./pages/home-seven-judges.js?v=20260730-redesign-stage-1", 'ap
 
 const index = read('public/index.html');
 const worker = read('public/sw.js');
-for (const text of [
-  '/css/redesign-stage-one.css?v=20260730-redesign-stage-1',
-  '/js/app.js?v=20260730-redesign-stage-1'
-]) {
-  requireText(index, text, 'index');
-  requireText(worker, text, 'service worker');
-}
-requireText(worker, "const CACHE_NAME = 'sosoking-app-v20260730-redesign-stage-1';", 'service worker');
+requireText(index, '/css/redesign-stage-one.css?v=20260730-redesign-stage-1', 'index');
+requireText(worker, '/css/redesign-stage-one.css?v=20260730-redesign-stage-1', 'service worker');
 requireText(worker, '/js/pages/home-seven-judges.js?v=20260730-redesign-stage-1', 'service worker');
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('index and service worker active app versions differ');
+}
+requireText(worker, "const CACHE_NAME = 'sosoking-app-v", 'service worker');
 
 const packageJson = read('package.json');
 requireText(packageJson, 'node tools/check-redesign-stage-one.mjs', 'validation chain');
@@ -59,4 +58,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Stage one redesign validation passed: shared surfaces, navigation, footer, homepage feature cards, and seven-judge layout are cache-safe.');
+console.log('Stage one redesign validation passed: shared surfaces, navigation, footer, homepage feature cards, and seven-judge layout remain active and cache-safe.');
