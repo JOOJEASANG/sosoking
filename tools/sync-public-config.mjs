@@ -26,9 +26,12 @@ function publicBusinessInfo(value) {
   );
 }
 
-const dailyLimit = 1;
-await db.doc('site_settings/config').set({ dailyLimit }, { merge: true });
+// 기존 운영 설정에는 이 필드가 없으므로 최초 배포 시 제한이 자동으로 해제된다.
+const dailyLimitEnabled = data.dailyLimitEnabled === true;
+const dailyLimit = numberInRange(data.dailyLimit, 3, 1, 1000);
+await db.doc('site_settings/config').set({ dailyLimitEnabled, dailyLimit }, { merge: true });
 await db.doc('site_public/config').set({
+  dailyLimitEnabled,
   dailyLimit,
   cooldownSec: numberInRange(data.cooldownSec, 45, 0, 300),
   businessInfo: publicBusinessInfo(data.businessInfo),
@@ -38,6 +41,7 @@ await db.doc('site_public/config').set({
 console.log(JSON.stringify({
   synced: true,
   sourceExists: source.exists,
-  fields: ['dailyLimit', 'cooldownSec', 'businessInfo'],
+  fields: ['dailyLimitEnabled', 'dailyLimit', 'cooldownSec', 'businessInfo'],
+  dailyLimitEnabled,
   dailyLimit
 }));
