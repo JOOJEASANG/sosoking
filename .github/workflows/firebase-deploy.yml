@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     permissions:
       contents: read
     concurrency:
@@ -104,25 +104,18 @@ jobs:
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node functions/sync-public-stats-cli.js
 
-      - name: Sync daily real court catalog
+      - name: Sync verified daily court catalog without shrinking existing data
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node tools/sync-daily-real-court-catalog.mjs
 
-      - name: Bootstrap 1000 official daily court cases
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-          GOOGLE_CLOUD_PROJECT: sosoking-481e6
-          LAW_OPEN_API_OC: ${{ secrets.LAW_OPEN_API_OC || 'test' }}
-          DAILY_COURT_TARGET_SIZE: '1000'
-        run: node tools/bootstrap-daily-real-court-1000.mjs
-
-      - name: Write verified daily court catalog status
+      - name: Write current daily court catalog status
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
           DAILY_COURT_TARGET_SIZE: '1000'
+          DAILY_COURT_REQUIRE_TARGET: 'false'
         run: node tools/write-daily-court-catalog-status.mjs
 
       - name: Sync safe public configuration
@@ -137,11 +130,11 @@ jobs:
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node tools/remove-official-seed.mjs
 
-      - name: Deploy verified Hosting
+      - name: Deploy Hosting independently of external catalog import
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, administrator-only AI generation, Functions, 1000 verified official daily court cases, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, Functions, preserved daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
