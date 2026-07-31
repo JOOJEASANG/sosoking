@@ -26,10 +26,11 @@ if (stateGuard < 0 || failureNotice < 0 || stateGuard > failureNotice) {
 
 const index = read('public/index.html');
 const guardScript = '<script type="module" src="/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1"></script>';
-const appScript = '<script type="module" src="/js/app.js?v=20260730-final-audit-1"></script>';
+const appScriptPattern = /<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/;
 need(index, guardScript, 'application entry');
 const guardPosition = index.indexOf(guardScript);
-const appPosition = index.indexOf(appScript);
+const appScript = index.match(appScriptPattern)?.[0] || '';
+const appPosition = appScript ? index.indexOf(appScript) : -1;
 if (guardPosition < 0 || appPosition < 0 || guardPosition > appPosition) {
   errors.push('application entry: Google login guard must load before the application');
 }
