@@ -10,10 +10,11 @@ const { getFirestore, FieldValue } = requireFromFunctions('firebase-admin/firest
 const projectId = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'sosoking-481e6';
 if (!getApps().length) initializeApp({ credential: applicationDefault(), projectId });
 
+const MAX_CATALOG_SIZE = 1000;
 const sourcePath = path.join(root, 'content', 'daily-real-court-cases.json');
 const cases = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
 if (!Array.isArray(cases) || cases.length < 3) throw new Error('오늘의 재판 판례는 하루 3건 출제를 위해 최소 3건이 필요합니다.');
-if (cases.length > 500) throw new Error('오늘의 재판 판례는 최대 500건까지 동기화할 수 있습니다.');
+if (cases.length > MAX_CATALOG_SIZE) throw new Error(`오늘의 재판 판례는 최대 ${MAX_CATALOG_SIZE}건까지 동기화할 수 있습니다.`);
 
 const ids = new Set();
 for (const [index, item] of cases.entries()) {
@@ -28,6 +29,12 @@ for (const [index, item] of cases.entries()) {
 }
 
 const db = getFirestore();
+const configRef = db.doc('daily_court_config/catalog');
+const configSnapshot = await configRef.get();
+const priorOrder = configSnapshot.exists && Array.isArray(configSnapshot.data()?.orderedCaseIds)
+  ? configSnapshot.data().orderedCaseIds.map(value => String(value || '').trim()).filter(Boolean)
+  : [];
+
 for (let offset = 0; offset < cases.length; offset += 400) {
   const batch = db.batch();
   cases.slice(offset, offset + 400).forEach((item, localIndex) => {
@@ -36,19 +43,59 @@ for (let offset = 0; offset < cases.length; offset += 400) {
       ...item,
       order,
       active: true,
+      curated: true,
       syncedAt: FieldValue.serverTimestamp()
     }, { merge: true });
   });
   await batch.commit();
 }
 
-await db.doc('daily_court_config/catalog').set({
-  orderedCaseIds: cases.map(item => item.id),
-  size: cases.length,
+const catalogSnapshot = await db.collection('daily_court_catalog').get();
+const activeItems = catalogSnapshot.docs
+  .filter(snapshot => snapshot.data()?.active !== false)
+  .map(snapshot => ({ id: snapshot.id, ...snapshot.data() }));
+const activeIds = new Set(activeItems.map(item => item.id));
+const mergedOrder = [];
+const seen = new Set();
+
+for (const id of priorOrder) {
+  if (activeIds.has(id) && !seen.has(id)) {
+    mergedOrder.push(id);
+    seen.add(id);
+  }
+}
+for (const item of cases) {
+  if (!seen.has(item.id)) {
+    mergedOrder.push(item.id);
+    seen.add(item.id);
+  }
+}
+for (const item of [...activeItems].sort((a, b) => Number(a.order ?? Number.MAX_SAFE_INTEGER) - Number(b.order ?? Number.MAX_SAFE_INTEGER)
+  || String(b.decidedAt || '').localeCompare(String(a.decidedAt || ''))
+  || a.id.localeCompare(b.id))) {
+  if (!seen.has(item.id)) {
+    mergedOrder.push(item.id);
+    seen.add(item.id);
+  }
+}
+
+const orderedCaseIds = mergedOrder.slice(0, MAX_CATALOG_SIZE);
+await configRef.set({
+  orderedCaseIds,
+  size: orderedCaseIds.length,
   dailyCaseCount: 3,
-  targetSize: 500,
+  targetSize: MAX_CATALOG_SIZE,
   source: '국가법령정보센터 판례를 바탕으로 재구성',
   updatedAt: FieldValue.serverTimestamp()
 }, { merge: true });
 
-console.log(JSON.stringify({ synced: true, count: cases.length, dailyCaseCount: 3, targetSize: 500, first: cases[0].id, last: cases.at(-1).id }));
+console.log(JSON.stringify({
+  synced: true,
+  curatedCount: cases.length,
+  count: orderedCaseIds.length,
+  dailyCaseCount: 3,
+  targetSize: MAX_CATALOG_SIZE,
+  preservedExistingOrder: priorOrder.length > 0,
+  first: orderedCaseIds[0],
+  last: orderedCaseIds.at(-1)
+}));
