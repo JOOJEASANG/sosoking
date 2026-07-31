@@ -74,7 +74,18 @@ jobs:
       - name: Deploy current Functions first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:getDailyRealCourt,functions:submitDailyRealCourtVerdict,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:getDailyRealCourt,functions:submitDailyRealCourtVerdict,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
+
+      - name: Remove obsolete automatic AI schedule
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: |
+          firebase functions:list --project sosoking-481e6 > "$RUNNER_TEMP/functions-list.txt"
+          if grep -q 'createDailyAiCase' "$RUNNER_TEMP/functions-list.txt"; then
+            firebase functions:delete createDailyAiCase --region asia-northeast3 --force --project sosoking-481e6 --non-interactive
+          else
+            echo "Automatic daily AI schedule is already absent."
+          fi
 
       - name: Sanitize existing public results
         env:
@@ -113,4 +124,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, Functions, daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, administrator-only AI generation, Functions, daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
