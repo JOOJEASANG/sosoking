@@ -93,7 +93,7 @@ jobs:
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node functions/sanitize-public-results-cli.js
 
-      - name: Deploy Firestore configuration
+      - name: Deploy Firestore configuration and Hosting prerequisites
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:indexes,firestore:rules --project sosoking-481e6 --non-interactive
