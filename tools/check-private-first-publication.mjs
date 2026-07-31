@@ -5,9 +5,8 @@ const read = file => fs.readFileSync(file, 'utf8');
 
 const submitServer = read('functions/submit-secure.js');
 for (const required of [
-  'const isPublic = false;',
-  '공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.',
-  'isPublic,'
+  'isPublic: false,',
+  '공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.'
 ]) {
   if (!submitServer.includes(required)) {
     errors.push(`functions/submit-secure.js: private-first submission guard missing ${required}`);
