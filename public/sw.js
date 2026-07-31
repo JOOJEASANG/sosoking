@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260801-dripso-community-1';
+const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-dripso-community-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-2';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
@@ -27,6 +28,8 @@ const APP_SHELL = [
   '/index.html',
   '/dripso/',
   '/dripso/index.html',
+  '/dripso/dripso.css?v=20260801-topic-image-1',
+  '/dripso/dripso.js?v=20260801-topic-image-1',
   '/dripso/dripso.css?v=20260801-community-1',
   '/dripso/dripso.js?v=20260801-community-1',
   '/dripso/dripso.css?v=20260731-dripso-1',
