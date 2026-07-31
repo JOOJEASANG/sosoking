@@ -7,6 +7,7 @@ const read = file => fs.readFileSync(file, 'utf8');
 const requiredFiles = [
   'public/dripso/index.html',
   'public/dripso/dripso.css',
+  'public/dripso/copy-helper.css',
   'public/dripso/dripso.js',
   'public/dripso/jokes.js'
 ];
@@ -18,6 +19,7 @@ for (const file of requiredFiles) {
 if (!errors.length) {
   const html = read('public/dripso/index.html');
   const css = read('public/dripso/dripso.css');
+  const copyCss = read('public/dripso/copy-helper.css');
   const app = read('public/dripso/dripso.js');
   const nav = read('public/js/components/nav.js');
   const brand = read('public/css/brand-logo.css');
@@ -28,6 +30,7 @@ if (!errors.length) {
     '<title>드립소 - 잠깐 웃고 가는 곳</title>',
     'http-equiv="Content-Security-Policy"',
     '/dripso/dripso.css?v=20260731-dripso-1',
+    '/dripso/copy-helper.css?v=20260731-dripso-1',
     '/dripso/dripso.js?v=20260731-dripso-1',
     'id="random-joke"',
     'id="saved-toggle"',
@@ -54,6 +57,9 @@ if (!errors.length) {
   ]) {
     if (!css.includes(required)) errors.push(`public/dripso/dripso.css: missing ${required}`);
   }
+  if (!copyCss.includes('.copy-helper') || !copyCss.includes('left: -10000px')) {
+    errors.push('public/dripso/copy-helper.css: CSP-safe clipboard fallback style is missing');
+  }
 
   for (const required of [
     "import { JOKES } from './jokes.js?v=20260731-dripso-1'",
@@ -61,6 +67,7 @@ if (!errors.length) {
     "'dripso.laughs.v1'",
     'navigator.clipboard.writeText',
     'navigator.share',
+    "area.className = 'copy-helper'",
     'renderSpotlight(dailyJoke())',
     "state.category === '전체'",
     "action === 'laugh'",
@@ -77,7 +84,8 @@ if (!errors.length) {
     'gemini',
     'generateContent',
     'innerHTML = joke',
-    'eval('
+    'eval(',
+    'area.style.'
   ]) {
     if (app.toLowerCase().includes(forbidden.toLowerCase())) {
       errors.push(`public/dripso/dripso.js: standalone page contains forbidden dependency or unsafe pattern ${forbidden}`);
@@ -95,9 +103,10 @@ if (!errors.length) {
   }
 
   for (const required of [
-    "const CACHE_NAME = 'sosoking-app-v20260731-dripso-1'",
+    "const CACHE_NAME = 'sosoking-app-v20260731-dripso-2'",
     "'/dripso/index.html'",
     "'/dripso/dripso.css?v=20260731-dripso-1'",
+    "'/dripso/copy-helper.css?v=20260731-dripso-1'",
     "'/dripso/dripso.js?v=20260731-dripso-1'",
     "'/dripso/jokes.js?v=20260731-dripso-1'",
     "url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')",
