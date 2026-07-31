@@ -7,8 +7,8 @@ const catalog = JSON.parse(read('content/daily-real-court-cases.json'));
 if (!Array.isArray(catalog) || catalog.length < 3) {
   errors.push('content/daily-real-court-cases.json: 하루 3건 출제를 위해 판례가 3건 이상 필요합니다.');
 }
-if (Array.isArray(catalog) && catalog.length > 500) {
-  errors.push('content/daily-real-court-cases.json: 판례는 최대 500건까지 지원합니다.');
+if (Array.isArray(catalog) && catalog.length > 1000) {
+  errors.push('content/daily-real-court-cases.json: 판례는 최대 1000건까지 지원합니다.');
 }
 
 const ids = new Set();
@@ -37,6 +37,7 @@ const rules = read('firestore.rules');
 const indexes = JSON.parse(read('firestore.indexes.json'));
 const deploy = read('.github/workflows/firebase-deploy.yml');
 const sync = read('tools/sync-daily-real-court-catalog.mjs');
+const bootstrap = read('tools/bootstrap-daily-real-court-1000.mjs');
 const submit = read('functions/submit-secure.js');
 const publicConfig = read('tools/sync-public-config.mjs');
 const index = read('public/index.html');
@@ -47,6 +48,9 @@ for (const expected of [
   'getDailyRealCourt',
   'submitDailyRealCourtVerdict',
   'const DAILY_CASE_COUNT = 3;',
+  'const MAX_CATALOG_SIZE = 1000;',
+  '.slice(0, MAX_CATALOG_SIZE)',
+  'offset += 100',
   'dailyCaseIndexes',
   'daily_court_days',
   'daily_court_weeks',
@@ -96,8 +100,35 @@ if (!completedScoreIndex) errors.push('firestore.indexes.json: completed daily r
 for (const functionName of ['functions:getDailyRealCourt', 'functions:submitDailyRealCourtVerdict']) {
   if (!deploy.includes(functionName)) errors.push(`deploy workflow missing: ${functionName}`);
 }
-for (const expected of ['orderedCaseIds', 'dailyCaseCount: 3', 'targetSize: 500', 'cases.length > 500']) {
+for (const expected of ['orderedCaseIds', 'dailyCaseCount: 3', 'targetSize: MAX_CATALOG_SIZE', 'const MAX_CATALOG_SIZE = 1000', 'preservedExistingOrder']) {
   if (!sync.includes(expected)) errors.push(`daily real court catalog sync missing: ${expected}`);
+}
+for (const expected of [
+  "const TARGET_SIZE = Math.max(3, Math.min(1000",
+  "const BOOTSTRAP_VERSION = 'law-open-data-ox-v1'",
+  "apiUrl('lawSearch.do'",
+  "apiUrl('lawService.do'",
+  "target: 'prec'",
+  "prncYd: `${START_DATE}~${todayDigits()}`",
+  "correctChoiceId: binary.positive ? 'yes' : 'no'",
+  "source: '국가법령정보센터 공식 판례 OX 카탈로그'",
+  'if (ordered.length < TARGET_SIZE)',
+  'aiUsed: false',
+  'categoryRoundRobin',
+  'BLOCKED_TERMS'
+]) {
+  if (!bootstrap.includes(expected)) errors.push(`official 1000-case bootstrap missing: ${expected}`);
+}
+for (const forbidden of ['gemini', 'generateContent', 'generativelanguage.googleapis.com']) {
+  if (bootstrap.toLowerCase().includes(forbidden.toLowerCase())) errors.push(`official catalog bootstrap must not use AI: ${forbidden}`);
+}
+for (const expected of [
+  'Bootstrap 1000 official daily court cases',
+  'LAW_OPEN_API_OC',
+  "DAILY_COURT_TARGET_SIZE: '1000'",
+  'node tools/bootstrap-daily-real-court-1000.mjs'
+]) {
+  if (!deploy.includes(expected)) errors.push(`deploy workflow missing official bootstrap: ${expected}`);
 }
 
 // AI 생활사건 접수 한도는 오늘의 재판 3건 참여 규칙과 별개이며 관리자 설정을 따른다.
@@ -130,4 +161,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Daily real court validation passed: ${catalog.length} verified cases, three daily judgments, completed-only daily ranking query, protected scores, and daily/weekly/all-time rankings.`);
+console.log(`Daily real court validation passed: ${catalog.length} curated cases plus deterministic official API bootstrap to 1000 cases, three daily judgments, protected scores, and daily/weekly/all-time rankings.`);
