@@ -62,7 +62,7 @@ export function renderNav(activeRoute = '') {
       <span class="nav-icon">🧑‍⚖️</span>
       <span class="nav-label">오늘재판</span>
     </a>
-    <a href="/dripso" class="nav-item" aria-label="별도 유머 사이트 드립소로 이동">
+    <a href="/dripso/" class="nav-item" aria-label="별도 유머 사이트 드립소로 이동">
       <span class="nav-icon">🤣</span>
       <span class="nav-label">드립소</span>
     </a>
