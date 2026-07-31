@@ -172,17 +172,22 @@ exports.toggleDripsoCommentLike = onCall({
   let result = { liked: false, likeCount: 0 };
 
   await db.runTransaction(async tx => {
-    const [commentSnap, likeSnap] = await Promise.all([
+    const [commentSnap, likeSnap, topicSnap] = await Promise.all([
       tx.get(commentRef),
-      tx.get(likeRef)
+      tx.get(likeRef),
+      tx.get(topicRef)
     ]);
     if (!commentSnap.exists || commentSnap.data()?.status !== 'visible') {
       throw new HttpsError('not-found', '드립 댓글을 찾을 수 없습니다.');
+    }
+    if (!topicSnap.exists || topicSnap.data()?.status !== 'visible') {
+      throw new HttpsError('not-found', '드립 주제를 찾을 수 없습니다.');
     }
 
     const currentCount = Math.max(0, Number(commentSnap.data().likeCount) || 0);
     const liked = !likeSnap.exists;
     const nextCount = Math.max(0, currentCount + (liked ? 1 : -1));
+    const currentTop = Math.max(0, Number(topicSnap.data().topLikeCount) || 0);
 
     if (liked) {
       tx.set(likeRef, {
@@ -198,7 +203,7 @@ exports.toggleDripsoCommentLike = onCall({
     }, { merge: true });
     tx.set(topicRef, {
       updatedAt: FieldValue.serverTimestamp(),
-      topLikeCount: liked ? Math.max(Number((await tx.get(topicRef)).data()?.topLikeCount) || 0, nextCount) : FieldValue.increment(0)
+      topLikeCount: liked ? Math.max(currentTop, nextCount) : currentTop
     }, { merge: true });
 
     result = { liked, likeCount: nextCount };
