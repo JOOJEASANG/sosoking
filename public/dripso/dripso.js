@@ -17,6 +17,10 @@ const TYPE_META = {
   naming: { label: '이름짓기', icon: '🏷️', description: '물건, 모임, 반려식물까지 기막힌 이름 모집' },
   situation: { label: '상황드립', icon: '🎭', description: '주어진 상황을 가장 웃기게 마무리하기' }
 };
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const MAX_SOURCE_IMAGE_BYTES = 12 * 1024 * 1024;
+const MAX_UPLOAD_IMAGE_BYTES = 700 * 1024;
+const MAX_IMAGE_EDGE = 1280;
 
 const createTopic = httpsCallable(functions, 'createDripsoTopic');
 const addComment = httpsCallable(functions, 'addDripsoComment');
@@ -29,6 +33,11 @@ const topicForm = document.getElementById('topic-form');
 const topicType = document.getElementById('topic-type');
 const topicTitle = document.getElementById('topic-title');
 const topicPrompt = document.getElementById('topic-prompt');
+const topicImage = document.getElementById('topic-image');
+const topicImagePreview = document.getElementById('topic-image-preview');
+const topicImagePreviewImg = document.getElementById('topic-image-preview-img');
+const topicImageStatus = document.getElementById('topic-image-status');
+const removeTopicImageButton = document.getElementById('remove-topic-image');
 const topicSubmit = document.getElementById('topic-submit');
 const openTopicDialogButton = document.getElementById('open-topic-dialog');
 const closeTopicDialogButton = document.getElementById('close-topic-dialog');
@@ -38,6 +47,10 @@ const toast = document.getElementById('toast');
 let topicsCache = null;
 let toastTimer = 0;
 let profileNickname = '';
+let selectedImageDataUrl = '';
+let imageSelectionVersion = 0;
+let imageProcessing = false;
+let topicSubmitting = false;
 
 function element(tag, className = '', text = '') {
   const node = document.createElement(tag);
@@ -131,6 +144,28 @@ function sortedPopular(items) {
   );
 }
 
+function safeTopicImageUrl(value) {
+  try {
+    const parsed = new URL(String(value || ''));
+    return parsed.protocol === 'https:' && parsed.hostname === 'firebasestorage.googleapis.com'
+      ? parsed.href
+      : '';
+  } catch {
+    return '';
+  }
+}
+
+function topicImageElement(topic, className) {
+  const imageUrl = safeTopicImageUrl(topic.imageUrl);
+  if (!imageUrl) return null;
+  const image = element('img', className);
+  image.src = imageUrl;
+  image.alt = `${String(topic.title || '드립 주제')} 첨부 이미지`;
+  image.loading = 'lazy';
+  image.decoding = 'async';
+  return image;
+}
+
 function topicCard(topic) {
   const meta = TYPE_META[topic.type] || TYPE_META.daily;
   const card = element('a', 'topic-card');
@@ -149,7 +184,10 @@ function topicCard(topic) {
     element('span', '', `❤️ ${Math.max(0, Number(topic.topLikeCount) || 0)}`),
     element('span', '', `by ${String(topic.nickname || '익명 드리퍼')}`)
   );
-  card.append(top, title, prompt, stats);
+  card.append(top);
+  const image = topicImageElement(topic, 'topic-card-image');
+  if (image) card.append(image);
+  card.append(title, prompt, stats);
   return card;
 }
 
@@ -302,8 +340,14 @@ async function renderTopic(topicId) {
   const back = element('a', 'back-button', `← ${meta.label}로 돌아가기`);
   back.href = `#/${topic.type || ''}`;
   const badge = element('span', `type-badge ${topic.type || ''}`, `${meta.icon} ${meta.label}`);
-  detail.append(back, badge, element('h1', '', String(topic.title || '드립 주제')), element('p', 'topic-prompt', String(topic.prompt || '')),
-    element('p', 'topic-author', `주제 등록: ${String(topic.nickname || '익명 드리퍼')} · 댓글 ${comments.length}개`), commentComposer(topicId));
+  detail.append(back, badge, element('h1', '', String(topic.title || '드립 주제')));
+  const image = topicImageElement(topic, 'topic-detail-image');
+  if (image) detail.append(image);
+  detail.append(
+    element('p', 'topic-prompt', String(topic.prompt || '')),
+    element('p', 'topic-author', `주제 등록: ${String(topic.nickname || '익명 드리퍼')} · 댓글 ${comments.length}개`),
+    commentComposer(topicId)
+  );
 
   const section = element('section', 'section-block');
   const heading = element('div', 'section-heading');
@@ -324,6 +368,127 @@ async function renderTopic(topicId) {
 function preferredDialogType() {
   const route = currentRoute();
   return TYPE_META[route.name] ? route.name : 'daily';
+}
+
+function syncTopicSubmitState() {
+  topicSubmit.disabled = imageProcessing || topicSubmitting;
+  topicSubmit.textContent = imageProcessing
+    ? '사진 처리 중…'
+    : (topicSubmitting ? '등록 중…' : '주제 등록하기');
+}
+
+function setImageStatus(message = '', isError = false) {
+  topicImageStatus.textContent = message;
+  topicImageStatus.classList.toggle('error', isError);
+}
+
+function clearSelectedImage() {
+  imageSelectionVersion += 1;
+  selectedImageDataUrl = '';
+  topicImage.value = '';
+  topicImagePreviewImg.removeAttribute('src');
+  topicImagePreview.hidden = true;
+  imageProcessing = false;
+  setImageStatus('');
+  syncTopicSubmitState();
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('사진 파일을 읽지 못했습니다.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('지원하지 않거나 손상된 사진입니다.'));
+    image.src = dataUrl;
+  });
+}
+
+function canvasToJpegBlob(canvas, quality) {
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+}
+
+async function blobToDataUrl(blob) {
+  return readFileAsDataUrl(blob);
+}
+
+async function compressTopicImage(file) {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    throw new Error('JPG, PNG, WEBP 사진만 첨부할 수 있습니다.');
+  }
+  if (file.size > MAX_SOURCE_IMAGE_BYTES) {
+    throw new Error('원본 사진은 12MB 이하만 첨부할 수 있습니다.');
+  }
+
+  const originalUrl = await readFileAsDataUrl(file);
+  const source = await loadImage(originalUrl);
+  const sourceWidth = Math.max(1, Number(source.naturalWidth) || 1);
+  const sourceHeight = Math.max(1, Number(source.naturalHeight) || 1);
+  let scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(sourceWidth, sourceHeight));
+
+  for (let sizeAttempt = 0; sizeAttempt < 4; sizeAttempt += 1) {
+    const width = Math.max(1, Math.round(sourceWidth * scale));
+    const height = Math.max(1, Math.round(sourceHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d', { alpha: false });
+    if (!context) throw new Error('이 기기에서 사진을 처리할 수 없습니다.');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, width, height);
+    context.drawImage(source, 0, 0, width, height);
+
+    for (const quality of [0.84, 0.74, 0.64, 0.54]) {
+      const blob = await canvasToJpegBlob(canvas, quality);
+      if (blob && blob.size <= MAX_UPLOAD_IMAGE_BYTES) return blob;
+    }
+    scale *= 0.78;
+  }
+  throw new Error('사진 용량을 줄이지 못했습니다. 다른 사진을 선택해 주세요.');
+}
+
+async function handleTopicImageSelection() {
+  const file = topicImage.files?.[0];
+  const version = ++imageSelectionVersion;
+  selectedImageDataUrl = '';
+  topicImagePreview.hidden = true;
+  topicImagePreviewImg.removeAttribute('src');
+  if (!file) {
+    setImageStatus('');
+    return;
+  }
+
+  imageProcessing = true;
+  setImageStatus('사진을 게시용 크기로 줄이는 중입니다.');
+  syncTopicSubmitState();
+  try {
+    const blob = await compressTopicImage(file);
+    const dataUrl = await blobToDataUrl(blob);
+    if (version !== imageSelectionVersion) return;
+    selectedImageDataUrl = dataUrl;
+    topicImagePreviewImg.src = dataUrl;
+    topicImagePreview.hidden = false;
+    const sizeKb = Math.max(1, Math.round(blob.size / 1024));
+    setImageStatus(`사진 준비 완료 · 약 ${sizeKb}KB`);
+  } catch (error) {
+    if (version !== imageSelectionVersion) return;
+    selectedImageDataUrl = '';
+    topicImage.value = '';
+    setImageStatus(errorMessage(error, '사진을 처리하지 못했습니다.'), true);
+    showToast(errorMessage(error, '사진을 처리하지 못했습니다.'));
+  } finally {
+    if (version === imageSelectionVersion) {
+      imageProcessing = false;
+      syncTopicSubmitState();
+    }
+  }
 }
 
 function openDialog(type = preferredDialogType()) {
@@ -413,22 +578,36 @@ topicForm.addEventListener('submit', async event => {
     showToast('제목과 설명을 조금 더 입력해 주세요.');
     return;
   }
-  topicSubmit.disabled = true;
+  if (imageProcessing) {
+    showToast('사진 처리가 끝날 때까지 잠시 기다려 주세요.');
+    return;
+  }
+  topicSubmitting = true;
+  syncTopicSubmitState();
   try {
-    const response = await createTopic({ type: topicType.value, title, prompt });
+    const response = await createTopic({
+      type: topicType.value,
+      title,
+      prompt,
+      imageDataUrl: selectedImageDataUrl
+    });
     const topicId = String(response.data?.topicId || '');
     topicsCache = null;
     topicForm.reset();
+    clearSelectedImage();
     topicDialog.close();
     showToast('새 드립판을 열었습니다.');
     location.hash = `#/topic/${topicId}`;
   } catch (error) {
     showToast(errorMessage(error, '주제 등록에 실패했습니다.'));
   } finally {
-    topicSubmit.disabled = false;
+    topicSubmitting = false;
+    syncTopicSubmitState();
   }
 });
 
+topicImage.addEventListener('change', () => void handleTopicImageSelection());
+removeTopicImageButton.addEventListener('click', clearSelectedImage);
 openTopicDialogButton.addEventListener('click', () => openDialog());
 closeTopicDialogButton.addEventListener('click', () => topicDialog.close());
 topicDialog.addEventListener('click', event => {
@@ -449,5 +628,6 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
+syncTopicSubmitState();
 await initAuth().catch(error => console.warn('Dripso auth init failed:', error));
 await renderRoute();
