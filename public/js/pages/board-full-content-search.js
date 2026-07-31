@@ -1,4 +1,5 @@
-import { renderBoard as renderBaseBoard } from './board-search-pagination.js?v=20260730-judge-board-search-1';
+import { renderBoard as renderBaseBoard } from './board-search-pagination.js?v=20260731-compact-record-card-1';
+// Cache lineage marker: ./board-search-pagination.js?v=20260730-judge-board-search-1
 import { db } from '../firebase.js?v=20260630-3';
 import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-public-records-2';
 
