@@ -5,15 +5,15 @@ const read = file => fs.readFileSync(file, 'utf8');
 
 const submitServer = read('functions/submit-secure.js');
 for (const required of [
-  'isPublic: false,',
-  '공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.'
+  'const requestedPublic = boolValue(data.isPublic, false);',
+  'const isPublic = false;',
+  'void requestedPublic;',
+  '공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.',
+  'isPublic,'
 ]) {
   if (!submitServer.includes(required)) {
     errors.push(`functions/submit-secure.js: private-first submission guard missing ${required}`);
   }
-}
-if (submitServer.includes('const isPublic = boolValue(data.isPublic, false);')) {
-  errors.push('functions/submit-secure.js: client input can still publish a case during submission');
 }
 
 const submitPage = read('public/js/pages/submit.js');
