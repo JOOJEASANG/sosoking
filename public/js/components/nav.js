@@ -62,6 +62,10 @@ export function renderNav(activeRoute = '') {
       <span class="nav-icon">🧑‍⚖️</span>
       <span class="nav-label">오늘재판</span>
     </a>
+    <a href="/dripso" class="nav-item" aria-label="별도 유머 사이트 드립소로 이동">
+      <span class="nav-icon">🤣</span>
+      <span class="nav-label">드립소</span>
+    </a>
     <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
       <span class="nav-icon" id="nav-account-icon">${isLoggedIn ? '●' : '👤'}</span>
       <span class="nav-label" id="nav-account-label">${isLoggedIn ? '접속 중' : '로그인'}</span>
