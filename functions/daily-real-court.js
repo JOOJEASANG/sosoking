@@ -9,6 +9,7 @@ const REGION = 'asia-northeast3';
 const CATALOG_CACHE_MS = 10 * 60 * 1000;
 const GAME_EPOCH = Date.parse('2026-01-01T00:00:00+09:00');
 const DAILY_CASE_COUNT = 3;
+const MAX_CATALOG_SIZE = 1000;
 const RANKING_LIMIT = 10;
 const RANKING_QUERY_LIMIT = 60;
 let catalogCache = { expiresAt: 0, cases: [] };
@@ -98,14 +99,19 @@ async function loadCatalog() {
 
   const configSnap = await db.doc('daily_court_config/catalog').get();
   const orderedCaseIds = configSnap.exists && Array.isArray(configSnap.data()?.orderedCaseIds)
-    ? configSnap.data().orderedCaseIds.map(value => String(value || '').trim()).filter(Boolean).slice(0, 500)
+    ? configSnap.data().orderedCaseIds.map(value => String(value || '').trim()).filter(Boolean).slice(0, MAX_CATALOG_SIZE)
     : [];
   if (!orderedCaseIds.length) return [];
 
+  const snapshotsById = new Map();
   const refs = orderedCaseIds.map(id => db.doc(`daily_court_catalog/${id}`));
-  const snapshots = await db.getAll(...refs);
-  const cases = snapshots
-    .filter(snapshot => snapshot.exists && snapshot.data()?.active !== false)
+  for (let offset = 0; offset < refs.length; offset += 100) {
+    const snapshots = await db.getAll(...refs.slice(offset, offset + 100));
+    snapshots.forEach(snapshot => snapshotsById.set(snapshot.id, snapshot));
+  }
+  const cases = orderedCaseIds
+    .map(id => snapshotsById.get(id))
+    .filter(snapshot => snapshot?.exists && snapshot.data()?.active !== false)
     .map(snapshot => ({ id: snapshot.id, ...snapshot.data() }));
 
   catalogCache = { expiresAt: Date.now() + CATALOG_CACHE_MS, cases };
@@ -509,6 +515,7 @@ exports.submitDailyRealCourtVerdict = onCall({
 
 exports._dailyRealCourtTest = {
   DAILY_CASE_COUNT,
+  MAX_CATALOG_SIZE,
   dateIndex,
   dailyCaseIndexes,
   normalizeStats,
