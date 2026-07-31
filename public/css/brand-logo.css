@@ -50,17 +50,15 @@
   box-sizing: border-box;
 }
 
-/* Layout lineage before Dripso: flex: 1 1 20%; */
+/* 판결소는 홈·판결기록·접수·오늘재판·계정의 5개 메뉴만 사용한다. */
 #bottom-nav .nav-item {
-  flex: 1 1 16.666%;
+  flex: 1 1 20%;
   min-width: 0;
   gap: 2px;
   padding: 7px 0 6px;
 }
 
-#bottom-nav .nav-icon {
-  font-size: 23px;
-}
+#bottom-nav .nav-icon { font-size: 23px; }
 
 #bottom-nav .nav-cta .nav-icon {
   display: flex;
@@ -82,13 +80,9 @@
 }
 
 #toast-container,
-#theme-toggle {
-  bottom: 88px;
-}
+#theme-toggle { bottom: 88px; }
 
-#site-footer {
-  padding-bottom: 84px;
-}
+#site-footer { padding-bottom: 84px; }
 
 @media (min-width: 601px) {
   .page-header {
@@ -164,6 +158,4 @@ button,
 input,
 textarea,
 select,
-option {
-  font: inherit;
-}
+option { font: inherit; }
