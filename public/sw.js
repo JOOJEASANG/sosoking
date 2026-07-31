@@ -47,6 +47,7 @@ const APP_SHELL = [
   '/js/pages/board-search-pagination.js?v=20260731-compact-record-card-1',
   '/js/pages/board-court.js?v=20260731-compact-record-card-1',
   '/js/pages/board.js?v=20260731-compact-record-card-1',
+  '/js/pages/board.js?v=20260730-discussion-court-1',
   '/js/utils/public-results.js?v=20260730-public-records-2',
   '/js/pages/result-comments.js?v=20260730-discussion-court-1',
   '/js/pages/result-court.js?v=20260729-dark-record-participation-1',
