@@ -78,9 +78,6 @@ exports.submitCase = onCall({
   const uid = request.auth.uid;
   const data = request.data || {};
   const desc = textValue(data.caseDescription, MAX_DESC);
-  // 공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.
-  // 클라이언트가 isPublic=true를 보내도 접수와 AI 생성 단계는 항상 비공개다.
-  const isPublic = false;
   const profileNickname = await loadUserNickname(uid);
 
   if (desc.length < 10) {
@@ -139,7 +136,9 @@ exports.submitCase = onCall({
       caseDescription: desc,
       nickname: profileNickname || randomNickname(),
       status: 'pending',
-      isPublic,
+      // 공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.
+      // 클라이언트가 isPublic=true를 보내도 접수와 AI 생성 단계는 항상 비공개다.
+      isPublic: false,
       reportCount: 0,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
