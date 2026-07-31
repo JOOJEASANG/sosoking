@@ -1,0 +1,120 @@
+#bottom-nav.has-dripso-entry .nav-item {
+  flex: 1 1 16.666%;
+  min-width: 0;
+}
+
+#bottom-nav .dripso-nav-item .nav-icon {
+  filter: drop-shadow(0 2px 5px rgba(255, 191, 73, .28));
+}
+
+.dripso-home-entry {
+  width: min(calc(100% - 28px), 572px);
+  margin: 14px auto 22px;
+  padding: 15px 16px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  box-sizing: border-box;
+  color: #fff8df;
+  text-decoration: none;
+  border: 1px solid rgba(255, 196, 82, .5);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255, 211, 112, .18), transparent 42%),
+    linear-gradient(135deg, #251a31, #15101e 70%);
+  box-shadow: 0 12px 28px rgba(10, 7, 15, .28);
+}
+
+.dripso-home-entry:hover,
+.dripso-home-entry:focus-visible {
+  border-color: rgba(255, 211, 112, .92);
+  transform: translateY(-1px);
+  box-shadow: 0 15px 34px rgba(10, 7, 15, .34);
+}
+
+.dripso-home-entry:focus-visible {
+  outline: 3px solid rgba(255, 214, 118, .38);
+  outline-offset: 3px;
+}
+
+.dripso-home-entry-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  font-size: 27px;
+  background: rgba(255, 255, 255, .09);
+}
+
+.dripso-home-entry-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dripso-home-entry-eyebrow {
+  color: #f5c969;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+
+.dripso-home-entry-copy strong {
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.dripso-home-entry-description {
+  color: rgba(255, 255, 255, .68);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.dripso-home-entry-arrow {
+  color: #f5c969;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+[data-theme='light'] .dripso-home-entry {
+  color: #2a2012;
+  border-color: #d8aa43;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255, 209, 103, .3), transparent 44%),
+    linear-gradient(135deg, #fff8e6, #f7ecd5 72%);
+  box-shadow: 0 10px 24px rgba(88, 63, 24, .14);
+}
+
+[data-theme='light'] .dripso-home-entry-copy strong {
+  color: #281d10;
+}
+
+[data-theme='light'] .dripso-home-entry-description {
+  color: #6b5a43;
+}
+
+[data-theme='light'] .dripso-home-entry-icon {
+  background: rgba(126, 83, 11, .08);
+}
+
+@media (max-width: 420px) {
+  .dripso-home-entry {
+    width: calc(100% - 20px);
+    padding: 13px 12px;
+    gap: 10px;
+  }
+
+  .dripso-home-entry-description {
+    font-size: 10.8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dripso-home-entry {
+    transition: none;
+  }
+}
