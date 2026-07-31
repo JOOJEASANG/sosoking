@@ -1,4 +1,5 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260730-discussion-court-1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260731-compact-record-card-1';
+// Cache lineage marker for the discussion court: ./board.js?v=20260730-discussion-court-1
 // Cache lineage marker for the CSP regression check: ./board.js?v=20260729-script-csp-1
 
 function ensureBoardGameStyle() {
@@ -14,6 +15,14 @@ function ensureBoardGameStyle() {
     .court-board-row:nth-child(1){border-color:rgba(255,223,122,.8)!important;box-shadow:0 8px 26px rgba(201,168,76,.12);}
     .court-board-row:nth-child(1)::after{content:'HOT';position:absolute;right:12px;top:12px;color:#111827;background:#ffdf7a;border-radius:999px;padding:3px 8px;font-size:9px;font-weight:900;}
     #board-list .card{position:relative;}
+    .court-board-page #board-list .card,.court-board-page .board-featured-card{padding:0!important;}
+    .court-board-row>.court-kicker{margin:10px 16px 0!important;line-height:1.2;}
+    .court-board-row>.board-row-link{padding:10px 16px 12px!important;}
+    .board-row-heading{margin-bottom:4px!important;}
+    .board-row-summary,.board-featured-summary{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;}
+    .board-row-summary{margin-bottom:9px!important;}
+    .board-record-kind{margin-top:7px!important;}
+    .board-card-actions a{padding:10px 8px!important;}
     .board-record-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
     .board-record-meta-row{justify-content:flex-start;}
     .board-judge-chip,.board-grievance-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;border:1px solid rgba(201,168,76,.32);background:rgba(201,168,76,.1);font-size:11px;color:var(--cream-dim);font-weight:800;}
@@ -55,8 +64,12 @@ function ensureBoardGameStyle() {
       border-color:rgba(121,83,11,.22)!important;
     }
     @media(max-width:520px){
+      .court-board-row>.court-kicker{margin:9px 14px 0!important;}
+      .court-board-row>.board-row-link{padding:9px 14px 11px!important;}
+      .board-row-summary{font-size:12.5px!important;line-height:1.5!important;}
       .board-record-meta{align-items:flex-start;}
       .board-judge-chip,.board-grievance-chip{font-size:10px;padding:5px 8px;}
+      .board-card-actions a{padding:9px 6px!important;font-size:11.5px!important;}
     }
   `;
   document.head.appendChild(style);
@@ -87,7 +100,7 @@ function decorateBoard(container) {
   const pick = container.querySelector('#today-pick')?.firstElementChild;
   if (pick && !pick.classList.contains('court-document')) {
     pick.classList.add('court-document');
-    pick.insertAdjacentHTML('afterbegin', '<div class="court-stamp" style="margin:12px 20px 0;">주목 기록</div>');
+    pick.insertAdjacentHTML('afterbegin', '<div class="court-stamp" style="margin:10px 16px 0;">주목 기록</div>');
   }
 
   container.querySelectorAll('#board-list .card').forEach((card, index) => {
@@ -95,7 +108,7 @@ function decorateBoard(container) {
     card.classList.add('court-board-row');
     card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
     const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : String(index + 1);
-    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin:12px 18px 0;"><span class="rank-medal">${medal}</span> ARENA RECORD</div>`);
+    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker board-row-kicker"><span class="rank-medal">${medal}</span> ARENA RECORD</div>`);
   });
 }
 
