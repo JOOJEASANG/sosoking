@@ -1,4 +1,3 @@
-const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -467,17 +466,7 @@ async function createDailyAiCase(force = false) {
   };
 }
 
-exports.createDailyAiCase = onSchedule({
-  region: REGION,
-  schedule: '0 9 * * *',
-  timeZone: 'Asia/Seoul',
-  secrets: [geminiKey],
-  timeoutSeconds: 300,
-  memory: '512MiB'
-}, async () => {
-  console.log('daily ai case result:', await createDailyAiCase(false));
-});
-
+// 일일 AI 사건 생성은 관리자 화면의 버튼이 호출하는 이 함수로만 실행한다.
 exports.generateDailyAiNow = onCall({
   region: REGION,
   secrets: [geminiKey],
