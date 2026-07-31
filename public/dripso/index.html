@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>드립소 - 잠깐 웃고 가는 곳</title>
+  <meta name="description" content="상황별 한 줄 드립을 랜덤으로 뽑고, 웃고, 저장하고, 공유하는 가벼운 유머 놀이터 드립소입니다.">
+  <meta name="theme-color" content="#17121f">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="드립소 - 잠깐 웃고 가는 곳">
+  <meta property="og:description" content="오늘 필요한 드립 한 줄. 랜덤으로 뽑고 저장하고 공유하세요.">
+  <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
+  <link rel="stylesheet" href="/dripso/dripso.css?v=20260731-dripso-1">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="dripso-header">
+    <a class="back-link" href="/" aria-label="소소킹으로 돌아가기">← 소소킹</a>
+    <a class="mini-brand" href="/dripso" aria-label="드립소 홈">
+      <span class="mini-brand-mark" aria-hidden="true">ㅋ</span>
+      <span>드립소</span>
+    </a>
+    <button class="saved-link" id="saved-toggle" type="button" aria-pressed="false">
+      저장함 <span id="saved-count">0</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="dripso-title">
+      <p class="eyebrow">잠깐 웃고 다시 진지해지기</p>
+      <h1 id="dripso-title"><span>드립</span>이 쉬어가는 <strong>드립소</strong></h1>
+      <p class="hero-copy">억지로 웃기진 않습니다. 그래도 하나쯤은 피식할 수 있습니다.</p>
+
+      <article class="spotlight" id="spotlight" aria-live="polite">
+        <div class="spotlight-top">
+          <span class="spotlight-label">오늘의 한 줄</span>
+          <span class="spotlight-category" id="spotlight-category">일상</span>
+        </div>
+        <p class="spotlight-text" id="spotlight-text">드립을 고르는 중입니다.</p>
+        <div class="spotlight-actions">
+          <button class="primary-action" id="random-joke" type="button">다른 드립 뽑기</button>
+          <button class="secondary-action" id="share-spotlight" type="button">공유</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="controls" aria-label="드립 분류">
+      <div class="category-row" id="category-row" role="group" aria-label="카테고리 선택">
+        <button type="button" class="category-chip active" data-category="전체" aria-pressed="true">전체</button>
+        <button type="button" class="category-chip" data-category="직장" aria-pressed="false">직장</button>
+        <button type="button" class="category-chip" data-category="일상" aria-pressed="false">일상</button>
+        <button type="button" class="category-chip" data-category="음식" aria-pressed="false">음식</button>
+        <button type="button" class="category-chip" data-category="디지털" aria-pressed="false">디지털</button>
+        <button type="button" class="category-chip" data-category="관계" aria-pressed="false">관계</button>
+      </div>
+      <button class="shuffle-action" id="shuffle-feed" type="button">순서 섞기</button>
+    </section>
+
+    <section class="feed-section" aria-labelledby="feed-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker" id="feed-kicker">전체 드립</p>
+          <h2 id="feed-title">피식 보관함</h2>
+        </div>
+        <span class="result-count" id="result-count">0개</span>
+      </div>
+      <div class="joke-grid" id="joke-grid"></div>
+      <p class="empty-state" id="empty-state" hidden>저장한 드립이 아직 없습니다. 피식한 문장을 저장해 보세요.</p>
+    </section>
+
+    <section class="pause-card" aria-label="드립소 안내">
+      <span class="pause-icon" aria-hidden="true">☕</span>
+      <div>
+        <h2>웃음은 짧게, 기분은 오래</h2>
+        <p>마음에 든 문장은 이 기기에만 저장됩니다. 로그인도, 개인정보 입력도 필요 없습니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <footer>
+    <p><strong>드립소</strong> · 웃자고 만든 가벼운 유머 페이지</p>
+    <a href="/">소소킹 판결소로 돌아가기</a>
+  </footer>
+
+  <script type="module" src="/dripso/dripso.js?v=20260731-dripso-1"></script>
+</body>
+</html>
