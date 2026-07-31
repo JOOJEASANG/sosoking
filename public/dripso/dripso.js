@@ -1,268 +1,453 @@
 import { JOKES } from './jokes.js?v=20260731-dripso-1';
+import { initAuth, auth, db, functions } from '/js/firebase.js?v=20260729-auth-session-1';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  where
+} from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
-const STORAGE_KEYS = {
-  saved: 'dripso.saved.v1',
-  laughs: 'dripso.laughs.v1'
+const TYPE_META = {
+  daily: { label: '오늘의 한줄', icon: '💬', description: '한 줄이면 충분한 오늘의 생각과 드립' },
+  naming: { label: '이름짓기', icon: '🏷️', description: '물건, 모임, 반려식물까지 기막힌 이름 모집' },
+  situation: { label: '상황드립', icon: '🎭', description: '주어진 상황을 가장 웃기게 마무리하기' }
 };
 
-const state = {
-  category: '전체',
-  savedOnly: false,
-  order: [...JOKES],
-  spotlightId: '',
-  saved: readSet(STORAGE_KEYS.saved),
-  laughs: readObject(STORAGE_KEYS.laughs)
-};
+const createTopic = httpsCallable(functions, 'createDripsoTopic');
+const addComment = httpsCallable(functions, 'addDripsoComment');
+const toggleLike = httpsCallable(functions, 'toggleDripsoCommentLike');
 
-const elements = {
-  grid: document.getElementById('joke-grid'),
-  empty: document.getElementById('empty-state'),
-  count: document.getElementById('result-count'),
-  kicker: document.getElementById('feed-kicker'),
-  categoryRow: document.getElementById('category-row'),
-  savedToggle: document.getElementById('saved-toggle'),
-  savedCount: document.getElementById('saved-count'),
-  spotlightText: document.getElementById('spotlight-text'),
-  spotlightCategory: document.getElementById('spotlight-category'),
-  randomJoke: document.getElementById('random-joke'),
-  shareSpotlight: document.getElementById('share-spotlight'),
-  shuffleFeed: document.getElementById('shuffle-feed'),
-  toast: document.getElementById('toast')
-};
+const app = document.getElementById('dripso-app');
+const nav = document.querySelector('.dripso-bottom-nav');
+const topicDialog = document.getElementById('topic-dialog');
+const topicForm = document.getElementById('topic-form');
+const topicType = document.getElementById('topic-type');
+const topicTitle = document.getElementById('topic-title');
+const topicPrompt = document.getElementById('topic-prompt');
+const topicSubmit = document.getElementById('topic-submit');
+const openTopicDialogButton = document.getElementById('open-topic-dialog');
+const closeTopicDialogButton = document.getElementById('close-topic-dialog');
+const accountLink = document.getElementById('account-link');
+const toast = document.getElementById('toast');
 
+let topicsCache = null;
 let toastTimer = 0;
+let profileNickname = '';
 
-function readSet(key) {
-  try {
-    const value = JSON.parse(localStorage.getItem(key) || '[]');
-    return new Set(Array.isArray(value) ? value.map(String) : []);
-  } catch {
-    return new Set();
-  }
+function element(tag, className = '', text = '') {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== '') node.textContent = text;
+  return node;
 }
 
-function readObject(key) {
-  try {
-    const value = JSON.parse(localStorage.getItem(key) || '{}');
-    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  } catch {
-    return {};
-  }
+function timestampMs(value) {
+  if (value?.toMillis) return value.toMillis();
+  const parsed = new Date(value || 0).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function writeStorage(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    showToast('이 브라우저에서는 저장 기능을 사용할 수 없습니다.');
-  }
+function formatDate(value) {
+  const millis = timestampMs(value);
+  if (!millis) return '방금 전';
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  }).format(new Date(millis));
 }
 
 function showToast(message) {
-  if (!elements.toast) return;
   window.clearTimeout(toastTimer);
-  elements.toast.textContent = message;
-  elements.toast.hidden = false;
-  toastTimer = window.setTimeout(() => {
-    elements.toast.hidden = true;
-  }, 1900);
+  toast.textContent = message;
+  toast.hidden = false;
+  toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2200);
 }
 
-function jokeById(id) {
-  return JOKES.find(joke => joke.id === id) || JOKES[0];
+function errorMessage(error, fallback) {
+  const raw = String(error?.message || '');
+  return raw.replace(/^FirebaseError:\s*/i, '').replace(/^functions\/[a-z-]+:\s*/i, '') || fallback;
+}
+
+function isAccountUser() {
+  return !!auth.currentUser && !auth.currentUser.isAnonymous;
+}
+
+function currentRoute() {
+  const hash = location.hash || '#/';
+  const value = hash.replace(/^#\/?/, '');
+  const [name = '', id = ''] = value.split('/');
+  if (name === 'topic' && id) return { name: 'topic', id };
+  if (['daily', 'naming', 'situation', 'popular'].includes(name)) return { name };
+  return { name: 'home' };
+}
+
+function setActiveNav(name) {
+  nav.querySelectorAll('[data-nav]').forEach(link => {
+    link.classList.toggle('active', link.dataset.nav === name);
+  });
+}
+
+function renderLoading() {
+  app.replaceChildren(element('section', 'loading-card', '드립을 불러오는 중입니다.'));
+}
+
+function renderError(message) {
+  app.replaceChildren(element('section', 'error-card', message));
 }
 
 function dailyJoke() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(new Date()).split('-').map(Number);
-  const seed = parts.reduce((total, value, index) => total + value * (index + 11), 0);
+  const key = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  let seed = 0;
+  for (const char of key) seed += char.charCodeAt(0);
   return JOKES[seed % JOKES.length];
 }
 
-function randomJoke(excludeId = '') {
-  const candidates = JOKES.filter(joke => joke.id !== excludeId);
-  return candidates[Math.floor(Math.random() * candidates.length)] || JOKES[0];
+async function loadTopics(force = false) {
+  if (topicsCache && !force) return topicsCache;
+  const snapshot = await getDocs(query(
+    collection(db, 'dripso_topics'),
+    where('status', '==', 'visible'),
+    limit(100)
+  ));
+  topicsCache = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+  return topicsCache;
 }
 
-function renderSpotlight(joke) {
-  state.spotlightId = joke.id;
-  elements.spotlightText.textContent = joke.text;
-  elements.spotlightCategory.textContent = joke.category;
+function sortedLatest(items) {
+  return [...items].sort((a, b) => timestampMs(b.createdAt) - timestampMs(a.createdAt));
 }
 
-function filteredJokes() {
-  return state.order.filter(joke => {
-    const categoryMatches = state.category === '전체' || joke.category === state.category;
-    const savedMatches = !state.savedOnly || state.saved.has(joke.id);
-    return categoryMatches && savedMatches;
-  });
-}
-
-function button(label, className, action, id, pressed = false) {
-  const control = document.createElement('button');
-  control.type = 'button';
-  control.className = `card-button ${className}${pressed ? ' active' : ''}`;
-  control.dataset.action = action;
-  control.dataset.id = id;
-  control.setAttribute('aria-pressed', String(pressed));
-  control.textContent = label;
-  return control;
-}
-
-function renderCard(joke, index) {
-  const article = document.createElement('article');
-  article.className = 'joke-card';
-  article.dataset.id = joke.id;
-
-  const meta = document.createElement('div');
-  meta.className = 'card-meta';
-
-  const category = document.createElement('span');
-  category.className = 'card-category';
-  category.textContent = joke.category;
-
-  const number = document.createElement('span');
-  number.className = 'card-number';
-  number.textContent = String(index + 1).padStart(2, '0');
-
-  const text = document.createElement('p');
-  text.className = 'joke-text';
-  text.textContent = joke.text;
-
-  const actions = document.createElement('div');
-  actions.className = 'card-actions';
-  const laughCount = Math.max(0, Number(state.laughs[joke.id]) || 0);
-  actions.append(
-    button(`피식 ${laughCount || ''}`.trim(), 'laugh', 'laugh', joke.id, laughCount > 0),
-    button(state.saved.has(joke.id) ? '저장됨' : '저장', 'save', 'save', joke.id, state.saved.has(joke.id)),
-    button('복사', 'copy', 'copy', joke.id)
+function sortedPopular(items) {
+  return [...items].sort((a, b) =>
+    Number(b.topLikeCount || 0) - Number(a.topLikeCount || 0)
+    || Number(b.commentCount || 0) - Number(a.commentCount || 0)
+    || timestampMs(b.updatedAt) - timestampMs(a.updatedAt)
   );
-
-  meta.append(category, number);
-  article.append(meta, text, actions);
-  return article;
 }
 
-function renderFeed() {
-  const jokes = filteredJokes();
-  elements.grid.replaceChildren(...jokes.map(renderCard));
-  elements.empty.hidden = jokes.length > 0;
-  elements.count.textContent = `${jokes.length}개`;
-  elements.kicker.textContent = state.savedOnly
-    ? (state.category === '전체' ? '저장한 드립' : `저장한 ${state.category} 드립`)
-    : `${state.category} 드립`;
-  elements.savedCount.textContent = String(state.saved.size);
-  elements.savedToggle.setAttribute('aria-pressed', String(state.savedOnly));
+function topicCard(topic) {
+  const meta = TYPE_META[topic.type] || TYPE_META.daily;
+  const card = element('a', 'topic-card');
+  card.href = `#/topic/${encodeURIComponent(topic.id)}`;
+
+  const top = element('div', 'topic-meta');
+  const badge = element('span', `type-badge ${topic.type || ''}`, `${meta.icon} ${meta.label}`);
+  const date = element('span', '', formatDate(topic.createdAt));
+  top.append(badge, date);
+
+  const title = element('h3', '', String(topic.title || '제목 없는 주제'));
+  const prompt = element('p', '', String(topic.prompt || ''));
+  const stats = element('div', 'topic-stats');
+  stats.append(
+    element('span', '', `💬 ${Math.max(0, Number(topic.commentCount) || 0)}`),
+    element('span', '', `❤️ ${Math.max(0, Number(topic.topLikeCount) || 0)}`),
+    element('span', '', `by ${String(topic.nickname || '익명 드리퍼')}`)
+  );
+  card.append(top, title, prompt, stats);
+  return card;
 }
 
-function selectCategory(category) {
-  state.category = category;
-  elements.categoryRow.querySelectorAll('[data-category]').forEach(chip => {
-    const active = chip.dataset.category === category;
-    chip.classList.toggle('active', active);
-    chip.setAttribute('aria-pressed', String(active));
-  });
-  renderFeed();
+function topicListSection(items, emptyText) {
+  if (!items.length) return element('div', 'empty-card', emptyText);
+  const list = element('div', 'topic-list');
+  list.replaceChildren(...items.map(topicCard));
+  return list;
 }
 
-function toggleSave(id) {
-  if (state.saved.has(id)) {
-    state.saved.delete(id);
-    showToast('저장함에서 뺐습니다.');
+function menuTile(type) {
+  const meta = TYPE_META[type];
+  const tile = element('a', 'menu-tile');
+  tile.href = `#/${type}`;
+  tile.append(
+    element('span', 'menu-icon', meta.icon),
+    (() => {
+      const copy = element('span');
+      copy.append(element('strong', '', meta.label), element('small', '', meta.description));
+      return copy;
+    })()
+  );
+  return tile;
+}
+
+async function renderHome() {
+  setActiveNav('home');
+  const topics = sortedLatest(await loadTopics());
+  const hero = element('section', 'hero-card');
+  hero.append(
+    element('p', 'eyebrow', 'DRIP COMMUNITY'),
+    element('h1', '', '주제를 던지면 모두가 한마디씩 보탭니다'),
+    element('p', '', '댓글 드립에 좋아요를 누르면 가장 반응이 좋은 한마디가 위로 올라옵니다.')
+  );
+  const daily = element('div', 'daily-line-card');
+  daily.append(element('span', '', '오늘의 기본 한 줄'), element('p', '', dailyJoke().text));
+  hero.append(daily);
+
+  const menu = element('section', 'menu-grid');
+  menu.append(menuTile('daily'), menuTile('naming'), menuTile('situation'));
+
+  const latest = element('section', 'section-block');
+  const heading = element('div', 'section-heading');
+  const headingCopy = element('div');
+  headingCopy.append(element('p', 'section-kicker', 'NEW TOPICS'), element('h2', '', '새로 열린 드립판'));
+  const write = element('button', 'write-button', '주제 등록');
+  write.type = 'button';
+  write.dataset.openDialog = 'daily';
+  heading.append(headingCopy, write);
+  latest.append(heading, topicListSection(topics.slice(0, 8), '아직 등록된 주제가 없습니다. 첫 드립판을 열어주세요.'));
+
+  app.replaceChildren(hero, menu, latest);
+}
+
+async function renderCategory(type) {
+  setActiveNav(type);
+  const meta = TYPE_META[type];
+  const topics = sortedLatest((await loadTopics()).filter(topic => topic.type === type));
+  const header = element('section', 'page-heading');
+  const copy = element('div', 'page-heading-copy');
+  copy.append(element('p', 'section-kicker', `${meta.icon} DRIP MENU`), element('h1', '', meta.label), element('p', '', meta.description));
+  const write = element('button', 'write-button', '＋ 주제 등록');
+  write.type = 'button';
+  write.dataset.openDialog = type;
+  header.append(copy, write);
+
+  const section = element('section', 'section-block');
+  section.append(topicListSection(topics, `${meta.label} 주제가 아직 없습니다.`));
+  app.replaceChildren(header, section);
+}
+
+async function renderPopular() {
+  setActiveNav('popular');
+  const topics = sortedPopular(await loadTopics());
+  const header = element('section', 'page-heading');
+  const copy = element('div', 'page-heading-copy');
+  copy.append(element('p', 'section-kicker', '🔥 BEST DRIP'), element('h1', '', '인기 드립판'), element('p', '', '좋아요가 많이 쌓인 댓글을 가진 주제부터 보여줍니다.'));
+  header.append(copy);
+  const section = element('section', 'section-block');
+  section.append(topicListSection(topics, '아직 인기 순위를 만들 댓글이 없습니다.'));
+  app.replaceChildren(header, section);
+}
+
+function commentCard(topicId, comment, index) {
+  const card = element('article', `comment-card${index < 3 ? ' best' : ''}`);
+  const meta = element('div', 'comment-meta');
+  const rank = element('span', index < 3 ? 'best-rank' : '', index < 3 ? `BEST ${index + 1}` : `#${index + 1}`);
+  const author = element('span', '', `${String(comment.nickname || '익명 드리퍼')} · ${formatDate(comment.createdAt)}`);
+  meta.append(rank, author);
+  const text = element('p', 'comment-text', String(comment.text || ''));
+  const like = element('button', 'like-button', `❤️ 좋아요 ${Math.max(0, Number(comment.likeCount) || 0)}`);
+  like.type = 'button';
+  like.dataset.like = comment.id;
+  like.dataset.topic = topicId;
+  card.append(meta, text, like);
+  return card;
+}
+
+async function loadComments(topicId) {
+  const snapshot = await getDocs(query(
+    collection(db, `dripso_topics/${topicId}/comments`),
+    where('status', '==', 'visible'),
+    limit(100)
+  ));
+  return snapshot.docs
+    .map(item => ({ id: item.id, ...item.data() }))
+    .sort((a, b) => Number(b.likeCount || 0) - Number(a.likeCount || 0)
+      || timestampMs(a.createdAt) - timestampMs(b.createdAt));
+}
+
+function commentComposer(topicId) {
+  if (!isAccountUser()) {
+    const notice = element('div', 'login-notice');
+    notice.append('댓글 드립과 좋아요는 로그인 후 참여할 수 있습니다. ', (() => {
+      const link = element('a', '', '로그인하기');
+      link.href = '/#/auth';
+      return link;
+    })());
+    return notice;
+  }
+  const form = element('form', 'comment-form');
+  form.dataset.commentForm = topicId;
+  const area = element('textarea');
+  area.name = 'text';
+  area.maxLength = 300;
+  area.required = true;
+  area.placeholder = '이 주제에 가장 잘 어울리는 한마디를 남겨주세요.';
+  const footer = element('div', 'comment-form-footer');
+  footer.append(element('small', '', `${profileNickname || '로그인 사용자'}로 등록됩니다.`));
+  const submit = element('button', 'comment-submit', '드립 달기');
+  submit.type = 'submit';
+  footer.append(submit);
+  form.append(area, footer);
+  return form;
+}
+
+async function renderTopic(topicId) {
+  renderLoading();
+  const topicSnap = await getDoc(doc(db, 'dripso_topics', topicId));
+  if (!topicSnap.exists() || topicSnap.data()?.status !== 'visible') {
+    renderError('삭제되었거나 찾을 수 없는 주제입니다.');
+    return;
+  }
+  const topic = { id: topicSnap.id, ...topicSnap.data() };
+  setActiveNav(topic.type || 'home');
+  const comments = await loadComments(topicId);
+  const meta = TYPE_META[topic.type] || TYPE_META.daily;
+
+  const detail = element('section', 'topic-detail');
+  const back = element('a', 'back-button', `← ${meta.label}로 돌아가기`);
+  back.href = `#/${topic.type || ''}`;
+  const badge = element('span', `type-badge ${topic.type || ''}`, `${meta.icon} ${meta.label}`);
+  detail.append(back, badge, element('h1', '', String(topic.title || '드립 주제')), element('p', 'topic-prompt', String(topic.prompt || '')),
+    element('p', 'topic-author', `주제 등록: ${String(topic.nickname || '익명 드리퍼')} · 댓글 ${comments.length}개`), commentComposer(topicId));
+
+  const section = element('section', 'section-block');
+  const heading = element('div', 'section-heading');
+  const headingCopy = element('div');
+  headingCopy.append(element('p', 'section-kicker', 'LIKE RANKING'), element('h2', '', '댓글 드립 순위'));
+  heading.append(headingCopy, element('span', '', `${comments.length}개`));
+  section.append(heading);
+  if (comments.length) {
+    const list = element('div', 'comment-list');
+    list.replaceChildren(...comments.map((comment, index) => commentCard(topicId, comment, index)));
+    section.append(list);
   } else {
-    state.saved.add(id);
-    showToast('저장함에 넣었습니다.');
+    section.append(element('div', 'empty-card', '아직 댓글 드립이 없습니다. 첫 한마디를 남겨주세요.'));
   }
-  writeStorage(STORAGE_KEYS.saved, [...state.saved]);
-  renderFeed();
+  app.replaceChildren(detail, section);
 }
 
-function laugh(id) {
-  state.laughs[id] = Math.min(999, Math.max(0, Number(state.laughs[id]) || 0) + 1);
-  writeStorage(STORAGE_KEYS.laughs, state.laughs);
-  showToast('피식이 기록됐습니다.');
-  renderFeed();
+function preferredDialogType() {
+  const route = currentRoute();
+  return TYPE_META[route.name] ? route.name : 'daily';
 }
 
-async function copyText(text) {
+function openDialog(type = preferredDialogType()) {
+  if (!isAccountUser()) {
+    showToast('판결소 계정으로 로그인한 뒤 주제를 등록할 수 있습니다.');
+    return;
+  }
+  topicType.value = TYPE_META[type] ? type : 'daily';
+  topicDialog.showModal();
+  window.setTimeout(() => topicTitle.focus(), 20);
+}
+
+async function renderRoute() {
+  const route = currentRoute();
+  renderLoading();
   try {
-    await navigator.clipboard.writeText(text);
-    showToast('드립을 복사했습니다.');
-    return true;
-  } catch {
-    const area = document.createElement('textarea');
-    area.value = text;
-    area.className = 'copy-helper';
-    area.setAttribute('readonly', '');
-    area.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(area);
-    area.select();
-    const copied = document.execCommand('copy');
-    area.remove();
-    showToast(copied ? '드립을 복사했습니다.' : '복사하지 못했습니다.');
-    return copied;
+    if (route.name === 'home') await renderHome();
+    else if (route.name === 'popular') await renderPopular();
+    else if (route.name === 'topic') await renderTopic(route.id);
+    else await renderCategory(route.name);
+    app.focus({ preventScroll: true });
+  } catch (error) {
+    console.error('Dripso render failed:', error);
+    renderError(errorMessage(error, '드립소 내용을 불러오지 못했습니다.'));
   }
 }
 
-async function shareJoke(joke) {
-  const text = `${joke.text}\n\n드립소에서 보냄`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: '드립소', text, url: `${location.origin}/dripso/` });
-      return;
-    } catch (error) {
-      if (error?.name === 'AbortError') return;
-    }
+app.addEventListener('click', async event => {
+  const dialogButton = event.target.closest('[data-open-dialog]');
+  if (dialogButton) {
+    openDialog(dialogButton.dataset.openDialog);
+    return;
   }
-  await copyText(text);
-}
-
-function shuffle(items) {
-  const output = [...items];
-  for (let index = output.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(Math.random() * (index + 1));
-    [output[index], output[other]] = [output[other], output[index]];
+  const likeButton = event.target.closest('[data-like][data-topic]');
+  if (!likeButton) return;
+  if (!isAccountUser()) {
+    showToast('로그인 후 좋아요를 누를 수 있습니다.');
+    return;
   }
-  return output;
-}
-
-elements.categoryRow.addEventListener('click', event => {
-  const chip = event.target.closest('[data-category]');
-  if (chip) selectCategory(chip.dataset.category || '전체');
+  likeButton.disabled = true;
+  try {
+    const response = await toggleLike({
+      topicId: likeButton.dataset.topic,
+      commentId: likeButton.dataset.like
+    });
+    const liked = response.data?.liked === true;
+    const count = Math.max(0, Number(response.data?.likeCount) || 0);
+    likeButton.classList.toggle('active', liked);
+    likeButton.textContent = `❤️ 좋아요 ${count}`;
+    topicsCache = null;
+  } catch (error) {
+    showToast(errorMessage(error, '좋아요 처리에 실패했습니다.'));
+  } finally {
+    likeButton.disabled = false;
+  }
 });
 
-elements.savedToggle.addEventListener('click', () => {
-  state.savedOnly = !state.savedOnly;
-  renderFeed();
+app.addEventListener('submit', async event => {
+  const form = event.target.closest('[data-comment-form]');
+  if (!form) return;
+  event.preventDefault();
+  const area = form.querySelector('textarea[name="text"]');
+  const submit = form.querySelector('button[type="submit"]');
+  const text = String(area?.value || '').trim();
+  if (text.length < 2) {
+    showToast('드립을 2자 이상 입력해 주세요.');
+    return;
+  }
+  submit.disabled = true;
+  try {
+    await addComment({ topicId: form.dataset.commentForm, text });
+    topicsCache = null;
+    showToast('드립이 등록됐습니다.');
+    await renderTopic(form.dataset.commentForm);
+  } catch (error) {
+    showToast(errorMessage(error, '댓글 등록에 실패했습니다.'));
+  } finally {
+    submit.disabled = false;
+  }
 });
 
-elements.randomJoke.addEventListener('click', () => {
-  renderSpotlight(randomJoke(state.spotlightId));
+topicForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const title = topicTitle.value.trim();
+  const prompt = topicPrompt.value.trim();
+  if (title.length < 2 || prompt.length < 4) {
+    showToast('제목과 설명을 조금 더 입력해 주세요.');
+    return;
+  }
+  topicSubmit.disabled = true;
+  try {
+    const response = await createTopic({ type: topicType.value, title, prompt });
+    const topicId = String(response.data?.topicId || '');
+    topicsCache = null;
+    topicForm.reset();
+    topicDialog.close();
+    showToast('새 드립판을 열었습니다.');
+    location.hash = `#/topic/${topicId}`;
+  } catch (error) {
+    showToast(errorMessage(error, '주제 등록에 실패했습니다.'));
+  } finally {
+    topicSubmit.disabled = false;
+  }
 });
 
-elements.shareSpotlight.addEventListener('click', () => {
-  void shareJoke(jokeById(state.spotlightId));
+openTopicDialogButton.addEventListener('click', () => openDialog());
+closeTopicDialogButton.addEventListener('click', () => topicDialog.close());
+topicDialog.addEventListener('click', event => {
+  if (event.target === topicDialog) topicDialog.close();
+});
+window.addEventListener('hashchange', () => void renderRoute());
+
+onAuthStateChanged(auth, async user => {
+  if (user && !user.isAnonymous) {
+    const profile = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+    profileNickname = profile?.exists() ? String(profile.data().nickname || '').slice(0, 20) : '';
+    accountLink.textContent = profileNickname || user.displayName || '내 계정';
+    accountLink.href = '/#/my-cases';
+  } else {
+    profileNickname = '';
+    accountLink.textContent = '로그인';
+    accountLink.href = '/#/auth';
+  }
 });
 
-elements.shuffleFeed.addEventListener('click', () => {
-  state.order = shuffle(state.order);
-  renderFeed();
-  showToast('드립 순서를 섞었습니다.');
-});
-
-elements.grid.addEventListener('click', event => {
-  const control = event.target.closest('[data-action][data-id]');
-  if (!control) return;
-  const id = control.dataset.id || '';
-  const action = control.dataset.action || '';
-  if (action === 'laugh') laugh(id);
-  if (action === 'save') toggleSave(id);
-  if (action === 'copy') void copyText(jokeById(id).text);
-});
-
-renderSpotlight(dailyJoke());
-renderFeed();
+await initAuth().catch(error => console.warn('Dripso auth init failed:', error));
+await renderRoute();
