@@ -1,7 +1,9 @@
 'use strict';
 
+const { randomUUID } = require('node:crypto');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 const { enforceActionRateLimit, requireVerifiedUser } = require('./security');
 const { inspectContent } = require('./content-safety');
 
@@ -9,6 +11,9 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const TOPIC_TYPES = ['daily', 'naming', 'situation'];
 const BLOCKED_WORDS = /(시발|씨발|병신|개새끼|죽어|자살|전화번호|주민등록번호|실명 공개)/i;
+const MAX_TOPIC_IMAGE_BYTES = 750 * 1024;
+const MAX_TOPIC_IMAGE_DATA_LENGTH = 1100000;
+const MAX_TOPIC_IMAGE_EDGE = 4096;
 
 function cleanText(value, maxLen) {
   return String(value || '')
@@ -30,6 +35,90 @@ function assertSafeText(text, label) {
   }
 }
 
+function jpegDimensions(buffer) {
+  if (buffer.length < 12 || buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
+  let offset = 2;
+  while (offset + 4 <= buffer.length) {
+    if (buffer[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+    while (buffer[offset] === 0xff) offset += 1;
+    const marker = buffer[offset];
+    offset += 1;
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker >= 0xd0 && marker <= 0xd7) continue;
+    if (offset + 2 > buffer.length) return null;
+    const length = buffer.readUInt16BE(offset);
+    if (length < 2 || offset + length > buffer.length) return null;
+    const isStartOfFrame = [0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker);
+    if (isStartOfFrame) {
+      if (length < 7) return null;
+      return {
+        height: buffer.readUInt16BE(offset + 3),
+        width: buffer.readUInt16BE(offset + 5)
+      };
+    }
+    offset += length;
+  }
+  return null;
+}
+
+function decodeTopicImageDataUrl(value) {
+  const dataUrl = String(value || '');
+  if (!dataUrl) return null;
+  if (dataUrl.length > MAX_TOPIC_IMAGE_DATA_LENGTH) {
+    throw new HttpsError('invalid-argument', '첨부 사진 용량이 너무 큽니다.');
+  }
+  const match = /^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl);
+  if (!match) {
+    throw new HttpsError('invalid-argument', '첨부 사진 형식이 올바르지 않습니다.');
+  }
+  const buffer = Buffer.from(match[1], 'base64');
+  if (!buffer.length || buffer.length > MAX_TOPIC_IMAGE_BYTES) {
+    throw new HttpsError('invalid-argument', '첨부 사진은 압축 후 750KB 이하여야 합니다.');
+  }
+  if (buffer[0] !== 0xff || buffer[1] !== 0xd8 || buffer.at(-2) !== 0xff || buffer.at(-1) !== 0xd9) {
+    throw new HttpsError('invalid-argument', '정상적인 JPG 사진만 첨부할 수 있습니다.');
+  }
+  const dimensions = jpegDimensions(buffer);
+  if (!dimensions || dimensions.width < 1 || dimensions.height < 1
+    || dimensions.width > MAX_TOPIC_IMAGE_EDGE || dimensions.height > MAX_TOPIC_IMAGE_EDGE) {
+    throw new HttpsError('invalid-argument', '첨부 사진의 크기 정보를 확인할 수 없습니다.');
+  }
+  return { buffer, ...dimensions };
+}
+
+async function storeTopicImage(topicId, image) {
+  if (!image) return null;
+  const bucket = getStorage().bucket();
+  const imagePath = `dripso/topics/${topicId}.jpg`;
+  const token = randomUUID();
+  const file = bucket.file(imagePath);
+  await file.save(image.buffer, {
+    resumable: false,
+    validation: 'md5',
+    metadata: {
+      contentType: 'image/jpeg',
+      contentDisposition: 'inline',
+      cacheControl: 'public,max-age=31536000,immutable',
+      metadata: {
+        firebaseStorageDownloadTokens: token,
+        service: 'dripso-topic-image'
+      }
+    }
+  });
+  const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucket.name)}/o/${encodeURIComponent(imagePath)}?alt=media&token=${encodeURIComponent(token)}`;
+  return {
+    file,
+    imagePath,
+    imageUrl,
+    imageWidth: image.width,
+    imageHeight: image.height,
+    imageByteSize: image.buffer.length
+  };
+}
+
 async function loadNickname(uid) {
   const snap = await db.doc(`users/${uid}`).get().catch(() => null);
   return snap?.exists
@@ -48,14 +137,15 @@ async function requireVisibleTopic(topicId) {
 
 exports.createDripsoTopic = onCall({
   region: REGION,
-  timeoutSeconds: 30,
-  memory: '256MiB'
+  timeoutSeconds: 60,
+  memory: '512MiB'
 }, async request => {
   requireVerifiedUser(request);
   const uid = request.auth.uid;
   const type = cleanText(request.data?.type, 20);
   const title = cleanText(request.data?.title, 60);
   const prompt = cleanText(request.data?.prompt, 300);
+  const image = decodeTopicImageDataUrl(request.data?.imageDataUrl);
 
   if (!TOPIC_TYPES.includes(type)) {
     throw new HttpsError('invalid-argument', '지원하지 않는 드립 메뉴입니다.');
@@ -76,27 +166,48 @@ exports.createDripsoTopic = onCall({
   const nickname = await loadNickname(uid);
   const topicRef = db.collection('dripso_topics').doc();
   const authorRef = db.doc(`dripso_topic_authors/${topicRef.id}`);
-  const batch = db.batch();
+  let storedImage = null;
 
-  batch.set(topicRef, {
-    type,
-    title,
-    prompt,
-    nickname,
-    status: 'visible',
-    commentCount: 0,
-    topLikeCount: 0,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp()
-  });
-  batch.set(authorRef, {
-    uid,
-    topicId: topicRef.id,
-    createdAt: FieldValue.serverTimestamp()
-  });
-  await batch.commit();
+  try {
+    storedImage = await storeTopicImage(topicRef.id, image);
+    const topicData = {
+      type,
+      title,
+      prompt,
+      nickname,
+      status: 'visible',
+      commentCount: 0,
+      topLikeCount: 0,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    };
+    if (storedImage) {
+      Object.assign(topicData, {
+        imageUrl: storedImage.imageUrl,
+        imagePath: storedImage.imagePath,
+        imageWidth: storedImage.imageWidth,
+        imageHeight: storedImage.imageHeight,
+        imageByteSize: storedImage.imageByteSize,
+        imageContentType: 'image/jpeg'
+      });
+    }
 
-  return { success: true, topicId: topicRef.id };
+    const batch = db.batch();
+    batch.set(topicRef, topicData);
+    batch.set(authorRef, {
+      uid,
+      topicId: topicRef.id,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    await batch.commit();
+  } catch (error) {
+    if (storedImage?.file) await storedImage.file.delete({ ignoreNotFound: true }).catch(() => {});
+    if (error instanceof HttpsError) throw error;
+    console.error('Dripso topic creation failed:', error);
+    throw new HttpsError('internal', '주제 또는 사진을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+
+  return { success: true, topicId: topicRef.id, hasImage: !!storedImage };
 });
 
 exports.addDripsoComment = onCall({
