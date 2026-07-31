@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
     concurrency:
@@ -110,6 +110,14 @@ jobs:
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node tools/sync-daily-real-court-catalog.mjs
 
+      - name: Bootstrap 1000 official daily court cases
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+          LAW_OPEN_API_OC: ${{ secrets.LAW_OPEN_API_OC || 'test' }}
+          DAILY_COURT_TARGET_SIZE: '1000'
+        run: node tools/bootstrap-daily-real-court-1000.mjs
+
       - name: Sync safe public configuration
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -124,4 +132,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, administrator-only AI generation, Functions, daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, administrator-only AI generation, Functions, 1000 official daily court cases, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
