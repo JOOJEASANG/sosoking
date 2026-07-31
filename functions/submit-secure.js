@@ -25,6 +25,13 @@ function clampNumber(value, fallback, min, max) {
   return Math.max(min, Math.min(max, Math.floor(n)));
 }
 
+function boolValue(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return fallback;
+}
+
 function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Seoul',
@@ -78,6 +85,10 @@ exports.submitCase = onCall({
   const uid = request.auth.uid;
   const data = request.data || {};
   const desc = textValue(data.caseDescription, MAX_DESC);
+  // 과거 클라이언트 입력 형식은 해석하되, 접수 단계 공개 요청은 의도적으로 적용하지 않는다.
+  const requestedPublic = boolValue(data.isPublic, false);
+  const isPublic = false;
+  void requestedPublic;
   const profileNickname = await loadUserNickname(uid);
 
   if (desc.length < 10) {
@@ -137,8 +148,7 @@ exports.submitCase = onCall({
       nickname: profileNickname || randomNickname(),
       status: 'pending',
       // 공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.
-      // 클라이언트가 isPublic=true를 보내도 접수와 AI 생성 단계는 항상 비공개다.
-      isPublic: false,
+      isPublic,
       reportCount: 0,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
