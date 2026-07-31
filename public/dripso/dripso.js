@@ -196,9 +196,9 @@ async function copyText(text) {
   } catch {
     const area = document.createElement('textarea');
     area.value = text;
+    area.className = 'copy-helper';
     area.setAttribute('readonly', '');
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
+    area.setAttribute('aria-hidden', 'true');
     document.body.appendChild(area);
     area.select();
     const copied = document.execCommand('copy');
@@ -212,7 +212,7 @@ async function shareJoke(joke) {
   const text = `${joke.text}\n\n드립소에서 보냄`;
   if (navigator.share) {
     try {
-      await navigator.share({ title: '드립소', text, url: `${location.origin}/dripso` });
+      await navigator.share({ title: '드립소', text, url: `${location.origin}/dripso/` });
       return;
     } catch (error) {
       if (error?.name === 'AbortError') return;
