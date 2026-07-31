@@ -50,34 +50,35 @@
   box-sizing: border-box;
 }
 
+/* Layout lineage before Dripso: flex: 1 1 20%; */
 #bottom-nav .nav-item {
-  flex: 1 1 20%;
+  flex: 1 1 16.666%;
   min-width: 0;
   gap: 2px;
   padding: 7px 0 6px;
 }
 
 #bottom-nav .nav-icon {
-  font-size: 24px;
+  font-size: 23px;
 }
 
 #bottom-nav .nav-cta .nav-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  width: 42px;
   height: 30px;
   overflow: visible;
 }
 
 #bottom-nav .nav-label {
-  font-size: 9.5px;
+  font-size: 8.8px;
   white-space: nowrap;
 }
 
 #nav-account-icon img {
-  width: 28px !important;
-  height: 28px !important;
+  width: 27px !important;
+  height: 27px !important;
 }
 
 #toast-container,
@@ -130,8 +131,8 @@
 
 .nav-brand-icon {
   display: block;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   max-width: none;
   object-fit: contain;
   margin: -7px auto -5px;

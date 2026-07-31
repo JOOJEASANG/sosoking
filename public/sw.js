@@ -1,4 +1,6 @@
-const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
+const CACHE_NAME = 'sosoking-app-v20260731-dripso-2';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-compact-record-card-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-final-audit-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-home-layout-route-1';
@@ -22,8 +24,15 @@ const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
 const APP_SHELL = [
   '/',
   '/index.html',
+  '/dripso/',
+  '/dripso/index.html',
+  '/dripso/dripso.css?v=20260731-dripso-1',
+  '/dripso/copy-helper.css?v=20260731-dripso-1',
+  '/dripso/dripso.js?v=20260731-dripso-1',
+  '/dripso/jokes.js?v=20260731-dripso-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
+  '/css/brand-logo.css?v=20260731-dripso-nav-1',
   '/css/brand-logo.css?v=20260729-sans-font-1',
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
@@ -144,6 +153,13 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/__/auth/')) return;
 
   if (request.mode === 'navigate') {
+    if (url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')) {
+      event.respondWith(
+        networkFirst(request, '/dripso/index.html')
+          .catch(() => caches.match('/dripso/index.html'))
+      );
+      return;
+    }
     if (url.pathname.startsWith('/result/')) {
       event.respondWith(fetch(request));
       return;
