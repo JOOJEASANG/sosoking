@@ -37,11 +37,15 @@ if (!errors.length) {
   for (const required of [
     '<title>드립소 - 모두가 한마디씩 보태는 유머 놀이터</title>',
     'http-equiv="Content-Security-Policy"',
-    '/dripso/dripso.css?v=20260801-community-1',
-    '/dripso/dripso.js?v=20260801-community-1',
+    '/dripso/dripso.css?v=20260801-topic-image-1',
+    '/dripso/dripso.js?v=20260801-topic-image-1',
     'id="dripso-app"',
     'id="topic-dialog"',
     'id="topic-form"',
+    'id="topic-image"',
+    'id="topic-image-preview"',
+    'id="remove-topic-image"',
+    'accept="image/jpeg,image/png,image/webp"',
     'data-nav="home"',
     'data-nav="daily"',
     'data-nav="naming"',
@@ -59,9 +63,15 @@ if (!errors.length) {
   if (/\son[a-z]+\s*=\s*["']/i.test(html)) errors.push('public/dripso/index.html: inline event attributes must not be used');
 
   for (const required of [
+    '#dripso-app:focus',
+    'outline: none',
     '.dripso-bottom-nav',
     'grid-template-columns: repeat(5, 1fr)',
     '.topic-card',
+    '.topic-card-image',
+    '.topic-detail-image',
+    '.image-picker',
+    '.image-preview',
     '.comment-card.best',
     '.like-button.active',
     '.topic-dialog',
@@ -85,6 +95,11 @@ if (!errors.length) {
     'index < 3',
     'renderTopic',
     'topicForm.addEventListener',
+    'compressTopicImage',
+    'canvas.toBlob',
+    "imageDataUrl: selectedImageDataUrl",
+    'safeTopicImageUrl',
+    "parsed.hostname === 'firebasestorage.googleapis.com'",
     "location.hash = `#/topic/${topicId}`"
   ]) {
     if (!app.includes(required)) errors.push(`public/dripso/dripso.js: missing ${required}`);
@@ -121,10 +136,10 @@ if (!errors.length) {
   }
 
   for (const required of [
-    "const CACHE_NAME = 'sosoking-app-v20260801-dripso-community-1'",
+    "const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1'",
     "'/dripso/index.html'",
-    "'/dripso/dripso.css?v=20260801-community-1'",
-    "'/dripso/dripso.js?v=20260801-community-1'",
+    "'/dripso/dripso.css?v=20260801-topic-image-1'",
+    "'/dripso/dripso.js?v=20260801-topic-image-1'",
     "url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')",
     "networkFirst(request, '/dripso/index.html')"
   ]) {
@@ -143,7 +158,14 @@ if (!errors.length) {
     "status: 'visible'",
     'topLikeCount',
     "collection('comments')",
-    "collection('likes')"
+    "collection('likes')",
+    "require('firebase-admin/storage')",
+    'decodeTopicImageDataUrl',
+    'jpegDimensions',
+    'MAX_TOPIC_IMAGE_BYTES',
+    'firebaseStorageDownloadTokens',
+    'imageContentType',
+    "imageDataUrl"
   ]) {
     if (!(functionsMain + functionsApp).includes(required)) errors.push(`Dripso Functions integration missing: ${required}`);
   }
@@ -184,4 +206,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Dripso validation passed: separate site navigation, topic and comment community, callable-only writes, like ranking, court home entry, and independent Hosting deployment.');
+console.log('Dripso validation passed: separate site navigation, topic images, callable-only writes, like ranking, court home entry, and independent Hosting deployment.');
