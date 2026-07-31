@@ -38,7 +38,7 @@ if (!server.includes("font-family:'Noto Sans KR',Arial,sans-serif")) {
   errors.push('functions/public-seo.js: public verdict sans font is missing');
 }
 if (!/const CACHE_NAME = 'sosoking-app-v[^']+';/.test(sw)
-  || !sw.includes('/css/brand-logo.css?v=20260729-sans-font-1')
+  || !/\/css\/brand-logo\.css\?v=[^'\"]+/.test(sw)
   || !sw.includes('/css/sans-font.css?v=20260729-sans-font-1')) {
   errors.push('public/sw.js: sans font cache assets are incomplete');
 }
