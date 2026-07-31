@@ -117,19 +117,19 @@ function todayPick([id, r]) {
   const icon = r.judgeIcon || JUDGE_ICON[judgeType] || '⚖️';
   const grievance = grievanceFor(id, r);
 
-  return `<div class="card board-featured-card" style="margin-bottom:16px;overflow:hidden;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));">
-    <a href="${resultPath(id)}" data-public-result-link="true" style="display:block;padding:20px;color:inherit;text-decoration:none;">
-      <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">오늘의 판결기록</div>
-      <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px;">${escapeHtml(r.caseTitle || '제목 없음')}</div>
-      <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:13px;">${escapeHtml(compactText(summaryText(r), 96))}</div>
+  return `<div class="card board-featured-card" style="margin-bottom:16px;overflow:hidden;padding:0;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));">
+    <a href="${resultPath(id)}" data-public-result-link="true" class="board-featured-link" style="display:block;padding:18px;color:inherit;text-decoration:none;">
+      <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:7px;">오늘의 판결기록</div>
+      <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.42;margin-bottom:7px;">${escapeHtml(r.caseTitle || '제목 없음')}</div>
+      <div class="board-featured-summary" style="font-size:14px;color:var(--cream-dim);line-height:1.6;margin-bottom:11px;">${escapeHtml(compactText(summaryText(r), 96))}</div>
       <div class="board-record-meta">
         <span class="board-judge-chip">${icon} ${escapeHtml(judgeType)} 판사</span>
         <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
       </div>
     </a>
-    <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);">
-      <a href="${resultPath(id)}" style="padding:12px;text-align:center;color:var(--cream-dim);text-decoration:none;font-size:12px;font-weight:800;">판결문 보기</a>
-      <a href="${discussionPath(id)}" data-discussion-record-link="true" style="padding:12px;text-align:center;color:var(--gold);text-decoration:none;font-size:12px;font-weight:900;border-left:1px solid var(--border);">💬 토론장 · ${totalComments(r)}개</a>
+    <div class="board-card-actions" style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);">
+      <a href="${resultPath(id)}" style="padding:10px 8px;text-align:center;color:var(--cream-dim);text-decoration:none;font-size:12px;font-weight:800;">판결문 보기</a>
+      <a href="${discussionPath(id)}" data-discussion-record-link="true" style="padding:10px 8px;text-align:center;color:var(--gold);text-decoration:none;font-size:12px;font-weight:900;border-left:1px solid var(--border);">💬 토론장 · ${totalComments(r)}개</a>
     </div>
   </div>`;
 }
@@ -140,19 +140,22 @@ function boardRow(id, r) {
   const grievance = grievanceFor(id, r);
   const isDaily = r.source === 'daily_ai';
 
-  return `<div class="card" style="overflow:hidden;">
-    <a href="${resultPath(id)}" data-public-result-link="true" style="display:block;padding:16px 18px;color:inherit;text-decoration:none;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="font-weight:800;font-size:15px;line-height:1.45;flex:1;">${escapeHtml(r.caseTitle || '제목 없음')}</div><div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div></div>
-      <div style="font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:11px;">${escapeHtml(compactText(summaryText(r), 86))}</div>
+  return `<div class="card" style="overflow:hidden;padding:0;">
+    <a href="${resultPath(id)}" data-public-result-link="true" class="board-row-link" style="display:block;padding:10px 16px 12px;color:inherit;text-decoration:none;">
+      <div class="board-row-heading" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px;">
+        <div class="board-row-title" style="font-weight:800;font-size:15px;line-height:1.42;flex:1;">${escapeHtml(r.caseTitle || '제목 없음')}</div>
+        <div class="board-row-date" style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div>
+      </div>
+      <div class="board-row-summary" style="font-size:13px;color:var(--cream-dim);line-height:1.55;margin-bottom:9px;">${escapeHtml(compactText(summaryText(r), 86))}</div>
       <div class="board-record-meta board-record-meta-row">
         <span class="board-judge-chip">${icon} ${escapeHtml(judgeType)} 판사</span>
         <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:var(--cream-dim);">${isDaily ? '오늘의 AI 사건' : '생활사건 기록'}</div>
+      <div class="board-record-kind" style="margin-top:7px;font-size:11px;color:var(--cream-dim);">${isDaily ? '오늘의 AI 사건' : '생활사건 기록'}</div>
     </a>
-    <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);">
-      <a href="${resultPath(id)}" style="padding:11px;text-align:center;color:var(--cream-dim);text-decoration:none;font-size:12px;font-weight:800;">판결문 보기</a>
-      <a href="${discussionPath(id)}" data-discussion-record-link="true" style="padding:11px;text-align:center;color:var(--gold);text-decoration:none;font-size:12px;font-weight:900;border-left:1px solid var(--border);">💬 토론장 · ${totalComments(r)}개</a>
+    <div class="board-card-actions" style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);">
+      <a href="${resultPath(id)}" style="padding:10px 8px;text-align:center;color:var(--cream-dim);text-decoration:none;font-size:12px;font-weight:800;">판결문 보기</a>
+      <a href="${discussionPath(id)}" data-discussion-record-link="true" style="padding:10px 8px;text-align:center;color:var(--gold);text-decoration:none;font-size:12px;font-weight:900;border-left:1px solid var(--border);">💬 토론장 · ${totalComments(r)}개</a>
     </div>
   </div>`;
 }

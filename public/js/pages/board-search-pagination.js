@@ -1,4 +1,5 @@
-import { renderBoard as renderBaseBoard } from './board-court.js?v=20260730-discussion-court-1';
+import { renderBoard as renderBaseBoard } from './board-court.js?v=20260731-compact-record-card-1';
+// Cache lineage marker: ./board-court.js?v=20260730-discussion-court-1
 
 const PAGE_SIZE = 10;
 
