@@ -36,8 +36,10 @@ const firebase = read('firebase.json');
 const rules = read('firestore.rules');
 const indexes = JSON.parse(read('firestore.indexes.json'));
 const deploy = read('.github/workflows/firebase-deploy.yml');
+const bootstrapWorkflow = read('.github/workflows/bootstrap-daily-court-catalog.yml');
 const sync = read('tools/sync-daily-real-court-catalog.mjs');
 const bootstrap = read('tools/bootstrap-daily-real-court-1000.mjs');
+const statusWriter = read('tools/write-daily-court-catalog-status.mjs');
 const submit = read('functions/submit-secure.js');
 const publicConfig = read('tools/sync-public-config.mjs');
 const index = read('public/index.html');
@@ -100,6 +102,22 @@ if (!completedScoreIndex) errors.push('firestore.indexes.json: completed daily r
 for (const functionName of ['functions:getDailyRealCourt', 'functions:submitDailyRealCourtVerdict']) {
   if (!deploy.includes(functionName)) errors.push(`deploy workflow missing: ${functionName}`);
 }
+for (const expected of [
+  'Sync verified daily court catalog without shrinking existing data',
+  "DAILY_COURT_REQUIRE_TARGET: 'false'",
+  'Deploy Hosting independently of external catalog import',
+  'node tools/write-daily-court-catalog-status.mjs'
+]) {
+  if (!deploy.includes(expected)) errors.push(`normal deploy separation missing: ${expected}`);
+}
+for (const forbidden of [
+  'Bootstrap 1000 official daily court cases',
+  'LAW_OPEN_API_OC',
+  'node tools/bootstrap-daily-real-court-1000.mjs'
+]) {
+  if (deploy.includes(forbidden)) errors.push(`normal deploy must not depend on external catalog import: ${forbidden}`);
+}
+
 for (const expected of ['orderedCaseIds', 'dailyCaseCount: 3', 'targetSize: MAX_CATALOG_SIZE', 'const MAX_CATALOG_SIZE = 1000', 'preservedExistingOrder']) {
   if (!sync.includes(expected)) errors.push(`daily real court catalog sync missing: ${expected}`);
 }
@@ -122,13 +140,31 @@ for (const expected of [
 for (const forbidden of ['gemini', 'generateContent', 'generativelanguage.googleapis.com']) {
   if (bootstrap.toLowerCase().includes(forbidden.toLowerCase())) errors.push(`official catalog bootstrap must not use AI: ${forbidden}`);
 }
+
 for (const expected of [
+  'workflow_dispatch:',
   'Bootstrap 1000 official daily court cases',
-  'LAW_OPEN_API_OC',
+  'Missing GitHub secret: LAW_OPEN_API_OC',
+  'LAW_OPEN_API_OC: ${{ secrets.LAW_OPEN_API_OC }}',
   "DAILY_COURT_TARGET_SIZE: '1000'",
-  'node tools/bootstrap-daily-real-court-1000.mjs'
+  "DAILY_COURT_REQUIRE_TARGET: 'true'",
+  'node tools/bootstrap-daily-real-court-1000.mjs',
+  'node tools/write-daily-court-catalog-status.mjs',
+  'Publish verified catalog status'
 ]) {
-  if (!deploy.includes(expected)) errors.push(`deploy workflow missing official bootstrap: ${expected}`);
+  if (!bootstrapWorkflow.includes(expected)) errors.push(`manual official bootstrap workflow missing: ${expected}`);
+}
+if (bootstrapWorkflow.includes('\n  push:') || bootstrapWorkflow.includes('\n  pull_request:')) {
+  errors.push('manual official bootstrap workflow must not run on normal pushes or pull requests');
+}
+
+for (const expected of [
+  "const requireTarget = process.env.DAILY_COURT_REQUIRE_TARGET === 'true';",
+  "status: ready ? 'ready' : 'partial'",
+  'count: actualCount',
+  'if (requireTarget && actualCount < target)'
+]) {
+  if (!statusWriter.includes(expected)) errors.push(`daily court status writer missing: ${expected}`);
 }
 
 // AI 생활사건 접수 한도는 오늘의 재판 3건 참여 규칙과 별개이며 관리자 설정을 따른다.
@@ -161,4 +197,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Daily real court validation passed: ${catalog.length} curated cases plus deterministic official API bootstrap to 1000 cases, three daily judgments, protected scores, and daily/weekly/all-time rankings.`);
+console.log(`Daily real court validation passed: ${catalog.length} curated cases, preserved catalog data, manual verified bootstrap to 1000 cases, independent Hosting deployment, and protected daily rankings.`);
