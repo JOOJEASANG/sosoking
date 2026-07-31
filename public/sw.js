@@ -1,6 +1,7 @@
 const CACHE_NAME = 'sosoking-app-v20260801-dripso-community-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-2';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
 // Cache lineage: /js/pages/daily-real-court.js?v=20260730-daily-three-ranking-1
 const APP_SHELL = [
   '/',
@@ -21,6 +22,7 @@ const APP_SHELL = [
   '/js/app.js?v=20260731-private-first-publication-1',
   '/js/app.js?v=20260731-compact-record-card-1',
   '/js/app.js?v=20260730-home-layout-route-1',
+  '/js/app.js?v=20260730-discussion-court-1',
   '/js/dripso-entry-guard.js?v=20260801-dripso-community-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
   '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1',
