@@ -50,6 +50,7 @@
   box-sizing: border-box;
 }
 
+/* Layout lineage before Dripso: flex: 1 1 20%; */
 #bottom-nav .nav-item {
   flex: 1 1 16.666%;
   min-width: 0;
