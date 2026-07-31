@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260731-dripso-2';
+const CACHE_NAME = 'sosoking-app-v20260801-dripso-community-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-2';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-compact-record-card-1';
@@ -26,12 +27,16 @@ const APP_SHELL = [
   '/index.html',
   '/dripso/',
   '/dripso/index.html',
+  '/dripso/dripso.css?v=20260801-community-1',
+  '/dripso/dripso.js?v=20260801-community-1',
   '/dripso/dripso.css?v=20260731-dripso-1',
   '/dripso/copy-helper.css?v=20260731-dripso-1',
   '/dripso/dripso.js?v=20260731-dripso-1',
   '/dripso/jokes.js?v=20260731-dripso-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
+  '/css/brand-logo.css?v=20260801-dripso-separate-1',
+  '/css/dripso-entry.css?v=20260801-dripso-community-1',
   '/css/brand-logo.css?v=20260731-dripso-nav-1',
   '/css/brand-logo.css?v=20260729-sans-font-1',
   '/css/home-light.css?v=20260729-light-home-1',
@@ -41,6 +46,8 @@ const APP_SHELL = [
   '/js/app.js?v=20260731-private-first-publication-1',
   '/js/app.js?v=20260731-compact-record-card-1',
   '/js/app.js?v=20260730-home-layout-route-1',
+  '/js/app.js?v=20260730-discussion-court-1',
+  '/js/dripso-entry-guard.js?v=20260801-dripso-community-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
   '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1',
   '/js/pages/home-no-search.js?v=20260730-search-scope-1',
@@ -64,6 +71,10 @@ const APP_SHELL = [
   '/js/pages/board-search-pagination.js?v=20260731-compact-record-card-1',
   '/js/pages/board-court.js?v=20260731-compact-record-card-1',
   '/js/pages/board.js?v=20260731-compact-record-card-1',
+  '/js/pages/board-full-content-search.js?v=20260730-search-scope-1',
+  '/js/pages/board-search-pagination.js?v=20260730-judge-board-search-1',
+  '/js/pages/board-court.js?v=20260730-discussion-court-1',
+  '/js/pages/board.js?v=20260730-discussion-court-1',
   '/js/utils/public-results.js?v=20260730-public-records-2',
   '/js/pages/result-comments.js?v=20260730-discussion-court-1',
   '/js/pages/result-court.js?v=20260729-dark-record-participation-1',

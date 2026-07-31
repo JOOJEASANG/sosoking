@@ -37,7 +37,7 @@ jobs:
         run: |
           node tools/check-hosting-hardening.mjs
           node tools/check-script-csp.mjs
-          node tools/check-dripso.mjs
+          node tools/check-dripso-site.mjs
           node tools/check-project.mjs
 
       - name: Prepare service account
