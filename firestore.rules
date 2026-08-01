@@ -7,7 +7,9 @@ service cloud.firestore {
     }
 
     function adminEmail() {
-      return signedIn() && request.auth.token.email != null
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
         ? request.auth.token.email
         : '';
     }
@@ -136,12 +138,21 @@ service cloud.firestore {
       }
     }
 
-    // 작성자 UID는 공개 문서에서 분리하고 Admin SDK에서만 사용한다.
+    // 작성자 UID와 신고 중복 키는 공개 문서에서 분리하고 Admin SDK에서만 사용한다.
     match /dripso_topic_authors/{topicId} {
       allow read, write: if false;
     }
 
     match /dripso_comment_authors/{topicId}/items/{commentId} {
+      allow read, write: if false;
+    }
+
+    match /dripso_reports/{reportId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /dripso_report_keys/{keyId} {
       allow read, write: if false;
     }
 
