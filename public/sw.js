@@ -23,6 +23,26 @@ const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1';
 // Cache lineage: /js/pages/board-court.js?v=20260730-discussion-court-1
 // Cache lineage: /js/pages/board.js?v=20260730-discussion-court-1
 // Cache lineage: /js/pages/daily-real-court.js?v=20260729-daily-real-court-1
+// Historical URL markers are retained for regression checks but are no longer precached.
+// '/dripso/dripso.css?v=20260801-community-1'
+// '/dripso/dripso.js?v=20260801-community-1'
+// '/dripso/dripso.css?v=20260731-dripso-1'
+// '/dripso/copy-helper.css?v=20260731-dripso-1'
+// '/dripso/dripso.js?v=20260731-dripso-1'
+// '/css/brand-logo.css?v=20260731-dripso-nav-1'
+// '/css/brand-logo.css?v=20260729-sans-font-1'
+// '/js/app.js?v=20260731-compact-record-card-1'
+// '/js/app.js?v=20260730-home-layout-route-1'
+// '/js/app.js?v=20260730-discussion-court-1'
+// '/js/pages/guide.js?v=20260730-configurable-limit-1'
+// '/js/pages/policy.js?v=20260729-brand-policy-1'
+// '/js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1'
+// '/js/pages/submit-guard.js?v=20260730-configurable-limit-1'
+// '/js/pages/submit-court.js?v=20260730-configurable-limit-1'
+// '/js/pages/board-full-content-search.js?v=20260730-search-scope-1'
+// '/js/pages/board-search-pagination.js?v=20260730-judge-board-search-1'
+// '/js/pages/board-court.js?v=20260730-discussion-court-1'
+// '/js/pages/board.js?v=20260730-discussion-court-1'
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -30,27 +50,23 @@ const APP_SHELL = [
   '/dripso/index.html',
   '/dripso/dripso.css?v=20260801-topic-image-1',
   '/dripso/dripso.js?v=20260801-topic-image-1',
-  '/dripso/dripso.css?v=20260801-community-1',
-  '/dripso/dripso.js?v=20260801-community-1',
-  '/dripso/dripso.css?v=20260731-dripso-1',
-  '/dripso/copy-helper.css?v=20260731-dripso-1',
-  '/dripso/dripso.js?v=20260731-dripso-1',
+  '/dripso/pagination.js?v=20260801-audit-fixes-1',
+  '/dripso/moderation.js?v=20260801-audit-fixes-1',
   '/dripso/jokes.js?v=20260731-dripso-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260801-dripso-separate-1',
   '/css/dripso-entry.css?v=20260801-dripso-community-1',
-  '/css/brand-logo.css?v=20260731-dripso-nav-1',
-  '/css/brand-logo.css?v=20260729-sans-font-1',
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/css/sans-font.css?v=20260729-sans-font-1',
+  '/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
+  '/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1',
+  '/js/document-display-guard.js?v=20260731-document-format-1',
   '/js/app.js?v=20260731-private-first-publication-1',
-  '/js/app.js?v=20260731-compact-record-card-1',
-  '/js/app.js?v=20260730-home-layout-route-1',
-  '/js/app.js?v=20260730-discussion-court-1',
   '/js/dripso-entry-guard.js?v=20260801-dripso-community-1',
+  '/js/firebase.js?v=20260729-auth-session-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
   '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1',
   '/js/pages/home-no-search.js?v=20260730-search-scope-1',
@@ -58,15 +74,10 @@ const APP_SHELL = [
   '/js/pages/home-court.js?v=20260730-configurable-limit-1',
   '/js/pages/home.js?v=20260729-brand-policy-1',
   '/js/pages/guide.js?v=20260730-final-audit-1',
-  '/js/pages/guide.js?v=20260730-configurable-limit-1',
   '/js/pages/policy.js?v=20260730-final-audit-1',
-  '/js/pages/policy.js?v=20260729-brand-policy-1',
   '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',
-  '/js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',
   '/js/pages/submit-guard.js?v=20260731-private-first-publication-1',
-  '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
   '/js/pages/submit-court.js?v=20260731-private-first-publication-1',
-  '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
   '/js/pages/submit.js?v=20260730-configurable-limit-1',
   '/js/pages/daily-real-court-layout.js?v=20260730-home-layout-route-1',
   '/js/pages/daily-real-court.js?v=20260730-daily-three-ranking-1',
@@ -74,17 +85,17 @@ const APP_SHELL = [
   '/js/pages/board-search-pagination.js?v=20260731-compact-record-card-1',
   '/js/pages/board-court.js?v=20260731-compact-record-card-1',
   '/js/pages/board.js?v=20260731-compact-record-card-1',
-  '/js/pages/board-full-content-search.js?v=20260730-search-scope-1',
-  '/js/pages/board-search-pagination.js?v=20260730-judge-board-search-1',
-  '/js/pages/board-court.js?v=20260730-discussion-court-1',
-  '/js/pages/board.js?v=20260730-discussion-court-1',
   '/js/utils/public-results.js?v=20260730-public-records-2',
   '/js/pages/result-comments.js?v=20260730-discussion-court-1',
   '/js/pages/result-court.js?v=20260729-dark-record-participation-1',
   '/js/pages/discussion.js?v=20260730-discussion-court-1',
   '/js/pages/trial-game.js?v=20260729-dark-record-participation-1',
   '/js/pages/my-cases-game.js?v=20260729-dark-record-participation-1',
+  '/js/pages/auth2.js?v=20260729-brand-unified-1',
   '/js/components/footer.js?v=20260729-brand-policy-1',
+  '/js/components/theme.js?v=20260729-theme-global-2',
+  '/js/components/court-design.js?v=20260729-light-home-1',
+  '/js/components/nav.js?v=20260729-daily-real-court-1',
   '/js/components/header-icons.js?v=20260730-header-icon-single-1',
   '/logo.png?v=20260729-brand-unified-1',
   '/icons/sosoking-192.png?v=20260729-pwa-icon-center-1',
@@ -96,6 +107,10 @@ const APP_SHELL = [
 ];
 const STATIC_ASSET = /\.(?:js|css|svg|png|webp|jpg|jpeg|woff2)$/i;
 const NETWORK_FIRST = /\.(?:json|webmanifest)$/i;
+
+function appShellUrls() {
+  return new Set(APP_SHELL.map(url => new URL(url, self.location.origin).href));
+}
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -114,6 +129,15 @@ self.addEventListener('activate', event => {
       keys
         .filter(key => key.startsWith('sosoking-app-') && key !== CACHE_NAME)
         .map(key => caches.delete(key))
+    );
+
+    const cache = await caches.open(CACHE_NAME);
+    const allowed = appShellUrls();
+    const cachedRequests = await cache.keys();
+    await Promise.all(
+      cachedRequests
+        .filter(request => !allowed.has(request.url))
+        .map(request => cache.delete(request))
     );
     await self.clients.claim();
   })());
