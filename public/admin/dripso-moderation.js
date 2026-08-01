@@ -1,4 +1,5 @@
 import { auth, db, functions } from '/js/firebase.js?v=20260729-auth-session-1';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import {
   collection,
   getDocs,
@@ -13,6 +14,7 @@ const moderateReport = httpsCallable(functions, 'moderateDripsoReport');
 let dialog = null;
 let list = null;
 let status = null;
+let built = false;
 
 function element(tag, className = '', text = '') {
   const node = document.createElement(tag);
@@ -107,6 +109,8 @@ async function loadReports() {
 }
 
 function buildUi() {
+  if (built) return;
+  built = true;
   injectStyles();
   const launch = element('button', 'dripso-admin-launch', '드립소 신고');
   launch.type = 'button';
@@ -148,5 +152,6 @@ function buildUi() {
   });
 }
 
-await auth.authStateReady().catch(() => null);
-if (auth.currentUser && !auth.currentUser.isAnonymous) buildUi();
+onAuthStateChanged(auth, user => {
+  if (user && !user.isAnonymous) buildUi();
+});
