@@ -14,7 +14,6 @@ const MAX_PAGES = 100;
 const app = document.getElementById('dripso-app');
 let refreshVersion = 0;
 let refreshTimer = 0;
-let rendering = false;
 
 const TYPE_META = {
   daily: { label: '오늘의 한줄', icon: '💬' },
@@ -46,9 +45,19 @@ function formatDate(value) {
 function currentRoute() {
   const value = (location.hash || '#/').replace(/^#\/?/, '');
   const [name = '', id = ''] = value.split('/');
-  if (name === 'topic' && id) return { name: 'topic', id: decodeURIComponent(id) };
+  if (name === 'topic' && id) {
+    try {
+      return { name: 'topic', id: decodeURIComponent(id) };
+    } catch {
+      return { name: 'home' };
+    }
+  }
   if (['daily', 'naming', 'situation', 'popular'].includes(name)) return { name };
   return { name: 'home' };
+}
+
+function routeKey(route) {
+  return route.name === 'topic' ? `topic:${route.id}` : route.name;
 }
 
 async function fetchAllPages(collectionRef, constraints) {
@@ -84,7 +93,6 @@ function topicCard(topic) {
   const meta = TYPE_META[topic.type] || TYPE_META.daily;
   const card = element('a', 'topic-card');
   card.href = `#/topic/${encodeURIComponent(topic.id)}`;
-  card.dataset.paginated = 'true';
 
   const top = element('div', 'topic-meta');
   top.append(
@@ -120,7 +128,6 @@ function topicCard(topic) {
 function commentCard(topicId, comment, index) {
   const card = element('article', `comment-card${index < 3 ? ' best' : ''}`);
   card.dataset.commentId = comment.id;
-  card.dataset.paginated = 'true';
   const meta = element('div', 'comment-meta');
   meta.append(
     element('span', index < 3 ? 'best-rank' : '', index < 3 ? `BEST ${index + 1}` : `#${index + 1}`),
@@ -134,15 +141,17 @@ function commentCard(topicId, comment, index) {
   return card;
 }
 
-function replaceList(section, selector, list, emptyText) {
+function replaceList(section, selector, list, emptyText, key) {
   const existing = section.querySelector(selector);
   const empty = section.querySelector('.empty-card');
   if (list.childElementCount) {
+    list.dataset.paginationComplete = key;
     if (existing) existing.replaceWith(list);
     else if (empty) empty.replaceWith(list);
     else section.append(list);
   } else {
     const emptyNode = element('div', 'empty-card', emptyText);
+    emptyNode.dataset.paginationComplete = key;
     if (existing) existing.replaceWith(emptyNode);
     else if (empty) empty.replaceWith(emptyNode);
     else section.append(emptyNode);
@@ -175,9 +184,7 @@ async function refreshTopics(route, version) {
   const emptyText = route.name === 'home'
     ? '아직 등록된 주제가 없습니다. 첫 드립판을 열어주세요.'
     : '아직 등록된 주제가 없습니다.';
-  rendering = true;
-  replaceList(section, '.topic-list', list, emptyText);
-  rendering = false;
+  replaceList(section, '.topic-list', list, emptyText, routeKey(route));
 }
 
 async function refreshComments(route, version) {
@@ -194,11 +201,15 @@ async function refreshComments(route, version) {
   list.replaceChildren(...comments.map((comment, index) => commentCard(route.id, comment, index)));
   const count = section.querySelector('.section-heading > span');
   const author = app.querySelector('.topic-author');
-  rendering = true;
   if (count) count.textContent = `${comments.length}개`;
   if (author) author.textContent = author.textContent.replace(/댓글\s+\d+개$/, `댓글 ${comments.length}개`);
-  replaceList(section, '.comment-list', list, '아직 댓글 드립이 없습니다. 첫 한마디를 남겨주세요.');
-  rendering = false;
+  replaceList(
+    section,
+    '.comment-list',
+    list,
+    '아직 댓글 드립이 없습니다. 첫 한마디를 남겨주세요.',
+    routeKey(route)
+  );
 }
 
 async function refresh() {
@@ -212,12 +223,24 @@ async function refresh() {
   }
 }
 
+function paginationAlreadyApplied(route) {
+  const key = routeKey(route);
+  const selector = route.name === 'topic' ? '.comment-list' : '.topic-list';
+  const list = app.querySelector(`${selector}[data-pagination-complete="${CSS.escape(key)}"]`);
+  const empty = app.querySelector(`.empty-card[data-pagination-complete="${CSS.escape(key)}"]`);
+  return Boolean(list || empty);
+}
+
 function scheduleRefresh() {
-  if (rendering) return;
+  const route = currentRoute();
+  if (paginationAlreadyApplied(route)) return;
   window.clearTimeout(refreshTimer);
   refreshTimer = window.setTimeout(() => void refresh(), 120);
 }
 
 new MutationObserver(scheduleRefresh).observe(app, { childList: true, subtree: true });
-window.addEventListener('hashchange', scheduleRefresh);
+window.addEventListener('hashchange', () => {
+  refreshVersion += 1;
+  scheduleRefresh();
+});
 scheduleRefresh();
