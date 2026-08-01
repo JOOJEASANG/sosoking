@@ -1,8 +1,8 @@
 'use strict';
 
 function looksLikeDatePrefix(text, markerIndex) {
-  const prefix = text.slice(Math.max(0, markerIndex - 12), markerIndex);
-  return /\d{2,4}[./-]\s*$/.test(prefix);
+  const prefix = text.slice(Math.max(0, markerIndex - 18), markerIndex);
+  return /\d{1,4}[./-]\s*$/.test(prefix);
 }
 
 function splitSequentialOrderText(startNumber, value) {
@@ -57,9 +57,10 @@ function createOrderItem(number, text) {
 function reflowOrderItem(item) {
   if (!(item instanceof HTMLElement) || item.dataset.verdictNumberLine === 'true') return false;
 
-  const markerText = item.querySelector('.doc-order-number')?.textContent || '';
+  const markerElement = item.querySelector('.doc-order-number') || item.querySelector(':scope > span');
+  const body = item.querySelector('.doc-order-text') || item.querySelector(':scope > p');
+  const markerText = markerElement?.textContent || '';
   const startNumber = Number(markerText.match(/\d{1,2}/)?.[0] || 0);
-  const body = item.querySelector('.doc-order-text');
   if (!startNumber || !body) return false;
 
   const parts = splitSequentialOrderText(startNumber, body.textContent || '');
@@ -75,7 +76,11 @@ function reflowOrderItem(item) {
 }
 
 function reflowAll(root = document) {
-  root.querySelectorAll?.('.court-formatted-body .doc-order-item').forEach(reflowOrderItem);
+  root.querySelectorAll?.([
+    '.result-paper-body .doc-order-item',
+    '.step-content .doc-order-item',
+    '.court-formatted-body .doc-order-item'
+  ].join(',')).forEach(reflowOrderItem);
 }
 
 function start() {
