@@ -58,8 +58,8 @@ export function renderNav(activeRoute = '') {
       <span class="nav-icon"><img class="nav-brand-icon" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="" width="25" height="25"></span>
       <span class="nav-label">접수</span>
     </a>
-    <a href="#/daily-court" class="nav-item${isDailyCourt ? ' active' : ''}">
-      <span class="nav-icon">🧑‍⚖️</span>
+    <a href="#/daily-court" data-nav-key="daily-court" class="nav-item${isDailyCourt ? ' active' : ''}">
+      <span class="nav-icon" aria-hidden="true">&#9878;</span>
       <span class="nav-label">오늘재판</span>
     </a>
     <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
