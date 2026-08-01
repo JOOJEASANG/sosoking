@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
-const { requireAppCheck, requireVerifiedUser } = require('./security');
+const { requireAccountUser, requireAppCheck, requireVerifiedUser } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -80,13 +80,11 @@ async function acquireCourtDeletionLock(caseId, ownerUid = '') {
     if (!caseSnap.exists && !resultSnap.exists) {
       throw new HttpsError('not-found', '삭제할 사건을 찾을 수 없습니다.');
     }
-    if (ownerUid) {
-      if (!caseSnap.exists || caseSnap.data().userId !== ownerUid) {
-        throw new HttpsError('permission-denied', '본인이 접수한 사건만 삭제할 수 있습니다.');
-      }
+    const caseData = caseSnap.exists ? caseSnap.data() : {};
+    if (ownerUid && caseData.userId !== ownerUid) {
+      throw new HttpsError('permission-denied', '본인이 접수한 사건만 삭제할 수 있습니다.');
     }
 
-    const caseData = caseSnap.exists ? caseSnap.data() : {};
     if (caseSnap.exists) {
       tx.set(caseRef, {
         status: 'deleting',
@@ -154,8 +152,9 @@ async function deleteCourtPostData(value, options = {}) {
 }
 
 exports.deleteOwnCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+  const authenticated = requireAccountUser(request);
   requireVerifiedUser(request);
-  const result = await deleteCourtPostData(request.data?.caseId, { ownerUid: request.auth.uid });
+  const result = await deleteCourtPostData(request.data?.caseId, { ownerUid: authenticated.uid });
   return { success: true, ...result };
 });
 
