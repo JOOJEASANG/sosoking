@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
   <title>드립소 - 모두가 한마디씩 보태는 유머 놀이터</title>
   <meta name="description" content="주제를 올리고 다른 사람들이 댓글 드립을 달며, 좋아요를 많이 받은 한마디가 위로 올라오는 참여형 유머 커뮤니티입니다.">
   <meta name="theme-color" content="#17121f">
@@ -75,12 +75,14 @@
         </div>
         <p class="image-status" id="topic-image-status" aria-live="polite"></p>
       </div>
-      <p class="form-help">사진은 자동으로 축소·압축되며, 개인정보·실명 공격·욕설이 포함된 내용은 등록하지 마세요.</p>
+      <p class="form-help">사진은 자동으로 축소·압축됩니다. 개인정보·타인의 얼굴·실명 공격·욕설이 포함된 내용은 등록하지 마세요. 공개 내용은 신고 후 숨김 또는 삭제될 수 있습니다.</p>
       <button class="submit-button" id="topic-submit" type="submit">주제 등록하기</button>
     </form>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="/dripso/dripso.js?v=20260801-topic-image-1"></script>
+  <script type="module" src="/dripso/pagination.js?v=20260801-audit-fixes-1"></script>
+  <script type="module" src="/dripso/moderation.js?v=20260801-audit-fixes-1"></script>
 </body>
 </html>
