@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { inspectContent } = require('./content-safety');
-const { enforceActionRateLimit, requireVerifiedUser } = require('./security');
+const { enforceActionRateLimit, requireAppCheck, requireVerifiedUser } = require('./security');
 const { isAdminAuth } = require('./admin-utils');
 
 const db = getFirestore();
@@ -179,6 +179,7 @@ exports.moderateReport = onCall({
   memory: '256MiB'
 }, async request => {
   requireVerifiedUser(request);
+  requireAppCheck(request);
   if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 신고를 처리할 수 있습니다.');
   }
