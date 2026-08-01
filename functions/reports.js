@@ -178,8 +178,9 @@ exports.moderateReport = onCall({
   timeoutSeconds: 60,
   memory: '256MiB'
 }, async request => {
+  requireVerifiedUser(request);
   requireAppCheck(request);
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
+  if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 신고를 처리할 수 있습니다.');
   }
   const reportId = cleanCaseId(request.data?.reportId);
