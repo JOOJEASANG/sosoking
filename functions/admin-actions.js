@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
-const { requireAccountUser, requireAppCheck } = require('./security');
+const { requireVerifiedUser } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -72,22 +72,55 @@ async function deleteUserProfileData(userId) {
   });
 }
 
+async function acquireCourtDeletionLock(caseId, ownerUid = '') {
+  const caseRef = db.doc(`cases/${caseId}`);
+  const resultRef = db.doc(`results/${caseId}`);
+  return db.runTransaction(async tx => {
+    const [caseSnap, resultSnap] = await Promise.all([tx.get(caseRef), tx.get(resultRef)]);
+    if (!caseSnap.exists && !resultSnap.exists) {
+      throw new HttpsError('not-found', '삭제할 사건을 찾을 수 없습니다.');
+    }
+    if (ownerUid) {
+      if (!caseSnap.exists || caseSnap.data().userId !== ownerUid) {
+        throw new HttpsError('permission-denied', '본인이 접수한 사건만 삭제할 수 있습니다.');
+      }
+    }
+
+    const caseData = caseSnap.exists ? caseSnap.data() : {};
+    if (caseSnap.exists) {
+      tx.set(caseRef, {
+        status: 'deleting',
+        courtStage: 'deleting',
+        isPublic: false,
+        deletionStatus: 'processing',
+        deletionStartedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+    if (resultSnap.exists) {
+      tx.set(resultRef, {
+        isPublic: false,
+        deletionStatus: 'processing',
+        deletionStartedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+
+    return {
+      caseFound: caseSnap.exists,
+      resultFound: resultSnap.exists,
+      legacyIdHash: cleanId(caseData.legacyIdHash)
+    };
+  });
+}
+
 async function deleteCourtPostData(value, options = {}) {
   const caseId = cleanCaseId(value);
   if (!caseId) throw new HttpsError('invalid-argument', '올바른 사건 ID가 필요합니다.');
 
-  const caseRef = db.doc(`cases/${caseId}`);
-  const caseSnap = await caseRef.get();
-  if (!caseSnap.exists) throw new HttpsError('not-found', '삭제할 사건을 찾을 수 없습니다.');
-
-  const caseData = caseSnap.data();
   const ownerUid = cleanId(options.ownerUid);
-  if (ownerUid && caseData.userId !== ownerUid) {
-    throw new HttpsError('permission-denied', '본인이 접수한 사건만 삭제할 수 있습니다.');
-  }
-
+  const lock = await acquireCourtDeletionLock(caseId, ownerUid);
   const counter = { deleted: 0 };
-  const legacyIdHash = cleanId(caseData.legacyIdHash);
 
   await deleteQuerySnapshot(db.collection(`result_reactions/${caseId}/votes`), counter);
   await deleteQuerySnapshot(db.collection(`court_comments/${caseId}/items`), counter);
@@ -101,9 +134,9 @@ async function deleteCourtPostData(value, options = {}) {
     db.doc(`court_comments/${caseId}`),
     db.doc(`court_comment_authors/${caseId}`),
     db.doc(`results/${caseId}`),
-    caseRef
+    db.doc(`cases/${caseId}`)
   ];
-  if (legacyIdHash) refs.push(db.doc(`case_id_aliases/${legacyIdHash}`));
+  if (lock.legacyIdHash) refs.push(db.doc(`case_id_aliases/${lock.legacyIdHash}`));
 
   const batch = db.batch();
   refs.forEach(ref => batch.delete(ref));
@@ -113,32 +146,36 @@ async function deleteCourtPostData(value, options = {}) {
   return {
     caseId,
     deleted: counter.deleted,
-    removedLegacyAlias: Boolean(legacyIdHash)
+    removedLegacyAlias: Boolean(lock.legacyIdHash),
+    lockedBeforeDelete: true,
+    caseFound: lock.caseFound,
+    resultFound: lock.resultFound
   };
 }
 
 exports.deleteOwnCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
-  const authenticated = requireAccountUser(request);
-  const result = await deleteCourtPostData(request.data?.caseId, { ownerUid: authenticated.uid });
+  requireVerifiedUser(request);
+  const result = await deleteCourtPostData(request.data?.caseId, { ownerUid: request.auth.uid });
   return { success: true, ...result };
 });
 
 exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
-  requireAppCheck(request);
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
+  requireVerifiedUser(request);
+  if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
   }
   const result = await deleteCourtPostData(request.data?.caseId);
   const auditLogged = await writeAdminLog(request.auth.uid, 'deleteCourtPost', result.caseId, {
     deleted: result.deleted,
-    removedLegacyAlias: result.removedLegacyAlias
+    removedLegacyAlias: result.removedLegacyAlias,
+    lockedBeforeDelete: result.lockedBeforeDelete
   });
   return { success: true, auditLogged, ...result };
 });
 
 exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
-  requireAppCheck(request);
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
+  requireVerifiedUser(request);
+  if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 회원 프로필을 삭제할 수 있습니다.');
   }
   const userId = cleanId(request.data?.userId);
@@ -150,6 +187,10 @@ exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory:
 });
 
 Object.defineProperties(module.exports, {
+  acquireCourtDeletionLock: {
+    value: acquireCourtDeletionLock,
+    enumerable: false
+  },
   deleteCourtPostData: {
     value: deleteCourtPostData,
     enumerable: false
