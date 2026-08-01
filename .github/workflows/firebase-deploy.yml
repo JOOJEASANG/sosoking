@@ -87,6 +87,13 @@ jobs:
             echo "Automatic daily AI schedule is already absent."
           fi
 
+      - name: Verify deployed Functions match source
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: |
+          firebase functions:list --project sosoking-481e6 --json > "$RUNNER_TEMP/functions-list.json"
+          node tools/check-deployed-functions.mjs "$RUNNER_TEMP/functions-list.json"
+
       - name: Sanitize existing public results
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -137,4 +144,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, Functions, Dripso moderation, preserved daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, Functions, Dripso moderation, deployed-function drift validation, preserved daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
