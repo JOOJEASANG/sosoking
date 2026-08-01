@@ -100,6 +100,12 @@ jobs:
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node functions/sanitize-public-results-cli.js
 
+      - name: Reformat existing verdict number lines
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node functions/migrate-verdict-number-lines-cli.js
+
       - name: Deploy Firestore configuration and Hosting prerequisites
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -144,4 +150,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, Functions, Dripso moderation, deployed-function drift validation, preserved daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, Functions, Dripso moderation, deployed-function drift validation, existing verdict number-line migration, preserved daily court catalog, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
