@@ -21,6 +21,8 @@ function normalizeSequentialList(value) {
     const number = Number(match[2]);
     const markerIndex = match.index + delimiter.length;
     const dateLike = looksLikeDatePrefix(text, markerIndex);
+    const alreadyAtLineStart = delimiter === ''
+      && (match.index === 0 || text.charAt(match.index - 1) === '\n');
 
     output += text.slice(cursor, match.index);
 
@@ -32,7 +34,7 @@ function normalizeSequentialList(value) {
       const linePrefix = text.slice(lineStart, match.index).trim();
       if (/^(?:재판부\s*)?주문\s*[:：]?$/.test(linePrefix)) nextDelimiter = '\n';
     } else if (!dateLike && active && number === expectedNumber) {
-      nextDelimiter = delimiter.includes('\n') ? delimiter : '\n';
+      nextDelimiter = alreadyAtLineStart ? '' : '\n';
       expectedNumber += 1;
     }
 
