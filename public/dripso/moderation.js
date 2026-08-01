@@ -90,6 +90,23 @@ function addCommentActions(topicId, ownedIds) {
   });
 }
 
+async function loadOwnership(topicId, commentIds) {
+  const ownedIds = new Set();
+  let topicOwned = false;
+  const chunks = [];
+  for (let index = 0; index < commentIds.length; index += 100) {
+    chunks.push(commentIds.slice(index, index + 100));
+  }
+  if (!chunks.length) chunks.push([]);
+
+  for (const chunk of chunks) {
+    const response = await getOwnership({ topicId, commentIds: chunk });
+    if (response.data?.topicOwned === true) topicOwned = true;
+    for (const commentId of response.data?.ownedCommentIds || []) ownedIds.add(commentId);
+  }
+  return { topicOwned, ownedIds };
+}
+
 async function decorate() {
   if (decorating) return;
   const topicId = topicIdFromHash();
@@ -107,10 +124,9 @@ async function decorate() {
     const commentIds = cards
       .map(card => card.dataset.commentId || card.querySelector('[data-like]')?.dataset.like || '')
       .filter(Boolean);
-    const response = await getOwnership({ topicId, commentIds });
-    const ownedIds = new Set(response.data?.ownedCommentIds || []);
-    addTopicActions(topicId, response.data?.topicOwned === true);
-    addCommentActions(topicId, ownedIds);
+    const ownership = await loadOwnership(topicId, commentIds);
+    addTopicActions(topicId, ownership.topicOwned);
+    addCommentActions(topicId, ownership.ownedIds);
   } catch (error) {
     console.warn('Dripso ownership decoration failed:', error?.code || error);
   } finally {
