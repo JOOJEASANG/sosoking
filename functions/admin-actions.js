@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
-const { requireVerifiedUser } = require('./security');
+const { requireAppCheck, requireVerifiedUser } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -161,6 +161,7 @@ exports.deleteOwnCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memor
 
 exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
   requireVerifiedUser(request);
+  requireAppCheck(request);
   if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
   }
@@ -175,6 +176,7 @@ exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: 
 
 exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
   requireVerifiedUser(request);
+  requireAppCheck(request);
   if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 회원 프로필을 삭제할 수 있습니다.');
   }
