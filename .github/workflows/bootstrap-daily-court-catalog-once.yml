@@ -1,0 +1,81 @@
+name: Bootstrap Daily Court Catalog Once
+
+on:
+  push:
+    branches:
+      - ops/bootstrap-daily-court-1000-20260802
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    concurrency:
+      group: daily-court-catalog-bootstrap
+      cancel-in-progress: false
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@15.24.0
+
+      - name: Install validation dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions --no-audit --no-fund
+
+      - name: Verify registered secrets
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          LAW_OPEN_API_OC: ${{ secrets.LAW_OPEN_API_OC }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6"
+            exit 1
+          fi
+          if [ -z "$LAW_OPEN_API_OC" ]; then
+            echo "Missing GitHub secret: LAW_OPEN_API_OC"
+            exit 1
+          fi
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "Required secrets are registered."
+
+      - name: Preserve current verified cases
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node tools/sync-daily-real-court-catalog.mjs
+
+      - name: Import 1000 official court cases
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+          LAW_OPEN_API_OC: ${{ secrets.LAW_OPEN_API_OC }}
+          DAILY_COURT_TARGET_SIZE: '1000'
+        run: node tools/bootstrap-daily-real-court-1000.mjs
+
+      - name: Verify 1000 unique stored cases
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+          DAILY_COURT_TARGET_SIZE: '1000'
+          DAILY_COURT_REQUIRE_TARGET: 'true'
+        run: node tools/write-daily-court-catalog-status.mjs
+
+      - name: Deploy verified catalog status to Hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
+
+      - name: Completion summary
+        run: echo "Daily court catalog now contains 1000 verified records and Hosting status was deployed."
