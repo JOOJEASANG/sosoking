@@ -1,4 +1,6 @@
 const CURRENT_COPY_MARKER = 'ai-life-verdict-only';
+const FEED_KICKER = '🔥 사용자가 공개한 AI 생활판결';
+const FEED_HEADING = '최근 공개 AI 판결 5건';
 
 function applyCurrentHomeCopy() {
   const page = document.getElementById('page-content');
@@ -14,8 +16,8 @@ function applyCurrentHomeCopy() {
   if (feedSection) {
     const kicker = feedSection.children[0];
     const heading = feedSection.children[1];
-    if (kicker) kicker.textContent = '🔥 사용자가 공개한 AI 생활판결';
-    if (heading) heading.textContent = '최근 공개 AI 판결 5건';
+    if (kicker && kicker.textContent !== FEED_KICKER) kicker.textContent = FEED_KICKER;
+    if (heading && heading.textContent !== FEED_HEADING) heading.textContent = FEED_HEADING;
   }
 
   const serviceNotice = Array.from(page.querySelectorAll('.disclaimer'))
