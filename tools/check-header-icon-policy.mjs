@@ -18,7 +18,6 @@ for (const value of [
   "['#/discussion/', '💬']",
   "['#/board', '📜']",
   "['#/submit', '📝']",
-  "['#/daily-court', '👩‍⚖️']",
   "['#/my-cases', '🗂️']",
   "['#/guide', '📖']",
   "['#/auth', '🔐']",
@@ -26,6 +25,9 @@ for (const value of [
   "['#/policy/ai_disclaimer', '🤖']",
   "['#/policy/terms', '📄']"
 ]) need(policy, value, 'header icon policy');
+if (policy.includes('daily-court') || policy.includes('오늘의 재판')) {
+  errors.push('header icon policy: removed daily-court mapping remains');
+}
 
 const brand = read('public/css/brand-logo.css');
 need(brand, '.page-header .logo::before', 'existing shared header logo source');
@@ -43,10 +45,7 @@ const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"
 if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active application cache versions differ');
 }
-for (const value of [
-  "const CACHE_NAME = 'sosoking-app-v20260730-header-icon-single-1';",
-  '/js/components/header-icons.js?v=20260730-header-icon-single-1'
-]) need(worker, value, 'header icon cache');
+need(worker, '/js/components/header-icons.js?v=20260730-header-icon-single-1', 'header icon cache');
 
 if (errors.length) {
   console.error(`Header icon policy validation failed (${errors.length})`);
@@ -54,4 +53,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Header icon policy validation passed: every public page header uses one route-specific icon and suppresses the duplicate shared logo.');
+console.log('Header icon policy validation passed: every public page header uses one route-specific icon and removed routes have no mapping.');
