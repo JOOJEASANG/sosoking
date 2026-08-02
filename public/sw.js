@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-2';
+const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-2';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-public-original-modal-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1';
@@ -69,7 +70,7 @@ const APP_SHELL = [
   '/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2',
   '/js/app.js?v=20260802-remove-daily-court-2',
   '/js/home-copy-guard.js?v=20260802-no-real-cases-1',
-  '/js/original-inline-accordion-guard.js?v=20260802-original-inline-accordion-1',
+  '/js/original-inline-accordion-guard.js?v=20260802-original-header-button-1',
   '/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
