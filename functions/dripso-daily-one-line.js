@@ -38,7 +38,7 @@ async function loadNickname(uid) {
     : '익명 드리퍼';
 }
 
-exports.addDripsoComment = onCall({
+exports.dailyOneLineAddDripsoComment = onCall({
   region: REGION,
   timeoutSeconds: 30,
   memory: '256MiB'
