@@ -1,4 +1,4 @@
-import { renderPolicy as renderBasePolicy } from './policy.js?v=20260802-community-court-1';
+import { renderPolicy as renderBasePolicy } from './policy.js?v=20260730-final-audit-1';
 import { db } from '../firebase.js?v=20260630-3';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
