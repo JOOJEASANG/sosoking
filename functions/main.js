@@ -10,9 +10,8 @@ require('./humor-prompt');
 require('./document-output-quality');
 
 Object.assign(exports, require('./daily'));
-// 기존 실제 판례 구현은 되돌리기용으로 보존한다.
-Object.assign(exports, require('./daily-real-court'));
-// 동일 callable 이름을 공개 접수사건 기반 선택재판으로 교체한다.
+// 기존 실제 판례 구현은 functions/daily-real-court.js에 되돌리기용으로만 보존한다.
+// 운영 callable은 공개 접수사건 기반 선택재판만 노출한다.
 Object.assign(exports, require('./daily-community-court'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
