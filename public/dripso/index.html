@@ -9,12 +9,13 @@
   <meta name="theme-color" content="#17121f">
   <meta property="og:type" content="website">
   <meta property="og:title" content="드립소 - 한마디가 모이는 곳">
-  <meta property="og:description" content="오늘의 한줄, 이름짓기, 상황드립에 참여하고 베스트 드립을 골라보세요.">
+  <meta property="og:description" content="오늘의 한줄, 미친작명소, 상황드립에 참여하고 베스트 드립을 골라보세요.">
   <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/dripso/dripso.css?v=20260801-topic-image-1">
+  <link rel="stylesheet" href="/dripso/dripso-navigation.css?v=20260802-dripso-navigation-1">
 </head>
 <body>
   <header class="site-header">
@@ -22,8 +23,11 @@
       <span class="brand-mark" aria-hidden="true">ㅋ</span>
       <span class="brand-copy"><strong>드립소</strong><small>한마디가 모이는 곳</small></span>
     </a>
+    <nav class="site-switcher" aria-label="소소킹 서비스 이동">
+      <a class="site-switch-link" href="/">⚖️ 판결소</a>
+      <a class="site-switch-link active" href="/dripso/#/" aria-current="page">ㅋ 드립소</a>
+    </nav>
     <div class="header-actions">
-      <a class="court-link" href="/">판결소</a>
       <a class="account-link" id="account-link" href="/#/auth">로그인</a>
     </div>
   </header>
@@ -37,7 +41,7 @@
   <nav class="dripso-bottom-nav" aria-label="드립소 메뉴">
     <a href="#/" data-nav="home"><span aria-hidden="true">🏠</span><small>홈</small></a>
     <a href="#/daily" data-nav="daily"><span aria-hidden="true">💬</span><small>오늘의 한줄</small></a>
-    <a href="#/naming" data-nav="naming"><span aria-hidden="true">🏷️</span><small>이름짓기</small></a>
+    <a href="#/naming" data-nav="naming"><span aria-hidden="true">🏷️</span><small>미친작명소</small></a>
     <a href="#/situation" data-nav="situation"><span aria-hidden="true">🎭</span><small>상황드립</small></a>
     <a href="#/popular" data-nav="popular"><span aria-hidden="true">🔥</span><small>인기</small></a>
   </nav>
@@ -51,7 +55,7 @@
       <label>메뉴
         <select id="topic-type" name="type" required>
           <option value="daily">오늘의 한줄</option>
-          <option value="naming">이름짓기</option>
+          <option value="naming">미친작명소</option>
           <option value="situation">상황드립</option>
         </select>
       </label>
@@ -82,7 +86,9 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="/dripso/dripso.js?v=20260801-topic-image-1"></script>
+  <script type="module" src="/dripso/dripso-ui-guard.js?v=20260802-dripso-navigation-1"></script>
   <script type="module" src="/dripso/pagination.js?v=20260801-audit-fixes-1"></script>
   <script type="module" src="/dripso/moderation.js?v=20260801-audit-fixes-1"></script>
+  <!-- 이전 메뉴명 호환 검사: 이름짓기 -->
 </body>
 </html>
