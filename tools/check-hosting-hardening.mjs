@@ -63,6 +63,7 @@ if (!theme.includes('prefers-reduced-motion:reduce') || !theme.includes(':focus-
 }
 
 const index = read('public/index.html');
+const dripsoIndex = read('public/dripso/index.html');
 const adminIndex = read('public/admin/index.html');
 const themeInit = read('public/js/theme-init.js');
 if (!index.includes('/js/theme-init.js?v=') || !adminIndex.includes('/js/theme-init.js?v=')) {
@@ -80,10 +81,23 @@ if (!themeVersion || !serviceWorker.includes(`/js/theme-init.js?v=${themeVersion
   errors.push('public/index.html and public/sw.js: theme bootstrap cache versions are inconsistent');
 }
 
+for (const [pagePath, html] of [
+  ['public/index.html', index],
+  ['public/dripso/index.html', dripsoIndex]
+]) {
+  const versionedAssets = [...html.matchAll(/(?:src|href)=["'](\/(?:js|css|dripso)\/[^"']+\?v=[^"']+)["']/g)]
+    .map(match => match[1]);
+  for (const asset of versionedAssets) {
+    if (!serviceWorker.includes(`'${asset}'`)) {
+      errors.push(`${pagePath} and public/sw.js: active offline asset is missing or version-mismatched: ${asset}`);
+    }
+  }
+}
+
 if (errors.length) {
   console.error(`Hosting hardening validation failed (${errors.length})`);
   errors.forEach(error => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('Hosting hardening validation passed: enforced clickjacking and script CSP, cache policy, auth compatibility, and guarded theme storage.');
+console.log('Hosting hardening validation passed: security headers, offline fallbacks, guarded theme storage, and all active versioned page assets are synchronized.');
