@@ -30,23 +30,31 @@ exports.getPublicCaseOriginal = onCall({
     db.doc(`cases/${caseId}`).get()
   ]);
 
-  if (!resultSnap.exists || resultSnap.data().isPublic !== true) {
-    throw new HttpsError('permission-denied', '공개 판결기록의 접수 원문만 볼 수 있습니다.');
-  }
   if (!caseSnap.exists) {
     throw new HttpsError('not-found', '접수 원문을 찾을 수 없습니다.');
   }
 
-  const resultData = resultSnap.data() || {};
+  const resultData = resultSnap.exists ? (resultSnap.data() || {}) : {};
   const caseData = caseSnap.data() || {};
+  const requesterUid = String(request.auth?.uid || '');
+  const ownerUid = String(caseData.userId || '');
+  const isOwner = Boolean(requesterUid && ownerUid && requesterUid === ownerUid);
+  const isPublic = Boolean(resultSnap.exists && resultData.isPublic === true);
+
+  if (!isOwner && !isPublic) {
+    throw new HttpsError('permission-denied', '판결 소유자 또는 공개 판결기록만 접수 원문을 볼 수 있습니다.');
+  }
+
   const caseDescription = cleanText(caseData.caseDescription, 600);
   if (!caseDescription) {
     throw new HttpsError('not-found', '기록된 접수 원문이 없습니다.');
   }
 
-  const safety = inspectContent(caseDescription);
-  if (!safety.safe) {
-    throw new HttpsError('failed-precondition', '개인정보 보호를 위해 이 접수 원문은 공개할 수 없습니다.');
+  if (!isOwner) {
+    const safety = inspectContent(caseDescription);
+    if (!safety.safe) {
+      throw new HttpsError('failed-precondition', '개인정보 보호를 위해 이 접수 원문은 공개할 수 없습니다.');
+    }
   }
 
   return {
