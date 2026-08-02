@@ -1,8 +1,8 @@
 {
   "status": "failure",
-  "runId": "30726720012",
-  "sourceSha": "107f560661b6062e29b146011a6b610f0e28dc62",
+  "runId": "30727002413",
+  "sourceSha": "3c6baa57231484788d9cf6bf610cf525416409d4",
   "targetCount": 1000,
   "firebaseProject": "sosoking-481e6",
-  "recordedAt": "2026-08-02T01:15:55Z"
+  "recordedAt": "2026-08-02T01:25:27Z"
 }
