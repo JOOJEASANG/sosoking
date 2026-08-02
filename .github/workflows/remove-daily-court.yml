@@ -1,0 +1,385 @@
+name: Remove Daily Court Feature
+
+on:
+  push:
+    branches:
+      - agent/remove-daily-court
+
+jobs:
+  remove-feature:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/remove-daily-court
+          fetch-depth: 0
+
+      - name: Remove daily court code and references
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          ROOT = Path('.')
+          VERSION = '20260802-remove-daily-court-1'
+
+          def read(path):
+              return (ROOT / path).read_text(encoding='utf-8')
+
+          def write(path, content):
+              target = ROOT / path
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_text(content, encoding='utf-8')
+
+          def replace_required(text, old, new, label):
+              if old not in text:
+                  raise RuntimeError(f'{label}: expected text not found: {old[:100]}')
+              return text.replace(old, new)
+
+          delete_paths = [
+              'functions/daily-real-court.js',
+              'public/js/pages/daily-real-court.js',
+              'public/js/pages/daily-real-court-layout.js',
+              'content/daily-real-court-cases.json',
+              'tools/check-daily-real-court.mjs',
+              'tools/check-daily-court-rules.mjs',
+              'tools/check-pc-daily-court-icon.mjs',
+              'tools/sync-daily-real-court-catalog.mjs',
+              'tools/bootstrap-daily-real-court-1000.mjs',
+              'tools/write-daily-court-catalog-status.mjs',
+              '.github/workflows/bootstrap-daily-court-catalog.yml',
+              '.github/workflows/remove-daily-court.yml'
+          ]
+          for path in delete_paths:
+              target = ROOT / path
+              if target.exists():
+                  target.unlink()
+
+          package_path = ROOT / 'package.json'
+          package = json.loads(package_path.read_text(encoding='utf-8'))
+          remove_checks = {
+              'node tools/check-pc-daily-court-icon.mjs',
+              'node tools/check-daily-real-court.mjs'
+          }
+          check_parts = [part for part in package['scripts']['check'].split(' && ') if part not in remove_checks]
+          package['scripts']['check'] = ' && '.join(check_parts)
+          package['scripts']['test:rules'] = package['scripts']['test:rules'].replace(
+              ' && node tools/check-daily-court-rules.mjs', ''
+          )
+          package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          main = read('functions/main.js')
+          main = replace_required(main, "Object.assign(exports, require('./daily-real-court'));\n", '', 'functions/main.js')
+          write('functions/main.js', main)
+
+          app = read('public/js/app.js')
+          app = '\n'.join(
+              line for line in app.splitlines()
+              if not any(token in line for token in ('daily-real-court', 'daily-three-ranking', "path === '/daily-court'", "hash === '#/daily-court'"))
+          ) + '\n'
+          app = app.replace(
+              "./pages/guide.js?v=20260730-final-audit-1",
+              f"./pages/guide.js?v={VERSION}"
+          )
+          app = app.replace(
+              "./components/nav.js?v=20260801-pc-daily-icon-1",
+              f"./components/nav.js?v={VERSION}"
+          )
+          write('public/js/app.js', app)
+
+          nav = read('public/js/components/nav.js')
+          nav = nav.replace("  if (path === '/daily-court') return '#/daily-court';\n", '')
+          nav = nav.replace("  const isDailyCourt = hash.startsWith('#/daily-court');\n", '')
+          nav = re.sub(
+              r'\n    <a href="#/daily-court"[\s\S]*?</a>',
+              '',
+              nav,
+              count=1
+          )
+          write('public/js/components/nav.js', nav)
+
+          brand = read('public/css/brand-logo.css')
+          brand = brand.replace(
+              '/* 판결소는 홈·판결기록·접수·오늘재판·계정의 5개 메뉴만 사용한다. */',
+              '/* 판결소는 홈·판결기록·접수·계정의 4개 메뉴만 사용한다. */'
+          )
+          brand = brand.replace('flex: 1 1 20%;', 'flex: 1 1 25%;')
+          write('public/css/brand-logo.css', brand)
+
+          home = read('public/js/pages/home-court.js')
+          home = home.replace(
+              '내 사건은 AI 판사에게 맡기고, 오늘의 실제 판례는 직접 판결해보세요.',
+              '내 사건은 AI 판사에게 맡기고, 공개 판결은 투표와 토론으로 함께 즐겨보세요.'
+          )
+          home = home.replace(
+              '<div><strong>1판</strong><span>오늘의 재판</span></div>',
+              '<div><strong>투표</strong><span>판결기록 참여</span></div>'
+          )
+          write('public/js/pages/home-court.js', home)
+
+          guide = f'''export function renderGuide(container) {{
+            const steps = [
+              ['🔐', '로그인하고 생활사건 접수', 'Google 또는 이메일 계정으로 로그인한 뒤 사소한 생활분쟁을 접수합니다. 실명·연락처·주소 등 개인정보는 빼주세요.'],
+              ['🎲', 'AI 판사 자동 배정', '엄벌주의형·감성형·현실주의형·과몰입형·피곤형·논리집착형·드립형 중 한 명이 사건마다 자동 배정됩니다.'],
+              ['📑', '다섯 문서와 생활형 처분 확인', 'AI가 사건접수, 수사보고, 원고측 변론, 피고측 변론, 판결문을 문서처럼 작성합니다. 접수한 본인은 결과를 바로 확인할 수 있습니다.'],
+              ['🔒', '기본은 비공개, 공개는 직접 선택', '사건과 판결문은 본인에게만 보이는 것이 기본입니다. 공개로 전환한 경우에만 판결기록과 투표·토론 대상이 됩니다.']
+            ];
+
+            const faqs = [
+              ['진짜 법원인가요?', '아닙니다. 생성형 AI가 만든 오락용 생활판결이며 법률상담이나 실제 재판을 대신하지 않습니다.'],
+              ['사건 접수에 로그인이 필요한가요?', '네. 내 사건과 공개 여부를 안전하게 관리하기 위해 Google 또는 이메일 로그인이 필요합니다. 이메일 가입자는 인증을 완료해야 합니다.'],
+              ['하루에 몇 번 접수할 수 있나요?', '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다. 운영자는 테스트·비용·안전 상황에 따라 계정당 일일 건수를 조절할 수 있습니다.'],
+              ['내 AI 판결은 언제 볼 수 있나요?', '접수한 본인은 생성이 끝나는 즉시 전체 결과를 확인할 수 있습니다. 사건은 기본적으로 비공개입니다.'],
+              ['판결 결과를 공개하면 어떻게 되나요?', '안전하게 정리된 사건과 AI 판결문이 판결기록에 표시되고 투표와 토론 대상이 됩니다. 다시 비공개로 전환하거나 사건을 삭제할 수 있습니다.'],
+              ['판결기록에서는 무엇을 할 수 있나요?', '공개된 판결을 읽고 정해진 반응에 투표하거나 토론에 참여할 수 있습니다. 개별 이용자의 투표 선택은 공개하지 않습니다.'],
+              ['진짜 심각한 일이라면요?', '실제 범죄·손해·가정·노동·계약·의료 문제는 변호사, 대한법률구조공단 또는 관계 기관에 상담해야 합니다.']
+            ];
+
+            container.innerHTML = `
+              <div>
+                <div class="page-header">
+                  <a href="#/" class="back-btn" aria-label="홈으로 돌아가기">‹</a>
+                  <span class="logo">이용 안내</span>
+                </div>
+                <div class="container" style="padding-top:28px;padding-bottom:90px;">
+                  <div style="text-align:center;margin-bottom:32px;">
+                    <div style="font-size:48px;margin-bottom:12px;" aria-hidden="true">⚖️</div>
+                    <h1 style="font-family:var(--font-serif);font-size:22px;font-weight:800;margin-bottom:6px;color:var(--gold);">소소킹 판결소 사용법</h1>
+                    <div style="font-size:13px;color:var(--cream-dim);">내 억울함은 AI에게, 공개 판결은 모두의 선택과 토론으로.</div>
+                  </div>
+
+                  <section aria-labelledby="guide-steps-title" style="margin-bottom:36px;">
+                    <h2 id="guide-steps-title" style="font-family:var(--font-serif);font-size:18px;font-weight:800;margin-bottom:6px;color:var(--gold);">AI 생활판결</h2>
+                    <p style="font-size:12px;color:var(--cream-dim);margin-bottom:16px;">사소한 억울함을 접수하고 문서형 AI 판결을 받는 과정입니다.</p>
+                    <div style="display:flex;flex-direction:column;gap:14px;">
+                      ${{steps.map(([icon, title, desc], index) => `
+                        <div class="card" style="display:flex;gap:15px;align-items:flex-start;padding:18px 20px;">
+                          <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border);border-radius:50%;background:var(--gold-dim);font-size:22px;" aria-hidden="true">${{icon}}</div>
+                          <div style="min-width:0;">
+                            <div style="font-size:10px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:3px;">STEP ${{index + 1}}</div>
+                            <div style="font-weight:800;font-size:15px;margin-bottom:5px;color:var(--cream);">${{title}}</div>
+                            <div style="font-size:13px;color:var(--cream-dim);line-height:1.75;">${{desc}}</div>
+                          </div>
+                        </div>`).join('')}}
+                    </div>
+                  </section>
+
+                  <section aria-labelledby="participation-title" style="margin-bottom:36px;">
+                    <h2 id="participation-title" style="font-family:var(--font-serif);font-size:18px;font-weight:800;margin-bottom:6px;color:var(--gold);">판결기록 참여</h2>
+                    <p style="font-size:12px;color:var(--cream-dim);margin-bottom:16px;">다른 이용자가 공개한 생활판결을 읽고 선택형 투표와 토론에 참여합니다.</p>
+                    <a href="#/board" class="btn btn-secondary">📜 공개 판결 둘러보기</a>
+                  </section>
+
+                  <section aria-labelledby="guide-faq-title" style="margin-bottom:36px;">
+                    <h2 id="guide-faq-title" style="font-family:var(--font-serif);font-size:18px;font-weight:800;margin-bottom:16px;color:var(--gold);">자주 묻는 질문</h2>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                      ${{faqs.map(([question, answer]) => `
+                        <details class="card" style="padding:0;overflow:hidden;">
+                          <summary style="list-style:none;cursor:pointer;padding:16px 18px;font-weight:800;font-size:14px;color:var(--cream);display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                            <span>Q. ${{question}}</span><span style="color:var(--gold);">＋</span>
+                          </summary>
+                          <div style="padding:0 18px 17px;font-size:13px;color:var(--cream-dim);line-height:1.75;">A. ${{answer}}</div>
+                        </details>`).join('')}}
+                    </div>
+                  </section>
+
+                  <div class="disclaimer" style="margin-bottom:24px;">
+                    <strong>⚠️ 오락 서비스 안내</strong><br>
+                    AI 생활판결은 생성형 AI가 만든 오락 콘텐츠이며 법적 효력이 없습니다. 중요한 문제는 반드시 전문가나 관계 기관에 상담해주세요.
+                  </div>
+
+                  <a href="#/submit" class="btn btn-primary">⚖️ 내 사건 판결받기</a>
+                </div>
+              </div>`;
+          }}
+          '''
+          write('public/js/pages/guide.js', guide)
+
+          index = read('public/index.html')
+          index = index.replace(
+              'AI 생활판결과 오늘의 재판을 즐기며, 사건접수부터 판결까지 재치와 유머로 읽고 웃는 오락형 생활법정 놀이터입니다.',
+              'AI 생활판결을 받고 공개 판결의 투표와 토론에 참여하며, 사건접수부터 판결까지 재치와 유머로 즐기는 오락형 생활법정 놀이터입니다.'
+          )
+          index = index.replace(
+              '소소한 일상을 판결하는 생활법정 놀이터. AI 생활판결과 오늘의 재판을 사건접수부터 판결까지 유머로 즐겨보세요.',
+              '소소한 일상을 판결하는 생활법정 놀이터. AI 생활판결과 공개 판결의 투표·토론을 유머로 즐겨보세요.'
+          )
+          index = index.replace(
+              'AI 생활판결과 오늘의 재판을 웃기게 심리하는 오락형 생활법정 놀이터입니다.',
+              'AI 생활판결과 공개 판결의 투표·토론을 웃기게 즐기는 오락형 생활법정 놀이터입니다.'
+          )
+          index = re.sub(r'/css/brand-logo\.css\?v=[^"\']+', f'/css/brand-logo.css?v={VERSION}', index)
+          index = re.sub(r'/js/app\.js\?v=[^"\']+', f'/js/app.js?v={VERSION}', index)
+          index = '\n'.join(line for line in index.splitlines() if not any(token in line for token in ('daily-three-ranking', 'daily-real-court', 'pc-daily-icon'))) + '\n'
+          write('public/index.html', index)
+
+          worker = read('public/sw.js')
+          worker = re.sub(r"const CACHE_NAME = 'sosoking-app-v[^']+';", f"const CACHE_NAME = 'sosoking-app-v{VERSION}';", worker, count=1)
+          worker = re.sub(r'/js/app\.js\?v=[^\'"\s]+', f'/js/app.js?v={VERSION}', worker)
+          worker = re.sub(r'/css/brand-logo\.css\?v=[^\'"\s]+', f'/css/brand-logo.css?v={VERSION}', worker)
+          worker = re.sub(r'/js/pages/guide\.js\?v=[^\'"\s]+', f'/js/pages/guide.js?v={VERSION}', worker)
+          worker = re.sub(r'/js/components/nav\.js\?v=[^\'"\s]+', f'/js/components/nav.js?v={VERSION}', worker)
+          worker = '\n'.join(
+              line for line in worker.splitlines()
+              if not any(token in line for token in ('daily-real-court', 'daily-three-ranking', 'pc-daily-icon'))
+          ) + '\n'
+          write('public/sw.js', worker)
+
+          firebase_path = ROOT / 'firebase.json'
+          firebase = json.loads(firebase_path.read_text(encoding='utf-8'))
+          for header in firebase.get('hosting', {}).get('headers', []):
+              if header.get('source') == '/@(board|submit|daily-court|guide|auth|my-cases)':
+                  header['source'] = '/@(board|submit|guide|auth|my-cases)'
+          firebase['hosting']['rewrites'] = [
+              item for item in firebase['hosting'].get('rewrites', [])
+              if item.get('source') != '/daily-court'
+          ]
+          firebase_path.write_text(json.dumps(firebase, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          rules = read('firestore.rules')
+          rules, count = re.subn(
+              r'\n    match /daily_court_catalog/\{caseId\} \{[\s\S]*?\n    match /case_id_aliases/\{aliasId\} \{',
+              '\n    match /case_id_aliases/{aliasId} {',
+              rules,
+              count=1
+          )
+          if count != 1:
+              raise RuntimeError('firestore.rules: daily court rule block not found')
+          write('firestore.rules', rules)
+
+          indexes_path = ROOT / 'firestore.indexes.json'
+          indexes = json.loads(indexes_path.read_text(encoding='utf-8'))
+          indexes['indexes'] = [
+              item for item in indexes.get('indexes', [])
+              if not (
+                  item.get('collectionGroup') == 'votes'
+                  and any(field.get('fieldPath') == 'completed' for field in item.get('fields', []))
+                  and any(field.get('fieldPath') == 'score' for field in item.get('fields', []))
+              )
+          ]
+          indexes_path.write_text(json.dumps(indexes, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          deploy = read('.github/workflows/firebase-deploy.yml')
+          deploy = deploy.replace(',functions:getDailyRealCourt,functions:submitDailyRealCourtVerdict', '')
+          deploy = re.sub(
+              r'      - name: Remove obsolete automatic AI schedule[\s\S]*?(?=      - name: Verify deployed Functions match source)',
+              '''      - name: Remove obsolete Functions\n        env:\n          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json\n        run: |\n          firebase functions:list --project sosoking-481e6 > "$RUNNER_TEMP/functions-list.txt"\n          for function_name in createDailyAiCase getDailyRealCourt submitDailyRealCourtVerdict; do\n            if grep -q "$function_name" "$RUNNER_TEMP/functions-list.txt"; then\n              firebase functions:delete "$function_name" --region asia-northeast3 --force --project sosoking-481e6 --non-interactive\n            else\n              echo "$function_name is already absent."\n            fi\n          done\n\n''',
+              deploy,
+              count=1
+          )
+          deploy = re.sub(
+              r'      - name: Sync verified daily court catalog without shrinking existing data[\s\S]*?(?=      - name: Sync safe public configuration)',
+              '',
+              deploy,
+              count=1
+          )
+          deploy = deploy.replace('Deploy Hosting independently of external catalog import', 'Deploy Hosting')
+          deploy = deploy.replace(
+              'preserved daily court catalog, ',
+              ''
+          )
+          write('.github/workflows/firebase-deploy.yml', deploy)
+
+          home_check = f'''import fs from 'node:fs';
+
+          const errors = [];
+          const read = file => fs.readFileSync(file, 'utf8');
+          const need = (source, value, label) => {{
+            if (!source.includes(value)) errors.push(`${{label}}: missing ${{value}}`);
+          }};
+
+          const homeJudges = read('public/js/pages/home-seven-judges.js');
+          for (const value of [
+            "./home-no-search.js?v=20260730-search-scope-1",
+            "name === '운명에 맡기기'",
+            "icon === '🎲'",
+            "card.remove()",
+            "heading.textContent = '7명의 AI 판사'",
+            "사건을 접수하면 7명 중 한 명이 자동으로 배정됩니다."
+          ]) need(homeJudges, value, 'seven-judge home');
+
+          const app = read('public/js/app.js');
+          need(app, "./pages/home-seven-judges.js?v=20260730-home-layout-route-1", 'application modules');
+          const normalizedRouteSource = app.split('function normalizedRoute() {{')[1]?.split('\\nfunction freshContentHost()')[0] || '';
+          for (const value of ["if (hash === '' || hash === '#')", "return hash || '#/'"]) {{
+            need(normalizedRouteSource, value, 'application routing');
+          }}
+          if (normalizedRouteSource.includes("if (hash === '#/' || hash === '' || hash === '#')")) {{
+            errors.push('application routing: explicit #/ home route is still overwritten by the current pathname');
+          }}
+          if (app.includes('daily-court') || app.includes('daily-real-court')) {{
+            errors.push('application modules: removed daily court route is still referenced');
+          }}
+
+          const index = read('public/index.html');
+          const worker = read('public/sw.js');
+          const appVersion = index.match(/<script type="module" src="\\/js\\/app\\.js\\?v=([^"']+)"/)?.[1] || '';
+          if (!appVersion) errors.push('public/index.html: active app version is missing');
+          if (!worker.includes(`/js/app.js?v=${{appVersion}}`)) errors.push('public/index.html and public/sw.js: active app cache versions differ');
+          if (!worker.includes(`const CACHE_NAME = 'sosoking-app-v${{appVersion}}';`)) errors.push('public/index.html and public/sw.js: active cache name differs from the application version');
+          need(worker, '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1', 'active application cache');
+
+          const packageJson = read('package.json');
+          need(packageJson, 'node tools/check-home-layout-routing.mjs', 'validation chain');
+
+          if (errors.length) {{
+            console.error(`Home and routing validation failed (${{errors.length}})`);
+            errors.forEach(error => console.error(`- ${{error}}`));
+            process.exit(1);
+          }}
+
+          console.log('Home and routing validation passed: seven judge cards remain, removed daily-court routes are absent, and active cache versions match.');
+          '''
+          write('tools/check-home-layout-routing.mjs', home_check)
+
+          forbidden = re.compile(r'(daily-real-court|daily_court_|#/daily-court|/daily-court|오늘재판|오늘의 실제 판례)')
+          matches = []
+          for path in ROOT.rglob('*'):
+              if not path.is_file() or '.git' in path.parts or path.suffix.lower() not in {'.js', '.mjs', '.json', '.yml', '.yaml', '.html', '.css', '.md'}:
+                  continue
+              text = path.read_text(encoding='utf-8', errors='ignore')
+              for line_no, line in enumerate(text.splitlines(), 1):
+                  if forbidden.search(line):
+                      matches.append(f'{path}:{line_no}:{line.strip()}')
+          if matches:
+              print('Remaining daily-court references:')
+              print('\n'.join(matches))
+          else:
+              print('No daily-court references remain.')
+          PY
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@15.24.0
+
+      - name: Install dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          npm ci --prefix functions --no-audit --no-fund
+
+      - name: Validate repository
+        run: npm test
+
+      - name: Commit cleaned feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "오늘의 재판 기능 제거"
+          git push origin agent/remove-daily-court
