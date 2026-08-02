@@ -6,6 +6,9 @@ const CACHE_NAME = 'sosoking-app-v20260802-community-court-1';
 // Cache lineage: /js/app.js?v=20260731-private-first-publication-1
 // Cache lineage: /js/app.js?v=20260730-discussion-court-1
 // Cache lineage: /js/pages/daily-real-court.js?v=20260730-daily-three-ranking-1
+// Cache lineage: /js/pages/submit-guard.js?v=20260730-configurable-limit-1
+// Cache lineage: /js/pages/submit-court.js?v=20260730-configurable-limit-1
+// Cache lineage: /js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1
 // Historical URL markers are retained for regression checks but are no longer precached.
 const APP_SHELL = [
   '/',
