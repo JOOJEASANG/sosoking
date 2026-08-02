@@ -38,7 +38,7 @@ async function loadNickname(uid) {
     : '익명 드리퍼';
 }
 
-exports.dailyOneLineAddDripsoComment = onCall({
+const dailyOneLineAddDripsoComment = onCall({
   region: REGION,
   timeoutSeconds: 30,
   memory: '256MiB'
@@ -101,3 +101,7 @@ exports.dailyOneLineAddDripsoComment = onCall({
 
   return { success: true, commentId: commentRef.id };
 });
+
+// main.js에서 기존 addDripsoComment를 교체하는 내부 구현이다.
+// `exports.<이름> =` 형식을 사용하지 않아 배포 대상 함수로 오인되지 않게 한다.
+module.exports = { dailyOneLineAddDripsoComment };
