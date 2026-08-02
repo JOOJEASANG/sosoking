@@ -6,11 +6,18 @@ const read = file => fs.readFileSync(file, 'utf8');
 const home = read('public/js/pages/home.js');
 for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
-  '오늘은 판결감입니다.',
-  '실제 판례는 직접 판결해보세요.',
-  'AI 생활판결과 실제 판례 맞히기'
+  '오늘은 판결감입니다.'
 ]) {
   if (!home.includes(phrase)) errors.push(`public/js/pages/home.js: 메인 문구 누락: ${phrase}`);
+}
+
+const homeCommunity = read('public/js/pages/home-community-court.js');
+for (const phrase of [
+  '오늘의 공개 생활사건',
+  '오늘의 선택재판',
+  '내 이야기는 사건접수에, 다른 생활사건은 선택으로 판결합니다.'
+]) {
+  if (!homeCommunity.includes(phrase)) errors.push(`public/js/pages/home-community-court.js: 선택형 오늘재판 문구 누락: ${phrase}`);
 }
 
 const homeCourt = read('public/js/pages/home-court.js');
@@ -26,25 +33,27 @@ for (const phrase of [
 
 const guide = read('public/js/pages/guide.js');
 for (const phrase of [
-  '접수 횟수와 대기시간은 운영 설정에 따라 달라질 수 있으며',
   '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다.',
-  '오늘의 실제 판례 3건 읽기',
-  '매일 실제 법원 판례 3건',
-  '실제 판단과 민심 비교하기',
-  '세 사건을 완료하면 일간 랭킹',
-  '매일 판례 3건이 제공되며',
-  '검색엔진에 노출될 수 있으며',
+  '제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.',
+  '오늘의 익명 생활사건 3건 읽기',
+  '공개사건이 부족할 때만 가상 생활사건',
+  '원고·피고·쌍방 중 선택하기',
+  'AI 판결과 민심 비교하기',
+  '세 사건을 완료하면 일간·주간·누적',
+  '검색엔진에 노출될 수 있습니다.',
   '개별 회원의 선택은 공개하지 않고'
 ]) {
   if (!guide.includes(phrase)) errors.push(`public/js/pages/guide.js: 이용 안내 누락: ${phrase}`);
 }
-for (const legacy of ['회원당 하루 1회입니다.', '매일 실제 법원 판례 한 건', '매일 한 사건이 제공되며']) {
+for (const legacy of ['회원당 하루 1회입니다.', '매일 실제 법원 판례 한 건', '매일 한 사건이 제공되며', '오늘의 실제 판례 3건']) {
   if (guide.includes(legacy)) errors.push(`public/js/pages/guide.js: 구버전 안내가 남아 있습니다: ${legacy}`);
 }
 
 const policy = read('public/js/pages/policy.js');
 for (const phrase of [
   '오늘의 재판 이용',
+  '공개를 허용한 익명 생활사건',
+  '원고·피고·쌍방',
   '검색엔진을 통해 노출',
   '개인정보 처리 및 보유 기간',
   '오늘의 재판 참여 정보',
@@ -57,19 +66,24 @@ for (const phrase of [
   '안전성 확보조치',
   '개인정보 보호 담당 및 문의',
   '생성형 AI 표시',
-  '오늘의 재판은 실제 판례'
+  '공개 유저 사건',
+  'AI 판단은 정답이나 법률의견이 아니라'
 ]) {
   if (!policy.includes(phrase)) errors.push(`public/js/pages/policy.js: 정책 고지 누락: ${phrase}`);
 }
 for (const type of ['terms', 'privacy', 'ai_disclaimer']) {
   if (!policy.includes(`type === '${type}'`)) errors.push(`public/js/pages/policy.js: ${type} 구버전 교체 기준 누락`);
 }
+for (const legacy of ['오늘의 재판은 국가법령정보센터', '매일 실제 판례 한 건', '실제 판례 3건을 제시']) {
+  if (policy.includes(legacy)) errors.push(`public/js/pages/policy.js: 실제 판례 구버전 정책이 남아 있습니다: ${legacy}`);
+}
 
 const policyLimit = read('public/js/pages/policy-configurable-limit.js');
 for (const phrase of [
   '접수 횟수와 재접수 대기시간은 서비스 화면에 표시된 현재 운영 설정을 따릅니다.',
   '제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.',
-  '매일 실제 판례 3건',
+  '공개에 동의한 익명 생활사건 3건',
+  '원고·피고·쌍방',
   '각 사건에 한 번씩',
   '일간·주간·누적 랭킹',
   'replaceLegacyLimitCopy',
@@ -84,7 +98,8 @@ for (const phrase of [
 const index = read('public/index.html');
 for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
-  'AI 생활판결과 오늘의 재판'
+  'AI 생활판결과 오늘의 재판',
+  '공개 생활사건은 선택만으로 판결'
 ]) {
   if (!index.includes(phrase)) errors.push(`public/index.html: 브랜드 메타정보 누락: ${phrase}`);
 }
@@ -94,14 +109,13 @@ if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index
 
 const app = read('public/js/app.js');
 const homeCourtVersion = app.match(/\.\/pages\/home-court\.js\?v=([^'";]+)/)?.[1] || '';
-if (!homeCourtVersion) {
-  errors.push('public/js/app.js: versioned home-court module is missing');
-}
+if (!homeCourtVersion) errors.push('public/js/app.js: versioned home-court module is missing');
 for (const moduleUrl of [
+  './pages/home-community-court.js?v=20260802-community-court-1',
   './pages/home-court.js?v=20260730-configurable-limit-1',
   './pages/submit-guard.js?v=20260730-configurable-limit-1',
   './pages/policy-configurable-limit.js?v=20260730-final-audit-1',
-  './pages/guide.js?v=20260730-final-audit-1',
+  './pages/guide.js?v=20260802-community-court-1',
   './components/footer.js?v=20260729-brand-policy-1'
 ]) {
   if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: 최신 문구·한도 모듈 버전 누락: ${moduleUrl}`);
@@ -111,7 +125,7 @@ if (!homeCourt.includes("./home.js?v=20260729-brand-policy-1")) {
 }
 
 const footer = read('public/js/components/footer.js');
-if (!footer.includes('AI 생활판결 · 실제 판례 게임 · 법적 효력 없음')) {
+if (!footer.includes('AI 생활판결 · 선택형 오늘의 재판 · 법적 효력 없음')) {
   errors.push('public/js/components/footer.js: 서비스 구성 안내 누락');
 }
 
@@ -124,8 +138,9 @@ if (!homeCourtVersion || !sw.includes(`/js/pages/home-court.js?v=${homeCourtVers
   errors.push('public/js/app.js 및 public/sw.js의 홈 모듈 버전이 일치하지 않음');
 }
 for (const asset of [
+  '/js/pages/home-community-court.js?v=20260802-community-court-1',
   '/js/pages/home.js?v=20260729-brand-policy-1',
-  '/js/pages/guide.js?v=20260730-final-audit-1',
+  '/js/pages/guide.js?v=20260802-community-court-1',
   '/js/pages/policy.js?v=20260730-final-audit-1',
   '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',
   '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
@@ -147,4 +162,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: dynamic submission limits, three-case real-court guidance, privacy disclosures, AI notice, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: dynamic submission limits, public lifestyle cases, selection-only daily court, privacy disclosures, AI notice, and synchronized cache versions.');
