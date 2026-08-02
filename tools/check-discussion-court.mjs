@@ -60,18 +60,24 @@ need(main, "require('./discussion')", 'function export');
 const deploy = read('.github/workflows/firebase-deploy.yml');
 need(deploy, 'functions:addDiscussionComment', 'function deployment');
 
-const firebase = read('firebase.json');
-need(firebase, '"source": "/discussion/**", "destination": "/index.html"', 'discussion rewrite');
-need(firebase, '/@(result|trial|discussion)/**', 'discussion CSP');
+const firebaseText = read('firebase.json');
+const firebase = JSON.parse(firebaseText);
+const hasDiscussionRewrite = firebase.hosting?.rewrites?.some(item => (
+  item.source === '/discussion/**' && item.destination === '/index.html'
+));
+if (!hasDiscussionRewrite) errors.push('discussion rewrite: /discussion/** to /index.html is missing');
+need(firebaseText, '/@(result|trial|discussion)/**', 'discussion CSP');
 
 const rules = read('firestore.rules');
 need(rules, 'match /court_comments/{caseId}/items/{commentId}', 'legacy comment compatibility');
 
 const index = read('public/index.html');
 const worker = read('public/sw.js');
-need(index, '/js/app.js?v=20260730-discussion-court-1', 'application entry');
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('discussion cache: active application versions differ');
+}
 for (const value of [
-  'sosoking-app-v20260730-discussion-court-1',
   '/js/pages/discussion.js?v=20260730-discussion-court-1',
   '/js/pages/result-comments.js?v=20260730-discussion-court-1',
   '/js/pages/board.js?v=20260730-discussion-court-1'
