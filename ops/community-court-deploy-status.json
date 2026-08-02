@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "hostingMatched": true,
+  "assetMatched": true,
+  "functionMatched": true,
+  "indexHttpStatus": "200",
+  "assetHttpStatus": "200",
+  "functionHttpStatus": "200",
+  "poolSize": 5,
+  "verifiedAt": "2026-08-02T02:25:54Z",
+  "mainCommit": "0b2d260f7d5e6993b935ec3d818d1c462761a7c7"
+}
