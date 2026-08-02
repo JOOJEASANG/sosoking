@@ -19,9 +19,24 @@ for (const phrase of [
 
 const homeEntry = read('public/js/pages/home-seven-judges.js');
 for (const phrase of [
-  '공개 판결은 투표와 토론으로 함께 즐겨보세요.',
-  'AI 생활판결과 공개 판결의 투표·토론'
+  '사소한 생활분쟁을 과하게 진지한 판결문으로 받아보세요.',
+  '사용자가 접수한 내용으로 만드는 오락용 AI 생활법정입니다.',
+  '사용자가 공개한 AI 생활판결',
+  '최근 공개 AI 판결 5건',
+  '실제 사례·판례 서비스가 아니며'
 ]) requireText(homeEntry, phrase, 'public/js/pages/home-seven-judges.js');
+for (const removed of ['실제 판례는 직접 판결해보세요.', 'AI 생활판결과 실제 판례 맞히기']) {
+  if (homeEntry.includes(removed)) errors.push(`public/js/pages/home-seven-judges.js: removed real-case copy remains: ${removed}`);
+}
+
+const homeCopyGuard = read('public/js/home-copy-guard.js');
+for (const phrase of [
+  "const CURRENT_COPY_MARKER = 'ai-life-verdict-only'",
+  '사소한 생활분쟁을 과하게 진지한 판결문으로 받아보세요.',
+  '사용자가 공개한 AI 생활판결',
+  '실제 사례·판례 서비스가 아니며',
+  'new MutationObserver(applyCurrentHomeCopy)'
+]) requireText(homeCopyGuard, phrase, 'public/js/home-copy-guard.js');
 
 const guide = read('public/js/pages/guide.js');
 for (const phrase of [
@@ -51,7 +66,8 @@ for (const removed of ['NEW_DAILY_COPY', 'OLD_DAILY_COPY', 'NEW_DAILY_STATS_COPY
 const index = read('public/index.html');
 for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
-  '공개 판결의 투표와 토론'
+  '공개 판결의 투표와 토론',
+  '/js/home-copy-guard.js?v=20260802-no-real-cases-1'
 ]) requireText(index, phrase, 'public/index.html');
 if (index.includes('오늘의 재판')) errors.push('public/index.html: removed feature metadata remains');
 if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index)) {
@@ -107,4 +123,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: current submission limits, public verdict participation, cleaned policy output, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: current AI-life-verdict copy, submission limits, public verdict participation, cleaned policy output, and synchronized cache versions.');
