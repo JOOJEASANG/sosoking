@@ -51,7 +51,7 @@ for (const required of [
   "legacyTrigger?.remove()",
   "createAccordion(page, caseId)",
   "new MutationObserver(schedule)",
-  "data.originalSource = 'cache-guard'"
+  "accordion.dataset.originalSource = 'cache-guard'"
 ]) {
   assert.ok(cacheGuard.includes(required), `기존 캐시 원문 버튼 정리 보호가 누락되었습니다: ${required}`);
 }
