@@ -8,6 +8,7 @@ const workflow = read('.github/workflows/firebase-deploy.yml');
 const resultPage = read('public/js/pages/result-comments.js');
 const cacheGuard = read('public/js/original-inline-accordion-guard.js');
 const index = read('public/index.html');
+const serviceWorker = read('public/sw.js');
 
 for (const required of [
   "exports.getPublicCaseOriginal = onCall",
@@ -43,7 +44,7 @@ for (const retired of [
   "header.appendChild(trigger)",
   "body.result-original-open"
 ]) {
-  assert.ok(!resultPage.includes(retired), `상단 버튼 또는 모달 방식이 남아 있습니다: ${retired}`);
+  assert.ok(!resultPage.includes(retired), `구형 모달 또는 직접 헤더 삽입 방식이 남아 있습니다: ${retired}`);
 }
 
 for (const required of [
@@ -51,12 +52,24 @@ for (const required of [
   "legacyTrigger?.remove()",
   "createAccordion(page, caseId)",
   "new MutationObserver(schedule)",
-  "accordion.dataset.originalSource = 'cache-guard'"
+  "accordion.dataset.originalSource = 'cache-guard'",
+  "positionOriginalHeaderButton(page)",
+  "toolbar.dataset.originalHeaderToolbar = 'true'",
+  "toolbar.appendChild(trigger)",
+  "trigger.dataset.originalHeaderPosition = 'top-right'",
+  "label.textContent = expanded ? '원문닫기' : '원문보기'",
+  "accordion.classList.toggle('is-open', !panel.hidden)",
+  "attributeFilter: ['aria-expanded', 'hidden']",
+  '.result-cover-toolbar',
+  '.result-original-panel-host:not(.is-open)'
 ]) {
-  assert.ok(cacheGuard.includes(required), `기존 캐시 원문 버튼 정리 보호가 누락되었습니다: ${required}`);
+  assert.ok(cacheGuard.includes(required), `원문보기 헤더 버튼 또는 캐시 정리 보호가 누락되었습니다: ${required}`);
 }
 
-const guardVersion = '20260802-original-inline-accordion-1';
-assert.ok(index.includes(`/js/original-inline-accordion-guard.js?v=${guardVersion}`), 'index.html이 새 원문 펼침 보호 스크립트를 불러와야 합니다.');
+const guardVersion = '20260802-original-header-button-1';
+const guardAsset = `/js/original-inline-accordion-guard.js?v=${guardVersion}`;
+assert.ok(index.includes(guardAsset), 'index.html이 원문보기 헤더 버튼 버전의 보호 스크립트를 불러와야 합니다.');
+assert.ok(serviceWorker.includes(`'${guardAsset}'`), '서비스워커가 원문보기 헤더 버튼 스크립트를 현재 버전으로 캐시해야 합니다.');
+assert.ok(serviceWorker.includes("const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1'"), '원문보기 배치 변경 시 서비스워커 캐시 이름이 갱신되어야 합니다.');
 
-console.log('Public original submission validation passed: public-only server lookup, safety recheck, inline accordion controls, and stale-cache cleanup are connected.');
+console.log('Public original submission validation passed: public-only server lookup, safety recheck, top-right header button, inline original panel, and stale-cache cleanup are connected.');
