@@ -13,16 +13,28 @@ for (const required of [
   'doc-order-item',
   'court-formatted-body',
   "replace(/([.!?。)])\\s*(?=(?:\\d{1,2})\\.\\s+)/g, '$1\\n')",
-  'new MutationObserver'
+  'new MutationObserver',
+  'repositionOriginalViewButton',
+  '.result-original-actions',
+  "judgeSummary.insertAdjacentElement('beforebegin', actions)",
+  "trigger.dataset.originalPosition = 'cover'",
+  "trigger.setAttribute('aria-label', '사용자가 접수한 원문 보기')"
 ]) {
   if (!displayGuard.includes(required)) {
-    errors.push(`public/js/document-display-guard.js: formatting guard missing: ${required}`);
+    errors.push(`public/js/document-display-guard.js: formatting or original-button guard missing: ${required}`);
   }
 }
 
+if (!displayGuard.includes("width:min(100%,240px)!important")) {
+  errors.push('public/js/document-display-guard.js: mobile original-button width safeguard is missing');
+}
+if (!displayGuard.includes("[data-theme='dark'] .result-document-page .result-original-actions .result-original-trigger")) {
+  errors.push('public/js/document-display-guard.js: dark-theme original-button contrast safeguard is missing');
+}
+
 const index = read('public/index.html');
-if (!index.includes('/js/document-display-guard.js?v=20260731-document-format-1')) {
-  errors.push('public/index.html: document display guard is not loaded with a versioned URL');
+if (!index.includes('/js/document-display-guard.js?v=20260802-original-button-layout-1')) {
+  errors.push('public/index.html: document display guard is not loaded with the current original-button layout version');
 }
 
 const main = read('functions/main.js');
@@ -81,4 +93,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Document formatting validation passed: numbered items are separated in the UI and AI documents receive completeness rules without changing the response schema.');
+console.log('Document formatting validation passed: numbered items remain readable, original-view controls avoid the theme toggle on desktop and mobile, and AI documents keep their schema.');
