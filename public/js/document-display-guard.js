@@ -22,9 +22,35 @@ function ensureStyle() {
     .court-formatted-body .doc-order-number{font-weight:900;color:var(--gold,#8a611f);}
     .court-formatted-body .doc-order-text{margin:0;min-width:0;}
     [data-theme='dark'] .court-formatted-body .doc-order-item{background:rgba(201,168,76,.08);}
+
+    .result-original-actions{
+      display:flex;align-items:center;justify-content:center;margin:15px 0 0;
+    }
+    .result-document-page .result-original-actions .result-original-trigger{
+      display:inline-flex!important;align-items:center;justify-content:center;min-height:38px!important;
+      width:auto!important;margin:0!important;padding:9px 15px!important;border:1px solid #d5c5a9!important;
+      border-radius:999px!important;background:#f7f0e3!important;color:#654b24!important;
+      font:inherit!important;font-size:12px!important;font-weight:900!important;cursor:pointer!important;
+      white-space:nowrap!important;box-shadow:0 5px 14px rgba(89,66,32,.1)!important;
+    }
+    .result-document-page .result-original-actions .result-original-trigger:hover{
+      background:#efe2ca!important;border-color:#a97927!important;color:#4c3517!important;
+    }
+    [data-theme='dark'] .result-document-page .result-original-actions .result-original-trigger{
+      border-color:rgba(209,173,80,.34)!important;background:rgba(201,168,76,.12)!important;
+      color:var(--gold)!important;box-shadow:0 5px 16px rgba(0,0,0,.18)!important;
+    }
+    [data-theme='dark'] .result-document-page .result-original-actions .result-original-trigger:hover{
+      background:rgba(201,168,76,.2)!important;border-color:var(--gold)!important;color:var(--gold)!important;
+    }
+
     @media(max-width:640px){
       .court-formatted-body .doc-order-item{grid-template-columns:26px minmax(0,1fr);gap:6px;padding:12px 12px;}
       .court-formatted-body .doc-paragraph{text-align:left;}
+      .result-original-actions{margin-top:13px;}
+      .result-document-page .result-original-actions .result-original-trigger{
+        width:min(100%,240px)!important;padding:10px 14px!important;font-size:12px!important;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -151,8 +177,34 @@ function formatDocumentBody(element) {
   element.dataset.courtFormatted = 'true';
 }
 
+function repositionOriginalViewButton(root = document) {
+  const pages = [];
+  if (root instanceof HTMLElement && root.matches('.result-document-page')) pages.push(root);
+  root.querySelectorAll?.('.result-document-page').forEach(page => pages.push(page));
+
+  pages.forEach(page => {
+    const trigger = page.querySelector('[data-original-trigger]');
+    const cover = page.querySelector('.result-cover');
+    const judgeSummary = cover?.querySelector('.judge-summary');
+    if (!(trigger instanceof HTMLElement) || !cover || !judgeSummary) return;
+
+    let actions = cover.querySelector('.result-original-actions');
+    if (!actions) {
+      actions = document.createElement('div');
+      actions.className = 'result-original-actions';
+      actions.dataset.originalLayout = 'cover';
+      judgeSummary.insertAdjacentElement('beforebegin', actions);
+    }
+
+    if (trigger.parentElement !== actions) actions.appendChild(trigger);
+    trigger.setAttribute('aria-label', '사용자가 접수한 원문 보기');
+    trigger.dataset.originalPosition = 'cover';
+  });
+}
+
 function formatAll(root = document) {
   ensureStyle();
+  repositionOriginalViewButton(root);
   if (root instanceof HTMLElement && root.matches('.result-paper-body,.step-content')) {
     formatDocumentBody(root);
   }
@@ -181,4 +233,4 @@ if (document.readyState === 'loading') {
   start();
 }
 
-export { formatAll, normalizeCourtText, structuredFragment };
+export { formatAll, normalizeCourtText, repositionOriginalViewButton, structuredFragment };
