@@ -1,0 +1,102 @@
+name: Verify Daily Court Removal
+
+on:
+  push:
+    branches:
+      - ops/verify-daily-court-removal-20260802
+    paths-ignore:
+      - ops/daily-court-removal-verification.json
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout verification branch
+        uses: actions/checkout@v4
+        with:
+          ref: ops/verify-daily-court-removal-20260802
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@15.24.0
+
+      - name: Prepare service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Verify production state
+        id: production
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: |
+          set +e
+          mkdir -p ops
+          status=failure
+          reason='deployment_not_observed'
+          attempts=0
+          for attempt in $(seq 1 40); do
+            attempts=$attempt
+            firebase functions:list --project sosoking-481e6 --json > "$RUNNER_TEMP/functions.json" 2>"$RUNNER_TEMP/functions.err"
+            functions_ok=$?
+            stamp=$(date +%s)
+            curl -fsSL --max-time 20 "https://sosoking.co.kr/?verify=$stamp" > "$RUNNER_TEMP/index.html"
+            index_ok=$?
+            curl -fsSL --max-time 20 "https://sosoking.co.kr/js/app.js?v=20260802-remove-daily-court-1&verify=$stamp" > "$RUNNER_TEMP/app.js"
+            app_ok=$?
+            curl -fsSL --max-time 20 "https://sosoking.co.kr/js/components/nav.js?v=20260802-remove-daily-court-1&verify=$stamp" > "$RUNNER_TEMP/nav.js"
+            nav_ok=$?
+
+            if [ "$functions_ok" -eq 0 ] \
+              && ! grep -q 'getDailyRealCourt' "$RUNNER_TEMP/functions.json" \
+              && ! grep -q 'submitDailyRealCourtVerdict' "$RUNNER_TEMP/functions.json" \
+              && [ "$index_ok" -eq 0 ] \
+              && grep -q '/js/app.js?v=20260802-remove-daily-court-1' "$RUNNER_TEMP/index.html" \
+              && [ "$app_ok" -eq 0 ] \
+              && ! grep -q 'renderDailyRealCourt' "$RUNNER_TEMP/app.js" \
+              && ! grep -q '#/daily-court' "$RUNNER_TEMP/app.js" \
+              && [ "$nav_ok" -eq 0 ] \
+              && ! grep -q '#/daily-court' "$RUNNER_TEMP/nav.js" \
+              && ! grep -q '오늘재판' "$RUNNER_TEMP/nav.js"; then
+              status=success
+              reason='functions_removed_and_live_site_updated'
+              break
+            fi
+            sleep 15
+          done
+
+          cat > ops/daily-court-removal-verification.json <<EOF
+          {
+            "status": "$status",
+            "reason": "$reason",
+            "attempts": $attempts,
+            "firebaseProject": "sosoking-481e6",
+            "mergeCommit": "bb73ec37412804db88d3816cedc663609f1db250",
+            "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+          if [ "$status" != success ]; then
+            echo 'Production verification did not observe the completed removal.'
+            cat "$RUNNER_TEMP/functions.err" || true
+            exit 1
+          fi
+
+      - name: Record verification result
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ops/daily-court-removal-verification.json
+          git commit -m "Record production daily court removal verification" || exit 0
+          git push origin ops/verify-daily-court-removal-20260802
