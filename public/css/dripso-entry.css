@@ -1,6 +1,6 @@
 .dripso-home-entry {
-  width: min(calc(100% - 28px), 360px);
-  margin: 0 auto 18px;
+  width: min(calc(100% - 40px), 560px);
+  margin: 34px auto 0;
   padding: 4px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -15,8 +15,8 @@
 }
 
 .dripso-home-entry-link {
-  min-height: 38px;
-  padding: 8px 12px;
+  min-height: 42px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,10 +68,14 @@
 
 @media (max-width: 420px) {
   .dripso-home-entry {
-    width: calc(100% - 20px);
-    margin-bottom: 15px;
+    width: calc(100% - 40px);
+    margin-top: 28px;
   }
-  .dripso-home-entry-link { min-height: 36px; padding: 7px 9px; font-size: 11px; }
+  .dripso-home-entry-link {
+    min-height: 40px;
+    padding: 8px 9px;
+    font-size: 11px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
