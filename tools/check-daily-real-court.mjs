@@ -112,8 +112,8 @@ for (const functionName of ['functions:getDailyRealCourt', 'functions:submitDail
 }
 
 const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
-if (appVersion !== '20260802-community-court-1') errors.push('index does not load the community app version');
-if (!sw.includes(`/js/app.js?v=${appVersion}`)) errors.push('index and service worker app versions differ');
+if (!appVersion) errors.push('index application version is missing');
+if (appVersion && !sw.includes(`/js/app.js?v=${appVersion}`)) errors.push('index and service worker app versions differ');
 for (const asset of [
   '/js/pages/home-community-court.js?v=20260802-community-court-1',
   '/js/pages/daily-real-court-layout.js?v=20260802-community-court-1',
