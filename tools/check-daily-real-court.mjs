@@ -34,7 +34,9 @@ for (const expected of [
   'daily_court_weeks',
   'daily_court_players',
   'aligned ? 100 : 70',
-  'data.mode === MODE'
+  'data.mode === MODE',
+  '원고 주장',
+  '피고 주장'
 ]) {
   if (!(main + server).includes(expected)) errors.push(`community court server missing: ${expected}`);
 }
@@ -65,8 +67,6 @@ for (const expected of [
   'COMMUNITY COURT · 하루 세 판',
   '다른 사람의 생활사건을 직접 판결합니다',
   '글쓰기는 사건접수 한 곳에서만 합니다',
-  '원고 주장',
-  '피고 주장',
   'AI 판결문 전체 보기',
   'AI 판단은 정답이나 법률상담이 아니며',
   '내 사건 접수하기',
