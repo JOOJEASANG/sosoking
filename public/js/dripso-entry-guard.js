@@ -17,44 +17,31 @@ function ensureHomeEntry() {
     document.getElementById('dripso-home-entry')?.remove();
     return;
   }
-  const page = document.getElementById('page-content');
-  if (!page || document.getElementById('dripso-home-entry')) return;
 
-  const entry = document.createElement('a');
+  const page = document.getElementById('page-content');
+  const hero = page?.querySelector('.hero-section');
+  if (!page || !hero || document.getElementById('dripso-home-entry')) return;
+
+  const entry = document.createElement('nav');
   entry.id = 'dripso-home-entry';
   entry.className = 'dripso-home-entry';
-  entry.href = DRIPSO_PATH;
-  entry.setAttribute('aria-label', '별도 커뮤니티 드립소로 이동');
+  entry.setAttribute('aria-label', '소소킹 서비스 이동');
+  entry.title = '주제를 올리고 댓글 드립을 달아 베스트 한마디를 뽑아보세요.';
 
-  const icon = document.createElement('span');
-  icon.className = 'dripso-home-entry-icon';
-  icon.textContent = '🤣';
+  const court = document.createElement('a');
+  court.className = 'dripso-home-entry-link active';
+  court.href = '/';
+  court.setAttribute('aria-current', 'page');
+  court.textContent = '⚖️ 판결소';
 
-  const copy = document.createElement('span');
-  copy.className = 'dripso-home-entry-copy';
+  const dripso = document.createElement('a');
+  dripso.className = 'dripso-home-entry-link';
+  dripso.href = DRIPSO_PATH;
+  dripso.setAttribute('aria-label', '드립소 바로가기');
+  dripso.textContent = 'ㅋ 드립소';
 
-  const eyebrow = document.createElement('span');
-  eyebrow.className = 'dripso-home-entry-eyebrow';
-  eyebrow.textContent = '판결소와 별도로 운영되는 유머 커뮤니티';
-
-  const title = document.createElement('strong');
-  title.textContent = '드립소 바로가기';
-
-  const description = document.createElement('span');
-  description.className = 'dripso-home-entry-description';
-  description.textContent = '주제를 올리고 댓글 드립을 달아 베스트 한마디를 뽑아보세요.';
-
-  copy.append(eyebrow, title, description);
-
-  const arrow = document.createElement('span');
-  arrow.className = 'dripso-home-entry-arrow';
-  arrow.setAttribute('aria-hidden', 'true');
-  arrow.textContent = '→';
-
-  entry.append(icon, copy, arrow);
-  const hero = page.querySelector('.hero-section');
-  if (hero) hero.insertAdjacentElement('afterend', entry);
-  else page.prepend(entry);
+  entry.append(court, dripso);
+  hero.prepend(entry);
 }
 
 function ensureEntry() {
