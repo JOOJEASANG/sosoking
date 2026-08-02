@@ -33,159 +33,132 @@ function addDiscussionLink(container, caseId) {
   actions.prepend(link);
 }
 
-function ensureOriginalModalStyle() {
-  if (document.getElementById('public-original-modal-style')) return;
+function ensureOriginalAccordionStyle() {
+  if (document.getElementById('public-original-accordion-style')) return;
 
   const style = document.createElement('style');
-  style.id = 'public-original-modal-style';
+  style.id = 'public-original-accordion-style';
   style.textContent = `
-    .result-original-trigger{
-      margin-left:auto;border:1px solid var(--border);border-radius:999px;
-      background:rgba(201,168,76,.12);color:var(--gold);padding:8px 13px;
-      font:inherit;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;
+    .result-original-accordion{
+      margin:17px 0 0;border:1px solid #d8cfbf;border-radius:14px;
+      background:#faf6ee;color:#302b25;overflow:hidden;text-align:left;
     }
-    .result-original-trigger:hover{background:rgba(201,168,76,.2);border-color:var(--gold);}
-    .result-original-trigger:disabled{opacity:.6;cursor:wait;}
-    .result-original-layer[hidden]{display:none!important;}
-    .result-original-layer{
-      position:fixed;inset:0;z-index:1400;display:grid;place-items:center;
-      padding:18px;isolation:isolate;
+    .result-original-accordion-trigger{
+      width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+      min-height:48px;padding:12px 15px;border:0;background:transparent;color:#654b24;
+      font:inherit;font-size:13px;font-weight:900;cursor:pointer;text-align:left;
     }
-    .result-original-backdrop{position:absolute;inset:0;background:rgba(4,7,12,.76);backdrop-filter:blur(5px);}
-    .result-original-panel{
-      position:relative;z-index:1;width:min(640px,100%);max-height:min(78vh,760px);
-      display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(201,168,76,.42);
-      border-radius:18px;background:var(--navy-card);color:var(--cream);
-      box-shadow:0 28px 80px rgba(0,0,0,.55);
+    .result-original-accordion-trigger:hover{background:#f2e8d7;color:#4c3517;}
+    .result-original-accordion-trigger:focus-visible{
+      outline:3px solid rgba(169,121,39,.35);outline-offset:-3px;
     }
-    .result-original-head{
-      display:flex;align-items:flex-start;gap:14px;padding:18px 20px 15px;
-      border-bottom:1px solid var(--border);background:rgba(201,168,76,.07);
+    .result-original-accordion-trigger:disabled{opacity:.65;cursor:wait;}
+    .result-original-accordion-label{display:flex;align-items:center;gap:8px;min-width:0;}
+    .result-original-accordion-icon{flex:0 0 auto;font-size:12px;transition:transform .18s ease;}
+    .result-original-accordion-trigger[aria-expanded='true'] .result-original-accordion-icon{transform:rotate(180deg);}
+    .result-original-accordion-panel[hidden]{display:none!important;}
+    .result-original-accordion-panel{
+      border-top:1px solid #ddd2c0;padding:15px 16px 17px;background:#fffdf7;
     }
-    .result-original-heading{min-width:0;flex:1;}
-    .result-original-kicker{font-size:10px;font-weight:900;letter-spacing:.13em;color:var(--gold);}
-    .result-original-title{margin-top:4px;font-family:var(--font-serif);font-size:19px;font-weight:900;line-height:1.45;word-break:keep-all;}
-    .result-original-meta{margin-top:4px;font-size:11px;color:var(--cream-dim);}
-    .result-original-close{
-      flex:0 0 auto;width:34px;height:34px;border:1px solid var(--border);border-radius:50%;
-      background:rgba(255,255,255,.05);color:var(--cream);font-size:22px;line-height:1;cursor:pointer;
+    .result-original-accordion-meta{margin-bottom:9px;font-size:11px;font-weight:800;color:#856225;}
+    .result-original-accordion-note{
+      margin-bottom:12px;padding:10px 12px;border-radius:10px;background:#f7f0e3;
+      color:#665d54;font-size:11px;line-height:1.65;
     }
-    .result-original-scroll{overflow:auto;padding:20px;overscroll-behavior:contain;}
-    .result-original-note{
-      margin-bottom:14px;padding:11px 13px;border-radius:11px;background:rgba(201,168,76,.09);
-      color:var(--cream-dim);font-size:12px;line-height:1.65;
+    .result-original-accordion-body{
+      white-space:pre-wrap;overflow-wrap:anywhere;word-break:keep-all;
+      color:#302b25;font-size:14px;line-height:1.9;
     }
-    .result-original-body{
-      min-height:120px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:keep-all;
-      font-size:15px;line-height:1.95;color:var(--cream);
+    [data-theme='dark'] .result-original-accordion{
+      border-color:rgba(209,173,80,.3);background:rgba(201,168,76,.075);color:#fff9ef;
     }
-    body.result-original-open{overflow:hidden;}
+    [data-theme='dark'] .result-original-accordion-trigger{color:var(--gold);}
+    [data-theme='dark'] .result-original-accordion-trigger:hover{background:rgba(201,168,76,.12);}
+    [data-theme='dark'] .result-original-accordion-panel{
+      border-top-color:rgba(209,173,80,.24);background:rgba(8,12,18,.34);
+    }
+    [data-theme='dark'] .result-original-accordion-meta{color:var(--gold);}
+    [data-theme='dark'] .result-original-accordion-note{
+      background:rgba(201,168,76,.09);color:rgba(255,249,239,.68);
+    }
+    [data-theme='dark'] .result-original-accordion-body{color:rgba(255,249,239,.86);}
     @media(max-width:640px){
-      .result-original-layer{padding:10px;align-items:end;}
-      .result-original-panel{width:100%;max-height:86vh;border-radius:18px 18px 12px 12px;}
-      .result-original-head{padding:16px 16px 13px;}
-      .result-original-scroll{padding:17px 16px 22px;}
-      .result-original-trigger{padding:7px 11px;font-size:11px;}
+      .result-original-accordion{margin-top:14px;border-radius:12px;}
+      .result-original-accordion-trigger{min-height:46px;padding:11px 13px;font-size:12px;}
+      .result-original-accordion-panel{padding:13px 13px 15px;}
+      .result-original-accordion-body{font-size:13px;line-height:1.85;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .result-original-accordion-icon{transition:none!important;}
     }
   `;
   document.head.appendChild(style);
 }
 
-function addOriginalView(container, caseId) {
+function addOriginalAccordion(container, caseId) {
   // 공개 판결에서만 생성되는 방청석 입력창을 공개 상태 판별 기준으로 사용한다.
   if (!container.querySelector('#court-comment-input')) return;
 
-  const header = container.querySelector('.result-document-page > .page-header');
-  const page = container.querySelector('.result-document-page');
-  if (!header || !page || header.querySelector('[data-original-trigger]')) return;
+  const cover = container.querySelector('.result-cover');
+  const judgeSummary = cover?.querySelector('.judge-summary');
+  if (!cover || !judgeSummary || cover.querySelector('[data-original-accordion]')) return;
 
-  ensureOriginalModalStyle();
+  ensureOriginalAccordionStyle();
 
-  const trigger = document.createElement('button');
-  trigger.type = 'button';
-  trigger.className = 'result-original-trigger';
-  trigger.dataset.originalTrigger = 'true';
-  trigger.textContent = '📄 원문보기';
-  trigger.setAttribute('aria-haspopup', 'dialog');
+  const accordion = document.createElement('section');
+  accordion.className = 'result-original-accordion';
+  accordion.dataset.originalAccordion = 'true';
 
-  const layer = document.createElement('div');
-  layer.className = 'result-original-layer';
-  layer.id = 'result-original-layer';
-  layer.hidden = true;
-  layer.setAttribute('role', 'dialog');
-  layer.setAttribute('aria-modal', 'true');
-  layer.setAttribute('aria-labelledby', 'result-original-title');
-  layer.innerHTML = `
-    <div class="result-original-backdrop" data-original-close="true"></div>
-    <section class="result-original-panel" tabindex="-1">
-      <header class="result-original-head">
-        <div class="result-original-heading">
-          <div class="result-original-kicker">ORIGINAL SUBMISSION</div>
-          <div class="result-original-title" id="result-original-title">접수 원문</div>
-          <div class="result-original-meta" id="result-original-meta"></div>
-        </div>
-        <button type="button" class="result-original-close" data-original-close="true" aria-label="접수 원문 닫기">×</button>
-      </header>
-      <div class="result-original-scroll">
-        <div class="result-original-note">AI가 정리한 사건접수보고서가 아니라, 사용자가 처음 접수한 내용을 보여드립니다.</div>
-        <div class="result-original-body" id="result-original-body">접수 원문을 불러오는 중입니다.</div>
-      </div>
-    </section>`;
+  const panelId = `result-original-panel-${String(caseId).replace(/[^a-zA-Z0-9_-]/g, '') || 'case'}`;
+  accordion.innerHTML = `
+    <button type="button" class="result-original-accordion-trigger" aria-expanded="false" aria-controls="${panelId}" data-original-accordion-trigger="true">
+      <span class="result-original-accordion-label">📄 접수 원문 펼쳐보기</span>
+      <span class="result-original-accordion-icon" aria-hidden="true">▼</span>
+    </button>
+    <div class="result-original-accordion-panel" id="${panelId}" hidden>
+      <div class="result-original-accordion-meta"></div>
+      <div class="result-original-accordion-note">AI가 정리한 사건접수보고서가 아니라, 사용자가 처음 접수한 내용을 보여드립니다.</div>
+      <div class="result-original-accordion-body">접수 원문을 불러오는 중입니다.</div>
+    </div>`;
 
-  header.appendChild(trigger);
-  page.appendChild(layer);
+  judgeSummary.insertAdjacentElement('beforebegin', accordion);
 
-  const panel = layer.querySelector('.result-original-panel');
-  const title = layer.querySelector('#result-original-title');
-  const meta = layer.querySelector('#result-original-meta');
-  const body = layer.querySelector('#result-original-body');
-  const closeButton = layer.querySelector('.result-original-close');
+  const trigger = accordion.querySelector('[data-original-accordion-trigger]');
+  const label = accordion.querySelector('.result-original-accordion-label');
+  const panel = accordion.querySelector('.result-original-accordion-panel');
+  const meta = accordion.querySelector('.result-original-accordion-meta');
+  const body = accordion.querySelector('.result-original-accordion-body');
   const getOriginal = httpsCallable(functions, 'getPublicCaseOriginal');
   let loaded = false;
-  let previousFocus = null;
-
-  const closeLayer = () => {
-    if (layer.hidden) return;
-    layer.hidden = true;
-    document.body.classList.remove('result-original-open');
-    document.removeEventListener('keydown', handleEscape);
-    previousFocus?.focus?.();
-  };
-
-  const handleEscape = event => {
-    if (event.key === 'Escape') closeLayer();
-  };
-
-  layer.addEventListener('click', event => {
-    if (event.target.closest('[data-original-close="true"]')) closeLayer();
-  });
+  let loading = false;
 
   trigger.addEventListener('click', async () => {
-    previousFocus = document.activeElement;
-    layer.hidden = false;
-    document.body.classList.add('result-original-open');
-    document.addEventListener('keydown', handleEscape);
-    closeButton?.focus();
+    const willOpen = trigger.getAttribute('aria-expanded') !== 'true';
+    trigger.setAttribute('aria-expanded', String(willOpen));
+    panel.hidden = !willOpen;
+    label.textContent = willOpen ? '📄 접수 원문 접기' : '📄 접수 원문 펼쳐보기';
 
-    if (loaded) return;
+    if (!willOpen || loaded || loading) return;
+
+    loading = true;
     trigger.disabled = true;
     body.textContent = '접수 원문을 불러오는 중입니다.';
 
     try {
       const response = await getOriginal({ caseId });
       const data = response.data || {};
-      title.textContent = data.caseTitle || '접수 원문';
-      meta.textContent = data.docketNumber ? `사건번호 ${data.docketNumber}` : '';
+      meta.textContent = data.docketNumber
+        ? `${data.caseTitle || '접수 원문'} · 사건번호 ${data.docketNumber}`
+        : (data.caseTitle || '접수 원문');
       body.textContent = data.caseDescription || '기록된 접수 원문이 없습니다.';
       loaded = true;
-      panel?.focus({ preventScroll: true });
     } catch (error) {
       console.error('public case original load failed:', error);
-      title.textContent = '접수 원문';
-      meta.textContent = '';
+      meta.textContent = '접수 원문';
       body.textContent = (error?.message || '접수 원문을 불러오지 못했습니다.')
         .replace('FirebaseError: ', '');
     } finally {
+      loading = false;
       trigger.disabled = false;
     }
   });
@@ -196,5 +169,5 @@ export async function renderResult(container, caseId) {
   stripJuryVote(container);
   addEntertainmentNotice(container);
   addDiscussionLink(container, caseId);
-  addOriginalView(container, caseId);
+  addOriginalAccordion(container, caseId);
 }
