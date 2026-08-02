@@ -64,7 +64,10 @@ jobs:
             const oc = String(process.env.LAW_OPEN_API_OC || '').trim();
             const tests = [
               { name: 'plain', params: { target: 'prec', type: 'JSON', display: '3', page: '1' } },
-              { name: 'dated', params: { target: 'prec', type: 'JSON', display: '3', page: '1', sort: 'ddes', prncYd: '20200101~20260802' } }
+              { name: 'query-star', params: { target: 'prec', type: 'JSON', display: '3', page: '1', query: '*' } },
+              { name: 'search-query-star', params: { target: 'prec', type: 'JSON', display: '3', page: '1', search: '1', query: '*' } },
+              { name: 'known-query', params: { target: 'prec', type: 'JSON', display: '3', page: '1', query: '자동차' } },
+              { name: 'dated-query-star', params: { target: 'prec', type: 'JSON', display: '3', page: '1', sort: 'ddes', prncYd: '20200101~20260802', query: '*' } }
             ];
             const results = [];
             for (const test of tests) {
