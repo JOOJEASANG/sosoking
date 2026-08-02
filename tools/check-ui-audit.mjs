@@ -75,7 +75,7 @@ if (!footer.includes('class="footer-brand-logo"') || !footer.includes('공개 �
 }
 
 const app = read('public/js/app.js');
-if (app.includes('renderDailyRealCourt') || app.includes('daily-court')) {
+if (app.includes('renderDailyRealCourt') || app.includes('#/daily-court') || app.includes('daily-real-court.js')) {
   errors.push('app.js: removed daily-court route remains');
 }
 if (!app.includes('renderThemeToggle();') || !app.includes('initNavAuthSync();')) {
@@ -93,7 +93,7 @@ if (!appVersion || !serviceWorker.includes(`/js/app.js?v=${appVersion}`)
 if (!brandVersion || !serviceWorker.includes(`/css/brand-logo.css?v=${brandVersion}`)) {
   errors.push('index.html/public/sw.js: navigation stylesheet cache versions are inconsistent');
 }
-if (serviceWorker.includes('daily-real-court')) {
+if (serviceWorker.includes('daily-real-court.js') || serviceWorker.includes('/daily-court')) {
   errors.push('public/sw.js: removed daily-court assets remain');
 }
 
