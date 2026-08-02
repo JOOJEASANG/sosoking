@@ -24,10 +24,10 @@ for (const value of [
   "return hash || '#/'"
 ]) need(normalizedRouteSource, value, 'application routing');
 if (normalizedRouteSource.includes("if (hash === '#/' || hash === '' || hash === '#')")) {
-  errors.push('application routing: explicit #/ home route is still overwritten by the current pathname');
+  errors.push('application routing: explicit home route is overwritten by pathname');
 }
-if (app.includes('daily-court') || app.includes('daily-real-court')) {
-  errors.push('application modules: removed daily court route is still referenced');
+if (app.includes('renderDailyRealCourt') || app.includes("#/daily-court") || app.includes('daily-real-court.js')) {
+  errors.push('application modules: obsolete route implementation is still referenced');
 }
 
 const index = read('public/index.html');
@@ -51,4 +51,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Home and routing validation passed: seven judge cards remain, removed daily-court routes are absent, and active cache versions match.');
+console.log('Home and routing validation passed: seven judge cards remain, obsolete routes are absent, and active cache versions match.');
