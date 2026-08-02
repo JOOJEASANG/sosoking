@@ -41,10 +41,11 @@ for (const expected of [
   if (!(main + server).includes(expected)) errors.push(`community court server missing: ${expected}`);
 }
 
-const legacyIndex = main.indexOf("require('./daily-real-court')");
-const communityIndex = main.indexOf("require('./daily-community-court')");
-if (legacyIndex < 0 || communityIndex <= legacyIndex) {
-  errors.push('functions/main.js: community callable exports must override the preserved legacy exports');
+if (main.includes("require('./daily-real-court')")) {
+  errors.push('functions/main.js: legacy precedent callable must not be loaded into production exports');
+}
+if (!fs.existsSync('functions/daily-real-court.js')) {
+  errors.push('functions/daily-real-court.js: rollback source must remain preserved');
 }
 
 for (const forbidden of ['law.go.kr', 'LAW_OPEN_API_OC', 'daily_court_catalog', 'correctChoiceId']) {
