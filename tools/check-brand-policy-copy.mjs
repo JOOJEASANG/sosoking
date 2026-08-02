@@ -65,7 +65,7 @@ for (const moduleUrl of [
   './pages/policy-configurable-limit.js?v=20260730-final-audit-1',
   './pages/guide.js?v=20260802-remove-daily-court-1',
   './components/footer.js?v=20260729-brand-policy-1',
-  './components/nav.js?v=20260802-remove-daily-court-1'
+  './components/nav.js?v=20260802-remove-daily-court-2'
 ]) requireText(app, moduleUrl, 'public/js/app.js');
 if (app.includes('renderDailyRealCourt') || app.includes('#/daily-court') || app.includes('daily-real-court.js')) {
   errors.push('public/js/app.js: removed feature route remains');
@@ -92,7 +92,7 @@ for (const asset of [
   '/js/pages/submit-court.js?v=20260731-private-first-publication-1',
   '/js/pages/submit.js?v=20260730-configurable-limit-1',
   '/js/components/footer.js?v=20260729-brand-policy-1',
-  '/js/components/nav.js?v=20260802-remove-daily-court-1'
+  '/js/components/nav.js?v=20260802-remove-daily-court-2'
 ]) requireText(sw, asset, 'public/sw.js');
 if (sw.includes('daily-real-court.js') || sw.includes("'/daily-court'")) {
   errors.push('public/sw.js: removed feature assets remain');
