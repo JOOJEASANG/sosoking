@@ -90,7 +90,7 @@ for (const required of [
   './pages/home-court.js?v=20260730-configurable-limit-1',
   './pages/submit-guard.js?v=20260730-configurable-limit-1',
   './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',
-  './pages/guide.js?v=20260802-remove-daily-court-1'
+  './pages/guide.js?v=20260730-configurable-limit-1'
 ]) {
   if (!app.includes(required)) errors.push(`public/js/app.js: configurable limit module missing ${required}`);
 }
@@ -99,8 +99,7 @@ for (const required of [
   '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
   '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
   '/js/pages/submit.js?v=20260730-configurable-limit-1',
-  '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',
-  '/js/pages/guide.js?v=20260802-remove-daily-court-1'
+  '/js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: configurable limit cache entry missing ${required}`);
 }

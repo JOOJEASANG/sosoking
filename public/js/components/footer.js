@@ -33,7 +33,7 @@ export async function renderFooter() {
     </div>
     <div class="footer-biz">
       ${businessRows.join('<br>')}
-      <span style="display:block;margin-top:6px;">© 2026 소소킹 판결소 · AI 생활판결 · 공개 판결 투표·토론 · 법적 효력 없음</span>
+      <span style="display:block;margin-top:6px;">© 2026 소소킹 판결소 · AI 생활판결 · 선택형 오늘의 재판 · 법적 효력 없음</span>
     </div>
     <div style="margin-top:16px;">
       <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>

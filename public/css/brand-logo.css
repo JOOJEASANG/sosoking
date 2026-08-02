@@ -50,9 +50,9 @@
   box-sizing: border-box;
 }
 
-/* 판결소는 홈·판결기록·접수·계정의 4개 메뉴만 사용한다. */
+/* 판결소는 홈·판결기록·접수·오늘재판·계정의 5개 메뉴만 사용한다. */
 #bottom-nav .nav-item {
-  flex: 1 1 25%;
+  flex: 1 1 20%;
   min-width: 0;
   gap: 2px;
   padding: 7px 0 6px;

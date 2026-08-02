@@ -20,6 +20,7 @@ function routeFromLocation() {
   if (path === '/') return '#/';
   if (path === '/board') return '#/board';
   if (path === '/submit') return '#/submit';
+  if (path === '/daily-court') return '#/daily-court';
   if (path === '/guide') return '#/guide';
   if (path === '/auth') return '#/auth';
   if (path === '/my-cases') return '#/my-cases';
@@ -37,6 +38,7 @@ export function renderNav(activeRoute = '') {
   const isHome = hash === '#/' || hash === '#' || hash === '';
   const isBoard = hash.startsWith('#/board');
   const isSubmit = hash.startsWith('#/submit');
+  const isDailyCourt = hash.startsWith('#/daily-court');
   const isAuth = hash.startsWith('#/auth') || hash.startsWith('#/my-cases');
   const user = auth.currentUser;
   const isLoggedIn = !!user && !user.isAnonymous;
@@ -55,6 +57,10 @@ export function renderNav(activeRoute = '') {
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon"><img class="nav-brand-icon" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="" width="25" height="25"></span>
       <span class="nav-label">접수</span>
+    </a>
+    <a href="#/daily-court" data-nav-key="daily-court" class="nav-item${isDailyCourt ? ' active' : ''}">
+      <span class="nav-icon" aria-hidden="true">&#9878;</span>
+      <span class="nav-label">오늘재판</span>
     </a>
     <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
       <span class="nav-icon" id="nav-account-icon">${isLoggedIn ? '●' : '👤'}</span>

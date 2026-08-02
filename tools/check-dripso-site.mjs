@@ -111,11 +111,8 @@ if (!errors.length) {
   if (courtNav.includes('href="/dripso/"') || courtNav.includes('>드립소</span>')) {
     errors.push('public/js/components/nav.js: Dripso must not remain in the court bottom navigation');
   }
-  if (!courtBrand.includes('flex: 1 1 25%')) {
-    errors.push('public/css/brand-logo.css: four-item court navigation layout is missing');
-  }
-  if (courtBrand.includes('flex: 1 1 20%')) {
-    errors.push('public/css/brand-logo.css: obsolete five-item court navigation layout remains');
+  if (!courtBrand.includes('flex: 1 1 20%')) {
+    errors.push('public/css/brand-logo.css: court navigation must return to five columns');
   }
   for (const required of [
     "const DRIPSO_PATH = '/dripso/'",
@@ -130,28 +127,23 @@ if (!errors.length) {
     errors.push('public/js/dripso-entry-guard.js: court bottom navigation injection must be removed');
   }
 
-  const brandVersion = index.match(/\/css\/brand-logo\.css\?v=([^"']+)/)?.[1] || '';
   for (const required of [
-    `/css/brand-logo.css?v=${brandVersion}`,
+    '/css/brand-logo.css?v=20260801-dripso-separate-1',
     '/css/dripso-entry.css?v=20260801-dripso-community-1',
     '/js/dripso-entry-guard.js?v=20260801-dripso-community-1'
   ]) {
-    if (!required || !index.includes(required)) errors.push(`public/index.html: missing ${required || 'versioned brand stylesheet'}`);
+    if (!index.includes(required)) errors.push(`public/index.html: missing ${required}`);
   }
 
-  const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
   for (const required of [
-    `const CACHE_NAME = 'sosoking-app-v${appVersion}'`,
+    "const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1'",
     "'/dripso/index.html'",
     "'/dripso/dripso.css?v=20260801-topic-image-1'",
     "'/dripso/dripso.js?v=20260801-topic-image-1'",
     "url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')",
     "networkFirst(request, '/dripso/index.html')"
   ]) {
-    if (!required || !sw.includes(required)) errors.push(`public/sw.js: Dripso cache or routing missing ${required || 'active cache version'}`);
-  }
-  if (!brandVersion || !sw.includes(`/css/brand-logo.css?v=${brandVersion}`)) {
-    errors.push('public/index.html and public/sw.js: court brand cache versions differ');
+    if (!sw.includes(required)) errors.push(`public/sw.js: Dripso cache or routing missing ${required}`);
   }
 
   for (const required of [

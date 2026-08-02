@@ -2,9 +2,23 @@ import fs from 'node:fs';
 
 const errors = [];
 const read = file => fs.readFileSync(file, 'utf8');
-const requireText = (source, phrase, label) => {
-  if (!source.includes(phrase)) errors.push(`${label}: missing ${phrase}`);
-};
+
+const home = read('public/js/pages/home.js');
+for (const phrase of [
+  '소소한 일상을 판결하는 생활법정 놀이터',
+  '오늘은 판결감입니다.'
+]) {
+  if (!home.includes(phrase)) errors.push(`public/js/pages/home.js: 메인 문구 누락: ${phrase}`);
+}
+
+const homeCommunity = read('public/js/pages/home-community-court.js');
+for (const phrase of [
+  '오늘의 공개 생활사건',
+  '오늘의 선택재판',
+  '내 이야기는 사건접수에, 다른 생활사건은 선택으로 판결합니다.'
+]) {
+  if (!homeCommunity.includes(phrase)) errors.push(`public/js/pages/home-community-court.js: 선택형 오늘재판 문구 누락: ${phrase}`);
+}
 
 const homeCourt = read('public/js/pages/home-court.js');
 for (const phrase of [
@@ -12,94 +26,135 @@ for (const phrase of [
   "doc(db, 'site_public', 'config')",
   'settings.dailyLimitEnabled === true',
   '현재 사건 접수 제한 없음',
-  'data-home-daily-limit',
-  '공개 판결은 투표와 토론으로 함께 즐겨보세요.',
-  '판결기록 참여'
-]) requireText(homeCourt, phrase, 'public/js/pages/home-court.js');
-
-const homeEntry = read('public/js/pages/home-seven-judges.js');
-for (const phrase of [
-  '공개 판결은 투표와 토론으로 함께 즐겨보세요.',
-  'AI 생활판결과 공개 판결의 투표·토론'
-]) requireText(homeEntry, phrase, 'public/js/pages/home-seven-judges.js');
+  'data-home-daily-limit'
+]) {
+  if (!homeCourt.includes(phrase)) errors.push(`public/js/pages/home-court.js: 동적 접수 한도 문구 누락: ${phrase}`);
+}
 
 const guide = read('public/js/pages/guide.js');
 for (const phrase of [
-  '접수 횟수와 대기시간은 운영 설정에 따라 달라질 수 있으며',
   '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다.',
-  '판결기록 참여',
-  '선택형 투표 참여',
-  '토론에서 의견 나누기',
-  '검색엔진에 노출될 수 있으며',
+  '제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.',
+  '오늘의 익명 생활사건 3건 읽기',
+  '공개사건이 부족할 때만 가상 생활사건',
+  '원고·피고·쌍방 중 선택하기',
+  'AI 판결과 민심 비교하기',
+  '세 사건을 완료하면 일간·주간·누적',
+  '검색엔진에 노출될 수 있습니다.',
   '개별 회원의 선택은 공개하지 않고'
-]) requireText(guide, phrase, 'public/js/pages/guide.js');
-for (const removed of ['오늘의 실제 판례', '매일 실제 법원 판례', '일간·주간·누적 랭킹']) {
-  if (guide.includes(removed)) errors.push(`public/js/pages/guide.js: removed feature copy remains: ${removed}`);
+]) {
+  if (!guide.includes(phrase)) errors.push(`public/js/pages/guide.js: 이용 안내 누락: ${phrase}`);
+}
+for (const legacy of ['회원당 하루 1회입니다.', '매일 실제 법원 판례 한 건', '매일 한 사건이 제공되며', '오늘의 실제 판례 3건']) {
+  if (guide.includes(legacy)) errors.push(`public/js/pages/guide.js: 구버전 안내가 남아 있습니다: ${legacy}`);
+}
+
+const policy = read('public/js/pages/policy.js');
+for (const phrase of [
+  '오늘의 재판 이용',
+  '공개를 허용한 익명 생활사건',
+  '원고·피고·쌍방',
+  '검색엔진을 통해 노출',
+  '개인정보 처리 및 보유 기간',
+  '오늘의 재판 참여 정보',
+  '개인정보의 제3자 제공',
+  '처리위탁 및 국외 처리',
+  'Firebase Authentication은 미국 데이터센터',
+  '개인정보 파기 절차 및 방법',
+  '이용자의 권리와 행사 방법',
+  '자동 저장 기술과 브라우저 정보',
+  '안전성 확보조치',
+  '개인정보 보호 담당 및 문의',
+  '생성형 AI 표시',
+  '공개 유저 사건',
+  'AI 판단은 정답이나 법률의견이 아니라'
+]) {
+  if (!policy.includes(phrase)) errors.push(`public/js/pages/policy.js: 정책 고지 누락: ${phrase}`);
+}
+for (const type of ['terms', 'privacy', 'ai_disclaimer']) {
+  if (!policy.includes(`type === '${type}'`)) errors.push(`public/js/pages/policy.js: ${type} 구버전 교체 기준 누락`);
+}
+for (const legacy of ['오늘의 재판은 국가법령정보센터', '매일 실제 판례 한 건', '실제 판례 3건을 제시']) {
+  if (policy.includes(legacy)) errors.push(`public/js/pages/policy.js: 실제 판례 구버전 정책이 남아 있습니다: ${legacy}`);
 }
 
 const policyLimit = read('public/js/pages/policy-configurable-limit.js');
 for (const phrase of [
   '접수 횟수와 재접수 대기시간은 서비스 화면에 표시된 현재 운영 설정을 따릅니다.',
-  'removeDailyCourtCopy',
-  "getDoc(doc(db, 'policy_docs', type))",
-  'removedLinePatterns'
-]) requireText(policyLimit, phrase, 'public/js/pages/policy-configurable-limit.js');
-for (const removed of ['NEW_DAILY_COPY', 'OLD_DAILY_COPY', 'NEW_DAILY_STATS_COPY']) {
-  if (policyLimit.includes(removed)) errors.push(`public/js/pages/policy-configurable-limit.js: obsolete replacement remains: ${removed}`);
+  '제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.',
+  '공개에 동의한 익명 생활사건 3건',
+  '원고·피고·쌍방',
+  '각 사건에 한 번씩',
+  '일간·주간·누적 랭킹',
+  'replaceLegacyLimitCopy',
+  'replaceCurrentPolicyCopy',
+  'OLD_DAILY_COPY',
+  'NEW_DAILY_COPY',
+  "getDoc(doc(db, 'policy_docs', 'terms'))"
+]) {
+  if (!policyLimit.includes(phrase)) errors.push(`public/js/pages/policy-configurable-limit.js: 최신 약관 문구 누락: ${phrase}`);
 }
 
 const index = read('public/index.html');
 for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
-  '공개 판결의 투표와 토론'
-]) requireText(index, phrase, 'public/index.html');
-if (index.includes('오늘의 재판')) errors.push('public/index.html: removed feature metadata remains');
+  'AI 생활판결과 오늘의 재판',
+  '공개 생활사건은 선택만으로 판결'
+]) {
+  if (!index.includes(phrase)) errors.push(`public/index.html: 브랜드 메타정보 누락: ${phrase}`);
+}
 if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index)) {
   errors.push('public/index.html: versioned application entry is missing');
 }
 
 const app = read('public/js/app.js');
+const homeCourtVersion = app.match(/\.\/pages\/home-court\.js\?v=([^'";]+)/)?.[1] || '';
+if (!homeCourtVersion) errors.push('public/js/app.js: versioned home-court module is missing');
 for (const moduleUrl of [
-  './pages/home-seven-judges.js?v=20260730-home-layout-route-1',
-  './pages/submit-guard.js?v=20260731-private-first-publication-1',
+  './pages/home-community-court.js?v=20260802-community-court-1',
+  './pages/home-court.js?v=20260730-configurable-limit-1',
+  './pages/submit-guard.js?v=20260730-configurable-limit-1',
   './pages/policy-configurable-limit.js?v=20260730-final-audit-1',
-  './pages/guide.js?v=20260802-remove-daily-court-1',
-  './components/footer.js?v=20260729-brand-policy-1',
-  './components/nav.js?v=20260802-remove-daily-court-1'
-]) requireText(app, moduleUrl, 'public/js/app.js');
-if (app.includes('renderDailyRealCourt') || app.includes('#/daily-court') || app.includes('daily-real-court.js')) {
-  errors.push('public/js/app.js: removed feature route remains');
+  './pages/guide.js?v=20260802-community-court-1',
+  './components/footer.js?v=20260729-brand-policy-1'
+]) {
+  if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: 최신 문구·한도 모듈 버전 누락: ${moduleUrl}`);
+}
+if (!homeCourt.includes("./home.js?v=20260729-brand-policy-1")) {
+  errors.push('public/js/pages/home-court.js: 메인 문구 모듈 버전 누락');
 }
 
 const footer = read('public/js/components/footer.js');
-requireText(footer, 'AI 생활판결 · 공개 판결 투표·토론 · 법적 효력 없음', 'public/js/components/footer.js');
-if (footer.includes('실제 판례 게임')) errors.push('public/js/components/footer.js: removed game copy remains');
+if (!footer.includes('AI 생활판결 · 선택형 오늘의 재판 · 법적 효력 없음')) {
+  errors.push('public/js/components/footer.js: 서비스 구성 안내 누락');
+}
 
 const sw = read('public/sw.js');
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 if (!appVersion || !sw.includes(`/js/app.js?v=${appVersion}`)) {
-  errors.push('public/index.html and public/sw.js: application versions differ');
+  errors.push('public/index.html 및 public/sw.js의 앱 버전이 일치하지 않음');
 }
-if (!sw.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
-  errors.push('public/index.html and public/sw.js: cache name differs from application version');
+if (!homeCourtVersion || !sw.includes(`/js/pages/home-court.js?v=${homeCourtVersion}`)) {
+  errors.push('public/js/app.js 및 public/sw.js의 홈 모듈 버전이 일치하지 않음');
 }
 for (const asset of [
+  '/js/pages/home-community-court.js?v=20260802-community-court-1',
   '/js/pages/home.js?v=20260729-brand-policy-1',
-  '/js/pages/guide.js?v=20260802-remove-daily-court-1',
+  '/js/pages/guide.js?v=20260802-community-court-1',
   '/js/pages/policy.js?v=20260730-final-audit-1',
   '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',
-  '/js/pages/submit-guard.js?v=20260731-private-first-publication-1',
-  '/js/pages/submit-court.js?v=20260731-private-first-publication-1',
+  '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
+  '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
   '/js/pages/submit.js?v=20260730-configurable-limit-1',
-  '/js/components/footer.js?v=20260729-brand-policy-1',
-  '/js/components/nav.js?v=20260802-remove-daily-court-1'
-]) requireText(sw, asset, 'public/sw.js');
-if (sw.includes('daily-real-court.js') || sw.includes("'/daily-court'")) {
-  errors.push('public/sw.js: removed feature assets remain');
+  '/js/components/footer.js?v=20260729-brand-policy-1'
+]) {
+  if (!sw.includes(asset)) errors.push(`public/sw.js: 최신 정책·한도 자산 캐시 누락: ${asset}`);
 }
 
 const packageJson = read('package.json');
-requireText(packageJson, 'node tools/check-brand-policy-copy.mjs', 'package.json');
+if (!packageJson.includes('node tools/check-brand-policy-copy.mjs')) {
+  errors.push('package.json: 브랜드·정책 회귀검사가 검사 체인에 없음');
+}
 
 if (errors.length) {
   console.error(`Brand and policy copy validation failed (${errors.length})`);
@@ -107,4 +162,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: current submission limits, public verdict participation, cleaned policy output, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: dynamic submission limits, public lifestyle cases, selection-only daily court, privacy disclosures, AI notice, and synchronized cache versions.');

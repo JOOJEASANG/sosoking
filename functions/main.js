@@ -10,6 +10,8 @@ require('./humor-prompt');
 require('./document-output-quality');
 
 Object.assign(exports, require('./daily'));
+// 오늘의 재판 운영 callable은 공개 접수사건 기반 선택재판만 노출한다.
+Object.assign(exports, require('./daily-community-court'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
 Object.assign(exports, require('./discussion'));

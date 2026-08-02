@@ -44,13 +44,13 @@ function addCourtEntrance(container) {
           <div style="flex:1;min-width:0;">
             <div class="court-kicker">SOSOKING LIFE COURT</div>
             <div class="court-title">소소한 일상을 판결하는 생활법정</div>
-            <div class="court-desc">내 사건은 AI 판사에게 맡기고, 공개 판결은 투표와 토론으로 함께 즐겨보세요.</div>
+            <div class="court-desc">내 사건은 AI 판사에게 맡기고, 오늘의 실제 판례는 직접 판결해보세요.</div>
           </div>
         </div>
         <div class="court-ledger">
           <div><strong data-home-daily-limit>설정 확인</strong><span>AI 사건 접수</span></div>
           <div><strong>7명</strong><span>판사 자동 배정</span></div>
-          <div><strong>투표</strong><span>판결기록 참여</span></div>
+          <div><strong>1판</strong><span>오늘의 재판</span></div>
         </div>
       </div>
     </div>`);

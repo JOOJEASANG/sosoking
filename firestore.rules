@@ -156,6 +156,51 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /daily_court_catalog/{caseId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /daily_court_config/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /daily_court_days/{dateKey} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /cases/{caseId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+
+      match /votes/{uid} {
+        allow read: if isAdmin();
+        allow write: if false;
+
+        match /cases/{caseId} {
+          allow read: if isAdmin();
+          allow write: if false;
+        }
+      }
+    }
+
+    match /daily_court_weeks/{weekKey} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /users/{uid} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /daily_court_players/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /case_id_aliases/{aliasId} {
       allow read, write: if false;
     }
