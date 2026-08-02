@@ -14,23 +14,18 @@ import { renderDiscussion } from './pages/discussion.js?v=20260730-discussion-co
 import { renderPolicy } from './pages/policy-configurable-limit.js?v=20260730-final-audit-1';
 // Cache lineage marker: './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260729-dark-record-participation-1';
-import { renderGuide } from './pages/guide.js?v=20260730-final-audit-1';
-// Cache lineage marker: './pages/guide.js?v=20260730-configurable-limit-1';
+import { renderGuide } from './pages/guide.js?v=20260802-remove-daily-court-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
 import { renderBoard } from './pages/board-full-content-search.js?v=20260731-compact-record-card-1';
 // Cache lineage marker for full search: './pages/board-full-content-search.js?v=20260730-search-scope-1';
 // Cache lineage marker for pagination: './pages/board-search-pagination.js?v=20260730-judge-board-search-1';
 // Cache lineage marker for discussion: './pages/board-court.js?v=20260730-discussion-court-1';
 // Cache lineage marker for CSP: './pages/board-court.js?v=20260729-script-csp-1';
-import { renderDailyRealCourt } from './pages/daily-real-court-layout.js?v=20260730-home-layout-route-1';
-// Cache lineage marker: './pages/daily-real-court.js?v=20260730-daily-three-ranking-1';
-// Cache lineage marker: './pages/daily-real-court.js?v=20260729-daily-real-court-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the compact-spacing regression check: ./components/footer.js?v=20260729-compact-spacing-1
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
-import { initNavAuthSync, renderNav } from './components/nav.js?v=20260801-pc-daily-icon-1';
-// Cache lineage marker: './components/nav.js?v=20260729-daily-real-court-1';
+import { initNavAuthSync, renderNav } from './components/nav.js?v=20260802-remove-daily-court-1';
 import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260730-header-icon-single-1';
 
 let routeSequence = 0;
@@ -51,7 +46,6 @@ function normalizedRoute() {
     if (path === '/') return '#/';
     if (path === '/board') return '#/board';
     if (path === '/submit') return '#/submit';
-    if (path === '/daily-court') return '#/daily-court';
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
@@ -117,7 +111,6 @@ async function route() {
     let renderTask;
     if (hash === '#/' || hash === '' || hash === '#') renderTask = renderHome(content);
     else if (hash === '#/submit') renderTask = renderSubmit(content);
-    else if (hash === '#/daily-court') renderTask = renderDailyRealCourt(content);
     else if (hash.startsWith('#/trial/')) {
       const caseId = decodeRouteValue(hash.replace('#/trial/', ''));
       renderTask = caseId ? renderTrial(content, caseId) : renderHome(content);

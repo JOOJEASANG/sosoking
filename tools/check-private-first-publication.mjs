@@ -52,20 +52,22 @@ if (!app.includes("./pages/submit-guard.js?v=20260731-private-first-publication-
 
 const index = read('public/index.html');
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
-if (appVersion !== '20260731-private-first-publication-1') {
-  errors.push('public/index.html: private-first application version is not active');
+if (!appVersion) {
+  errors.push('public/index.html: versioned application entry is missing');
 }
 
 const worker = read('public/sw.js');
 for (const required of [
-  "const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';",
-  '/js/app.js?v=20260731-private-first-publication-1',
+  `/js/app.js?v=${appVersion}`,
   '/js/pages/submit-guard.js?v=20260731-private-first-publication-1',
   '/js/pages/submit-court.js?v=20260731-private-first-publication-1'
 ]) {
   if (!worker.includes(required)) {
     errors.push(`public/sw.js: private-first cache graph missing ${required}`);
   }
+}
+if (!appVersion || !worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
+  errors.push('public/index.html and public/sw.js: active application cache versions differ');
 }
 
 const trialGenerator = read('functions/generate-trial-lite.js');
