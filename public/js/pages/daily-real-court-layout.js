@@ -1,4 +1,5 @@
 import { renderDailyRealCourt as renderBaseDailyRealCourt } from './daily-community-court.js?v=20260802-community-court-1';
+// Cache lineage marker: './daily-real-court.js?v=20260730-daily-three-ranking-1';
 
 function ensureDailyCourtLayoutStyle() {
   if (document.getElementById('daily-real-court-layout-style')) return;
