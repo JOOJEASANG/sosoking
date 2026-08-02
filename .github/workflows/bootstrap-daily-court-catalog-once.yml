@@ -60,35 +60,40 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('node:fs');
-          const oc = String(process.env.LAW_OPEN_API_OC || '').trim();
-          const tests = [
-            { name: 'plain', params: { target: 'prec', type: 'JSON', display: '3', page: '1' } },
-            { name: 'dated', params: { target: 'prec', type: 'JSON', display: '3', page: '1', sort: 'ddes', prncYd: '20200101~20260802' } }
-          ];
-          const results = [];
-          for (const test of tests) {
-            const url = new URL('https://www.law.go.kr/DRF/lawSearch.do');
-            url.search = new URLSearchParams({ OC: oc, ...test.params }).toString();
-            const response = await fetch(url, { headers: { accept: 'application/json,text/plain,*/*', 'user-agent': 'sosoking-daily-court-diagnostic/1.0' } });
-            const raw = await response.text();
-            const sanitized = raw.split(oc).join('[REDACTED]');
-            let parsed = null;
-            try { parsed = JSON.parse(raw.replace(/^\uFEFF/, '')); } catch {}
-            const payload = parsed?.PrecSearch || parsed?.precSearch || parsed || {};
-            results.push({
-              name: test.name,
-              httpStatus: response.status,
-              contentType: response.headers.get('content-type') || '',
-              bodyLength: raw.length,
-              topLevelKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
-              payloadKeys: payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 30) : [],
-              totalCnt: payload?.totalCnt ?? payload?.totalCount ?? null,
-              itemCount: Array.isArray(payload?.prec) ? payload.prec.length : Array.isArray(payload?.items) ? payload.items.length : null,
-              preview: sanitized.slice(0, 800)
-            });
-          }
-          fs.writeFileSync('/tmp/law-api-diagnostic.json', JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2) + '\n');
-          console.log(JSON.stringify(results.map(({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }) => ({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }))));
+          (async () => {
+            const oc = String(process.env.LAW_OPEN_API_OC || '').trim();
+            const tests = [
+              { name: 'plain', params: { target: 'prec', type: 'JSON', display: '3', page: '1' } },
+              { name: 'dated', params: { target: 'prec', type: 'JSON', display: '3', page: '1', sort: 'ddes', prncYd: '20200101~20260802' } }
+            ];
+            const results = [];
+            for (const test of tests) {
+              const url = new URL('https://www.law.go.kr/DRF/lawSearch.do');
+              url.search = new URLSearchParams({ OC: oc, ...test.params }).toString();
+              const response = await fetch(url, { headers: { accept: 'application/json,text/plain,*/*', 'user-agent': 'sosoking-daily-court-diagnostic/1.0' } });
+              const raw = await response.text();
+              const sanitized = raw.split(oc).join('[REDACTED]');
+              let parsed = null;
+              try { parsed = JSON.parse(raw.replace(/^\uFEFF/, '')); } catch {}
+              const payload = parsed?.PrecSearch || parsed?.precSearch || parsed || {};
+              results.push({
+                name: test.name,
+                httpStatus: response.status,
+                contentType: response.headers.get('content-type') || '',
+                bodyLength: raw.length,
+                topLevelKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
+                payloadKeys: payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 30) : [],
+                totalCnt: payload?.totalCnt ?? payload?.totalCount ?? null,
+                itemCount: Array.isArray(payload?.prec) ? payload.prec.length : Array.isArray(payload?.items) ? payload.items.length : null,
+                preview: sanitized.slice(0, 800)
+              });
+            }
+            fs.writeFileSync('/tmp/law-api-diagnostic.json', JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2) + '\n');
+            console.log(JSON.stringify(results.map(({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }) => ({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }))));
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
           NODE
 
       - name: Preserve current verified cases
