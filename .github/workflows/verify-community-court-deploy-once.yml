@@ -1,0 +1,106 @@
+name: Verify Community Court Deployment Once
+
+on:
+  push:
+    branches:
+      - ops/verify-community-court-deploy-20260802
+    paths:
+      - .github/workflows/verify-community-court-deploy-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify-live:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout verification branch
+        uses: actions/checkout@v4
+        with:
+          ref: ops/verify-community-court-deploy-20260802
+          fetch-depth: 0
+
+      - name: Verify Hosting assets and callable response
+        id: verify
+        shell: bash
+        run: |
+          set +e
+          hosting_ok=false
+          asset_ok=false
+          function_ok=false
+          index_code=0
+          asset_code=0
+          function_code=0
+          catalog_size=0
+
+          for attempt in $(seq 1 48); do
+            index_code=$(curl -L -sS -o /tmp/index.html -w '%{http_code}' 'https://sosoking.co.kr/?verify=community-court-20260802' || echo 000)
+            asset_code=$(curl -L -sS -o /tmp/community.js -w '%{http_code}' 'https://sosoking.co.kr/js/pages/daily-community-court.js?v=20260802-community-court-1' || echo 000)
+            function_code=$(curl -L -sS -o /tmp/function.json -w '%{http_code}' \
+              -H 'Content-Type: application/json' \
+              --data '{"data":{}}' \
+              'https://asia-northeast3-sosoking-481e6.cloudfunctions.net/getDailyRealCourt' || echo 000)
+
+            if [ "$index_code" = "200" ] && grep -q '공개 생활사건은 선택만으로 판결' /tmp/index.html; then
+              hosting_ok=true
+            fi
+            if [ "$asset_code" = "200" ] && grep -q 'COMMUNITY COURT · 하루 세 판' /tmp/community.js; then
+              asset_ok=true
+            fi
+            if [ "$function_code" = "200" ] && grep -q 'community-v1' /tmp/function.json && grep -q 'dailyCaseCount' /tmp/function.json; then
+              function_ok=true
+              catalog_size=$(node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/function.json','utf8'));const d=x.result||x.data||{};process.stdout.write(String(d.poolSize||d.catalogSize||0));" 2>/dev/null || echo 0)
+            fi
+
+            if [ "$hosting_ok" = true ] && [ "$asset_ok" = true ] && [ "$function_ok" = true ]; then
+              break
+            fi
+            sleep 15
+          done
+
+          status=failure
+          if [ "$hosting_ok" = true ] && [ "$asset_ok" = true ] && [ "$function_ok" = true ]; then
+            status=success
+          fi
+
+          mkdir -p ops
+          cat > ops/community-court-deploy-status.json <<EOF
+          {
+            "status": "$status",
+            "hostingMatched": $hosting_ok,
+            "assetMatched": $asset_ok,
+            "functionMatched": $function_ok,
+            "indexHttpStatus": "$index_code",
+            "assetHttpStatus": "$asset_code",
+            "functionHttpStatus": "$function_code",
+            "poolSize": $catalog_size,
+            "verifiedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "mainCommit": "0b2d260f7d5e6993b935ec3d818d1c462761a7c7"
+          }
+          EOF
+
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" != success ]; then
+            echo 'Live deployment did not reach the expected community court state.'
+            echo '--- index preview ---'
+            head -c 500 /tmp/index.html 2>/dev/null || true
+            echo
+            echo '--- function preview ---'
+            head -c 800 /tmp/function.json 2>/dev/null || true
+            echo
+          fi
+
+      - name: Record verification result
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ops/community-court-deploy-status.json
+          git commit -m "Record community court deployment verification" || true
+          git push origin ops/verify-community-court-deploy-20260802
+
+      - name: Fail when live verification failed
+        if: steps.verify.outputs.status != 'success'
+        run: exit 1
