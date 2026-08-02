@@ -6,6 +6,7 @@ on:
       - ops/bootstrap-daily-court-1000-20260802
     paths-ignore:
       - ops/daily-court-bootstrap-status.json
+      - ops/law-api-diagnostic.json
 
 jobs:
   bootstrap:
@@ -52,6 +53,43 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "Required secrets are registered."
+
+      - name: Diagnose law API response
+        env:
+          LAW_OPEN_API_OC: ${{ secrets.LAW_OPEN_API_OC }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const oc = String(process.env.LAW_OPEN_API_OC || '').trim();
+          const tests = [
+            { name: 'plain', params: { target: 'prec', type: 'JSON', display: '3', page: '1' } },
+            { name: 'dated', params: { target: 'prec', type: 'JSON', display: '3', page: '1', sort: 'ddes', prncYd: '20200101~20260802' } }
+          ];
+          const results = [];
+          for (const test of tests) {
+            const url = new URL('https://www.law.go.kr/DRF/lawSearch.do');
+            url.search = new URLSearchParams({ OC: oc, ...test.params }).toString();
+            const response = await fetch(url, { headers: { accept: 'application/json,text/plain,*/*', 'user-agent': 'sosoking-daily-court-diagnostic/1.0' } });
+            const raw = await response.text();
+            const sanitized = raw.split(oc).join('[REDACTED]');
+            let parsed = null;
+            try { parsed = JSON.parse(raw.replace(/^\uFEFF/, '')); } catch {}
+            const payload = parsed?.PrecSearch || parsed?.precSearch || parsed || {};
+            results.push({
+              name: test.name,
+              httpStatus: response.status,
+              contentType: response.headers.get('content-type') || '',
+              bodyLength: raw.length,
+              topLevelKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
+              payloadKeys: payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 30) : [],
+              totalCnt: payload?.totalCnt ?? payload?.totalCount ?? null,
+              itemCount: Array.isArray(payload?.prec) ? payload.prec.length : Array.isArray(payload?.items) ? payload.items.length : null,
+              preview: sanitized.slice(0, 800)
+            });
+          }
+          fs.writeFileSync('/tmp/law-api-diagnostic.json', JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2) + '\n');
+          console.log(JSON.stringify(results.map(({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }) => ({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }))));
+          NODE
 
       - name: Preserve current verified cases
         env:
@@ -101,8 +139,11 @@ jobs:
             "recordedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
+          if [ -f /tmp/law-api-diagnostic.json ]; then
+            cp /tmp/law-api-diagnostic.json ops/law-api-diagnostic.json
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ops/daily-court-bootstrap-status.json
-          git commit -m "Record daily court bootstrap status: $RUN_STATUS" || exit 0
+          git add ops/daily-court-bootstrap-status.json ops/law-api-diagnostic.json 2>/dev/null || git add ops/daily-court-bootstrap-status.json
+          git commit -m "Record daily court bootstrap diagnostics: $RUN_STATUS" || exit 0
           git push origin "$STATUS_BRANCH"
