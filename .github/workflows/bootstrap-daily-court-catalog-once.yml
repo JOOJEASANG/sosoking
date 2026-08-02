@@ -4,16 +4,19 @@ on:
   push:
     branches:
       - ops/bootstrap-daily-court-1000-20260802
+    paths-ignore:
+      - ops/daily-court-bootstrap-status.json
 
 jobs:
   bootstrap:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
-      contents: read
+      contents: write
     concurrency:
       group: daily-court-catalog-bootstrap
-      cancel-in-progress: false
+      cancel-in-progress: true
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -77,5 +80,29 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
 
-      - name: Completion summary
-        run: echo "Daily court catalog now contains 1000 verified records and Hosting status was deployed."
+      - name: Record execution status
+        if: always()
+        env:
+          RUN_STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_SHA: ${{ github.sha }}
+          STATUS_BRANCH: ops/bootstrap-daily-court-1000-20260802
+        run: |
+          git fetch origin "$STATUS_BRANCH"
+          git checkout -B "$STATUS_BRANCH" "origin/$STATUS_BRANCH"
+          mkdir -p ops
+          cat > ops/daily-court-bootstrap-status.json <<EOF
+          {
+            "status": "$RUN_STATUS",
+            "runId": "$RUN_ID",
+            "sourceSha": "$RUN_SHA",
+            "targetCount": 1000,
+            "firebaseProject": "sosoking-481e6",
+            "recordedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ops/daily-court-bootstrap-status.json
+          git commit -m "Record daily court bootstrap status: $RUN_STATUS" || exit 0
+          git push origin "$STATUS_BRANCH"
