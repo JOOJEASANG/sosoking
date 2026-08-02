@@ -54,7 +54,7 @@ jobs:
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "Required secrets are registered."
 
-      - name: Diagnose law API response
+      - name: Diagnose law API response over official HTTP endpoint
         env:
           LAW_OPEN_API_OC: ${{ secrets.LAW_OPEN_API_OC }}
         run: |
@@ -65,15 +65,13 @@ jobs:
             const tests = [
               { name: 'plain', params: { target: 'prec', type: 'JSON', display: '3', page: '1' } },
               { name: 'query-star', params: { target: 'prec', type: 'JSON', display: '3', page: '1', query: '*' } },
-              { name: 'search-query-star', params: { target: 'prec', type: 'JSON', display: '3', page: '1', search: '1', query: '*' } },
-              { name: 'known-query', params: { target: 'prec', type: 'JSON', display: '3', page: '1', query: '자동차' } },
-              { name: 'dated-query-star', params: { target: 'prec', type: 'JSON', display: '3', page: '1', sort: 'ddes', prncYd: '20200101~20260802', query: '*' } }
+              { name: 'known-query', params: { target: 'prec', type: 'JSON', display: '3', page: '1', search: '1', query: '자동차' } }
             ];
             const results = [];
             for (const test of tests) {
-              const url = new URL('https://www.law.go.kr/DRF/lawSearch.do');
+              const url = new URL('http://www.law.go.kr/DRF/lawSearch.do');
               url.search = new URLSearchParams({ OC: oc, ...test.params }).toString();
-              const response = await fetch(url, { headers: { accept: 'application/json,text/plain,*/*', 'user-agent': 'sosoking-daily-court-diagnostic/1.0' } });
+              const response = await fetch(url, { redirect: 'follow', headers: { accept: 'application/json,text/plain,*/*', 'user-agent': 'sosoking-daily-court-diagnostic/1.0' } });
               const raw = await response.text();
               const sanitized = raw.split(oc).join('[REDACTED]');
               let parsed = null;
@@ -81,18 +79,22 @@ jobs:
               const payload = parsed?.PrecSearch || parsed?.precSearch || parsed || {};
               results.push({
                 name: test.name,
+                finalUrlProtocol: new URL(response.url).protocol,
                 httpStatus: response.status,
                 contentType: response.headers.get('content-type') || '',
                 bodyLength: raw.length,
                 topLevelKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
                 payloadKeys: payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 30) : [],
                 totalCnt: payload?.totalCnt ?? payload?.totalCount ?? null,
-                itemCount: Array.isArray(payload?.prec) ? payload.prec.length : Array.isArray(payload?.items) ? payload.items.length : null,
+                itemCount: Array.isArray(payload?.prec) ? payload.prec.length : (payload?.prec ? 1 : Array.isArray(payload?.items) ? payload.items.length : null),
                 preview: sanitized.slice(0, 800)
               });
             }
             fs.writeFileSync('/tmp/law-api-diagnostic.json', JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2) + '\n');
-            console.log(JSON.stringify(results.map(({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }) => ({ name, httpStatus, contentType, totalCnt, itemCount, topLevelKeys, payloadKeys }))));
+            console.log(JSON.stringify(results.map(({ name, finalUrlProtocol, httpStatus, totalCnt, itemCount, topLevelKeys }) => ({ name, finalUrlProtocol, httpStatus, totalCnt, itemCount, topLevelKeys }))));
+            if (!results.some(result => Number(result.totalCnt) > 0 || Number(result.itemCount) > 0)) {
+              throw new Error('Official HTTP endpoint still returned no precedent records.');
+            }
           })().catch(error => {
             console.error(error);
             process.exit(1);
@@ -104,6 +106,9 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node tools/sync-daily-real-court-catalog.mjs
+
+      - name: Use official HTTP endpoint for this import
+        run: sed -i "s|https://www.law.go.kr/DRF|http://www.law.go.kr/DRF|g" tools/bootstrap-daily-real-court-1000.mjs
 
       - name: Import 1000 official court cases
         env:
@@ -153,5 +158,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ops/daily-court-bootstrap-status.json ops/law-api-diagnostic.json 2>/dev/null || git add ops/daily-court-bootstrap-status.json
-          git commit -m "Record daily court bootstrap diagnostics: $RUN_STATUS" || exit 0
+          git commit -m "Record daily court bootstrap HTTP test: $RUN_STATUS" || exit 0
           git push origin "$STATUS_BRANCH"
