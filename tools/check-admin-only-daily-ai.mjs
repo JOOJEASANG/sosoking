@@ -50,9 +50,10 @@ if (deploy.includes('functions:createDailyAiCase')) {
 }
 for (const required of [
   'functions:generateDailyAiNow',
-  'Remove obsolete automatic AI schedule',
+  'Remove obsolete Functions',
   'firebase functions:list --project sosoking-481e6',
-  'firebase functions:delete createDailyAiCase --region asia-northeast3 --force'
+  'for function_name in createDailyAiCase',
+  'firebase functions:delete "$function_name" --region asia-northeast3 --force'
 ]) {
   if (!deploy.includes(required)) {
     errors.push(`.github/workflows/firebase-deploy.yml: automatic schedule removal is incomplete: ${required}`);
@@ -95,4 +96,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only daily AI validation passed: scheduled generation is removed, the deployed schedule is deleted, and the existing AI result contract remains intact.');
+console.log('Administrator-only daily AI validation passed: scheduled generation is removed, obsolete functions are cleaned up, and the existing AI result contract remains intact.');
