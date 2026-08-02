@@ -2,7 +2,9 @@ const CACHE_NAME = 'sosoking-app-v20260802-community-court-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-public-original-modal-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-pc-daily-icon-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
 // Cache lineage: /js/app.js?v=20260731-private-first-publication-1
+// Cache lineage: /js/app.js?v=20260730-discussion-court-1
 // Cache lineage: /js/pages/daily-real-court.js?v=20260730-daily-three-ranking-1
 // Historical URL markers are retained for regression checks but are no longer precached.
 const APP_SHELL = [
