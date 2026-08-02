@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-02T01:14:12.197Z",
+  "checkedAt": "2026-08-02T01:15:49.818Z",
   "results": [
     {
       "name": "plain",
@@ -19,7 +19,58 @@
       "preview": "{\n    \"result\" : \"필수입력요소 검증에 실패하였습니다.\",\n    \"msg\" : \"필수 입력값이 존재하지 않습니다. 요청 URL을 확인해 주세요.\"\n}\n"
     },
     {
-      "name": "dated",
+      "name": "query-star",
+      "httpStatus": 200,
+      "contentType": "application/json;charset=UTF-8",
+      "bodyLength": 92,
+      "topLevelKeys": [
+        "result",
+        "msg"
+      ],
+      "payloadKeys": [
+        "result",
+        "msg"
+      ],
+      "totalCnt": null,
+      "itemCount": null,
+      "preview": "{\n    \"result\" : \"필수입력요소 검증에 실패하였습니다.\",\n    \"msg\" : \"필수 입력값이 존재하지 않습니다. 요청 URL을 확인해 주세요.\"\n}\n"
+    },
+    {
+      "name": "search-query-star",
+      "httpStatus": 200,
+      "contentType": "application/json;charset=UTF-8",
+      "bodyLength": 92,
+      "topLevelKeys": [
+        "result",
+        "msg"
+      ],
+      "payloadKeys": [
+        "result",
+        "msg"
+      ],
+      "totalCnt": null,
+      "itemCount": null,
+      "preview": "{\n    \"result\" : \"필수입력요소 검증에 실패하였습니다.\",\n    \"msg\" : \"필수 입력값이 존재하지 않습니다. 요청 URL을 확인해 주세요.\"\n}\n"
+    },
+    {
+      "name": "known-query",
+      "httpStatus": 200,
+      "contentType": "application/json;charset=UTF-8",
+      "bodyLength": 92,
+      "topLevelKeys": [
+        "result",
+        "msg"
+      ],
+      "payloadKeys": [
+        "result",
+        "msg"
+      ],
+      "totalCnt": null,
+      "itemCount": null,
+      "preview": "{\n    \"result\" : \"필수입력요소 검증에 실패하였습니다.\",\n    \"msg\" : \"필수 입력값이 존재하지 않습니다. 요청 URL을 확인해 주세요.\"\n}\n"
+    },
+    {
+      "name": "dated-query-star",
       "httpStatus": 200,
       "contentType": "application/json;charset=UTF-8",
       "bodyLength": 92,
