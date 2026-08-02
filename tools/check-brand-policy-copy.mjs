@@ -34,7 +34,7 @@ for (const phrase of [
   '개별 회원의 선택은 공개하지 않고'
 ]) requireText(guide, phrase, 'public/js/pages/guide.js');
 for (const removed of ['오늘의 실제 판례', '매일 실제 법원 판례', '일간·주간·누적 랭킹']) {
-  if (guide.includes(removed)) errors.push(`public/js/pages/guide.js: removed daily-court copy remains: ${removed}`);
+  if (guide.includes(removed)) errors.push(`public/js/pages/guide.js: removed feature copy remains: ${removed}`);
 }
 
 const policyLimit = read('public/js/pages/policy-configurable-limit.js');
@@ -45,7 +45,7 @@ for (const phrase of [
   'removedLinePatterns'
 ]) requireText(policyLimit, phrase, 'public/js/pages/policy-configurable-limit.js');
 for (const removed of ['NEW_DAILY_COPY', 'OLD_DAILY_COPY', 'NEW_DAILY_STATS_COPY']) {
-  if (policyLimit.includes(removed)) errors.push(`public/js/pages/policy-configurable-limit.js: obsolete daily-court replacement remains: ${removed}`);
+  if (policyLimit.includes(removed)) errors.push(`public/js/pages/policy-configurable-limit.js: obsolete replacement remains: ${removed}`);
 }
 
 const index = read('public/index.html');
@@ -53,7 +53,7 @@ for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
   '공개 판결의 투표와 토론'
 ]) requireText(index, phrase, 'public/index.html');
-if (index.includes('오늘의 재판')) errors.push('public/index.html: removed daily-court metadata remains');
+if (index.includes('오늘의 재판')) errors.push('public/index.html: removed feature metadata remains');
 if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index)) {
   errors.push('public/index.html: versioned application entry is missing');
 }
@@ -67,8 +67,8 @@ for (const moduleUrl of [
   './components/footer.js?v=20260729-brand-policy-1',
   './components/nav.js?v=20260802-remove-daily-court-1'
 ]) requireText(app, moduleUrl, 'public/js/app.js');
-if (app.includes('daily-court') || app.includes('daily-real-court')) {
-  errors.push('public/js/app.js: removed daily-court route remains');
+if (app.includes('renderDailyRealCourt') || app.includes('#/daily-court') || app.includes('daily-real-court.js')) {
+  errors.push('public/js/app.js: removed feature route remains');
 }
 
 const footer = read('public/js/components/footer.js');
@@ -94,7 +94,9 @@ for (const asset of [
   '/js/components/footer.js?v=20260729-brand-policy-1',
   '/js/components/nav.js?v=20260802-remove-daily-court-1'
 ]) requireText(sw, asset, 'public/sw.js');
-if (sw.includes('daily-real-court')) errors.push('public/sw.js: removed daily-court assets remain');
+if (sw.includes('daily-real-court.js') || sw.includes("'/daily-court'")) {
+  errors.push('public/sw.js: removed feature assets remain');
+}
 
 const packageJson = read('package.json');
 requireText(packageJson, 'node tools/check-brand-policy-copy.mjs', 'package.json');
