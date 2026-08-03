@@ -12,6 +12,7 @@ import {
 const app = document.getElementById('dripso-app');
 let officialTopics = new Map();
 let loadPromise = null;
+let loadedAt = 0;
 let scheduled = 0;
 
 function topicIdFromHref(value) {
@@ -29,7 +30,7 @@ function officialBadge() {
 }
 
 async function loadOfficialTopics(force = false) {
-  if (!force && loadPromise) return loadPromise;
+  if (!force && loadPromise && Date.now() - loadedAt < 5 * 60 * 1000) return loadPromise;
   loadPromise = getDocs(query(
     collection(db, 'dripso_topics'),
     where('status', '==', 'visible'),
@@ -37,6 +38,7 @@ async function loadOfficialTopics(force = false) {
     limit(60)
   )).then(snapshot => {
     officialTopics = new Map(snapshot.docs.map(item => [item.id, { id: item.id, ...item.data() }]));
+    loadedAt = Date.now();
     return officialTopics;
   }).catch(error => {
     console.warn('Official Dripso topics could not be loaded:', error);
@@ -66,7 +68,8 @@ function decorateCards() {
     const sorted = [...cards].sort((left, right) =>
       Number(right.classList.contains('official-battle-card')) - Number(left.classList.contains('official-battle-card'))
     );
-    sorted.forEach(card => list.append(card));
+    const changed = cards.some((card, index) => card !== sorted[index]);
+    if (changed) sorted.forEach(card => list.append(card));
   });
 }
 
