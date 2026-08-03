@@ -16,10 +16,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/dripso/dripso.css?v=20260801-topic-image-1">
   <link rel="stylesheet" href="/dripso/dripso-navigation.css?v=20260802-dripso-navigation-1">
-  <!-- Cache lineage: /dripso/battle.css?v=20260803-seven-battles-1 -->
   <link rel="stylesheet" href="/dripso/battle.css?v=20260804-official-layout-1">
   <link rel="stylesheet" href="/dripso/battle-game.css?v=20260803-blind-duel-1">
   <link rel="stylesheet" href="/dripso/tournament-v3.css?v=20260804-final-four-1">
+  <link rel="stylesheet" href="/dripso/app-v4.css?v=20260804-dripso-v4-audit-1">
+  <!-- Retired app layers: battle-v2.js, battle-v2-pagination.js, tournament-v3.js, official-ui.js -->
 </head>
 <body>
   <header class="site-header">
@@ -28,8 +29,7 @@
       <span class="brand-copy"><strong>드립소</strong><small>파이널4 드립배틀</small></span>
     </a>
     <nav class="site-switcher" aria-label="소소킹 서비스 이동">
-      <a class="site-switch-link" href="/">⚖️ 판결소</a>
-      <a class="site-switch-link active" href="/dripso/#/" aria-current="page">ㅋ 드립소</a>
+      <a class="site-switch-link" href="/" aria-label="판결소로 이동">⚖️ 판결소</a>
     </nav>
     <div class="header-actions">
       <a class="account-link" id="account-link" href="/#/auth">로그인</a>
@@ -37,7 +37,7 @@
   </header>
 
   <main id="dripso-app" tabindex="-1">
-    <section class="loading-card" aria-live="polite">드립 배틀을 불러오는 중입니다.</section>
+    <section class="loading-card" aria-live="polite">오늘의 드립 경기를 준비하는 중입니다.</section>
   </main>
 
   <button class="write-fab" id="open-topic-dialog" type="button" aria-label="새 드립 배틀 열기">＋</button>
@@ -119,10 +119,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-  <script type="module" src="/dripso/battle-v2.js?v=20260803-blind-duel-1"></script>
-  <script type="module" src="/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1"></script>
-  <script type="module" src="/dripso/moderation.js?v=20260801-audit-fixes-1"></script>
-  <script type="module" src="/dripso/tournament-v3.js?v=20260804-final-four-1"></script>
-  <script type="module" src="/dripso/official-ui.js?v=20260804-official-layout-1"></script>
+  <script type="module" src="/dripso/app-v4.js?v=20260804-dripso-v4-audit-1"></script>
+  <script type="module" src="/dripso/moderation.js?v=20260804-dripso-v4-audit-1"></script>
 </body>
 </html>
