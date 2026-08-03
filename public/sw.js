@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260804-dripso-official-layout-1';
+const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-official-layout-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-2';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-1';
@@ -15,24 +16,18 @@ const CACHE_NAME = 'sosoking-app-v20260804-dripso-official-layout-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-search-scope-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-judge-board-search-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
-// Cache lineage: /js/app.js?v=20260730-home-layout-route-1
-// Cache lineage: /js/app.js?v=20260730-header-icon-single-1
-// Cache lineage: /js/app.js?v=20260730-search-scope-1
-// Cache lineage: /js/app.js?v=20260730-judge-board-search-1
-// Cache lineage: /js/app.js?v=20260730-discussion-court-1
-// Cache lineage: /js/app.js?v=20260730-final-audit-1
-// Cache lineage: /js/pages/result-comments.js?v=20260730-discussion-court-1
-// Cache lineage: /js/pages/board-full-content-search.js?v=20260730-search-scope-1
-// Cache lineage: /js/pages/board-search-pagination.js?v=20260730-judge-board-search-1
-// Cache lineage: /js/pages/board-court.js?v=20260730-discussion-court-1
-// Historical URL markers are retained for regression checks but are no longer precached.
+// Historical Dripso app layers are retained as markers but are no longer precached.
+// '/dripso/battle-v2.js?v=20260803-blind-duel-1'
+// '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1'
+// '/dripso/tournament-v3.js?v=20260804-final-four-1'
+// '/dripso/official-ui.js?v=20260804-official-layout-1'
+// '/dripso/battle.js?v=20260803-seven-battles-1'
+// '/dripso/battle-pagination.js?v=20260803-seven-battles-1'
 // '/dripso/dripso.css?v=20260801-community-1'
 // '/dripso/dripso.js?v=20260801-community-1'
 // '/dripso/dripso.css?v=20260731-dripso-1'
 // '/dripso/copy-helper.css?v=20260731-dripso-1'
 // '/dripso/dripso.js?v=20260731-dripso-1'
-// '/dripso/battle.js?v=20260803-seven-battles-1'
-// '/dripso/battle-pagination.js?v=20260803-seven-battles-1'
 // '/css/brand-logo.css?v=20260731-dripso-nav-1'
 // '/css/brand-logo.css?v=20260729-sans-font-1'
 // '/js/app.js?v=20260731-compact-record-card-1'
@@ -57,11 +52,9 @@ const APP_SHELL = [
   '/dripso/battle.css?v=20260804-official-layout-1',
   '/dripso/battle-game.css?v=20260803-blind-duel-1',
   '/dripso/tournament-v3.css?v=20260804-final-four-1',
-  '/dripso/battle-v2.js?v=20260803-blind-duel-1',
-  '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1',
-  '/dripso/moderation.js?v=20260801-audit-fixes-1',
-  '/dripso/tournament-v3.js?v=20260804-final-four-1',
-  '/dripso/official-ui.js?v=20260804-official-layout-1',
+  '/dripso/app-v4.css?v=20260804-dripso-v4-audit-1',
+  '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
+  '/dripso/moderation.js?v=20260804-dripso-v4-audit-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260802-remove-daily-court-2',
@@ -220,7 +213,5 @@ self.addEventListener('fetch', event => {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }
-  if (NETWORK_FIRST.test(url.pathname)) {
-    event.respondWith(networkFirst(request));
-  }
+  if (NETWORK_FIRST.test(url.pathname)) event.respondWith(networkFirst(request));
 });
