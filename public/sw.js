@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1';
+const CACHE_NAME = 'sosoking-app-v20260804-dripso-official-layout-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-2';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-public-original-modal-1';
@@ -53,13 +54,14 @@ const APP_SHELL = [
   '/dripso/index.html',
   '/dripso/dripso.css?v=20260801-topic-image-1',
   '/dripso/dripso-navigation.css?v=20260802-dripso-navigation-1',
-  '/dripso/battle.css?v=20260803-seven-battles-1',
+  '/dripso/battle.css?v=20260804-official-layout-1',
   '/dripso/battle-game.css?v=20260803-blind-duel-1',
   '/dripso/tournament-v3.css?v=20260804-final-four-1',
   '/dripso/battle-v2.js?v=20260803-blind-duel-1',
   '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1',
   '/dripso/moderation.js?v=20260801-audit-fixes-1',
   '/dripso/tournament-v3.js?v=20260804-final-four-1',
+  '/dripso/official-ui.js?v=20260804-official-layout-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260802-remove-daily-court-2',
