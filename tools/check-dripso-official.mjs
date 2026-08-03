@@ -47,7 +47,7 @@ for (const required of [
   "topic.official ? '공식 운영'", "topic.official ? `👑 드립소 공식",
   'Number(b.official) - Number(a.official)'
 ]) assert.ok(app.includes(required), `통합 앱 공식 배틀 표시 누락: ${required}`);
-for (const required of ['.official-spotlight', '.official-guide', '.official-battle-card', '.official-topic']) {
+for (const required of ['.official-spotlight', '.official-guide', '.official-spotlight .v4-topic-card', '.topic-label-row .official-battle-badge']) {
   assert.ok(css.includes(required), `공식 배틀 레이아웃 누락: ${required}`);
 }
 assert.ok(moderation.includes("detail.classList.contains('official-topic')"), '공식 주제가 일반 신고 버튼으로 처리되지 않도록 보호해야 합니다.');
