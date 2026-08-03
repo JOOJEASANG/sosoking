@@ -14,7 +14,8 @@ const requiredFiles = [
   'public/js/dripso-entry-guard.js',
   'public/css/dripso-entry.css',
   'functions/dripso.js',
-  'functions/dripso-game.js'
+  'functions/dripso-game.js',
+  'functions/dripso-bundle.js'
 ];
 
 for (const file of requiredFiles) {
@@ -30,6 +31,7 @@ if (!errors.length) {
   const functionsMain = read('functions/main.js');
   const legacyFunctions = read('functions/dripso.js');
   const gameFunctions = read('functions/dripso-game.js');
+  const functionBundle = read('functions/dripso-bundle.js');
   const rules = read('firestore.rules');
   const moderation = read('public/dripso/moderation.js');
   const deploy = read('.github/workflows/firebase-deploy.yml');
@@ -146,9 +148,24 @@ if (!errors.length) {
     if (!pagination.includes(required)) errors.push(`public/dripso/battle-v2-pagination.js: missing ${required}`);
   }
 
+  if (!functionsMain.includes("Object.assign(exports, require('./dripso-bundle'))")) {
+    errors.push('functions/main.js: Dripso public bundle is not loaded');
+  }
   for (const required of [
-    "Object.assign(exports, require('./dripso'))",
-    "Object.assign(exports, require('./dripso-game'))",
+    "const legacy = require('./dripso')",
+    "const game = require('./dripso-game')",
+    'exports.createDripsoTopic = legacy.createDripsoTopic',
+    'exports.createDripsoBattle = game.createDripsoBattle',
+    'exports.submitDripsoBattleEntry = game.submitDripsoBattleEntry',
+    'exports.getDripsoBattleView = game.getDripsoBattleView',
+    'exports.getDripsoBattleMatchup = game.getDripsoBattleMatchup',
+    'exports.voteDripsoBattleMatchup = game.voteDripsoBattleMatchup',
+    'exports.addDripsoComment = game.addDripsoComment',
+    'exports.toggleDripsoCommentLike = game.toggleDripsoCommentLike'
+  ]) {
+    if (!functionBundle.includes(required)) errors.push(`functions/dripso-bundle.js: missing ${required}`);
+  }
+  for (const required of [
     'exports.createDripsoTopic',
     'exports.createDripsoBattle',
     'exports.submitDripsoBattleEntry',
@@ -158,8 +175,8 @@ if (!errors.length) {
     'exports.addDripsoComment',
     'exports.toggleDripsoCommentLike'
   ]) {
-    if (!(functionsMain + legacyFunctions + gameFunctions).includes(required)) {
-      errors.push(`Dripso Functions integration missing: ${required}`);
+    if (!(legacyFunctions + gameFunctions).includes(required)) {
+      errors.push(`Dripso implementation missing: ${required}`);
     }
   }
   for (const required of [
@@ -220,4 +237,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Dripso validation passed: seven quick modes now use timed blind entry, anonymous pair voting, final rankings, legacy compatibility, protected writes, moderation, and offline assets.');
+console.log('Dripso validation passed: seven quick modes now use timed blind entry, anonymous pair voting, final rankings, a single public Functions bundle, legacy compatibility, protected writes, moderation, and offline assets.');
