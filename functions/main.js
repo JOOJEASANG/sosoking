@@ -14,9 +14,6 @@ Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
 Object.assign(exports, require('./discussion'));
 Object.assign(exports, require('./dripso'));
-// 오늘의 한줄 댓글은 줄바꿈과 길이를 별도로 검증한 구현으로 교체한다.
-const { dailyOneLineAddDripsoComment } = require('./dripso-daily-one-line');
-exports.addDripsoComment = dailyOneLineAddDripsoComment;
 Object.assign(exports, require('./dripso-moderation'));
 Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));

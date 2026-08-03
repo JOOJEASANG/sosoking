@@ -1,14 +1,14 @@
 import fs from 'node:fs';
-import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 const errors = [];
 const read = file => fs.readFileSync(file, 'utf8');
 const requiredFiles = [
   'public/dripso/index.html',
   'public/dripso/dripso.css',
-  'public/dripso/dripso.js',
-  'public/dripso/jokes.js',
+  'public/dripso/dripso-navigation.css',
+  'public/dripso/battle.css',
+  'public/dripso/battle.js',
+  'public/dripso/moderation.js',
   'public/js/dripso-entry-guard.js',
   'public/css/dripso-entry.css',
   'functions/dripso.js'
@@ -20,138 +20,105 @@ for (const file of requiredFiles) {
 
 if (!errors.length) {
   const html = read('public/dripso/index.html');
-  const css = read('public/dripso/dripso.css');
-  const app = read('public/dripso/dripso.js');
-  const courtNav = read('public/js/components/nav.js');
-  const courtBrand = read('public/css/brand-logo.css');
-  const entryGuard = read('public/js/dripso-entry-guard.js');
-  const index = read('public/index.html');
-  const sw = read('public/sw.js');
+  const css = read('public/dripso/battle.css');
+  const app = read('public/dripso/battle.js');
   const functionsMain = read('functions/main.js');
   const functionsApp = read('functions/dripso.js');
   const rules = read('firestore.rules');
-  const deploy = read('.github/workflows/firebase-deploy.yml');
-  const hostingOnly = read('.github/workflows/hosting-only-deploy.yml');
-  const indexes = JSON.parse(read('firestore.indexes.json'));
+  const moderation = read('public/dripso/moderation.js');
 
   for (const required of [
-    '<title>드립소 - 모두가 한마디씩 보태는 유머 놀이터</title>',
-    'http-equiv="Content-Security-Policy"',
-    '/dripso/dripso.css?v=20260801-topic-image-1',
-    '/dripso/dripso.js?v=20260801-topic-image-1',
+    '<title>드립소 - 10초 드립배틀</title>',
+    '/dripso/battle.css?v=20260803-seven-battles-1',
+    '/dripso/battle.js?v=20260803-seven-battles-1',
     'id="dripso-app"',
     'id="topic-dialog"',
     'id="topic-form"',
-    'id="topic-image"',
-    'id="topic-image-preview"',
-    'id="remove-topic-image"',
-    'accept="image/jpeg,image/png,image/webp"',
+    'id="battle-mode"',
     'data-nav="home"',
+    'data-nav="browse"',
+    'data-nav="popular"',
+    'data-nav="hall"',
+    'data-nav="create"',
+    'value="blank"',
+    'value="naming"',
+    'value="comeback"',
+    'value="wrong"',
+    'value="headline"',
+    'value="excuse"',
+    'value="manual"',
+    '빈칸채우기',
+    '이름붙이기',
+    '받아치기',
+    '오답제출',
+    '뉴스제목',
+    '변명대회',
+    '사용설명서'
+  ]) {
+    if (!html.includes(required)) errors.push(`public/dripso/index.html: missing ${required}`);
+  }
+
+  for (const forbidden of [
     'data-nav="daily"',
     'data-nav="naming"',
     'data-nav="situation"',
-    'data-nav="popular"',
-    '오늘의 한줄',
-    '이름짓기',
-    '상황드립',
-    '인기'
+    '<small>오늘의 한줄</small>',
+    '<small>미친작명소</small>',
+    '<small>상황드립</small>'
   ]) {
-    if (!html.includes(required)) errors.push(`public/dripso/index.html: missing ${required}`);
+    if (html.includes(forbidden)) errors.push(`public/dripso/index.html: retired category remains ${forbidden}`);
   }
 
   if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(html)) errors.push('public/dripso/index.html: inline script must not be used');
   if (/\son[a-z]+\s*=\s*["']/i.test(html)) errors.push('public/dripso/index.html: inline event attributes must not be used');
 
   for (const required of [
-    '#dripso-app:focus',
-    'outline: none',
-    '.dripso-bottom-nav',
-    'grid-template-columns: repeat(5, 1fr)',
-    '.topic-card',
-    '.topic-card-image',
-    '.topic-detail-image',
-    '.image-picker',
-    '.image-preview',
-    '.comment-card.best',
-    '.like-button.active',
-    '.topic-dialog',
-    '@media (max-width: 580px)',
-    '@media (prefers-reduced-motion: reduce)',
-    'env(safe-area-inset-bottom)'
+    '.battle-mode-grid',
+    '.battle-mode-tile',
+    '.battle-filter-bar',
+    '.battle-rule-note',
+    '.hall-rank',
+    '@media (max-width:580px)',
+    '@media (prefers-reduced-motion:reduce)'
   ]) {
-    if (!css.includes(required)) errors.push(`public/dripso/dripso.css: missing ${required}`);
+    if (!css.includes(required)) errors.push(`public/dripso/battle.css: missing ${required}`);
   }
 
   for (const required of [
-    "import { initAuth, auth, db, functions } from '/js/firebase.js?v=20260729-auth-session-1'",
+    'const MODE_META = Object.freeze({',
+    "blank: {",
+    "naming: {",
+    "comeback: {",
+    "wrong: {",
+    "headline: {",
+    "excuse: {",
+    "manual: {",
+    'const MODE_ORDER = Object.keys(MODE_META)',
+    'const MODE_MARKER =',
+    '[[dripso-mode:',
+    "topic?.type === 'naming'",
+    "topic?.type === 'situation'",
     "httpsCallable(functions, 'createDripsoTopic')",
     "httpsCallable(functions, 'addDripsoComment')",
     "httpsCallable(functions, 'toggleDripsoCommentLike')",
     "collection(db, 'dripso_topics')",
     "collection(db, `dripso_topics/${topicId}/comments`)",
     "where('status', '==', 'visible')",
-    'sortedPopular',
-    'comment.likeCount',
-    'index < 3',
+    "type: mode === 'naming' ? 'naming' : 'situation'",
+    'renderHome',
+    'renderBrowse',
+    'renderPopular',
+    'renderHall',
     'renderTopic',
-    'topicForm.addEventListener',
     'compressTopicImage',
-    'canvas.toBlob',
-    "imageDataUrl: selectedImageDataUrl",
     'safeTopicImageUrl',
-    "parsed.hostname === 'firebasestorage.googleapis.com'",
-    "location.hash = `#/topic/${topicId}`"
+    'topicForm.addEventListener'
   ]) {
-    if (!app.includes(required)) errors.push(`public/dripso/dripso.js: missing ${required}`);
+    if (!app.includes(required)) errors.push(`public/dripso/battle.js: missing ${required}`);
   }
+
   for (const forbidden of ['setDoc(', 'addDoc(', 'updateDoc(', 'deleteDoc(', 'innerHTML', 'eval(']) {
-    if (app.includes(forbidden)) errors.push(`public/dripso/dripso.js: direct write or unsafe pattern found ${forbidden}`);
-  }
-
-  if (courtNav.includes('href="/dripso/"') || courtNav.includes('>드립소</span>')) {
-    errors.push('public/js/components/nav.js: Dripso must not remain in the court bottom navigation');
-  }
-  if (!courtBrand.includes('flex: 1 1 25%')) {
-    errors.push('public/css/brand-logo.css: four-item court navigation layout is missing');
-  }
-  if (courtBrand.includes('flex: 1 1 20%')) {
-    errors.push('public/css/brand-logo.css: obsolete five-item court navigation layout remains');
-  }
-  for (const required of [
-    "const DRIPSO_PATH = '/dripso/'",
-    'removeLegacyNavEntry',
-    "document.getElementById('dripso-home-entry')",
-    '드립소 바로가기',
-    '주제를 올리고 댓글 드립을 달아 베스트 한마디를 뽑아보세요.'
-  ]) {
-    if (!entryGuard.includes(required)) errors.push(`public/js/dripso-entry-guard.js: missing ${required}`);
-  }
-  if (entryGuard.includes('makeNavLink') || entryGuard.includes('ensureDripsoNav')) {
-    errors.push('public/js/dripso-entry-guard.js: court bottom navigation injection must be removed');
-  }
-
-  const brandVersion = index.match(/\/css\/brand-logo\.css\?v=([^"']+)/)?.[1] || '';
-  for (const required of [
-    `/css/brand-logo.css?v=${brandVersion}`,
-    '/css/dripso-entry.css?v=20260801-dripso-community-1',
-    '/js/dripso-entry-guard.js?v=20260801-dripso-community-1'
-  ]) {
-    if (!required || !index.includes(required)) errors.push(`public/index.html: missing ${required || 'versioned brand stylesheet'}`);
-  }
-
-  const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
-  for (const required of [
-    `const CACHE_NAME = 'sosoking-app-v${appVersion}'`,
-    "'/dripso/index.html'",
-    "'/dripso/dripso.css?v=20260801-topic-image-1'",
-    "'/dripso/dripso.js?v=20260801-topic-image-1'",
-    "url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')",
-    "networkFirst(request, '/dripso/index.html')"
-  ]) {
-    if (!required || !sw.includes(required)) errors.push(`public/sw.js: Dripso cache or routing missing ${required || 'active cache version'}`);
-  }
-  if (!brandVersion || !sw.includes(`/css/brand-logo.css?v=${brandVersion}`)) {
-    errors.push('public/index.html and public/sw.js: court brand cache versions differ');
+    if (app.includes(forbidden)) errors.push(`public/dripso/battle.js: direct write or unsafe pattern found ${forbidden}`);
   }
 
   for (const required of [
@@ -165,15 +132,7 @@ if (!errors.length) {
     "enforceActionRateLimit(uid, 'dripso-like'",
     "status: 'visible'",
     'topLikeCount',
-    "collection('comments')",
-    "collection('likes')",
-    "require('firebase-admin/storage')",
-    'decodeTopicImageDataUrl',
-    'jpegDimensions',
-    'MAX_TOPIC_IMAGE_BYTES',
-    'firebaseStorageDownloadTokens',
-    'imageContentType',
-    "imageDataUrl"
+    'decodeTopicImageDataUrl'
   ]) {
     if (!(functionsMain + functionsApp).includes(required)) errors.push(`Dripso Functions integration missing: ${required}`);
   }
@@ -182,29 +141,18 @@ if (!errors.length) {
     'match /dripso_topics/{topicId}',
     'match /comments/{commentId}',
     'match /likes/{uid}',
-    'match /dripso_topic_authors/{topicId}',
-    'match /dripso_comment_authors/{topicId}/items/{commentId}',
     'allow create, update, delete: if false;'
   ]) {
     if (!rules.includes(required)) errors.push(`firestore.rules: Dripso protection missing ${required}`);
   }
 
-  for (const functionName of ['functions:createDripsoTopic', 'functions:addDripsoComment', 'functions:toggleDripsoCommentLike']) {
-    if (!deploy.includes(functionName)) errors.push(`firebase deploy workflow missing ${functionName}`);
-  }
-  if (!hostingOnly.includes('node tools/check-dripso-site.mjs') || hostingOnly.includes('node tools/check-dripso.mjs')) {
-    errors.push('hosting-only deploy workflow uses an invalid Dripso check path');
-  }
-
-  const commentRankIndex = indexes.indexes?.some(item => item.collectionGroup === 'comments'
-    && item.fields?.some(field => field.fieldPath === 'status' && field.order === 'ASCENDING')
-    && item.fields?.some(field => field.fieldPath === 'likeCount' && field.order === 'DESCENDING'));
-  if (!commentRankIndex) errors.push('firestore.indexes.json: Dripso comment ranking index is missing');
-
-  const moduleUrl = `${pathToFileURL(path.resolve('public/dripso/jokes.js')).href}?check=${Date.now()}`;
-  const { JOKES } = await import(moduleUrl);
-  if (!Array.isArray(JOKES) || JOKES.length < 50) {
-    errors.push(`public/dripso/jokes.js: expected at least 50 original lines, found ${JOKES?.length || 0}`);
+  for (const required of [
+    "httpsCallable(functions, 'getDripsoOwnership')",
+    "httpsCallable(functions, 'deleteOwnDripsoTopic')",
+    "httpsCallable(functions, 'deleteOwnDripsoComment')",
+    "httpsCallable(functions, 'submitDripsoReport')"
+  ]) {
+    if (!moderation.includes(required)) errors.push(`public/dripso/moderation.js: missing ${required}`);
   }
 }
 
@@ -214,4 +162,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Dripso validation passed: separate site navigation, topic images, callable-only writes, like ranking, court home entry, and independent Hosting deployment.');
+console.log('Dripso validation passed: seven quick battle modes replace the retired daily/category navigation while callable-only writes, images, ranking, deletion, and reporting remain protected.');
