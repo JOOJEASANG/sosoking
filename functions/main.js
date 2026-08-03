@@ -13,7 +13,8 @@ Object.assign(exports, require('./daily'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
 Object.assign(exports, require('./discussion'));
-Object.assign(exports, require('./dripso'));
+// 기존 자유형 호환과 게임 버전 2 공개 함수를 하나의 배포 표면으로 묶는다.
+Object.assign(exports, require('./dripso-bundle'));
 Object.assign(exports, require('./dripso-moderation'));
 Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));

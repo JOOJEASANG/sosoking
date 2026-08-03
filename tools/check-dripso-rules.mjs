@@ -43,6 +43,10 @@ const admin = testEnv.authenticatedContext('dripso-admin', {
 }).firestore();
 const unauthenticated = testEnv.unauthenticatedContext().firestore();
 const now = Timestamp.now();
+const futureEntry = Timestamp.fromMillis(Date.now() + 60 * 60 * 1000);
+const futureVoting = Timestamp.fromMillis(Date.now() + 2 * 60 * 60 * 1000);
+const pastEntry = Timestamp.fromMillis(Date.now() - 2 * 60 * 60 * 1000);
+const pastVoting = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
 
 try {
   await testEnv.withSecurityRulesDisabled(async context => {
@@ -69,6 +73,32 @@ try {
         topLikeCount: 0,
         createdAt: now
       }),
+      setDoc(doc(db, 'dripso_topics/game-open'), {
+        type: 'situation',
+        mode: 'blank',
+        gameVersion: 2,
+        title: '블라인드 출전 중',
+        prompt: '[[dripso-mode:blank]] 빈칸을 채워주세요.',
+        nickname: '판주',
+        status: 'visible',
+        commentCount: 1,
+        entryDeadline: futureEntry,
+        votingDeadline: futureVoting,
+        createdAt: now
+      }),
+      setDoc(doc(db, 'dripso_topics/game-closed'), {
+        type: 'situation',
+        mode: 'wrong',
+        gameVersion: 2,
+        title: '종료된 배틀',
+        prompt: '[[dripso-mode:wrong]] 오답을 제출하세요.',
+        nickname: '판주',
+        status: 'visible',
+        commentCount: 1,
+        entryDeadline: pastEntry,
+        votingDeadline: pastVoting,
+        createdAt: now
+      }),
       setDoc(doc(db, 'dripso_topics/visible-topic/comments/visible-comment'), {
         nickname: '댓글러',
         text: '공개 댓글 드립',
@@ -83,6 +113,24 @@ try {
         likeCount: 0,
         createdAt: now
       }),
+      setDoc(doc(db, 'dripso_topics/game-open/comments/blind-entry'), {
+        nickname: '비공개 출전자',
+        text: '마감 전에는 보이면 안 되는 작품',
+        status: 'visible',
+        gameVersion: 2,
+        battleScore: 0,
+        duelCount: 0,
+        createdAt: now
+      }),
+      setDoc(doc(db, 'dripso_topics/game-closed/comments/final-entry'), {
+        nickname: '우승 후보',
+        text: '종료 뒤 공개되는 작품',
+        status: 'visible',
+        gameVersion: 2,
+        battleScore: 4,
+        duelCount: 7,
+        createdAt: now
+      }),
       setDoc(doc(db, 'dripso_topics/visible-topic/comments/visible-comment/likes/dripso-user'), {
         uid: 'dripso-user',
         createdAt: now
@@ -95,6 +143,12 @@ try {
         uid: 'dripso-user',
         topicId: 'visible-topic',
         commentId: 'visible-comment'
+      }),
+      setDoc(doc(db, 'dripso_battle_voters/game-open/users/dripso-user/votes/pair-key'), {
+        topicId: 'game-open',
+        voterUid: 'dripso-user',
+        selectedEntryId: 'blind-entry',
+        createdAt: now
       })
     ]);
   });
@@ -111,6 +165,24 @@ try {
   await assertFails(getDoc(doc(unauthenticated, 'dripso_topics/visible-topic/comments/hidden-comment')));
   await assertSucceeds(getDocs(query(
     collection(unauthenticated, 'dripso_topics/visible-topic/comments'),
+    where('status', '==', 'visible')
+  )));
+
+  // 게임 버전 2의 출전작은 투표 종료 전까지 직접 읽을 수 없다.
+  await assertSucceeds(getDoc(doc(unauthenticated, 'dripso_topics/game-open')));
+  await assertFails(getDoc(doc(unauthenticated, 'dripso_topics/game-open/comments/blind-entry')));
+  await assertFails(getDoc(doc(user, 'dripso_topics/game-open/comments/blind-entry')));
+  await assertFails(getDoc(doc(other, 'dripso_topics/game-open/comments/blind-entry')));
+  await assertFails(getDocs(query(
+    collection(unauthenticated, 'dripso_topics/game-open/comments'),
+    where('status', '==', 'visible')
+  )));
+  await assertSucceeds(getDoc(doc(admin, 'dripso_topics/game-open/comments/blind-entry')));
+
+  // 투표 종료 뒤에는 최종 순위와 출전작을 공개한다.
+  await assertSucceeds(getDoc(doc(unauthenticated, 'dripso_topics/game-closed/comments/final-entry')));
+  await assertSucceeds(getDocs(query(
+    collection(unauthenticated, 'dripso_topics/game-closed/comments'),
     where('status', '==', 'visible')
   )));
 
@@ -134,8 +206,10 @@ try {
   await assertFails(getDoc(doc(admin, 'dripso_topic_authors/visible-topic')));
   await assertFails(getDoc(doc(user, 'dripso_comment_authors/visible-topic/items/visible-comment')));
   await assertFails(getDoc(doc(admin, 'dripso_comment_authors/visible-topic/items/visible-comment')));
+  await assertFails(getDoc(doc(user, 'dripso_battle_voters/game-open/users/dripso-user/votes/pair-key')));
+  await assertFails(getDoc(doc(admin, 'dripso_battle_voters/game-open/users/dripso-user/votes/pair-key')));
 
-  console.log('Dripso Firestore rules integration passed: visible public reads, callable-only writes, private authors, and private per-user likes.');
+  console.log('Dripso Firestore rules integration passed: public topics, legacy comments, timed blind entries, closed results, callable-only writes, private authors, likes, and pair votes.');
 } finally {
   await testEnv.cleanup();
 }

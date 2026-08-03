@@ -74,7 +74,7 @@ jobs:
       - name: Deploy current Functions first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:createDripsoTopic,functions:addDripsoComment,functions:toggleDripsoCommentLike,functions:getDripsoOwnership,functions:deleteOwnDripsoTopic,functions:deleteOwnDripsoComment,functions:submitDripsoReport,functions:moderateDripsoReport,functions:setResultVisibility,functions:getPublicCaseOriginal,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:createDripsoTopic,functions:createDripsoBattle,functions:submitDripsoBattleEntry,functions:getDripsoBattleView,functions:getDripsoBattleMatchup,functions:voteDripsoBattleMatchup,functions:addDripsoComment,functions:toggleDripsoCommentLike,functions:getDripsoOwnership,functions:deleteOwnDripsoTopic,functions:deleteOwnDripsoComment,functions:submitDripsoReport,functions:moderateDripsoReport,functions:setResultVisibility,functions:getPublicCaseOriginal,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
 
       - name: Remove obsolete Functions
         env:
@@ -138,4 +138,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, Functions, public original-case viewer, Dripso moderation, deployed-function drift validation, existing verdict number-line migration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, Functions, public original-case viewer, Dripso blind duels, moderation, deployed-function drift validation, existing verdict number-line migration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
