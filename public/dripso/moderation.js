@@ -26,11 +26,8 @@ function errorMessage(error, fallback) {
 function topicIdFromHash() {
   const match = (location.hash || '').match(/^#\/topic\/([^/?#]+)/);
   if (!match) return '';
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return '';
-  }
+  try { return decodeURIComponent(match[1]); }
+  catch { return ''; }
 }
 
 function injectStyles() {
@@ -63,6 +60,7 @@ function actionButton(label, action, targetType, topicId, commentId = '') {
 function addTopicActions(topicId, owned) {
   const detail = app.querySelector('.topic-detail');
   if (!detail || detail.querySelector('[data-dripso-topic-actions]')) return;
+  if (detail.classList.contains('official-topic')) return;
   const actions = document.createElement('div');
   actions.className = 'dripso-target-actions';
   actions.dataset.dripsoTopicActions = 'true';
@@ -77,8 +75,8 @@ function addTopicActions(topicId, owned) {
 function addCommentActions(topicId, ownedIds) {
   app.querySelectorAll('.comment-card').forEach(card => {
     if (card.querySelector('[data-dripso-comment-actions]')) return;
-    const like = card.querySelector('[data-like][data-topic]');
-    const commentId = card.dataset.commentId || like?.dataset.like || '';
+    const like = card.querySelector('[data-legacy-like][data-topic]');
+    const commentId = card.dataset.commentId || like?.dataset.legacyLike || '';
     if (!commentId) return;
     const actions = document.createElement('div');
     actions.className = 'dripso-target-actions comment-actions';
@@ -115,14 +113,15 @@ async function decorate() {
   if (!detail) return;
 
   const cards = [...app.querySelectorAll('.comment-card')];
-  const missingTopic = !detail.querySelector('[data-dripso-topic-actions]');
+  const officialTopic = detail.classList.contains('official-topic');
+  const missingTopic = !officialTopic && !detail.querySelector('[data-dripso-topic-actions]');
   const missingComment = cards.some(card => !card.querySelector('[data-dripso-comment-actions]'));
   if (!missingTopic && !missingComment) return;
 
   decorating = true;
   try {
     const commentIds = cards
-      .map(card => card.dataset.commentId || card.querySelector('[data-like]')?.dataset.like || '')
+      .map(card => card.dataset.commentId || card.querySelector('[data-legacy-like]')?.dataset.legacyLike || '')
       .filter(Boolean);
     const ownership = await loadOwnership(topicId, commentIds);
     addTopicActions(topicId, ownership.topicOwned);
@@ -136,7 +135,7 @@ async function decorate() {
 
 function scheduleDecorate() {
   window.clearTimeout(decorateTimer);
-  decorateTimer = window.setTimeout(() => void decorate(), 100);
+  decorateTimer = window.setTimeout(() => void decorate(), 80);
 }
 
 app.addEventListener('click', async event => {
@@ -171,7 +170,7 @@ app.addEventListener('click', async event => {
     } else {
       await deleteComment({ topicId, commentId });
       showToast('댓글이 삭제됐습니다.');
-      location.reload();
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
     }
   } catch (error) {
     showToast(errorMessage(error, action === 'report' ? '신고에 실패했습니다.' : '삭제에 실패했습니다.'));
@@ -184,4 +183,5 @@ injectStyles();
 await auth.authStateReady().catch(() => null);
 new MutationObserver(scheduleDecorate).observe(app, { childList: true, subtree: true });
 window.addEventListener('hashchange', scheduleDecorate);
+window.addEventListener('dripso:rendered', scheduleDecorate);
 scheduleDecorate();
