@@ -12,8 +12,10 @@ function sourceExports() {
     const file = path.resolve(path.dirname(mainPath), `${moduleName}.js`);
     if (!fs.existsSync(file)) continue;
     const source = fs.readFileSync(file, 'utf8');
-    for (const match of source.matchAll(/exports\.([A-Za-z_$][\w$]*)\s*=/g)) {
-      const name = match[1];
+    // Firebase가 실제 배포 표면으로 읽는 직접 exports.foo 할당만 수집한다.
+    // module.exports.foo는 CLI·회귀검사용 내부 헬퍼일 수 있으므로 제외한다.
+    for (const match of source.matchAll(/(^|[^\w$.])exports\.([A-Za-z_$][\w$]*)\s*=/g)) {
+      const name = match[2];
       if (!name.startsWith('_')) names.add(name);
     }
   }
