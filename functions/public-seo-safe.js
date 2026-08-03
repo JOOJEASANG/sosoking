@@ -13,6 +13,7 @@ const {
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const SITEMAP_RESULT_LIMIT = 5000;
+const DRIPSO_CANONICAL_URL = 'https://sosoking.co.kr/dripso/';
 
 function isSanitizedPublicResult(raw = {}) {
   return raw.isPublic === true
@@ -71,6 +72,13 @@ async function listSafePublicResultEntries() {
         }
       })()
     }));
+}
+
+function renderSafeSitemapXml(entries) {
+  const base = renderSitemapXml(entries);
+  if (base.includes(`<loc>${DRIPSO_CANONICAL_URL}</loc>`)) return base;
+  const row = `  <url>\n    <loc>${DRIPSO_CANONICAL_URL}</loc>\n  </url>\n`;
+  return base.replace('</urlset>', `${row}</urlset>`);
 }
 
 function renderNotFoundHtml() {
@@ -143,7 +151,7 @@ exports.publicSitemap = onRequest({
       .set('X-Robots-Tag', 'noindex')
       .set('Vary', 'Accept-Encoding')
       .status(200)
-      .send(renderSitemapXml(entries));
+      .send(renderSafeSitemapXml(entries));
   } catch (error) {
     console.error('safe public sitemap failed:', { code: error?.code || '', message: error?.message || '' });
     response.status(503).set('Retry-After', '300').send('Sitemap temporarily unavailable');
@@ -154,5 +162,6 @@ Object.defineProperties(module.exports, {
   isSanitizedPublicResult: { value: isSanitizedPublicResult, enumerable: false },
   loadSafePublicResult: { value: loadSafePublicResult, enumerable: false },
   listSafePublicResultEntries: { value: listSafePublicResultEntries, enumerable: false },
-  normalizeSafePublicResult: { value: normalizeSafePublicResult, enumerable: false }
+  normalizeSafePublicResult: { value: normalizeSafePublicResult, enumerable: false },
+  renderSafeSitemapXml: { value: renderSafeSitemapXml, enumerable: false }
 });
