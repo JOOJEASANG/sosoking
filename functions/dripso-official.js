@@ -149,5 +149,6 @@ exports.publishDailyOfficialDripsoBattle = onSchedule({
   console.log('Official Dripso battle ensured:', result);
 });
 
-exports.ensureOfficialBattle = ensureOfficialBattle;
-exports.officialSelection = officialSelection;
+// CLI와 회귀검사에서만 사용하며 Firebase 배포 표면에는 노출하지 않는다.
+module.exports.ensureOfficialBattle = ensureOfficialBattle;
+module.exports.officialSelection = officialSelection;
