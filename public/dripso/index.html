@@ -5,28 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
   <title>드립소 - 블라인드 파이널4 드립배틀</title>
-  <meta name="description" content="빈칸채우기, 이름붙이기, 받아치기 등 일곱 가지 짧은 드립에 출전하고 익명 예선과 파이널4 준결승·결승으로 챔피언을 정하는 참여형 코미디 게임입니다.">
-  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
-  <meta name="application-name" content="드립소">
+  <meta name="description" content="일곱 가지 짧은 드립에 블라인드로 출전하고, 익명 예선과 파이널4 준결승·결승으로 챔피언을 정하는 코미디 게임입니다.">
   <meta name="theme-color" content="#17121f">
-  <link rel="canonical" href="https://sosoking.co.kr/dripso/">
-  <link rel="alternate" hreflang="ko-KR" href="https://sosoking.co.kr/dripso/">
-
   <meta property="og:type" content="website">
-  <meta property="og:locale" content="ko_KR">
-  <meta property="og:site_name" content="드립소">
-  <meta property="og:url" content="https://sosoking.co.kr/dripso/">
   <meta property="og:title" content="드립소 - 블라인드 파이널4 드립배틀">
-  <meta property="og:description" content="문제는 드립소가 준비하고, 사용자는 짧은 한 방으로 출전합니다. 익명 예선과 파이널4로 오늘의 챔피언을 정해보세요.">
-  <meta property="og:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="드립소 - 블라인드 파이널4 드립배틀">
-  <meta name="twitter:description" content="빈칸채우기·이름붙이기·받아치기 등 일곱 종목에서 짧은 드립으로 출전해보세요.">
-  <meta name="twitter:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
-
+  <meta property="og:description" content="블라인드 출전, 익명 예선, 파이널4 준결승과 최종 결승.">
   <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,20 +36,8 @@
     </div>
   </header>
 
-  <main id="dripso-app" tabindex="-1" itemscope itemtype="https://schema.org/WebApplication">
-    <section class="hero-card battle-hero" aria-labelledby="dripso-seo-title">
-      <p class="eyebrow">BLIND DRIP BATTLE</p>
-      <h1 id="dripso-seo-title" itemprop="name">짧은 한 방으로 붙는 드립소</h1>
-      <p itemprop="description">빈칸채우기·이름붙이기·받아치기·오답제출·뉴스제목·변명대회·사용설명서에서 드립을 제출하고, 익명 1대1 예선과 파이널4 투표로 챔피언을 정합니다.</p>
-      <meta itemprop="applicationCategory" content="GameApplication">
-      <meta itemprop="operatingSystem" content="Web">
-      <meta itemprop="isAccessibleForFree" content="true">
-      <div class="battle-hero-actions">
-        <a class="submit-button battle-hero-link" href="/dripso/#/browse">열린 배틀 보기</a>
-        <a class="write-button battle-hero-link" href="/dripso/#/create">새 배틀 열기</a>
-      </div>
-      <noscript><p>드립배틀 출전과 투표 기능을 이용하려면 브라우저의 JavaScript를 켜주세요.</p></noscript>
-    </section>
+  <main id="dripso-app" tabindex="-1">
+    <section class="loading-card" aria-live="polite">드립 배틀을 불러오는 중입니다.</section>
   </main>
 
   <button class="write-fab" id="open-topic-dialog" type="button" aria-label="새 드립 배틀 열기">＋</button>
