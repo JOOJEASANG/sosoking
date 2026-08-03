@@ -13,9 +13,8 @@ Object.assign(exports, require('./daily'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
 Object.assign(exports, require('./discussion'));
-Object.assign(exports, require('./dripso'));
-// 게임 버전 2는 기존 댓글 함수를 안전한 호환 구현으로 교체하고 블라인드 출전·비교투표 함수를 추가한다.
-Object.assign(exports, require('./dripso-game'));
+// 기존 자유형 호환과 게임 버전 2 공개 함수를 하나의 배포 표면으로 묶는다.
+Object.assign(exports, require('./dripso-bundle'));
 Object.assign(exports, require('./dripso-moderation'));
 Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));
