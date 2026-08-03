@@ -5,7 +5,7 @@ const read = file => fs.readFileSync(file, 'utf8');
 const requiredFiles = [
   'functions/dripso-moderation.js',
   'public/dripso/moderation.js',
-  'public/dripso/battle-pagination.js',
+  'public/dripso/battle-v2-pagination.js',
   'public/admin/dripso-moderation.js'
 ];
 for (const file of requiredFiles) {
@@ -20,7 +20,7 @@ if (!errors.length) {
   const rules = read('firestore.rules');
   const indexes = read('firestore.indexes.json');
   const publicUi = read('public/dripso/moderation.js');
-  const pagination = read('public/dripso/battle-pagination.js');
+  const pagination = read('public/dripso/battle-v2-pagination.js');
   const publicHtml = read('public/dripso/index.html');
   const adminUi = read('public/admin/dripso-moderation.js');
   const adminHtml = read('public/admin/index.html');
@@ -60,7 +60,8 @@ if (!errors.length) {
   for (const required of [
     'match /dripso_reports/{reportId}',
     'match /dripso_report_keys/{keyId}',
-    'request.auth.token.email_verified == true'
+    'request.auth.token.email_verified == true',
+    'match /dripso_battle_voters/{topicId}/users/{uid}/votes/{voteId}'
   ]) {
     if (!rules.includes(required)) errors.push(`firestore.rules: missing ${required}`);
   }
@@ -80,16 +81,18 @@ if (!errors.length) {
   for (const required of [
     'startAfter',
     "orderBy('createdAt', 'desc')",
-    "orderBy('likeCount', 'desc')",
     'data-pagination-complete',
+    'const GAME_VERSION = 2',
     'const MODE_MARKER =',
     "route.name === 'mode'",
-    "route.name === 'hall'"
+    "route.name === 'hall'",
+    'function battlePhase(topic)',
+    'Number(topic.gameVersion) === GAME_VERSION'
   ]) {
-    if (!pagination.includes(required)) errors.push(`public/dripso/battle-pagination.js: missing ${required}`);
+    if (!pagination.includes(required)) errors.push(`public/dripso/battle-v2-pagination.js: missing ${required}`);
   }
   for (const required of [
-    '/dripso/battle-pagination.js?v=20260803-seven-battles-1',
+    '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1',
     '/dripso/moderation.js?v=20260801-audit-fixes-1'
   ]) {
     if (!publicHtml.includes(required)) errors.push(`public/dripso/index.html: missing ${required}`);
@@ -129,4 +132,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Dripso moderation validation passed: ownership deletion, reporting, administrator actions, seven-mode pagination, verified admin email, and serialized deployment are connected.');
+console.log('Dripso moderation validation passed: ownership deletion, reporting, administrator actions, blind-battle pagination, private pair votes, verified admin email, and serialized deployment are connected.');
