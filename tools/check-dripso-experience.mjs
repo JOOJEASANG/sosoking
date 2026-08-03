@@ -74,7 +74,7 @@ for (const required of [
   '1대1 비교심사 중',
   '경기 종료',
   '한 계정당 한 작품만 출전합니다.',
-  '본인 작품을 제외',
+  'ANONYMOUS DUEL',
   'FINAL WINNER',
   'FINAL RANKING'
 ]) {
