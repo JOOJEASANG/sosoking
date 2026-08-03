@@ -9,6 +9,7 @@ const battleCss = read('public/dripso/battle.css');
 const gameCss = read('public/dripso/battle-game.css');
 const navigationCss = read('public/dripso/dripso-navigation.css');
 const gameServer = read('functions/dripso-game.js');
+const functionBundle = read('functions/dripso-bundle.js');
 const courtGuard = read('public/js/dripso-entry-guard.js');
 const courtCss = read('public/css/dripso-entry.css');
 const courtIndex = read('public/index.html');
@@ -116,9 +117,18 @@ for (const required of ['.site-switcher', '.site-switch-link.active', '@media (m
   assert.ok(navigationCss.includes(required), `사이트 전환 스타일 누락: ${required}`);
 }
 
-assert.ok(functionsMain.includes("Object.assign(exports, require('./dripso'))"), '기존 드립소 callable 함수가 유지되어야 합니다.');
-assert.ok(functionsMain.includes("Object.assign(exports, require('./dripso-game'))"), '게임 버전 2 서버 모듈이 연결되어야 합니다.');
+assert.ok(functionsMain.includes("Object.assign(exports, require('./dripso-bundle'))"), '드립소 공개 함수 번들이 메인에 연결되어야 합니다.');
+assert.ok(!functionsMain.includes("Object.assign(exports, require('./dripso'))"), '기존 모듈을 메인에서 직접 공개하면 중복 함수가 생깁니다.');
+assert.ok(!functionsMain.includes("Object.assign(exports, require('./dripso-game'))"), '게임 모듈을 메인에서 직접 공개하면 중복 함수가 생깁니다.');
 assert.ok(!functionsMain.includes("require('./dripso-daily-one-line')"), '종료된 오늘의 한줄 전용 서버 교체가 활성화되어 있습니다.');
+for (const required of [
+  'exports.createDripsoTopic = legacy.createDripsoTopic',
+  'exports.createDripsoBattle = game.createDripsoBattle',
+  'exports.addDripsoComment = game.addDripsoComment',
+  'exports.toggleDripsoCommentLike = game.toggleDripsoCommentLike'
+]) {
+  assert.ok(functionBundle.includes(required), `드립소 공개 함수 번들 누락: ${required}`);
+}
 
 const deployedSourceExports = sourceExports();
 for (const functionName of [
@@ -158,4 +168,4 @@ for (const required of [
 assert.ok(courtIndex.includes('/css/dripso-entry.css?v=20260802-dripso-bottom-entry-1'), '판결소가 최신 하단 전환 CSS를 불러와야 합니다.');
 assert.ok(courtIndex.includes('/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1'), '판결소가 최신 하단 전환 스크립트를 불러와야 합니다.');
 
-console.log('Dripso experience validation passed: seven quick modes now run as timed blind entry, anonymous pair voting, closed results, legacy compatibility, and the court switcher remains intact.');
+console.log('Dripso experience validation passed: seven quick modes now run as timed blind entry, anonymous pair voting, closed results, a single public Functions bundle, legacy compatibility, and the court switcher remains intact.');
