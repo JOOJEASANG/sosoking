@@ -16,6 +16,16 @@ const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-search-scope-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-judge-board-search-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
+// Cache lineage: /js/app.js?v=20260730-home-layout-route-1
+// Cache lineage: /js/app.js?v=20260730-header-icon-single-1
+// Cache lineage: /js/app.js?v=20260730-search-scope-1
+// Cache lineage: /js/app.js?v=20260730-judge-board-search-1
+// Cache lineage: /js/app.js?v=20260730-discussion-court-1
+// Cache lineage: /js/app.js?v=20260730-final-audit-1
+// Cache lineage: /js/pages/result-comments.js?v=20260730-discussion-court-1
+// Cache lineage: /js/pages/board-full-content-search.js?v=20260730-search-scope-1
+// Cache lineage: /js/pages/board-search-pagination.js?v=20260730-judge-board-search-1
+// Cache lineage: /js/pages/board-court.js?v=20260730-discussion-court-1
 // Historical Dripso app layers are retained as markers but are no longer precached.
 // '/dripso/battle-v2.js?v=20260803-blind-duel-1'
 // '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1'
