@@ -10,11 +10,14 @@ const requiredFiles = [
   'public/dripso/battle-game.css',
   'public/dripso/battle-v2.js',
   'public/dripso/battle-v2-pagination.js',
+  'public/dripso/tournament-v3.js',
+  'public/dripso/tournament-v3.css',
   'public/dripso/moderation.js',
   'public/js/dripso-entry-guard.js',
   'public/css/dripso-entry.css',
   'functions/dripso.js',
   'functions/dripso-game.js',
+  'functions/dripso-tournament.js',
   'functions/dripso-bundle.js'
 ];
 
@@ -31,6 +34,7 @@ if (!errors.length) {
   const functionsMain = read('functions/main.js');
   const legacyFunctions = read('functions/dripso.js');
   const gameFunctions = read('functions/dripso-game.js');
+  const tournamentFunctions = read('functions/dripso-tournament.js');
   const functionBundle = read('functions/dripso-bundle.js');
   const rules = read('firestore.rules');
   const moderation = read('public/dripso/moderation.js');
@@ -38,17 +42,20 @@ if (!errors.length) {
   const sw = read('public/sw.js');
 
   for (const required of [
-    '<title>드립소 - 블라인드 1대1 드립배틀</title>',
+    '<title>드립소 - 블라인드 파이널4 드립배틀</title>',
     '/dripso/battle.css?v=20260803-seven-battles-1',
     '/dripso/battle-game.css?v=20260803-blind-duel-1',
     '/dripso/battle-v2.js?v=20260803-blind-duel-1',
     '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1',
+    '/dripso/tournament-v3.css?v=20260804-final-four-1',
+    '/dripso/tournament-v3.js?v=20260804-final-four-1',
     'id="dripso-app"',
     'id="topic-dialog"',
     'id="topic-form"',
     'id="battle-mode"',
     'id="entry-duration"',
     'id="voting-duration"',
+    'id="finals-duration"',
     'data-nav="home"',
     'data-nav="browse"',
     'data-nav="popular"',
@@ -62,7 +69,8 @@ if (!errors.length) {
     'value="excuse"',
     'value="manual"',
     '30분 번개전',
-    '비교심사 시간'
+    '익명 예선',
+    '준결승·결승'
   ]) {
     if (!html.includes(required)) errors.push(`public/dripso/index.html: missing ${required}`);
   }
@@ -154,12 +162,18 @@ if (!errors.length) {
   for (const required of [
     "const legacy = require('./dripso')",
     "const game = require('./dripso-game')",
+    "const tournament = require('./dripso-tournament')",
     'exports.createDripsoTopic = legacy.createDripsoTopic',
     'exports.createDripsoBattle = game.createDripsoBattle',
     'exports.submitDripsoBattleEntry = game.submitDripsoBattleEntry',
     'exports.getDripsoBattleView = game.getDripsoBattleView',
     'exports.getDripsoBattleMatchup = game.getDripsoBattleMatchup',
     'exports.voteDripsoBattleMatchup = game.voteDripsoBattleMatchup',
+    'exports.createDripsoTournamentBattle = tournament.createDripsoTournamentBattle',
+    'exports.submitDripsoTournamentEntry = tournament.submitDripsoTournamentEntry',
+    'exports.getDripsoTournamentView = tournament.getDripsoTournamentView',
+    'exports.getDripsoTournamentMatchup = tournament.getDripsoTournamentMatchup',
+    'exports.voteDripsoTournamentMatchup = tournament.voteDripsoTournamentMatchup',
     'exports.addDripsoComment = game.addDripsoComment',
     'exports.toggleDripsoCommentLike = game.toggleDripsoCommentLike'
   ]) {
@@ -172,10 +186,15 @@ if (!errors.length) {
     'exports.getDripsoBattleView',
     'exports.getDripsoBattleMatchup',
     'exports.voteDripsoBattleMatchup',
+    'exports.createDripsoTournamentBattle',
+    'exports.submitDripsoTournamentEntry',
+    'exports.getDripsoTournamentView',
+    'exports.getDripsoTournamentMatchup',
+    'exports.voteDripsoTournamentMatchup',
     'exports.addDripsoComment',
     'exports.toggleDripsoCommentLike'
   ]) {
-    if (!(legacyFunctions + gameFunctions).includes(required)) {
+    if (!(legacyFunctions + gameFunctions + tournamentFunctions).includes(required)) {
       errors.push(`Dripso implementation missing: ${required}`);
     }
   }
@@ -195,8 +214,9 @@ if (!errors.length) {
 
   for (const required of [
     'function canReadDripsoComment(topicId, commentData)',
-    'topic.data.gameVersion != 2',
+    'topic.data.gameVersion != 2 && topic.data.gameVersion != 3',
     'request.time >= topic.data.votingDeadline',
+    'request.time >= topic.data.finalDeadline',
     'match /dripso_battle_voters/{topicId}/users/{uid}/votes/{voteId}',
     'allow create, update, delete: if false;'
   ]) {
@@ -208,7 +228,12 @@ if (!errors.length) {
     'functions:submitDripsoBattleEntry',
     'functions:getDripsoBattleView',
     'functions:getDripsoBattleMatchup',
-    'functions:voteDripsoBattleMatchup'
+    'functions:voteDripsoBattleMatchup',
+    'functions:createDripsoTournamentBattle',
+    'functions:submitDripsoTournamentEntry',
+    'functions:getDripsoTournamentView',
+    'functions:getDripsoTournamentMatchup',
+    'functions:voteDripsoTournamentMatchup'
   ]) {
     if (!deploy.includes(functionName)) errors.push(`firebase-deploy.yml: missing ${functionName}`);
   }
@@ -216,7 +241,9 @@ if (!errors.length) {
   for (const asset of [
     '/dripso/battle-game.css?v=20260803-blind-duel-1',
     '/dripso/battle-v2.js?v=20260803-blind-duel-1',
-    '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1'
+    '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1',
+    '/dripso/tournament-v3.css?v=20260804-final-four-1',
+    '/dripso/tournament-v3.js?v=20260804-final-four-1'
   ]) {
     if (!sw.includes(`'${asset}'`)) errors.push(`public/sw.js: active game asset missing ${asset}`);
   }
@@ -237,4 +264,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Dripso validation passed: seven quick modes now use timed blind entry, anonymous pair voting, final rankings, a single public Functions bundle, legacy compatibility, protected writes, moderation, and offline assets.');
+console.log('Dripso validation passed: seven quick modes retain v2 blind duels while new v3 battles add blind prelim seeding, Final Four semifinals, a final, legacy compatibility, protected writes, moderation, and offline assets.');
