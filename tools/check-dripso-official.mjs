@@ -11,10 +11,7 @@ assert.equal(MODE_ORDER.length, 7, '공식 배틀 종목은 일곱 개여야 합
 assert.equal(OFFICIAL_BATTLES.length, 1400, '공식 배틀 데이터는 1,400개여야 합니다.');
 assert.equal(new Set(OFFICIAL_BATTLES.map(item => item.id)).size, 1400, '공식 배틀 ID는 중복되면 안 됩니다.');
 assert.equal(new Set(OFFICIAL_BATTLES.map(item => `${item.mode}\u0000${item.prompt}`)).size, 1400, '공식 배틀 문제는 중복되면 안 됩니다.');
-
-for (const mode of MODE_ORDER) {
-  assert.equal(BY_MODE[mode].length, 200, `${mode} 공식 배틀은 200개여야 합니다.`);
-}
+for (const mode of MODE_ORDER) assert.equal(BY_MODE[mode].length, 200, `${mode} 공식 배틀은 200개여야 합니다.`);
 
 const blocked = /(시발|씨발|병신|개새끼|죽어|자살|주민등록번호|실명 공개)/i;
 for (const item of OFFICIAL_BATTLES) {
@@ -30,46 +27,43 @@ assert.equal(new Set(selections.slice(0, 7).map(item => item.mode)).size, 7, '�
 assert.equal(new Set(selections.map(item => item.item.id)).size, 14, '연속 게시 문제는 중복되면 안 됩니다.');
 
 const html = read('public/dripso/index.html');
-const css = read('public/dripso/battle.css');
-const officialUi = read('public/dripso/official-ui.js');
+const app = read('public/dripso/app-v4.js');
+const css = read('public/dripso/app-v4.css');
+const moderation = read('public/dripso/moderation.js');
 const main = read('functions/main.js');
-const officialServer = read('functions/dripso-official.js');
+const server = read('functions/dripso-official.js');
 const deploy = read('.github/workflows/firebase-deploy.yml');
 const sw = read('public/sw.js');
 
 for (const required of [
-  '/dripso/battle.css?v=20260804-official-layout-1',
-  '/dripso/official-ui.js?v=20260804-official-layout-1'
-]) assert.ok(html.includes(required), `드립소 공식 UI 자산 누락: ${required}`);
+  '/dripso/app-v4.css?v=20260804-dripso-v4-audit-1',
+  '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'
+]) assert.ok(html.includes(required), `공식 배틀 통합 자산 누락: ${required}`);
+assert.ok(!html.includes('<script type="module" src="/dripso/official-ui.js'), '공식 배틀 보정 오버레이가 다시 활성화되었습니다.');
 
 for (const required of [
-  '.official-battle-badge',
-  '.battle-page-heading{align-items:center',
-  'flex-direction:column;align-items:stretch',
-  '.battle-page-heading .write-button{width:auto'
-]) assert.ok(css.includes(required), `모바일 배틀찾기 레이아웃 보호 누락: ${required}`);
+  '오늘의 공식 경기', 'official-spotlight-section', 'official-spotlight',
+  "el('span', 'official-battle-badge', '👑 드립소 공식 배틀')",
+  "topic.official ? '공식 운영'", "topic.official ? `👑 드립소 공식",
+  'Number(b.official) - Number(a.official)'
+]) assert.ok(app.includes(required), `통합 앱 공식 배틀 표시 누락: ${required}`);
+for (const required of ['.official-spotlight', '.official-guide', '.official-battle-card', '.official-topic']) {
+  assert.ok(css.includes(required), `공식 배틀 레이아웃 누락: ${required}`);
+}
+assert.ok(moderation.includes("detail.classList.contains('official-topic')"), '공식 주제가 일반 신고 버튼으로 처리되지 않도록 보호해야 합니다.');
 
+assert.ok(main.includes('exports.publishDailyOfficialDripsoBattle = dripsoOfficial.publishDailyOfficialDripsoBattle'), '공식 배틀 스케줄 함수가 main에 연결되어야 합니다.');
 for (const required of [
-  "where('official', '==', true)",
-  "badge.textContent = '👑 드립소 공식 배틀'",
-  "card.classList.add('official-battle-card')",
-  'decorateDetail()',
-  "owner.textContent = '공식 운영'"
-]) assert.ok(officialUi.includes(required), `공식 배틀 화면 표시 누락: ${required}`);
-
-assert.ok(main.includes("exports.publishDailyOfficialDripsoBattle = dripsoOfficial.publishDailyOfficialDripsoBattle"), '공식 배틀 스케줄 함수가 main에 연결되어야 합니다.');
-for (const required of [
-  "schedule: '0 9 * * *'",
-  "timeZone: TIME_ZONE",
-  "official: true",
-  "nickname: '드립소 공식'",
-  "entryMinutes: ENTRY_MINUTES",
-  "tournamentRound: 'prelim'"
-]) assert.ok(officialServer.includes(required), `공식 배틀 서버 규칙 누락: ${required}`);
+  "schedule: '0 9 * * *'", 'timeZone: TIME_ZONE', 'official: true',
+  "nickname: '드립소 공식'", 'entryMinutes: ENTRY_MINUTES', "tournamentRound: 'prelim'"
+]) assert.ok(server.includes(required), `공식 배틀 서버 규칙 누락: ${required}`);
 
 assert.ok(deploy.includes('functions:publishDailyOfficialDripsoBattle'), '공식 배틀 스케줄 함수가 배포 목록에 있어야 합니다.');
 assert.ok(deploy.includes('node functions/ensure-official-dripso-battle-cli.js'), '배포 직후 공식 배틀 생성 단계가 필요합니다.');
-assert.ok(sw.includes("'/dripso/official-ui.js?v=20260804-official-layout-1'"), '공식 배틀 UI가 오프라인 캐시에 있어야 합니다.');
-assert.ok(sw.includes("'/dripso/battle.css?v=20260804-official-layout-1'"), '수정된 배틀 CSS가 오프라인 캐시에 있어야 합니다.');
+for (const asset of [
+  "'/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'",
+  "'/dripso/app-v4.css?v=20260804-dripso-v4-audit-1'",
+  "'/dripso/battle.css?v=20260804-official-layout-1'"
+]) assert.ok(sw.includes(asset), `공식 배틀 오프라인 자산 누락: ${asset}`);
 
-console.log('Dripso official validation passed: 1,400 unique prompts, seven-mode rotation, daily publishing, immediate deployment seed, official badges, and compact mobile browse layout.');
+console.log('Dripso official validation passed: 1,400 unique prompts, seven-mode rotation, daily publishing, immediate seed, native official spotlight, protected moderation, and responsive layout are connected.');
