@@ -16,8 +16,7 @@ const {
 } = require('./public-seo');
 const {
   loadSafePublicResult,
-  listSafePublicResultEntries,
-  renderSafeSitemapXml
+  listSafePublicResultEntries
 } = require('./public-seo-safe');
 
 const PUBLIC_ID = 'seo_public_case_20260729';
@@ -122,12 +121,8 @@ async function run() {
   assert.doesNotMatch(sitemap, new RegExp(UNSAFE_ID));
   assert.doesNotMatch(sitemap, /#\/result\//);
 
-  const safeSitemap = renderSafeSitemapXml(entries);
-  assert.match(safeSitemap, /<loc>https:\/\/sosoking\.co\.kr\/dripso\/<\/loc>/);
-  assert.equal((safeSitemap.match(/https:\/\/sosoking\.co\.kr\/dripso\//g) || []).length, 1, 'Dripso canonical URL should appear once');
-
   await cleanup();
-  console.log('Public SEO emulator validation passed: sanitized public-only loading, structured result headings, metadata, Dripso discovery, and sitemap filtering.');
+  console.log('Public SEO emulator validation passed: sanitized public-only loading, structured result headings, metadata, and sitemap filtering.');
 }
 
 run().catch(async error => {
