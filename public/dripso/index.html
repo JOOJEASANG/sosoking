@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
-  <title>드립소 - 블라인드 1대1 드립배틀</title>
-  <meta name="description" content="일곱 가지 짧은 드립에 블라인드로 출전하고, 마감 뒤 익명 1대1 비교투표로 우승작을 정하는 참여형 코미디 게임입니다.">
+  <title>드립소 - 블라인드 파이널4 드립배틀</title>
+  <meta name="description" content="일곱 가지 짧은 드립에 블라인드로 출전하고, 익명 예선과 파이널4 준결승·결승으로 챔피언을 정하는 코미디 게임입니다.">
   <meta name="theme-color" content="#17121f">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="드립소 - 블라인드 1대1 드립배틀">
-  <meta property="og:description" content="먼저 출전하고, 마감 뒤 두 작품씩 붙습니다.">
+  <meta property="og:title" content="드립소 - 블라인드 파이널4 드립배틀">
+  <meta property="og:description" content="블라인드 출전, 익명 예선, 파이널4 준결승과 최종 결승.">
   <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,12 +18,13 @@
   <link rel="stylesheet" href="/dripso/dripso-navigation.css?v=20260802-dripso-navigation-1">
   <link rel="stylesheet" href="/dripso/battle.css?v=20260803-seven-battles-1">
   <link rel="stylesheet" href="/dripso/battle-game.css?v=20260803-blind-duel-1">
+  <link rel="stylesheet" href="/dripso/tournament-v3.css?v=20260804-final-four-1">
 </head>
 <body>
   <header class="site-header">
     <a class="dripso-brand" href="/dripso/#/" aria-label="드립소 홈">
       <span class="brand-mark" aria-hidden="true">ㅋ</span>
-      <span class="brand-copy"><strong>드립소</strong><small>블라인드 드립배틀</small></span>
+      <span class="brand-copy"><strong>드립소</strong><small>파이널4 드립배틀</small></span>
     </a>
     <nav class="site-switcher" aria-label="소소킹 서비스 이동">
       <a class="site-switch-link" href="/">⚖️ 판결소</a>
@@ -51,7 +52,7 @@
   <dialog class="topic-dialog" id="topic-dialog">
     <form id="topic-form" method="dialog">
       <div class="dialog-heading">
-        <div><span>새 경기</span><h2>블라인드 드립판을 열어주세요</h2></div>
+        <div><span>새 경기</span><h2>파이널4 드립판을 열어주세요</h2></div>
         <button class="dialog-close" id="close-topic-dialog" type="button" aria-label="닫기">×</button>
       </div>
       <label>경기 방식
@@ -71,7 +72,7 @@
       <label>문제
         <textarea id="topic-prompt" name="prompt" maxlength="260" required placeholder="예: 회의가 길어지는 이유는 ______ 때문이다."></textarea>
       </label>
-      <div class="battle-time-grid">
+      <div class="battle-time-grid three-stage">
         <label>출전 시간
           <select id="entry-duration" name="entryDuration" required>
             <option value="30">30분 번개전</option>
@@ -81,12 +82,19 @@
             <option value="1440">24시간</option>
           </select>
         </label>
-        <label>비교심사 시간
+        <label>익명 예선
           <select id="voting-duration" name="votingDuration" required>
             <option value="60">1시간</option>
             <option value="180" selected>3시간</option>
             <option value="360">6시간</option>
             <option value="720">12시간</option>
+          </select>
+        </label>
+        <label>준결승·결승
+          <select id="finals-duration" name="finalsDuration" required>
+            <option value="30">각 30분</option>
+            <option value="60" selected>각 1시간</option>
+            <option value="180">각 3시간</option>
           </select>
         </label>
       </div>
@@ -104,8 +112,8 @@
         </div>
         <p class="image-status" id="topic-image-status" aria-live="polite"></p>
       </div>
-      <p class="form-help">출전 중에는 작품이 공개되지 않습니다. 출전 마감 뒤 작성자명을 숨긴 1대1 비교심사가 시작되고, 심사 종료 후 우승작과 전체 순위가 공개됩니다.</p>
-      <button class="submit-button" id="topic-submit" type="submit">블라인드 배틀 열기</button>
+      <p class="form-help">출전작은 결승 종료 전까지 공개되지 않습니다. 익명 1대1 예선 상위 네 작품이 파이널4에 진출하며, 동점은 예선 상위 시드가 다음 라운드로 올라갑니다.</p>
+      <button class="submit-button" id="topic-submit" type="submit">파이널4 배틀 열기</button>
     </form>
   </dialog>
 
@@ -113,5 +121,6 @@
   <script type="module" src="/dripso/battle-v2.js?v=20260803-blind-duel-1"></script>
   <script type="module" src="/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1"></script>
   <script type="module" src="/dripso/moderation.js?v=20260801-audit-fixes-1"></script>
+  <script type="module" src="/dripso/tournament-v3.js?v=20260804-final-four-1"></script>
 </body>
 </html>
