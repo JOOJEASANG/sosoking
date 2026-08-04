@@ -13,6 +13,7 @@ const functionsMain = read('functions/main.js');
 const courtGuard = read('public/js/dripso-entry-guard.js');
 const courtCss = read('public/css/dripso-entry.css');
 const courtIndex = read('public/index.html');
+const serviceWorker = read('public/sw.js');
 
 for (const [value, label] of [
   ['blank', '빈칸채우기'], ['naming', '이름붙이기'], ['comeback', '받아치기'],
@@ -82,13 +83,45 @@ for (const name of [
 ]) assert.ok(exports.has(name), `배포 대상 함수 누락: ${name}`);
 
 for (const required of [
-  "entry.id = 'dripso-home-entry'", "entry.className = 'dripso-home-entry'",
-  "court.textContent = '⚖️ 판결소'", "dripso.textContent = 'ㅋ 드립소'", 'homeContent.append(entry)'
-]) assert.ok(courtGuard.includes(required), `판결소 하단 전환 누락: ${required}`);
-for (const required of ['.dripso-home-entry', 'grid-template-columns: repeat(2, minmax(0, 1fr))']) {
-  assert.ok(courtCss.includes(required), `판결소 전환 스타일 누락: ${required}`);
-}
-assert.ok(courtIndex.includes('/css/dripso-entry.css?v=20260802-dripso-bottom-entry-1'));
-assert.ok(courtIndex.includes('/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1'));
+  "const BUTTON_ID = 'dripso-quick-button'",
+  "const PANEL_ID = 'dripso-quick-panel'",
+  "document.getElementById('dripso-home-entry')?.remove()",
+  "document.body.insertBefore(button, themeToggle)",
+  "button.setAttribute('aria-expanded', 'false')",
+  "panel.setAttribute('role', 'dialog')",
+  "description.textContent = '7가지 짧은 드립으로 출전하고, 익명 1대1 투표와 파이널4 결승으로 챔피언을 정합니다.'",
+  "link.href = DRIPSO_PATH",
+  "link.textContent = 'ㅋ 드립소 바로가기'",
+  "if (event.key === 'Escape') closePanel"
+]) assert.ok(courtGuard.includes(required), `판결소 상단 드립소 안내 누락: ${required}`);
 
-console.log('Dripso experience validation passed: one responsive app provides official spotlight, seven easy modes, state filters, legacy/v2 compatibility, blind prelims, Final Four, and stable court navigation.');
+for (const retired of [
+  "entry.id = 'dripso-home-entry'",
+  "entry.className = 'dripso-home-entry'",
+  "court.textContent = '⚖️ 판결소'",
+  "homeContent.append(entry)"
+]) assert.ok(!courtGuard.includes(retired), `판결소 하단 전환 코드가 남아 있습니다: ${retired}`);
+
+for (const required of [
+  '.dripso-quick-button',
+  'right: 60px',
+  '.dripso-quick-panel',
+  '.dripso-quick-link',
+  "[data-theme='light'] .dripso-quick-button",
+  '@media (max-width: 420px)',
+  '@media (prefers-reduced-motion: reduce)'
+]) assert.ok(courtCss.includes(required), `판결소 상단 드립소 스타일 누락: ${required}`);
+
+for (const retired of ['.dripso-home-entry {', 'grid-template-columns: repeat(2, minmax(0, 1fr))']) {
+  assert.ok(!courtCss.includes(retired), `판결소 하단 전환 스타일이 남아 있습니다: ${retired}`);
+}
+
+for (const asset of [
+  '/css/dripso-entry.css?v=20260805-dripso-header-entry-1',
+  '/js/dripso-entry-guard.js?v=20260805-dripso-header-entry-1'
+]) {
+  assert.ok(courtIndex.includes(asset), `판결소 상단 드립소 자산 누락: ${asset}`);
+  assert.ok(serviceWorker.includes(`'${asset}'`), `서비스워커 상단 드립소 자산 누락: ${asset}`);
+}
+
+console.log('Dripso experience validation passed: one responsive Dripso app remains connected, while the court home uses a compact theme-adjacent Dripso guide button instead of the retired bottom switcher.');

@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
+const CACHE_NAME = 'sosoking-app-v20260805-dripso-header-entry-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-official-layout-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-2';
@@ -52,6 +53,8 @@ const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
 // '/js/pages/board-search-pagination.js?v=20260730-judge-board-search-1'
 // '/js/pages/board-court.js?v=20260730-discussion-court-1'
 // '/js/pages/board.js?v=20260730-discussion-court-1'
+// '/css/dripso-entry.css?v=20260802-dripso-bottom-entry-1'
+// '/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1'
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -68,7 +71,7 @@ const APP_SHELL = [
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260802-remove-daily-court-2',
-  '/css/dripso-entry.css?v=20260802-dripso-bottom-entry-1',
+  '/css/dripso-entry.css?v=20260805-dripso-header-entry-1',
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/css/sans-font.css?v=20260729-sans-font-1',
@@ -80,7 +83,7 @@ const APP_SHELL = [
   '/js/app.js?v=20260802-remove-daily-court-2',
   '/js/home-copy-guard.js?v=20260802-no-real-cases-1',
   '/js/original-inline-accordion-guard.js?v=20260802-original-header-button-1',
-  '/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1',
+  '/js/dripso-entry-guard.js?v=20260805-dripso-header-entry-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
   '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1',
