@@ -28,6 +28,7 @@ for (const required of [
   '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
   '/dripso/moderation.js?v=20260804-dripso-v4-audit-1',
   'id="dripso-app"', 'id="topic-dialog"', 'id="topic-form"',
+  'id="open-topic-dialog" type="button" hidden aria-hidden="true" tabindex="-1"',
   'data-nav="home"', 'data-nav="browse"', 'data-nav="popular"', 'data-nav="hall"', 'data-nav="create"',
   'value="blank"', 'value="naming"', 'value="comeback"', 'value="wrong"', 'value="headline"', 'value="excuse"', 'value="manual"'
 ]) assert.ok(html.includes(required), `드립소 HTML 누락: ${required}`);
@@ -36,8 +37,9 @@ for (const retired of [
   '<script type="module" src="/dripso/battle-v2.js',
   '<script type="module" src="/dripso/battle-v2-pagination.js',
   '<script type="module" src="/dripso/tournament-v3.js',
-  '<script type="module" src="/dripso/official-ui.js'
-]) assert.ok(!html.includes(retired), `중복 실행 스크립트가 다시 활성화됨: ${retired}`);
+  '<script type="module" src="/dripso/official-ui.js',
+  'class="write-fab"'
+]) assert.ok(!html.includes(retired), `중복 또는 종료된 화면 계층이 활성화됨: ${retired}`);
 assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), '인라인 스크립트는 사용할 수 없습니다.');
 assert.ok(!/\son[a-z]+\s*=\s*["']/i.test(html), '인라인 이벤트 속성은 사용할 수 없습니다.');
 
@@ -95,4 +97,4 @@ for (const asset of [
   "'/dripso/moderation.js?v=20260804-dripso-v4-audit-1'"
 ]) assert.ok(sw.includes(asset), `서비스워커 v4 자산 누락: ${asset}`);
 
-console.log('Dripso validation passed: one consolidated responsive app serves seven modes, legacy and v2 compatibility, Final Four, moderation, protected writes, pagination, and offline assets.');
+console.log('Dripso validation passed: one consolidated responsive app serves seven modes, one create entry, legacy and v2 compatibility, Final Four, moderation, protected writes, pagination, and offline assets.');
