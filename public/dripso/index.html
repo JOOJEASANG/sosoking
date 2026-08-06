@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="/dripso/battle-game.css?v=20260803-blind-duel-1">
   <link rel="stylesheet" href="/dripso/tournament-v3.css?v=20260804-final-four-1">
   <link rel="stylesheet" href="/dripso/app-v4.css?v=20260804-dripso-v4-audit-1">
+  <link rel="stylesheet" href="/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1">
   <!-- Retired app layers: battle-v2.js, battle-v2-pagination.js, tournament-v3.js, official-ui.js -->
 </head>
 <body>
@@ -28,11 +29,8 @@
       <span class="brand-mark" aria-hidden="true">ㅋ</span>
       <span class="brand-copy"><strong>드립소</strong><small>파이널4 드립배틀</small></span>
     </a>
-    <nav class="site-switcher" aria-label="소소킹 서비스 이동">
-      <a class="site-switch-link" href="/" aria-label="판결소로 이동">⚖️ 판결소</a>
-    </nav>
-    <div class="header-actions">
-      <a class="account-link" id="account-link" href="/#/auth">로그인</a>
+    <div class="header-actions" hidden>
+      <a class="account-link" id="account-link" href="/#/auth" tabindex="-1" aria-hidden="true">내 정보</a>
     </div>
   </header>
 
@@ -45,9 +43,9 @@
   <nav class="dripso-bottom-nav" aria-label="드립소 메뉴">
     <a href="#/" data-nav="home"><span aria-hidden="true">🏠</span><small>홈</small></a>
     <a href="#/browse" data-nav="browse"><span aria-hidden="true">🎮</span><small>배틀찾기</small></a>
-    <a href="#/popular" data-nav="popular"><span aria-hidden="true">🔥</span><small>인기</small></a>
-    <a href="#/hall" data-nav="hall"><span aria-hidden="true">🏆</span><small>명예</small></a>
     <a href="#/create" data-nav="create"><span aria-hidden="true">＋</span><small>배틀열기</small></a>
+    <a href="/#/" data-nav="court" aria-label="판결소로 이동"><span aria-hidden="true">⚖️</span><small>판결소</small></a>
+    <a href="/#/auth" data-nav="account" aria-label="소소킹 내 정보로 이동"><span aria-hidden="true">👤</span><small>내 정보</small></a>
   </nav>
 
   <dialog class="topic-dialog" id="topic-dialog">
