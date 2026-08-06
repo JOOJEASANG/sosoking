@@ -27,7 +27,8 @@ import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-t
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
 import { initNavAuthSync, renderNav } from './components/nav.js?v=20260806-unified-service-nav-1';
 // Cache lineage marker: './components/nav.js?v=20260802-remove-daily-court-2';
-import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260730-header-icon-single-1';
+import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260806-unified-service-nav-1';
+// Cache lineage marker: './components/header-icons.js?v=20260730-header-icon-single-1';
 
 let routeSequence = 0;
 let routeQueued = false;
