@@ -106,8 +106,14 @@ function persistDraft(form = activeForm, { manual = false } = {}) {
   }
 }
 
+function clearScheduledSave() {
+  if (!activeSaveTimer) return;
+  clearTimeout(activeSaveTimer);
+  activeSaveTimer = null;
+}
+
 function scheduleDraftSave(form) {
-  if (activeSaveTimer) clearTimeout(activeSaveTimer);
+  clearScheduledSave();
   setDraftStatus('입력 내용을 저장하는 중입니다…', 'normal', form);
   activeSaveTimer = setTimeout(() => {
     activeSaveTimer = null;
@@ -126,6 +132,7 @@ function restoreDraft(form) {
 
   description.value = draft.description;
   description.dispatchEvent(new Event('input', { bubbles: true }));
+  clearScheduledSave();
   const savedAt = formatSavedAt(draft.updatedAt);
   setDraftStatus(
     savedAt ? `임시저장 내용을 불러왔습니다 · ${savedAt}` : '임시저장 내용을 불러왔습니다.',
@@ -173,10 +180,7 @@ function attachDraftBehavior(form) {
 
   description.addEventListener('input', () => scheduleDraftSave(form));
   saveButton.addEventListener('click', () => {
-    if (activeSaveTimer) {
-      clearTimeout(activeSaveTimer);
-      activeSaveTimer = null;
-    }
+    clearScheduledSave();
     persistDraft(form, { manual: true });
   });
   clearButton.addEventListener('click', () => {
@@ -186,13 +190,11 @@ function attachDraftBehavior(form) {
       return;
     }
     if (!confirm('임시저장된 사건 내용과 현재 입력란을 모두 비울까요?')) return;
-    if (activeSaveTimer) {
-      clearTimeout(activeSaveTimer);
-      activeSaveTimer = null;
-    }
+    clearScheduledSave();
     removeDraft({ updateStatus: false });
     description.value = '';
     description.dispatchEvent(new Event('input', { bubbles: true }));
+    clearScheduledSave();
     setDraftStatus('입력 내용과 임시본을 비웠습니다.', 'normal', form);
     description.focus();
   });
@@ -206,25 +208,24 @@ function findAndAttachSubmitForm() {
   if (form) attachDraftBehavior(form);
 }
 
-const observer = new MutationObserver(findAndAttachSubmitForm);
-observer.observe(document.body, { childList: true, subtree: true });
-queueMicrotask(findAndAttachSubmitForm);
-
-window.addEventListener('hashchange', () => {
+function handleRouteChange() {
   if (!activeForm?.isConnected) return;
   const nextHash = location.hash || '#/';
   if (nextHash.startsWith('#/trial/')) {
-    if (activeSaveTimer) {
-      clearTimeout(activeSaveTimer);
-      activeSaveTimer = null;
-    }
+    clearScheduledSave();
     removeDraft({ updateStatus: false });
     activeForm = null;
     return;
   }
   persistDraft(activeForm);
-});
+}
 
+const observer = new MutationObserver(findAndAttachSubmitForm);
+observer.observe(document.body, { childList: true, subtree: true });
+queueMicrotask(findAndAttachSubmitForm);
+
+window.addEventListener('hashchange', handleRouteChange);
+window.addEventListener('popstate', handleRouteChange);
 window.addEventListener('pagehide', () => {
   if (activeForm?.isConnected) persistDraft(activeForm);
 });
