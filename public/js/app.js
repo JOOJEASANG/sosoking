@@ -25,7 +25,8 @@ import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the compact-spacing regression check: ./components/footer.js?v=20260729-compact-spacing-1
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
-import { initNavAuthSync, renderNav } from './components/nav.js?v=20260802-remove-daily-court-2';
+import { initNavAuthSync, renderNav } from './components/nav.js?v=20260806-unified-service-nav-1';
+// Cache lineage marker: './components/nav.js?v=20260802-remove-daily-court-2';
 import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260730-header-icon-single-1';
 
 let routeSequence = 0;
