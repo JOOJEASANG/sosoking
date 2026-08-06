@@ -1,0 +1,220 @@
+:root {
+  --border: var(--line);
+  --surface-soft: var(--panel-2);
+  --cream: var(--text);
+  --gold: var(--yellow);
+  --gold-dim: rgba(255, 209, 102, .1);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f8f5fb;
+  --bg-soft: #f1eaf6;
+  --panel: #fffdfd;
+  --panel-2: #f5eef8;
+  --text: #2b2230;
+  --muted: #6e6275;
+  --line: rgba(64, 44, 74, .15);
+  --pink: #c94368;
+  --yellow: #a86200;
+  --mint: #147b5f;
+  --violet: #7157bd;
+  --danger: #b52f44;
+  --shadow: 0 18px 44px rgba(67, 46, 78, .13);
+  --gold-dim: rgba(168, 98, 0, .1);
+}
+
+[data-theme='light'] html {
+  background: var(--bg);
+}
+
+[data-theme='light'] body {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 113, 143, .08), transparent 30%),
+    radial-gradient(circle at 92% 8%, rgba(113, 87, 189, .08), transparent 32%),
+    var(--bg);
+}
+
+[data-theme='light'] .site-header {
+  background: rgba(248, 245, 251, .92);
+  box-shadow: 0 8px 26px rgba(67, 46, 78, .06);
+}
+
+.site-header .dripso-brand {
+  max-width: calc(100% - 54px) !important;
+}
+
+[data-theme='light'] .hero-card {
+  border-color: rgba(168, 98, 0, .24);
+  background:
+    radial-gradient(circle at 88% 15%, rgba(255, 184, 77, .18), transparent 36%),
+    linear-gradient(145deg, #fffaf1, #f3ecf8 65%);
+}
+
+[data-theme='light'] .daily-line-card,
+[data-theme='light'] .official-guide,
+[data-theme='light'] .battle-mode-tile,
+[data-theme='light'] .battle-page-heading,
+[data-theme='light'] .battle-phase-panel,
+[data-theme='light'] .battle-duel,
+[data-theme='light'] .tournament-match,
+[data-theme='light'] .tournament-live-section {
+  background: linear-gradient(145deg, rgba(255, 255, 255, .92), rgba(244, 237, 248, .86));
+}
+
+[data-theme='light'] .menu-tile,
+[data-theme='light'] .topic-card,
+[data-theme='light'] .topic-detail,
+[data-theme='light'] .comment-card,
+[data-theme='light'] .loading-card,
+[data-theme='light'] .empty-card,
+[data-theme='light'] .error-card {
+  box-shadow: 0 10px 28px rgba(67, 46, 78, .07);
+}
+
+[data-theme='light'] .topic-card-image,
+[data-theme='light'] .topic-detail-image,
+[data-theme='light'] .image-preview {
+  background: #eee8f2;
+}
+
+[data-theme='light'] .comment-form textarea,
+[data-theme='light'] .topic-dialog input,
+[data-theme='light'] .topic-dialog textarea,
+[data-theme='light'] .topic-dialog select,
+[data-theme='light'] .battle-duel-choice {
+  color: var(--text);
+  background: rgba(255, 255, 255, .9);
+}
+
+[data-theme='light'] .battle-duel-choice:hover {
+  background: #fff8ed;
+}
+
+[data-theme='light'] .like-button,
+[data-theme='light'] .site-switch-link,
+[data-theme='light'] .court-link,
+[data-theme='light'] .account-link,
+[data-theme='light'] .battle-filter-bar a {
+  background: rgba(255, 255, 255, .68);
+}
+
+[data-theme='light'] .battle-mode-tile strong,
+[data-theme='light'] .battle-prompt,
+[data-theme='light'] .battle-phase-copy strong,
+[data-theme='light'] .battle-duel-heading h2,
+[data-theme='light'] .battle-vote-complete strong,
+[data-theme='light'] .battle-winner-showcase blockquote,
+[data-theme='light'] .tournament-bracket > h2,
+[data-theme='light'] .tournament-contender p {
+  color: var(--text) !important;
+}
+
+[data-theme='light'] .battle-phase-copy p,
+[data-theme='light'] .battle-phase-stats span,
+[data-theme='light'] .battle-duel-remaining,
+[data-theme='light'] .battle-vote-complete p,
+[data-theme='light'] .battle-winner-showcase small,
+[data-theme='light'] .battle-result-score {
+  color: var(--muted);
+}
+
+[data-theme='light'] .battle-phase-stats span {
+  background: rgba(64, 44, 74, .07);
+}
+
+[data-theme='light'] .battle-phase-panel.recruiting {
+  background: linear-gradient(145deg, rgba(83, 219, 153, .12), rgba(255, 255, 255, .88));
+}
+
+[data-theme='light'] .battle-phase-panel.voting {
+  background: linear-gradient(145deg, rgba(255, 209, 102, .16), rgba(255, 255, 255, .88));
+}
+
+[data-theme='light'] .battle-phase-panel.closed {
+  background: linear-gradient(145deg, rgba(199, 157, 255, .13), rgba(255, 255, 255, .88));
+}
+
+[data-theme='light'] .battle-status-chip.closed,
+[data-theme='light'] .battle-status-chip.transition {
+  color: #62556a;
+  background: rgba(64, 44, 74, .07);
+}
+
+[data-theme='light'] .hall-winner-preview {
+  color: #76500a;
+}
+
+[data-theme='light'] .tournament-phase.prelim {
+  background: linear-gradient(135deg, rgba(90, 75, 140, .14), rgba(255, 255, 255, .9));
+}
+
+[data-theme='light'] .tournament-phase.semifinal {
+  background: linear-gradient(135deg, rgba(148, 96, 255, .14), rgba(255, 255, 255, .9));
+}
+
+[data-theme='light'] .tournament-phase.final {
+  background: linear-gradient(135deg, rgba(255, 154, 72, .16), rgba(255, 255, 255, .92));
+}
+
+[data-theme='light'] .tournament-phase.closed {
+  background: linear-gradient(135deg, rgba(255, 209, 102, .19), rgba(255, 255, 255, .92));
+}
+
+[data-theme='light'] .tournament-bracket {
+  background: rgba(255, 255, 255, .72);
+}
+
+[data-theme='light'] .tournament-seed {
+  color: #5f5267;
+  background: #eee6f3;
+}
+
+[data-theme='light'] .tournament-contender {
+  border-top-color: rgba(64, 44, 74, .1);
+}
+
+[data-theme='light'] .dripso-bottom-nav {
+  background: rgba(250, 247, 252, .96);
+  box-shadow: 0 -8px 28px rgba(67, 46, 78, .08);
+}
+
+[data-theme='light'] .dripso-bottom-nav a {
+  color: #776b7f;
+}
+
+[data-theme='light'] .dripso-bottom-nav a.active {
+  color: var(--yellow);
+}
+
+[data-theme='light'] .topic-dialog {
+  background: #fffdfd;
+}
+
+[data-theme='light'] .topic-dialog::backdrop {
+  background: rgba(48, 35, 55, .35);
+}
+
+[data-theme='light'] .image-preview button {
+  color: #fff;
+  background: rgba(48, 35, 55, .8);
+}
+
+[data-theme='light'] .theme-toggle {
+  border-color: rgba(64, 44, 74, .18);
+  background: rgba(255, 255, 255, .92);
+  color: var(--text);
+  box-shadow: 0 7px 20px rgba(67, 46, 78, .13);
+}
+
+[data-theme='light'] .theme-toggle:hover {
+  border-color: var(--yellow);
+  background: #fff8ed;
+  color: var(--yellow);
+}
+
+@media (max-width: 390px) {
+  .site-header .dripso-brand {
+    max-width: calc(100% - 50px) !important;
+  }
+}
