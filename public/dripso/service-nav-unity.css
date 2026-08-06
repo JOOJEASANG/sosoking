@@ -1,0 +1,61 @@
+.site-header {
+  grid-template-columns: minmax(0, 1fr) !important;
+  min-height: 62px;
+}
+
+.site-header .dripso-brand {
+  justify-self: start;
+  max-width: calc(100% - 8px);
+}
+
+.site-header .site-switcher,
+.site-header .header-actions {
+  display: none !important;
+}
+
+.dripso-bottom-nav a {
+  min-width: 0;
+}
+
+.dripso-bottom-nav a > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  margin: 0 auto;
+  line-height: 1;
+}
+
+.dripso-bottom-nav a small {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dripso-bottom-nav a[data-nav='create'] > span:first-child {
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--yellow), #ff9f72);
+  color: #2a1820;
+  font-size: 18px;
+  font-weight: 1000;
+  box-shadow: 0 4px 11px rgba(255, 159, 114, .2);
+}
+
+.dripso-bottom-nav a[data-nav='court'] > span:first-child {
+  font-size: 20px;
+}
+
+.dripso-bottom-nav a[data-nav='account'] > span:first-child {
+  font-size: 19px;
+}
+
+@media (max-width: 390px) {
+  .site-header {
+    min-height: 58px;
+  }
+
+  .dripso-bottom-nav a small {
+    font-size: 9px;
+  }
+}

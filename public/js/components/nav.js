@@ -37,28 +37,33 @@ export function renderNav(activeRoute = '') {
   const isHome = hash === '#/' || hash === '#' || hash === '';
   const isBoard = hash.startsWith('#/board');
   const isSubmit = hash.startsWith('#/submit');
-  const isAuth = hash.startsWith('#/auth') || hash.startsWith('#/my-cases');
+  const isAccount = hash.startsWith('#/auth') || hash.startsWith('#/my-cases');
   const user = auth.currentUser;
-  const isLoggedIn = !!user && !user.isAnonymous;
+  const isLoggedIn = Boolean(user && !user.isAnonymous);
 
   const nav = document.createElement('nav');
   nav.id = 'bottom-nav';
+  nav.setAttribute('aria-label', '판결소 메뉴');
   nav.innerHTML = `
-    <a href="#/" class="nav-item${isHome ? ' active' : ''}">
-      <span class="nav-icon">🏠</span>
+    <a href="#/" class="nav-item${isHome ? ' active' : ''}"${isHome ? ' aria-current="page"' : ''}>
+      <span class="nav-icon" aria-hidden="true">🏠</span>
       <span class="nav-label">홈</span>
     </a>
-    <a href="#/board" class="nav-item${isBoard ? ' active' : ''}">
-      <span class="nav-icon">📜</span>
+    <a href="#/board" class="nav-item${isBoard ? ' active' : ''}"${isBoard ? ' aria-current="page"' : ''}>
+      <span class="nav-icon" aria-hidden="true">📜</span>
       <span class="nav-label">판결기록</span>
     </a>
-    <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
+    <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}"${isSubmit ? ' aria-current="page"' : ''}>
       <span class="nav-icon"><img class="nav-brand-icon" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="" width="25" height="25"></span>
-      <span class="nav-label">접수</span>
+      <span class="nav-label">사건접수</span>
     </a>
-    <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
-      <span class="nav-icon" id="nav-account-icon">${isLoggedIn ? '●' : '👤'}</span>
-      <span class="nav-label" id="nav-account-label">${isLoggedIn ? '접속 중' : '로그인'}</span>
+    <a href="/dripso/#/" class="nav-item" aria-label="드립소로 이동">
+      <span class="nav-icon nav-service-mark" aria-hidden="true">ㅋ</span>
+      <span class="nav-label">드립소</span>
+    </a>
+    <a href="#/auth" class="nav-item${isAccount ? ' active' : ''}" id="nav-account-item"${isAccount ? ' aria-current="page"' : ''}>
+      <span class="nav-icon" id="nav-account-icon" aria-hidden="true">${isLoggedIn ? '●' : '👤'}</span>
+      <span class="nav-label" id="nav-account-label">내 정보</span>
     </a>
   `;
   document.body.appendChild(nav);
@@ -67,12 +72,8 @@ export function renderNav(activeRoute = '') {
     loadProfile(user).then(profile => {
       if (renderVersion !== navRenderVersion || auth.currentUser?.uid !== user.uid) return;
       const icon = document.getElementById('nav-account-icon');
-      const label = document.getElementById('nav-account-label');
-      const name = String(profile.nickname || user.displayName || '계정').slice(0, 8);
-      if (icon) {
-        icon.innerHTML = `<span style="position:relative;display:inline-block;line-height:0;">${avatarImg(user, profile, 24)}<span style="position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:99px;background:#27ae60;border:1.5px solid #101522;"></span></span>`;
-      }
-      if (label) label.textContent = name;
+      if (!icon) return;
+      icon.innerHTML = `<span style="position:relative;display:inline-block;line-height:0;">${avatarImg(user, profile, 24)}<span style="position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:99px;background:#27ae60;border:1.5px solid #101522;"></span></span>`;
     }).catch(() => {});
   }
 }

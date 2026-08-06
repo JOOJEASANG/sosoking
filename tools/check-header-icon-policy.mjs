@@ -20,7 +20,8 @@ for (const value of [
   "['#/submit', '📝']",
   "['#/my-cases', '🗂️']",
   "['#/guide', '📖']",
-  "['#/auth', '🔐']",
+  "['#/auth', '👤']",
+  "['내 정보', '👤']",
   "['#/policy/privacy', '🔒']",
   "['#/policy/ai_disclaimer', '🤖']",
   "['#/policy/terms', '📄']"
@@ -33,7 +34,7 @@ const brand = read('public/css/brand-logo.css');
 need(brand, '.page-header .logo::before', 'existing shared header logo source');
 
 const app = read('public/js/app.js');
-need(app, "./components/header-icons.js?v=20260730-header-icon-single-1", 'active header icon module');
+need(app, "./components/header-icons.js?v=20260806-unified-service-nav-1", 'active header icon module');
 const normalizeCalls = (app.match(/normalizePageHeaderIcons\(content, hash\)/g) || []).length;
 if (normalizeCalls !== 2) {
   errors.push(`public/js/app.js: expected normal and error route normalization calls, found ${normalizeCalls}`);
@@ -45,7 +46,7 @@ const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"
 if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active application cache versions differ');
 }
-need(worker, '/js/components/header-icons.js?v=20260730-header-icon-single-1', 'header icon cache');
+need(worker, '/js/components/header-icons.js?v=20260806-unified-service-nav-1', 'header icon cache');
 
 if (errors.length) {
   console.error(`Header icon policy validation failed (${errors.length})`);
@@ -53,4 +54,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Header icon policy validation passed: every public page header uses one route-specific icon and removed routes have no mapping.');
+console.log('Header icon policy validation passed: every public page header uses one route-specific icon and the shared account uses one person icon.');
