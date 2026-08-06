@@ -27,7 +27,7 @@ assert.ok(html.indexOf(initAsset) < html.indexOf('/dripso/dripso.css'), '초기 
 
 for (const required of [
   "localStorage.getItem('theme')",
-  "saved === 'light' || saved === 'dark' || saved === 'system'",
+  "candidate === 'light' || candidate === 'dark' || candidate === 'system'",
   "document.documentElement.setAttribute('data-theme', resolved)",
   "document.documentElement.setAttribute('data-theme-choice', saved)"
 ]) assert.ok(themeInit.includes(required), `공통 초기 테마 계약 누락: ${required}`);
