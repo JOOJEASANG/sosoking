@@ -92,7 +92,7 @@ function normalizeAccountPage() {
   }
 
   const logo = document.querySelector('#page-content .page-header .logo');
-  if (logo && !logo.textContent.includes('내 정보')) logo.textContent = '👤 내 정보';
+  if (logo && logo.textContent.trim() !== '👤 내 정보') logo.textContent = '👤 내 정보';
 
   const box = document.getElementById('auth-box');
   if (!box || !box.querySelector('#change-nick')) {
