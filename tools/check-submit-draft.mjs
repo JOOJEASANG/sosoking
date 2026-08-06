@@ -16,6 +16,7 @@ for (const required of [
   '임시본 삭제',
   '임시저장 내용을 불러왔습니다',
   "window.addEventListener('hashchange'",
+  "window.addEventListener('popstate'",
   "nextHash.startsWith('#/trial/')",
   "window.addEventListener('pagehide'",
   "document.addEventListener('visibilitychange'",
