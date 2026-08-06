@@ -6,10 +6,12 @@ const read = file => fs.readFileSync(file, 'utf8');
 const html = read('public/dripso/index.html');
 const app = read('public/dripso/app-v4.js');
 const css = read('public/dripso/app-v4.css');
+const serviceNavCss = read('public/dripso/service-nav-unity.css');
 const gameServer = read('functions/dripso-game.js');
 const tournamentServer = read('functions/dripso-tournament.js');
 const functionBundle = read('functions/dripso-bundle.js');
 const functionsMain = read('functions/main.js');
+const courtNav = read('public/js/components/nav.js');
 const courtGuard = read('public/js/dripso-entry-guard.js');
 const courtCss = read('public/css/dripso-entry.css');
 const courtIndex = read('public/index.html');
@@ -26,17 +28,18 @@ for (const [value, label] of [
 
 for (const required of [
   '파이널4 드립판을 열어주세요', '익명 1대1 예선 상위 네 작품이 파이널4에 진출',
-  'data-nav="home"', 'data-nav="browse"', 'data-nav="popular"', 'data-nav="hall"', 'data-nav="create"',
+  'data-nav="home"', 'data-nav="browse"', 'data-nav="create"', 'data-nav="court"', 'data-nav="account"',
+  '<small>홈</small>', '<small>배틀찾기</small>', '<small>배틀열기</small>', '<small>판결소</small>', '<small>내 정보</small>',
   'id="entry-duration"', 'id="voting-duration"', 'id="finals-duration"',
-  'class="site-switcher"', 'aria-label="판결소로 이동">⚖️ 판결소</a>',
   '/dripso/app-v4.css?v=20260804-dripso-v4-audit-1',
+  '/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1',
   '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'
 ]) assert.ok(html.includes(required), `드립소 v4 화면 누락: ${required}`);
 
 for (const retired of [
   'data-nav="daily"', '<small>오늘의 한줄</small>', '<small>미친작명소</small>', '<small>상황드립</small>',
   '<script type="module" src="/dripso/battle-v2.js', '<script type="module" src="/dripso/tournament-v3.js',
-  '<script type="module" src="/dripso/official-ui.js'
+  '<script type="module" src="/dripso/official-ui.js', 'class="site-switcher"', 'data-nav="popular"', 'data-nav="hall"'
 ]) assert.ok(!html.includes(retired), `종료된 화면 계층이 활성화됨: ${retired}`);
 
 for (const required of [
@@ -53,6 +56,14 @@ for (const required of [
   '.v4-page-heading', '.v4-topic-card', '.v4-topic-detail', '.v4-empty',
   '@media (min-width: 900px)', '@media (max-width: 760px)', '@media (max-width: 390px)'
 ]) assert.ok(css.includes(required), `반응형 화면 스타일 누락: ${required}`);
+
+for (const required of [
+  ".site-header .site-switcher",
+  ".site-header .header-actions",
+  ".dripso-bottom-nav a[data-nav='create']",
+  ".dripso-bottom-nav a[data-nav='court']",
+  ".dripso-bottom-nav a[data-nav='account']"
+]) assert.ok(serviceNavCss.includes(required), `서비스 이동 스타일 누락: ${required}`);
 
 for (const required of [
   'const MAX_ENTRIES = 64', 'function entryIdFor(topicId, uid)',
@@ -83,45 +94,39 @@ for (const name of [
 ]) assert.ok(exports.has(name), `배포 대상 함수 누락: ${name}`);
 
 for (const required of [
-  "const BUTTON_ID = 'dripso-quick-button'",
-  "const PANEL_ID = 'dripso-quick-panel'",
-  "document.getElementById('dripso-home-entry')?.remove()",
-  "document.body.insertBefore(button, themeToggle)",
-  "button.setAttribute('aria-expanded', 'false')",
-  "panel.setAttribute('role', 'dialog')",
-  "description.textContent = '7가지 짧은 드립으로 출전하고, 익명 1대1 투표와 파이널4 결승으로 챔피언을 정합니다.'",
-  "link.href = DRIPSO_PATH",
-  "link.textContent = 'ㅋ 드립소 바로가기'",
-  "if (event.key === 'Escape') closePanel"
-]) assert.ok(courtGuard.includes(required), `판결소 상단 드립소 안내 누락: ${required}`);
-
-for (const retired of [
-  "entry.id = 'dripso-home-entry'",
-  "entry.className = 'dripso-home-entry'",
-  "court.textContent = '⚖️ 판결소'",
-  "homeContent.append(entry)"
-]) assert.ok(!courtGuard.includes(retired), `판결소 하단 전환 코드가 남아 있습니다: ${retired}`);
+  'href="/dripso/#/" class="nav-item"',
+  '<span class="nav-label">드립소</span>',
+  '<span class="nav-label" id="nav-account-label">내 정보</span>',
+  '<span class="nav-label">사건접수</span>'
+]) assert.ok(courtNav.includes(required), `판결소 하단 서비스 메뉴 누락: ${required}`);
 
 for (const required of [
-  '.dripso-quick-button',
-  'right: 60px',
-  '.dripso-quick-panel',
-  '.dripso-quick-link',
-  "[data-theme='light'] .dripso-quick-button",
-  '@media (max-width: 420px)',
-  '@media (prefers-reduced-motion: reduce)'
-]) assert.ok(courtCss.includes(required), `판결소 상단 드립소 스타일 누락: ${required}`);
+  "const SERVICE_HUB_ID = 'sosoking-service-hub'",
+  "logo.textContent = '👤 내 정보'",
+  "title: '판결소 활동'",
+  "title: '드립소 활동'",
+  "href: '/dripso/#/browse'",
+  "document.getElementById(RETIRED_BUTTON_ID)?.remove()"
+]) assert.ok(courtGuard.includes(required), `공통 내 정보 화면 누락: ${required}`);
 
-for (const retired of ['.dripso-home-entry {', 'grid-template-columns: repeat(2, minmax(0, 1fr))']) {
-  assert.ok(!courtCss.includes(retired), `판결소 하단 전환 스타일이 남아 있습니다: ${retired}`);
-}
+for (const retired of [
+  'buildQuickButton', 'buildQuickPanel', 'togglePanel', "document.body.insertBefore(button, themeToggle)",
+  "entry.id = 'dripso-home-entry'", "homeContent.append(entry)"
+]) assert.ok(!courtGuard.includes(retired), `종료된 서비스 이동 코드가 남아 있습니다: ${retired}`);
+
+for (const required of [
+  '.nav-service-mark', '.sosoking-service-hub', '.sosoking-service-hub-links',
+  '.sosoking-service-hub-link', "[data-theme='light'] .sosoking-service-hub", '@media (prefers-reduced-motion: reduce)'
+]) assert.ok(courtCss.includes(required), `공통 내 정보 스타일 누락: ${required}`);
 
 for (const asset of [
-  '/css/dripso-entry.css?v=20260805-dripso-header-entry-1',
-  '/js/dripso-entry-guard.js?v=20260805-dripso-header-entry-1'
+  '/css/dripso-entry.css?v=20260806-unified-service-nav-1',
+  '/js/app.js?v=20260806-unified-service-nav-1',
+  '/js/dripso-entry-guard.js?v=20260806-unified-service-nav-1'
 ]) {
-  assert.ok(courtIndex.includes(asset), `판결소 상단 드립소 자산 누락: ${asset}`);
-  assert.ok(serviceWorker.includes(`'${asset}'`), `서비스워커 상단 드립소 자산 누락: ${asset}`);
+  assert.ok(courtIndex.includes(asset), `판결소 통합 서비스 자산 누락: ${asset}`);
+  assert.ok(serviceWorker.includes(`'${asset}'`), `서비스워커 통합 서비스 자산 누락: ${asset}`);
 }
+assert.ok(serviceWorker.includes("'/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1'"));
 
-console.log('Dripso experience validation passed: one responsive Dripso app remains connected, while the court home uses a compact theme-adjacent Dripso guide button instead of the retired bottom switcher.');
+console.log('Dripso experience validation passed: court and Dripso use matching five-item bottom navigation and one shared account page without duplicate top shortcuts.');
