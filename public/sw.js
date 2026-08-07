@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
+const CACHE_NAME = 'sosoking-app-v20260807-private-original-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260806-unified-service-nav-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260805-dripso-header-entry-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
@@ -101,7 +102,7 @@ const APP_SHELL = [
   '/js/pages/home.js?v=20260729-brand-policy-1',
   '/js/pages/guide.js?v=20260802-remove-daily-court-1',
   '/js/pages/policy.js?v=20260730-final-audit-1',
-  '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',
+  '/js/pages/policy-configurable.js?v=20260730-final-audit-1',
   '/js/pages/submit-guard.js?v=20260731-private-first-publication-1',
   '/js/pages/submit-court.js?v=20260731-private-first-publication-1',
   '/js/pages/submit.js?v=20260730-configurable-limit-1',
