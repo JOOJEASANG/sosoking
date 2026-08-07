@@ -41,7 +41,14 @@ for (const required of [
   "결과문 안에 '웃음 포인트'",
   '다른 사건에도 그대로 붙일 수 있는 문장',
   '수사보고(investigation)',
-  '시간순서, 실제 남은 흔적, 당사자의 말과 행동 사이의 모순',
+  '대형 사건 수사본부가 다루는 것처럼 과잉 진지하게',
+  '현장보존·현장감식·CCTV 동선 분석',
+  '지문·족적·DNA 감식',
+  '국과수 감정 의뢰 검토',
+  '디지털 포렌식',
+  '사용자가 실제 존재를 말한 경우에만 발견·확보·검출 사실',
+  '실제 경찰·국과수에 신고·의뢰·출동한 사실',
+  '전문 수사 절차의 과한 스케일이 스스로 우스워지는 배열',
   '앞 문서에서 나온 물건·말·행동을 다시 활용해 결말',
   'appendHumorRules'
 ]) {
@@ -108,4 +115,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: AI verdicts use natural story-driven comedy, forced stage callouts are removed, and active cache versions are synchronized.');
+console.log('Verdict humor validation passed: investigation reports use major-case forensic comedy without inventing evidence, forced stage callouts are removed, and active cache versions are synchronized.');
