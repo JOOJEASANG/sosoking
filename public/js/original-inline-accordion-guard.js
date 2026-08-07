@@ -146,7 +146,7 @@ function createAccordion(page, caseId) {
       body.textContent = data.caseDescription || '기록된 접수 원문이 없습니다.';
       loaded = true;
     } catch (error) {
-      console.error('public case original accordion load failed:', error);
+      console.error('case original accordion load failed:', error);
       meta.textContent = '접수 원문';
       body.textContent = (error?.message || '접수 원문을 불러오지 못했습니다.').replace('FirebaseError: ', '');
     } finally {
@@ -194,16 +194,15 @@ function normalizeOriginalUi(root = document) {
   root.querySelectorAll?.('.result-document-page').forEach(page => pages.push(page));
 
   pages.forEach(page => {
-    const legacyTrigger = page.querySelector('[data-original-trigger]');
-    const isPublicResult = Boolean(legacyTrigger || page.querySelector('#court-comment-input'));
-    if (!isPublicResult) return;
+    const caseId = currentCaseId();
+    if (!caseId) return;
 
+    const legacyTrigger = page.querySelector('[data-original-trigger]');
     page.querySelectorAll('.result-original-layer').forEach(layer => layer.remove());
     page.querySelectorAll('.result-original-actions').forEach(actions => actions.remove());
     legacyTrigger?.remove();
 
-    const caseId = currentCaseId();
-    if (caseId) createAccordion(page, caseId);
+    createAccordion(page, caseId);
     positionOriginalHeaderButton(page);
   });
 }

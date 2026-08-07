@@ -57,19 +57,25 @@ for (const required of [
 }
 
 for (const required of [
+  "const caseId = currentCaseId();",
+  "if (!caseId) return;",
+  "createAccordion(page, caseId)",
   "positionOriginalHeaderButton(page)",
   "toolbar.dataset.originalHeaderToolbar = 'true'",
   "trigger.dataset.originalHeaderPosition = 'top-right'",
   "accordion.classList.toggle('is-open', !panel.hidden)",
+  "httpsCallable(functions, 'getPublicCaseOriginal')",
   "attributeFilter: ['aria-expanded', 'hidden']"
 ]) {
-  assert.ok(cacheGuard.includes(required), `공개 판결 기존 원문보기 보호가 누락되었습니다: ${required}`);
+  assert.ok(cacheGuard.includes(required), `개인·공개 판결 공통 원문보기 보호가 누락되었습니다: ${required}`);
 }
+assert.ok(!cacheGuard.includes('const isPublicResult = Boolean('), '원문보기 보호 스크립트가 공개 판결만 대상으로 제한되면 안 됩니다.');
+assert.ok(!cacheGuard.includes('if (!isPublicResult) return;'), '비공개 개인 판결에서 원문보기 생성을 중단하면 안 됩니다.');
 
 const publicGuardVersion = '20260802-original-header-button-1';
 const publicGuardAsset = `/js/original-inline-accordion-guard.js?v=${publicGuardVersion}`;
-assert.ok(index.includes(publicGuardAsset), 'index.html이 공개 판결 원문보기 보호 스크립트를 불러와야 합니다.');
-assert.ok(serviceWorker.includes(`'${publicGuardAsset}'`), '서비스워커가 공개 판결 원문보기 보호 스크립트를 현재 버전으로 캐시해야 합니다.');
+assert.ok(index.includes(publicGuardAsset), 'index.html이 판결 원문보기 보호 스크립트를 불러와야 합니다.');
+assert.ok(serviceWorker.includes(`'${publicGuardAsset}'`), '서비스워커가 판결 원문보기 보호 스크립트를 현재 버전으로 캐시해야 합니다.');
 assert.ok(index.includes('/js/original-detail-header-guard.js'), 'index.html이 판결기록 상세 원문 헤더 보호 스크립트를 불러와야 합니다.');
 
-console.log('Original submission validation passed: owners can open private originals, public originals remain safety-filtered, and the detail header button is fixed to the cover top-right.');
+console.log('Original submission validation passed: public records and owner-only private verdicts share the same original-view control while private originals remain protected.');
