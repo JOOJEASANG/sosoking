@@ -35,27 +35,18 @@ for (const required of [
 const humorPrompt = read('functions/humor-prompt.js');
 for (const required of [
   '[소소킹 코미디 방향: 상황 자체가 재미있게]',
-  '[소소킹 미소 밀도: 읽다가 자연스럽게 피식]',
-  '입꼬리가 자연스럽게 올라가게',
-  '접수·수사에서 첫 미소',
-  '변론에서 말의 빈틈',
-  '판결의 콜백',
-  '첫 미소: 사건접수 또는 수사보고',
-  '변명의 틈:',
-  '판결 콜백:',
-  '드립형이 아니어도 각 판사의 성격에서 미소',
-  '폭력, 학대, 성적 피해, 자해·죽음',
+  '웃긴 문장을 많이 쓰는 것이 아니라',
   '핵심 상황·행동·모순 하나',
   '평범한 시작 → 예상 밖 행동 → 변명과 증거의 충돌 → 판결에서 앞선 장면을 회수하는 결말',
   "결과문 안에 '웃음 포인트'",
   '다른 사건에도 그대로 붙일 수 있는 문장',
   '수사보고(investigation)',
   '시간순서, 실제 남은 흔적, 당사자의 말과 행동 사이의 모순',
-  '앞 문서에서 나온 물건·말·행동을 다시 활용해 책임을 정리',
+  '앞 문서에서 나온 물건·말·행동을 다시 활용해 결말',
   'appendHumorRules'
 ]) {
   if (!humorPrompt.includes(required)) {
-    errors.push(`functions/humor-prompt.js: natural smile rule missing: ${required}`);
+    errors.push(`functions/humor-prompt.js: natural comedy rule missing: ${required}`);
   }
 }
 for (const forbidden of ['최소 2개씩', '최소 10개의 서로 다른 유머 장면']) {
@@ -117,4 +108,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: AI verdicts target a gentle smile through case-specific setup, contradiction and callback without forced joke quotas.');
+console.log('Verdict humor validation passed: AI verdicts use natural story-driven comedy, forced stage callouts are removed, and active cache versions are synchronized.');
