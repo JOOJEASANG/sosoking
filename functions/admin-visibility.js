@@ -14,6 +14,18 @@ function cleanId(value) {
     .slice(0, 180);
 }
 
+function isDeletionLocked(...records) {
+  return records.some(data => {
+    const deletionStatus = String(data?.deletionStatus || '').toLowerCase();
+    const status = String(data?.status || '').toLowerCase();
+    const courtStage = String(data?.courtStage || '').toLowerCase();
+    return deletionStatus === 'processing'
+      || deletionStatus === 'deleting'
+      || status === 'deleting'
+      || courtStage === 'deleting';
+  });
+}
+
 function publicResultText(caseData = {}, resultData = {}) {
   return [
     caseData.caseTitle,
@@ -85,11 +97,14 @@ exports.setAdminResultVisibility = onCall({
       throw new HttpsError('failed-precondition', '완성된 판결문이 있어야 공개할 수 있습니다.');
     }
 
+    const caseData = caseSnap.exists ? caseSnap.data() : {};
+    const resultData = resultSnap.exists ? resultSnap.data() : {};
+    if (isDeletionLocked(caseData, resultData)) {
+      throw new HttpsError('failed-precondition', '삭제 중인 사건은 공개 상태를 변경할 수 없습니다.');
+    }
+
     if (isPublic) {
-      const safety = inspectContent(publicResultText(
-        caseSnap.exists ? caseSnap.data() : {},
-        resultSnap.exists ? resultSnap.data() : {}
-      ));
+      const safety = inspectContent(publicResultText(caseData, resultData));
       if (!safety.safe) {
         throw new HttpsError(
           'failed-precondition',
@@ -111,13 +126,13 @@ exports.setAdminResultVisibility = onCall({
         userId: FieldValue.delete(),
         caseDescription: FieldValue.delete(),
         nickname: FieldValue.delete(),
-        publicCaseDescription: resultSnap.data().publicCaseDescription || '',
-        publicNickname: resultSnap.data().publicNickname || '익명 원고',
+        publicCaseDescription: resultData.publicCaseDescription || '',
+        publicNickname: resultData.publicNickname || '익명 원고',
         publicDataVersion: 1,
-        contentSafetyStatus: isPublic ? 'passed' : (resultSnap.data().contentSafetyStatus || 'not-public'),
+        contentSafetyStatus: isPublic ? 'passed' : (resultData.contentSafetyStatus || 'not-public'),
         contentSafetyCheckedAt: isPublic
           ? FieldValue.serverTimestamp()
-          : (resultSnap.data().contentSafetyCheckedAt || FieldValue.delete()),
+          : (resultData.contentSafetyCheckedAt || FieldValue.delete()),
         updatedAt: FieldValue.serverTimestamp()
       });
     }
