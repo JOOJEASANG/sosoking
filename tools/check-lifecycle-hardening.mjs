@@ -68,10 +68,35 @@ if (deployedCheck.includes('reported without blocking deployment')) {
   errors.push('tools/check-deployed-functions.mjs: unmanaged Functions are still non-blocking');
 }
 
+const actionPins = {
+  checkout: 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262',
+  setupNode: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020',
+  setupJava: 'actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3'
+};
+const workflowFiles = [
+  '.github/workflows/firebase-deploy.yml',
+  '.github/workflows/migrate-legacy-case-ids.yml',
+  '.github/workflows/pull-request-validation.yml'
+];
+for (const file of workflowFiles) {
+  const source = read(file);
+  if (!source.includes(actionPins.checkout)) errors.push(`${file}: checkout action is not pinned to the audited v4 SHA`);
+  if (!source.includes(actionPins.setupNode)) errors.push(`${file}: setup-node action is not pinned to the audited v4 SHA`);
+  if (/actions\/(?:checkout|setup-node|setup-java)@v\d/.test(source)) {
+    errors.push(`${file}: mutable GitHub Action major-version tag remains`);
+  }
+}
+for (const file of ['.github/workflows/firebase-deploy.yml', '.github/workflows/pull-request-validation.yml']) {
+  const source = read(file);
+  if (!source.includes(actionPins.setupJava)) errors.push(`${file}: setup-java action is not pinned to the audited v4 SHA`);
+}
+
 const prValidation = read('.github/workflows/pull-request-validation.yml');
 for (const required of [
   'pull_request:',
   'branches: [main]',
+  'push:',
+  'branches-ignore: [main]',
   'node-version: 22',
   "java-version: '21'",
   'firebase-tools@15.24.0',
@@ -91,4 +116,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Lifecycle and operational hardening validation passed: moderation, deletion races, public originals, PR validation, secret-file ignores, and strict deployed-function drift checks are intact.');
+console.log('Lifecycle and operational hardening validation passed: moderation, deletion races, public originals, PR validation, immutable Actions pins, secret-file ignores, and strict deployed-function drift checks are intact.');
