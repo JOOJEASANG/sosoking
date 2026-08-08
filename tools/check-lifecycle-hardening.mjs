@@ -30,7 +30,8 @@ if (social.includes("batch.set(resultRef, {\n    commentCount: FieldValue.increm
 const adminVisibility = read('functions/admin-visibility.js');
 for (const required of [
   'function isDeletionLocked(...records)',
-  "삭제 중인 사건은 공개 상태를 변경할 수 없습니다."
+  "삭제 중인 사건은 공개 상태를 변경할 수 없습니다.",
+  'moderationStatus: isPublic ? FieldValue.delete()'
 ]) {
   if (!adminVisibility.includes(required)) errors.push(`functions/admin-visibility.js: missing ${required}`);
 }
@@ -55,10 +56,39 @@ if (!reports.includes("moderationStatus: 'hidden-by-report'")) {
   errors.push('functions/reports.js: report hide marker is missing');
 }
 
+const deployedCheck = read('tools/check-deployed-functions.mjs');
+for (const required of [
+  'if (result.missing.length || result.unexpected.length)',
+  '- Unexpected in Firebase:',
+  'process.exit(1);'
+]) {
+  if (!deployedCheck.includes(required)) errors.push(`tools/check-deployed-functions.mjs: missing strict drift guard ${required}`);
+}
+if (deployedCheck.includes('reported without blocking deployment')) {
+  errors.push('tools/check-deployed-functions.mjs: unmanaged Functions are still non-blocking');
+}
+
+const prValidation = read('.github/workflows/pull-request-validation.yml');
+for (const required of [
+  'pull_request:',
+  'branches: [main]',
+  'node-version: 22',
+  "java-version: '21'",
+  'firebase-tools@15.24.0',
+  'run: npm test'
+]) {
+  if (!prValidation.includes(required)) errors.push(`pull-request-validation.yml: missing ${required}`);
+}
+
+const gitignore = read('.gitignore');
+for (const required of ['*service-account*.json', 'firebase-adminsdk-*.json', '*.local']) {
+  if (!gitignore.includes(required)) errors.push(`.gitignore: missing sensitive/local pattern ${required}`);
+}
+
 if (errors.length) {
-  console.error(`Lifecycle hardening validation failed (${errors.length})`);
+  console.error(`Lifecycle and operational hardening validation failed (${errors.length})`);
   errors.forEach(error => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('Lifecycle hardening validation passed: moderation hides cannot be user-reopened, deletion locks block visibility/participation/appeals, and public originals are hardened.');
+console.log('Lifecycle and operational hardening validation passed: moderation, deletion races, public originals, PR validation, secret-file ignores, and strict deployed-function drift checks are intact.');
