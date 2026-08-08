@@ -42,7 +42,7 @@ for (const required of [
   'requireAppCheck(request);',
   "enforceActionRateLimit(requesterUid, 'public-original'",
   'function isSanitizedPublicResult(data = {})',
-  'resultData.isPublic === true',
+  'data.isPublic === true',
   'Number(data.publicDataVersion || 0) === 1',
   "!Object.prototype.hasOwnProperty.call(data, 'caseDescription')",
   'function isDeletionLocked(...records)'
