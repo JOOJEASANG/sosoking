@@ -76,19 +76,20 @@ function run(inputPath) {
   }
 
   const result = validateDeployedFunctions(records);
-  if (result.missing.length) {
+  if (result.missing.length || result.unexpected.length) {
     console.error('Deployed Functions drift detected.');
-    console.error(`- Missing in Firebase: ${result.missing.join(', ')}`);
+    if (result.missing.length) {
+      console.error(`- Missing in Firebase: ${result.missing.join(', ')}`);
+    }
+    if (result.unexpected.length) {
+      console.error(`- Unexpected in Firebase: ${result.unexpected.join(', ')}`);
+    }
+    console.error('Remove unmanaged legacy Functions or add the intended export to source before continuing deployment.');
     process.exit(1);
   }
 
-  if (result.unexpected.length) {
-    console.warn(`Legacy or unmanaged Firebase Functions remain (${result.unexpected.length}): ${result.unexpected.join(', ')}`);
-  }
-
   console.log(
-    `Deployed Functions validation passed: all ${result.expected.size} current source exports are deployed; `
-    + `${result.unexpected.length} legacy or unmanaged function(s) were reported without blocking deployment.`
+    `Deployed Functions validation passed: Firebase exactly matches all ${result.expected.size} current source exports.`
   );
 }
 
