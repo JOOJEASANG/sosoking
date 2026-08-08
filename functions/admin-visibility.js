@@ -116,6 +116,7 @@ exports.setAdminResultVisibility = onCall({
     if (caseSnap.exists) {
       tx.update(caseRef, {
         isPublic,
+        moderationStatus: isPublic ? FieldValue.delete() : (caseData.moderationStatus || FieldValue.delete()),
         updatedAt: FieldValue.serverTimestamp()
       });
     }
@@ -129,6 +130,7 @@ exports.setAdminResultVisibility = onCall({
         publicCaseDescription: resultData.publicCaseDescription || '',
         publicNickname: resultData.publicNickname || '익명 원고',
         publicDataVersion: 1,
+        moderationStatus: isPublic ? FieldValue.delete() : (resultData.moderationStatus || FieldValue.delete()),
         contentSafetyStatus: isPublic ? 'passed' : (resultData.contentSafetyStatus || 'not-public'),
         contentSafetyCheckedAt: isPublic
           ? FieldValue.serverTimestamp()
