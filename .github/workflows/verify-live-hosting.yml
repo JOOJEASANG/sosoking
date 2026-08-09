@@ -24,7 +24,7 @@ jobs:
 
       - name: Verify all production hosts serve the same release
         env:
-          EXPECTED_VERSION: sosoking-judge-final-20260810-1
+          EXPECTED_VERSION: sosoking-judge-final-20260810-2
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
