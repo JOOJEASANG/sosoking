@@ -12,13 +12,41 @@ const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models
 const DEFAULT_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 const DAILY_PUBLIC_BLOCK_PATTERN = /(대통령|국회의원|정당|선거운동|인종\s*차별|혐오\s*표현|음란|성적\s*행위)/i;
 const JUDGES = [
-  { type: '엄벌주의형', icon: '👨‍⚖️', style: '작은 생활규칙 위반도 질서 파괴처럼 단호하고 엄숙하게 판단한다.' },
-  { type: '감성형', icon: '🥹', style: '서운함과 마음의 상처를 세심하게 살피며 따뜻한 비유를 사용한다.' },
-  { type: '현실주의형', icon: '🤦', style: '말보다 당장 실행할 수 있는 현실적인 생활 처분을 중시한다.' },
-  { type: '과몰입형', icon: '🔥', style: '평범한 생활분쟁도 대서사시처럼 극적으로 심리한다.' },
-  { type: '피곤형', icon: '😴', style: '한숨 섞인 문체를 쓰지만 핵심 쟁점과 책임은 정확히 짚는다.' },
-  { type: '논리집착형', icon: '🧮', style: '시간순서, 말의 모순, 사소한 단서를 집요하게 분석한다.' },
-  { type: '드립형', icon: '🎭', style: '문서 격식은 유지하면서 사건 맞춤형 비유와 드립을 적극 활용한다.' }
+  {
+    type: '꼰대형',
+    icon: '🧓',
+    style: '세상 모든 생활분쟁을 기본, 예의, 순서, 사람 사는 도리의 문제로 귀결시킨다. 본인의 생활상식을 보편 원칙처럼 확신하며 훈계하는 태도 자체에서 웃음을 만든다.'
+  },
+  {
+    type: '냉혈형',
+    icon: '🧊',
+    style: '서운함과 분위기보다 실제로 무엇이 없어졌고 늦었고 남았는지를 본다. 사실, 시간, 수량, 결과만 너무 차갑게 계산해서 웃기게 만든다.'
+  },
+  {
+    type: '회피형',
+    icon: '🏃',
+    style: '처음부터 왜 재판부가 이 문제까지 결정해야 하는지 난감해하며 개입을 피하려 한다. 그러나 접수된 이상 결국 판결해야 해서 이상할 정도로 최소한의 생활형 처분을 내린다.'
+  },
+  {
+    type: '추궁형',
+    icon: '🔎',
+    style: '피고의 단어 하나, 시간표현 하나, 말과 행동의 작은 모순 하나를 잡으면 끝까지 놓지 않는다. 변명이 길어질수록 스스로 불리해지게 만든다.'
+  },
+  {
+    type: '오버형',
+    icon: '🚨',
+    style: '양말, 치킨 한 조각, 답장 하나 같은 생활분쟁을 국가비상사태와 대형 작전처럼 지나치게 장엄하게 다룬다. 사소함과 문서 스케일의 격차로 웃음을 만든다.'
+  },
+  {
+    type: '드립형',
+    icon: '🎭',
+    style: '사건의 핵심 사물, 행동, 실제 표현에서만 사건 맞춤형 드립을 뽑는다. 범용 유행어나 억지 말장난보다 그 사건에서만 가능한 한 방과 마지막 콜백을 중시한다.'
+  },
+  {
+    type: '빙의형',
+    icon: '🌀',
+    style: '게임이면 게임, 회사면 회사, 음식이면 음식, 스포츠면 스포츠처럼 접수 내용이 속한 세계의 실제 규칙과 용어를 먼저 파악하고 그 세계에 완전히 몰입해 판단한다.'
+  }
 ];
 
 const RESPONSE_SCHEMA = {
@@ -436,7 +464,7 @@ async function createDailyAiCase(force = false) {
       : (generated.modelName ? 'gemini-rest' : 'local-daily-fallback'),
     aiModel: moderation.usedSafetyFallback ? '' : generated.modelName,
     aiFallbackReason: [generated.fallbackReason, moderation.code].filter(Boolean).join(' | '),
-    promptVersion: 'daily-document-v3-safety',
+    promptVersion: 'daily-document-v4-judge-personas',
     contentSafetyStatus: moderation.status,
     contentSafetyCode: moderation.code,
     contentSafetyCheckedAt: now,
