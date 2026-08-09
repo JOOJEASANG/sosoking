@@ -30,6 +30,8 @@ const sw = read('public/sw.js');
 const bundle = read('functions/dripso-bundle.js');
 const rules = read('firestore.rules');
 const deploy = read('.github/workflows/firebase-deploy.yml');
+const courtAppAsset = courtIndex.match(/<script type="module" src="(\/js\/app\.js\?v=[^"']+)"/)?.[1] || '';
+assert.ok(courtAppAsset, '판결소 현재 앱 자산 경로를 찾을 수 없습니다.');
 
 for (const required of [
   '<title>드립소 - 블라인드 파이널4 드립배틀</title>',
@@ -122,7 +124,7 @@ for (const required of [
 
 for (const asset of [
   '/css/dripso-entry.css?v=20260806-unified-service-nav-1',
-  '/js/app.js?v=20260806-unified-service-nav-1',
+  courtAppAsset,
   '/js/dripso-entry-guard.js?v=20260806-unified-service-nav-1'
 ]) assert.ok(courtIndex.includes(asset), `판결소 통합 자산 누락: ${asset}`);
 
@@ -152,7 +154,7 @@ for (const asset of [
   "'/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'",
   "'/dripso/moderation.js?v=20260804-dripso-v4-audit-1'",
   "'/css/dripso-entry.css?v=20260806-unified-service-nav-1'",
-  "'/js/app.js?v=20260806-unified-service-nav-1'",
+  `'${courtAppAsset}'`,
   "'/js/dripso-entry-guard.js?v=20260806-unified-service-nav-1'",
   "'/js/components/nav.js?v=20260806-unified-service-nav-1'",
   "'/js/components/header-icons.js?v=20260806-unified-service-nav-1'"

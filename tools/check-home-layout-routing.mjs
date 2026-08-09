@@ -13,7 +13,7 @@ for (const value of [
   "icon === '🎲'",
   "card.remove()",
   "heading.textContent = '7명의 AI 판사'",
-  "사건을 접수하면 7명 중 한 명이 자동으로 배정됩니다."
+  "사건을 접수하면 성격부터 판결 방식까지 다른 7명 중 한 명이 자동 배정됩니다."
 ]) need(homeJudges, value, 'seven-judge home');
 
 const app = read('public/js/app.js');
@@ -51,4 +51,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Home and routing validation passed: seven judge cards remain, obsolete routes are absent, and active cache versions match.');
+console.log('Home and routing validation passed: seven current judge cards remain, obsolete routes are absent, and active cache versions match.');

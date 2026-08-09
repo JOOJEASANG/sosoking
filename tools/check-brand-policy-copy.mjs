@@ -19,10 +19,11 @@ for (const phrase of [
 
 const homeEntry = read('public/js/pages/home-seven-judges.js');
 for (const phrase of [
-  '사소한 생활분쟁을 과하게 진지한 판결문으로 받아보세요.',
-  '사용자가 접수한 내용으로 만드는 오락용 AI 생활법정입니다.',
+  '꼰대부터 냉혈·회피·추궁·오버·드립·빙의까지',
+  '같은 사건도 담당 판사의 성격에 따라 전혀 다른 방식으로 흘러갑니다.',
   '사용자가 공개한 AI 생활판결',
   '최근 공개 AI 판결 5건',
+  '7명의 개성 강한 AI 판사',
   '실제 사례·판례 서비스가 아니며'
 ]) requireText(homeEntry, phrase, 'public/js/pages/home-seven-judges.js');
 for (const removed of ['실제 판례는 직접 판결해보세요.', 'AI 생활판결과 실제 판례 맞히기']) {
@@ -31,9 +32,11 @@ for (const removed of ['실제 판례는 직접 판결해보세요.', 'AI 생활
 
 const homeCopyGuard = read('public/js/home-copy-guard.js');
 for (const phrase of [
-  "const CURRENT_COPY_MARKER = 'ai-life-verdict-only'",
-  '사소한 생활분쟁을 과하게 진지한 판결문으로 받아보세요.',
+  "const CURRENT_COPY_MARKER = 'judge-personas-v2'",
+  '꼰대부터 냉혈·회피·추궁·오버·드립·빙의까지',
+  '같은 사건도 담당 판사의 성격에 따라 전혀 다른 방식으로 흘러갑니다.',
   '사용자가 공개한 AI 생활판결',
+  '7명의 개성 강한 AI 판사',
   '실제 사례·판례 서비스가 아니며',
   'new MutationObserver(applyCurrentHomeCopy)'
 ]) requireText(homeCopyGuard, phrase, 'public/js/home-copy-guard.js');
@@ -42,6 +45,7 @@ const guide = read('public/js/pages/guide.js');
 for (const phrase of [
   '접수 횟수와 대기시간은 운영 설정에 따라 달라질 수 있으며',
   '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다.',
+  '꼰대형·냉혈형·회피형·추궁형·오버형·드립형·빙의형',
   '판결기록 참여',
   '선택형 투표 참여',
   '토론에서 의견 나누기',
@@ -123,4 +127,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: current AI-life-verdict copy, submission limits, public verdict participation, cleaned policy output, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: seven-judge comedy copy, submission limits, public verdict participation, cleaned policy output, and synchronized cache versions.');

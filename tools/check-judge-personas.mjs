@@ -1,16 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
-import { createRequire } from 'node:module';
 
 const root = process.cwd();
-const trialPath = path.join(root, 'functions', 'generate-trial-lite.js');
-const personaPath = path.join(root, 'functions', 'judge-persona-prompt.js');
-const mainPath = path.join(root, 'functions', 'main.js');
+const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
-const trial = fs.readFileSync(trialPath, 'utf8');
-const persona = fs.readFileSync(personaPath, 'utf8');
-const main = fs.readFileSync(mainPath, 'utf8');
+const trial = read('functions/generate-trial-lite.js');
+const persona = read('functions/judge-persona-prompt.js');
+const main = read('functions/main.js');
+const home = read('public/js/pages/home-seven-judges.js');
+const guide = read('public/js/pages/guide.js');
+const index = read('public/index.html');
+const worker = read('public/sw.js');
 
 const expected = ['꼰대형', '냉혈형', '회피형', '추궁형', '오버형', '드립형', '빙의형'];
 const legacy = ['엄벌주의형', '감성형', '현실주의형', '과몰입형', '피곤형', '논리집착형'];
@@ -19,6 +19,8 @@ for (const type of expected) {
   if ([...type].length !== 3) throw new Error(`판사 유형은 정확히 3글자여야 합니다: ${type}`);
   if (!trial.includes(`type: '${type}'`)) throw new Error(`generate-trial-lite.js 판사 누락: ${type}`);
   if (!persona.includes(`'${type}': {`)) throw new Error(`judge-persona-prompt.js 전용 연출 누락: ${type}`);
+  if (!home.includes(`name: '${type}'`)) throw new Error(`메인 판사 카드 누락: ${type}`);
+  if (!guide.includes(type)) throw new Error(`이용안내 판사 유형 누락: ${type}`);
 }
 
 const judgeBlock = trial.match(/const JUDGES = \[(.*?)\n\];/s)?.[1] || '';
@@ -27,8 +29,16 @@ if (judgeTypes.length !== 7) throw new Error(`판사는 정확히 7명이어야 
 if (new Set(judgeTypes).size !== 7) throw new Error('판사 유형 이름이 중복되었습니다.');
 if (judgeTypes.join('|') !== expected.join('|')) throw new Error(`판사 순서가 기대값과 다릅니다: ${judgeTypes.join(', ')}`);
 
+const homeJudgeBlock = home.match(/const JUDGES = \[(.*?)\n\];/s)?.[1] || '';
+const homeJudgeTypes = [...homeJudgeBlock.matchAll(/name: '([^']+)'/g)].map(match => match[1]);
+if (homeJudgeTypes.join('|') !== expected.join('|')) {
+  throw new Error(`메인 판사 카드 순서가 생성 판사 순서와 다릅니다: ${homeJudgeTypes.join(', ')}`);
+}
+
 for (const oldType of legacy) {
   if (judgeBlock.includes(oldType)) throw new Error(`구형 판사 유형이 신규 JUDGES 목록에 남았습니다: ${oldType}`);
+  if (homeJudgeBlock.includes(oldType)) throw new Error(`구형 판사 유형이 메인 판사 카드에 남았습니다: ${oldType}`);
+  if (guide.includes(oldType)) throw new Error(`구형 판사 유형이 이용안내에 남았습니다: ${oldType}`);
 }
 
 for (const type of expected) {
@@ -73,4 +83,19 @@ if (!trial.includes("promptVersion: 'simple-document-v1.6-judge-personas'")) {
   throw new Error('새 판사 체계의 promptVersion이 연결되지 않았습니다.');
 }
 
-console.log('Judge persona validation passed: seven distinct 3-character comedy judges are wired across generation, five-stage persona prompting, fallback rulings, and safety constraints.');
+if (!home.includes('성격부터 판결 방식까지 다른 7명')) {
+  throw new Error('메인 판사 라인업 설명이 새 캐릭터 체계를 반영하지 않습니다.');
+}
+if (!home.includes('같은 사건도 담당 판사의 성격에 따라 전혀 다른 방식')) {
+  throw new Error('메인 히어로 설명이 판사별 차이를 안내하지 않습니다.');
+}
+
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+if (appVersion !== '20260810-judge-ui-sync-1') {
+  throw new Error(`판사 UI 캐시 버전이 갱신되지 않았습니다: ${appVersion || '없음'}`);
+}
+if (!worker.includes(`/js/app.js?v=${appVersion}`) || !worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
+  throw new Error('판사 UI 캐시 버전이 index/service worker 사이에서 일치하지 않습니다.');
+}
+
+console.log('Judge persona validation passed: seven distinct 3-character comedy judges are synchronized across generation, five-stage prompting, main UI, guide copy, cache refresh, fallback rulings, and safety constraints.');
