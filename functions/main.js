@@ -10,6 +10,8 @@ require('./humor-prompt');
 require('./comedy-topic-context');
 // 목록 밖 게임과 일반 생활주제까지 해석하고 다섯 결과 모두에 서로 다른 코미디 역할을 부여한다.
 require('./five-stage-topic-comedy');
+// 3글자 판사 7종의 사고방식과 5단계 연출을 추가한다.
+require('./judge-persona-prompt');
 // 번호 항목 분리와 문장 완결성을 보장하는 출력 규칙을 이어서 주입한다.
 require('./document-output-quality');
 
