@@ -61,8 +61,8 @@ const daily = read('functions/daily.js');
 if (!daily.includes('moderateDailyContent')) {
   errors.push('functions/daily.js: post-generation daily content moderation is missing');
 }
-if (!daily.includes("promptVersion: 'daily-document-v3-safety'")) {
-  errors.push('functions/daily.js: moderated daily prompt version is missing');
+if (!daily.includes("promptVersion: 'daily-document-v4-judge-personas'")) {
+  errors.push('functions/daily.js: moderated daily judge-persona prompt version is missing');
 }
 if (!daily.includes('isPublic: moderation.publish')) {
   errors.push('functions/daily.js: daily publication is not controlled by moderation');

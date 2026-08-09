@@ -22,7 +22,9 @@ for (const required of [
 const dailyTrial = read('functions/daily.js');
 for (const required of [
   '웃음코드를 충분히 넣는다',
-  '사건 맞춤형 비유와 드립을 적극 활용한다',
+  "type: '드립형'",
+  '사건의 핵심 사물, 행동, 실제 표현에서만 사건 맞춤형 드립을 뽑는다',
+  '범용 유행어나 억지 말장난보다 그 사건에서만 가능한 한 방과 마지막 콜백을 중시한다',
   'temperature: 0.92',
   '냉장고 마지막 푸딩 실종 사건',
   '숟가락이 증거번호를 받을 일은 없었을 것이다'
@@ -116,4 +118,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: investigation reports use major-case forensic comedy without inventing evidence, seven comedy judge personas are loaded before generation, forced stage callouts are removed, and active cache versions are synchronized.');
+console.log('Verdict humor validation passed: investigation reports use major-case forensic comedy without inventing evidence, both user and admin generators enforce case-specific callback humor, seven comedy judge personas load before generation, and active cache versions are synchronized.');
