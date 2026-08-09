@@ -31,7 +31,14 @@ for (const required of [
   'function buildPrompt(dateKey, judge, settings = {})',
   'function normalizeDailyContent(ai, dateKey, judge)',
   'function moderateDailyContent(data, dateKey, judge, settings = {})',
-  "promptVersion: 'daily-document-v3-safety'",
+  "promptVersion: 'daily-document-v4-judge-personas'",
+  "type: '꼰대형'",
+  "type: '냉혈형'",
+  "type: '회피형'",
+  "type: '추궁형'",
+  "type: '오버형'",
+  "type: '드립형'",
+  "type: '빙의형'",
   'reception:',
   'investigation:',
   'plaintiffArg:',
@@ -40,7 +47,7 @@ for (const required of [
   'sentence:'
 ]) {
   if (!daily.includes(required)) {
-    errors.push(`functions/daily.js: existing AI result contract changed unexpectedly: ${required}`);
+    errors.push(`functions/daily.js: current AI result contract changed unexpectedly: ${required}`);
   }
 }
 
@@ -107,4 +114,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only daily AI validation passed: scheduled generation is removed, reviewed obsolete cleanup covers the old trigger, and the existing AI result contract remains intact.');
+console.log('Administrator-only daily AI validation passed: scheduled generation stays removed, current seven-judge generation is enforced, reviewed obsolete cleanup covers the old trigger, and the result contract remains intact.');
