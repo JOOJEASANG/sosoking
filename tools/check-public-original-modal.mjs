@@ -14,7 +14,7 @@ const serviceWorker = read('public/sw.js');
 for (const required of [
   "exports.getPublicCaseOriginal = onCall",
   "const isOwner = Boolean(requesterUid && ownerUid && requesterUid === ownerUid)",
-  "const isPublic = Boolean(resultSnap.exists && resultData.isPublic === true)",
+  "const isPublic = Boolean(resultSnap.exists && isSanitizedPublicResult(resultData))",
   "if (!isOwner && !isPublic)",
   "if (!isOwner) {",
   "const safety = inspectContent(caseDescription);",
@@ -22,6 +22,17 @@ for (const required of [
   "caseDescription"
 ]) {
   assert.ok(backend.includes(required), `접수 원문 함수의 소유자·공개 권한 안전장치가 누락되었습니다: ${required}`);
+}
+
+for (const required of [
+  "function isSanitizedPublicResult(data = {})",
+  "data.isPublic === true",
+  "Number(data.publicDataVersion || 0) === 1",
+  "!Object.prototype.hasOwnProperty.call(data, 'userId')",
+  "!Object.prototype.hasOwnProperty.call(data, 'caseDescription')",
+  "!Object.prototype.hasOwnProperty.call(data, 'nickname')"
+]) {
+  assert.ok(backend.includes(required), `접수 원문 공개 데이터 정제 검증이 누락되었습니다: ${required}`);
 }
 
 assert.ok(functionsMain.includes("require('./public-original')"), '접수 원문 함수가 Functions 엔트리에서 export되어야 합니다.');
@@ -78,4 +89,4 @@ assert.ok(index.includes(publicGuardAsset), 'index.html이 판결 원문보기 �
 assert.ok(serviceWorker.includes(`'${publicGuardAsset}'`), '서비스워커가 판결 원문보기 보호 스크립트를 현재 버전으로 캐시해야 합니다.');
 assert.ok(index.includes('/js/original-detail-header-guard.js'), 'index.html이 판결기록 상세 원문 헤더 보호 스크립트를 불러와야 합니다.');
 
-console.log('Original submission validation passed: public records and owner-only private verdicts share the same original-view control while private originals remain protected.');
+console.log('Original submission validation passed: public records require sanitized public data while owner-only private verdicts keep the same original-view control.');
