@@ -16,6 +16,8 @@ const courtGuard = read('public/js/dripso-entry-guard.js');
 const courtCss = read('public/css/dripso-entry.css');
 const courtIndex = read('public/index.html');
 const serviceWorker = read('public/sw.js');
+const courtAppAsset = courtIndex.match(/<script type="module" src="(\/js\/app\.js\?v=[^"']+)"/)?.[1] || '';
+assert.ok(courtAppAsset, '판결소 현재 앱 자산 경로를 찾을 수 없습니다.');
 
 for (const [value, label] of [
   ['blank', '빈칸채우기'], ['naming', '이름붙이기'], ['comeback', '받아치기'],
@@ -121,7 +123,7 @@ for (const required of [
 
 for (const asset of [
   '/css/dripso-entry.css?v=20260806-unified-service-nav-1',
-  '/js/app.js?v=20260806-unified-service-nav-1',
+  courtAppAsset,
   '/js/dripso-entry-guard.js?v=20260806-unified-service-nav-1'
 ]) {
   assert.ok(courtIndex.includes(asset), `판결소 통합 서비스 자산 누락: ${asset}`);
