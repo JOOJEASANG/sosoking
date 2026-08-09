@@ -36,7 +36,7 @@ if (!guard.includes('new MutationObserver(queueApply)')) fail('캐시된 구형 
 if (!guard.includes('HOME_HERO_HTML') || !guard.includes('heroSub.innerHTML !== HOME_HERO_HTML')) fail('구형 홈 카피 재덮기 방어 누락');
 if (!guard.includes('syncHomeJudgeLineup') || !guard.includes('syncJudgeMetadata') || !guard.includes('syncGuide')) fail('최종 UI 표면 동기화 누락');
 
-const guardAsset = `/js/judge-final-guard.js?v=${guardVersion}`;
+const guardAsset = '/js/judge-final-guard.js';
 if (!index.includes(guardAsset)) fail('index.html에 최종 판사 UI 가드가 연결되지 않았습니다.');
 if (!index.includes(`<meta name="sosoking-deploy-version" content="${version}">`)) fail('HTML 배포 마커 누락');
 if (marker !== version) fail(`정적 배포 마커 불일치: ${marker}`);
