@@ -8,7 +8,7 @@ for (const required of [
   '코미디 판결문 작가',
   '웃음코드를 충분히 넣는다',
   '사건 맞춤형 드립',
-  '반복되지 않는 웃음 포인트',
+  '0~2개의 강한 말장난',
   "'드립형'",
   'temperature: 0.9',
   'function buildLocalFallback',
@@ -64,10 +64,11 @@ for (const forbidden of ['최소 2개씩', '최소 10개의 서로 다른 유머
 
 const main = read('functions/main.js');
 const humorLoad = main.indexOf("require('./humor-prompt')");
+const personaLoad = main.indexOf("require('./judge-persona-prompt')");
 const dailyLoad = main.indexOf("require('./daily')");
 const userTrialLoad = main.indexOf("require('./generate-trial-lite')");
-if (humorLoad < 0 || dailyLoad < 0 || userTrialLoad < 0 || humorLoad > dailyLoad || humorLoad > userTrialLoad) {
-  errors.push('functions/main.js: humor prompt must load before user and daily AI functions');
+if (humorLoad < 0 || personaLoad < 0 || dailyLoad < 0 || userTrialLoad < 0 || humorLoad > personaLoad || personaLoad > dailyLoad || personaLoad > userTrialLoad) {
+  errors.push('functions/main.js: humor and judge persona prompts must load before user and daily AI functions');
 }
 
 const resultComments = read('public/js/pages/result-comments.js');
@@ -115,4 +116,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: investigation reports use major-case forensic comedy without inventing evidence, forced stage callouts are removed, and active cache versions are synchronized.');
+console.log('Verdict humor validation passed: investigation reports use major-case forensic comedy without inventing evidence, seven comedy judge personas are loaded before generation, forced stage callouts are removed, and active cache versions are synchronized.');
