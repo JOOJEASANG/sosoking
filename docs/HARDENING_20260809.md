@@ -11,15 +11,17 @@
 - 항소 결과 저장도 사건과 결과 문서가 모두 존재하고 삭제 중이 아닌지 다시 확인합니다.
 - 공개 사건 원문 조회에는 App Check 훅, 인스턴스 상한, 세션별 호출 제한, sanitized 공개 결과 검증을 적용합니다.
 - 배포된 Firebase Functions가 소스와 정확히 일치하지 않으면 배포 검증을 실패시킵니다.
-- Pull Request 단계에서도 전체 `npm test`가 실행되도록 별도 검증 workflow를 추가했습니다.
+- 기존 `.github/workflows/validate-pr.yml` 하나만 사용해 Pull Request마다 전체 `npm test`를 실행하고, 중복 검증 workflow는 제거했습니다.
+- PR 검증·Firebase 배포·레거시 마이그레이션에서 GitHub 공식 Actions를 v5의 불변 commit SHA로 고정했습니다.
 - 서비스계정 JSON과 로컬 환경 파일 패턴을 Git에서 추가 제외했습니다.
 
 ## 자동 검증
 
 - `tools/check-lifecycle-hardening.mjs`
 - `functions/check-lifecycle-guards.js`
+- `tools/check-public-original-modal.mjs`의 sanitized 공개 원문 회귀검사
 
-두 검사는 기존 `npm test` 체인에 포함됩니다.
+검사는 기존 `npm test` 체인에 포함되며, PR 검증 workflow가 전체 정적 검사와 Firestore Emulator 통합 검사를 실행합니다.
 
 ## 외부 설정
 
