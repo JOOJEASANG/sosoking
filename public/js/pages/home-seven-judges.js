@@ -48,8 +48,11 @@ function syncSevenJudgeCards(container) {
 function syncJudgeIcons(container) {
   const popularJudge = container.querySelector('#stat-judge');
   if (popularJudge) {
-    const judgeType = JUDGES.find(judge => popularJudge.textContent?.includes(judge.name))?.name;
-    if (judgeType) popularJudge.textContent = `${JUDGE_ICON[judgeType]} ${judgeType.replace('형', '')}`;
+    const visibleText = popularJudge.textContent || '';
+    const judge = JUDGES.find(item =>
+      visibleText.includes(item.name) || visibleText.includes(item.name.replace('형', ''))
+    );
+    if (judge) popularJudge.textContent = `${judge.icon} ${judge.name.replace('형', '')}`;
   }
 
   container.querySelectorAll('.case-meta span').forEach(meta => {
