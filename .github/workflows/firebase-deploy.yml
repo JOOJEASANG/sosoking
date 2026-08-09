@@ -1,4 +1,4 @@
-# Deployment retrigger: 2026-08-07T08:06:00+09:00
+# Deployment retrigger: 2026-08-09T22:44:00+09:00
 name: Deploy Firebase
 
 on:
@@ -83,17 +83,22 @@ jobs:
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node functions/ensure-official-dripso-battle-cli.js
 
-      - name: Remove obsolete Functions
+      - name: Remove known obsolete Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: |
-          firebase functions:list --project sosoking-481e6 > "$RUNNER_TEMP/functions-list.txt"
-          for function_name in createDailyAiCase getDailyRealCourt submitDailyRealCourtVerdict; do
-            if grep -q "$function_name" "$RUNNER_TEMP/functions-list.txt"; then
-              firebase functions:delete "$function_name" --region asia-northeast3 --force --project sosoking-481e6 --non-interactive
-            else
-              echo "$function_name is already absent."
-            fi
+          firebase functions:list --project sosoking-481e6 --json > "$RUNNER_TEMP/functions-before-cleanup.json"
+          node tools/list-obsolete-deployed-functions.mjs "$RUNNER_TEMP/functions-before-cleanup.json" > "$RUNNER_TEMP/obsolete-functions.txt"
+
+          if [ ! -s "$RUNNER_TEMP/obsolete-functions.txt" ]; then
+            echo "No known obsolete Functions remain."
+            exit 0
+          fi
+
+          mapfile -t obsolete_functions < "$RUNNER_TEMP/obsolete-functions.txt"
+          echo "Removing ${#obsolete_functions[@]} known obsolete Functions."
+          for ((i=0; i<${#obsolete_functions[@]}; i+=10)); do
+            firebase functions:delete "${obsolete_functions[@]:i:10}" --force --project sosoking-481e6 --non-interactive
           done
 
       - name: Verify deployed Functions match source
@@ -145,4 +150,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, Functions, daily official Dripso battles, blind duels and Final Four tournaments, moderation, deployed-function drift validation, existing verdict number-line migration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, Functions, daily official Dripso battles, blind duels and Final Four tournaments, moderation, known legacy cleanup, deployed-function drift validation, existing verdict number-line migration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
