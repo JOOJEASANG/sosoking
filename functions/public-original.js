@@ -3,6 +3,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore } = require('firebase-admin/firestore');
 const { inspectContent } = require('./content-safety');
+const { enforceActionRateLimit, requireAppCheck } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -15,14 +16,45 @@ function cleanText(value, maxLen) {
     .slice(0, maxLen);
 }
 
+function isSanitizedPublicResult(data = {}) {
+  return data.isPublic === true
+    && Number(data.publicDataVersion || 0) === 1
+    && !Object.prototype.hasOwnProperty.call(data, 'userId')
+    && !Object.prototype.hasOwnProperty.call(data, 'caseDescription')
+    && !Object.prototype.hasOwnProperty.call(data, 'nickname');
+}
+
+function isDeletionLocked(...records) {
+  return records.some(data => {
+    const deletionStatus = String(data?.deletionStatus || '').toLowerCase();
+    const status = String(data?.status || '').toLowerCase();
+    const courtStage = String(data?.courtStage || '').toLowerCase();
+    return deletionStatus === 'processing'
+      || deletionStatus === 'deleting'
+      || status === 'deleting'
+      || courtStage === 'deleting';
+  });
+}
+
 exports.getPublicCaseOriginal = onCall({
   region: REGION,
   timeoutSeconds: 20,
-  memory: '256MiB'
+  memory: '256MiB',
+  maxInstances: 20
 }, async request => {
+  requireAppCheck(request);
+
   const caseId = cleanText(request.data?.caseId, 180);
-  if (!caseId) {
+  if (!caseId || !/^[A-Za-z0-9_-]{1,180}$/.test(caseId)) {
     throw new HttpsError('invalid-argument', '판결 식별자가 올바르지 않습니다.');
+  }
+
+  const requesterUid = String(request.auth?.uid || '');
+  if (requesterUid) {
+    await enforceActionRateLimit(requesterUid, 'public-original', {
+      cooldownSeconds: 1,
+      dailyLimit: 120
+    });
   }
 
   const [resultSnap, caseSnap] = await Promise.all([
@@ -36,10 +68,13 @@ exports.getPublicCaseOriginal = onCall({
 
   const resultData = resultSnap.exists ? (resultSnap.data() || {}) : {};
   const caseData = caseSnap.data() || {};
-  const requesterUid = String(request.auth?.uid || '');
+  if (isDeletionLocked(caseData, resultData)) {
+    throw new HttpsError('not-found', '삭제 중인 접수 원문입니다.');
+  }
+
   const ownerUid = String(caseData.userId || '');
   const isOwner = Boolean(requesterUid && ownerUid && requesterUid === ownerUid);
-  const isPublic = Boolean(resultSnap.exists && resultData.isPublic === true);
+  const isPublic = Boolean(resultSnap.exists && isSanitizedPublicResult(resultData));
 
   if (!isOwner && !isPublic) {
     throw new HttpsError('permission-denied', '판결 소유자 또는 공개 판결기록만 접수 원문을 볼 수 있습니다.');

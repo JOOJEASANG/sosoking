@@ -32,4 +32,4 @@ const withoutSubmitCase = validateDeployedFunctions(
 );
 assert.ok(withoutSubmitCase.missing.includes('submitCase'));
 
-console.log('Deployed Functions regression passed: direct Firebase exports are discovered, module.exports helpers are ignored, legacy functions warn, and current missing functions still fail.');
+console.log('Deployed Functions regression passed: direct Firebase exports are discovered, module.exports helpers are ignored, unexpected legacy functions are detected for strict deploy blocking, and current missing functions are detected.');

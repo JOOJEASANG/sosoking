@@ -26,6 +26,22 @@ function timestampMillis(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function isDeletionLocked(...records) {
+  return records.some(data => {
+    const deletionStatus = String(data?.deletionStatus || '').toLowerCase();
+    const status = String(data?.status || '').toLowerCase();
+    const courtStage = String(data?.courtStage || '').toLowerCase();
+    return deletionStatus === 'processing'
+      || deletionStatus === 'deleting'
+      || status === 'deleting'
+      || courtStage === 'deleting';
+  });
+}
+
+function isModerationHidden(...records) {
+  return records.some(data => String(data?.moderationStatus || '').toLowerCase().startsWith('hidden'));
+}
+
 function publicResultText(caseData = {}, resultData = {}) {
   return [
     caseData.caseTitle,
@@ -59,6 +75,24 @@ function isSanitizedPublicResult(data = {}) {
     && !Object.prototype.hasOwnProperty.call(data, 'userId')
     && !Object.prototype.hasOwnProperty.call(data, 'caseDescription')
     && !Object.prototype.hasOwnProperty.call(data, 'nickname');
+}
+
+function assertParticipablePublicResult(data = {}) {
+  if (isDeletionLocked(data)) {
+    throw new HttpsError('failed-precondition', '삭제 중인 판결문에는 참여할 수 없습니다.');
+  }
+  if (!isSanitizedPublicResult(data)) {
+    throw new HttpsError('permission-denied', '공개 준비가 완료된 판결문만 참여할 수 있습니다.');
+  }
+}
+
+function assertVisibilityChangeAllowed(caseData = {}, resultData = {}, isPublic = false) {
+  if (isDeletionLocked(caseData, resultData)) {
+    throw new HttpsError('failed-precondition', '삭제 중인 사건은 공개 상태를 변경할 수 없습니다.');
+  }
+  if (isPublic && isModerationHidden(caseData, resultData)) {
+    throw new HttpsError('failed-precondition', '운영 검토로 숨김 처리된 판결문은 다시 공개할 수 없습니다.');
+  }
 }
 
 function extractGeminiText(payload) {
@@ -118,9 +152,7 @@ async function assertPublicResult(caseId) {
   const snap = await resultRef.get();
   if (!snap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
   const data = snap.data();
-  if (!isSanitizedPublicResult(data)) {
-    throw new HttpsError('permission-denied', '공개 준비가 완료된 판결문만 참여할 수 있습니다.');
-  }
+  assertParticipablePublicResult(data);
   return { resultRef, data };
 }
 
@@ -148,7 +180,13 @@ exports.voteResult = onCall({
   const voteRef = db.doc(`result_reactions/${caseId}/votes/${uid}`);
 
   await db.runTransaction(async tx => {
-    const voteSnap = await tx.get(voteRef);
+    const [latestResultSnap, voteSnap] = await Promise.all([
+      tx.get(resultRef),
+      tx.get(voteRef)
+    ]);
+    if (!latestResultSnap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
+    assertParticipablePublicResult(latestResultSnap.data());
+
     const prev = voteSnap.exists ? voteSnap.data().reaction : '';
     const isNewVote = !prev;
 
@@ -168,10 +206,10 @@ exports.voteResult = onCall({
     }, { merge: true });
 
     if (isNewVote) {
-      tx.set(resultRef, {
+      tx.update(resultRef, {
         reactionTotal: FieldValue.increment(1),
         updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
+      });
     }
   });
 
@@ -205,30 +243,34 @@ exports.addCourtComment = onCall({
   const commentRef = db.collection(`court_comments/${caseId}/items`).doc();
   const authorRef = db.doc(`court_comment_authors/${caseId}/items/${commentRef.id}`);
   const statsRef = db.doc(`court_comment_stats/${caseId}`);
-  const batch = db.batch();
 
-  batch.set(commentRef, {
-    nickname,
-    text,
-    status: 'visible',
-    createdAt: FieldValue.serverTimestamp()
-  });
-  batch.set(authorRef, {
-    uid,
-    caseId,
-    commentId: commentRef.id,
-    createdAt: FieldValue.serverTimestamp()
-  });
-  batch.set(statsRef, {
-    count: FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
-  batch.set(resultRef, {
-    commentCount: FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+  await db.runTransaction(async tx => {
+    const latestResultSnap = await tx.get(resultRef);
+    if (!latestResultSnap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
+    assertParticipablePublicResult(latestResultSnap.data());
 
-  await batch.commit();
+    tx.set(commentRef, {
+      nickname,
+      text,
+      status: 'visible',
+      createdAt: FieldValue.serverTimestamp()
+    });
+    tx.set(authorRef, {
+      uid,
+      caseId,
+      commentId: commentRef.id,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    tx.set(statsRef, {
+      count: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    tx.update(resultRef, {
+      commentCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+  });
+
   return { success: true };
 });
 
@@ -254,15 +296,20 @@ exports.setResultVisibility = onCall({
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
   await db.runTransaction(async tx => {
-    const caseSnap = await tx.get(caseRef);
-    const resultSnap = await tx.get(resultRef);
+    const [caseSnap, resultSnap] = await Promise.all([
+      tx.get(caseRef),
+      tx.get(resultRef)
+    ]);
     if (!caseSnap.exists || !resultSnap.exists) {
       throw new HttpsError('not-found', '사건 또는 판결문을 찾을 수 없습니다.');
     }
-    if (caseSnap.data().userId !== uid) {
+    const caseData = caseSnap.data();
+    const resultData = resultSnap.data();
+    if (caseData.userId !== uid) {
       throw new HttpsError('permission-denied', '본인 판결문만 공개 상태를 변경할 수 있습니다.');
     }
-    if (isPublic) assertSafeForPublic(caseSnap.data(), resultSnap.data());
+    assertVisibilityChangeAllowed(caseData, resultData, isPublic);
+    if (isPublic) assertSafeForPublic(caseData, resultData);
 
     tx.update(caseRef, {
       isPublic,
@@ -273,11 +320,11 @@ exports.setResultVisibility = onCall({
       userId: FieldValue.delete(),
       caseDescription: FieldValue.delete(),
       nickname: FieldValue.delete(),
-      publicCaseDescription: resultSnap.data().publicCaseDescription || '',
-      publicNickname: resultSnap.data().publicNickname || '익명 원고',
+      publicCaseDescription: resultData.publicCaseDescription || '',
+      publicNickname: resultData.publicNickname || '익명 원고',
       publicDataVersion: 1,
-      contentSafetyStatus: isPublic ? 'passed' : (resultSnap.data().contentSafetyStatus || 'not-public'),
-      contentSafetyCheckedAt: isPublic ? FieldValue.serverTimestamp() : (resultSnap.data().contentSafetyCheckedAt || FieldValue.delete()),
+      contentSafetyStatus: isPublic ? 'passed' : (resultData.contentSafetyStatus || 'not-public'),
+      contentSafetyCheckedAt: isPublic ? FieldValue.serverTimestamp() : (resultData.contentSafetyCheckedAt || FieldValue.delete()),
       updatedAt: FieldValue.serverTimestamp()
     });
   });
@@ -303,14 +350,19 @@ exports.requestAppeal = onCall({
   const resultRef = db.doc(`results/${caseId}`);
   const requestId = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`;
   const lock = await db.runTransaction(async tx => {
-    const caseSnap = await tx.get(caseRef);
-    const resultSnap = await tx.get(resultRef);
+    const [caseSnap, resultSnap] = await Promise.all([
+      tx.get(caseRef),
+      tx.get(resultRef)
+    ]);
     if (!caseSnap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
     if (!resultSnap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
 
     const caseData = caseSnap.data();
     const resultData = resultSnap.data();
     if (caseData.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 항소할 수 있습니다.');
+    if (isDeletionLocked(caseData, resultData)) {
+      throw new HttpsError('failed-precondition', '삭제 중인 사건은 항소할 수 없습니다.');
+    }
     if (resultData.appeal?.verdict) return { state: 'completed' };
 
     const startedAt = timestampMillis(resultData.appeal?.processingStartedAt);
@@ -352,9 +404,17 @@ exports.requestAppeal = onCall({
     if (!appealSafety.safe) throw new Error(`항소심 AI 안전검사 실패: ${appealSafety.code || 'unknown'}`);
 
     await db.runTransaction(async tx => {
-      const latest = await tx.get(resultRef);
-      if (!latest.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
-      const appeal = latest.data().appeal || {};
+      const [latestResult, latestCase] = await Promise.all([
+        tx.get(resultRef),
+        tx.get(caseRef)
+      ]);
+      if (!latestResult.exists || !latestCase.exists) {
+        throw new HttpsError('not-found', '사건 또는 판결문을 찾을 수 없습니다.');
+      }
+      if (isDeletionLocked(latestCase.data(), latestResult.data())) {
+        throw new HttpsError('failed-precondition', '삭제 중인 사건은 항소 결과를 저장할 수 없습니다.');
+      }
+      const appeal = latestResult.data().appeal || {};
       if (appeal.verdict) return;
       if (appeal.requestId !== requestId || appeal.status !== 'processing') {
         throw new HttpsError('aborted', '항소 처리 권한이 만료되었습니다.');
@@ -371,10 +431,10 @@ exports.requestAppeal = onCall({
         'appeal.errorMessage': FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp()
       });
-      tx.set(caseRef, {
+      tx.update(caseRef, {
         hasAppeal: true,
         updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
+      });
     });
   } catch (err) {
     await db.runTransaction(async tx => {
@@ -397,4 +457,11 @@ exports.requestAppeal = onCall({
   }
 
   return { success: true, verdict: appealVerdict };
+});
+
+Object.defineProperties(module.exports, {
+  isDeletionLocked: { value: isDeletionLocked, enumerable: false },
+  isModerationHidden: { value: isModerationHidden, enumerable: false },
+  assertParticipablePublicResult: { value: assertParticipablePublicResult, enumerable: false },
+  assertVisibilityChangeAllowed: { value: assertVisibilityChangeAllowed, enumerable: false }
 });
