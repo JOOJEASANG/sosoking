@@ -11,6 +11,7 @@ const guardVersion = '20260810-judge-final-1';
 const runtimeVersion = '20260810-judge-runtime-1';
 
 const trial = read('functions/generate-trial-lite.js');
+const daily = read('functions/daily.js');
 const persona = read('functions/judge-persona-prompt.js');
 const homeEntry = read('public/js/pages/home-seven-judges.js');
 const guide = read('public/js/pages/guide.js');
@@ -24,8 +25,12 @@ const index = read('public/index.html');
 const marker = read('public/deploy-version.txt').trim();
 const liveWorkflow = read('.github/workflows/verify-live-hosting.yml');
 
+const trialJudgeBlock = trial.match(/const JUDGES = \[(.*?)\n\];/s)?.[1] || '';
+const dailyJudgeBlock = daily.match(/const JUDGES = \[(.*?)\n\];/s)?.[1] || '';
+
 for (const name of expected) {
-  if (!trial.includes(`type: '${name}'`)) fail(`생성 판사 누락: ${name}`);
+  if (!trialJudgeBlock.includes(`type: '${name}'`)) fail(`일반 사건 생성 판사 누락: ${name}`);
+  if (!dailyJudgeBlock.includes(`type: '${name}'`)) fail(`관리자 일일 AI 판사 누락: ${name}`);
   if (!persona.includes(`'${name}': {`)) fail(`판사 전용 프롬프트 누락: ${name}`);
   if (!homeEntry.includes(`name: '${name}'`)) fail(`활성 홈 판사 누락: ${name}`);
   if (!guide.includes(name)) fail(`이용안내 판사 누락: ${name}`);
@@ -33,8 +38,15 @@ for (const name of expected) {
   if (!runtimeGuard.includes(`name: '${name}'`)) fail(`런타임 판사 가드 누락: ${name}`);
 }
 
+const generalTypes = [...trialJudgeBlock.matchAll(/type: '([^']+)'/g)].map(match => match[1]);
+const dailyTypes = [...dailyJudgeBlock.matchAll(/type: '([^']+)'/g)].map(match => match[1]);
+if (generalTypes.join('|') !== expected.join('|')) fail(`일반 사건 판사 순서 불일치: ${generalTypes.join(', ')}`);
+if (dailyTypes.join('|') !== expected.join('|')) fail(`관리자 일일 AI 판사 순서 불일치: ${dailyTypes.join(', ')}`);
+if (!daily.includes("promptVersion: 'daily-document-v4-judge-personas'")) fail('관리자 일일 AI promptVersion이 신규 판사 체계로 갱신되지 않았습니다.');
+
 for (const name of legacy) {
-  if (trial.match(/const JUDGES = \[(.*?)\n\];/s)?.[1]?.includes(name)) fail(`신규 생성 목록에 구형 판사 잔존: ${name}`);
+  if (trialJudgeBlock.includes(name)) fail(`신규 일반 사건 생성 목록에 구형 판사 잔존: ${name}`);
+  if (dailyJudgeBlock.includes(name)) fail(`신규 관리자 일일 AI 목록에 구형 판사 잔존: ${name}`);
   if (homeEntry.match(/const JUDGES = \[(.*?)\n\];/s)?.[1]?.includes(name)) fail(`활성 홈 목록에 구형 판사 잔존: ${name}`);
   if (guide.includes(name)) fail(`이용안내에 구형 판사 잔존: ${name}`);
 }
@@ -49,8 +61,8 @@ if (!runtimeGuard.includes('syncTrial(root)') || !runtimeGuard.includes('syncBoa
 if (!runtimeGuard.includes("root.querySelectorAll('.board-judge-chip')")) fail('판결기록 판사 칩 보정 누락');
 if (!runtimeGuard.includes("root.querySelector('#docket-meta')") || !runtimeGuard.includes("root.querySelector('#loading-text')")) fail('재판 진행 판사/메시지 보정 누락');
 
-const trialJudgeBlock = trialPage.match(/const JUDGES = \[(.*?)\n\];/s)?.[1] || '';
-const trialLegacyTypes = [...trialJudgeBlock.matchAll(/\['([^']+)'/g)].map(match => match[1]);
+const trialPageJudgeBlock = trialPage.match(/const JUDGES = \[(.*?)\n\];/s)?.[1] || '';
+const trialLegacyTypes = [...trialPageJudgeBlock.matchAll(/\['([^']+)'/g)].map(match => match[1]);
 if (trialLegacyTypes.join('|') !== legacyTrialOrder.join('|')) {
   fail('trial.js 구형 표시 배열의 순서가 바뀌어 런타임 인덱스 호환 보정을 신뢰할 수 없습니다.');
 }
@@ -86,4 +98,4 @@ for (const host of ['https://sosoking-481e6.web.app', 'https://sosoking.co.kr', 
 if (!liveWorkflow.includes('workflows: ["Deploy Firebase"]')) fail('Firebase 배포 완료 후 운영 검증 연결 누락');
 if (!liveWorkflow.includes(`EXPECTED_VERSION: ${version}`)) fail('운영 배포 검증 버전 불일치');
 
-console.log('Final judge deployment validation passed: generation, five-stage persona, home/result/guide UI, trial progress, board chips, stale-cache protection, release markers, and all three production hosts are covered.');
+console.log('Final judge deployment validation passed: user generation, admin generation, five-stage personas, home/result/guide UI, trial progress, board chips, stale-cache protection, release markers, and all three production hosts are covered.');
