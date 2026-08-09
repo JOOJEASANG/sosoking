@@ -1,4 +1,6 @@
 const JUDGE_UI_VERSION = '20260810-judge-final-1';
+const HOME_HERO_HTML = '내 억울함은 AI 판사에게 맡기고,<br><strong>꼰대·냉혈·회피·추궁·오버·드립·빙의, 누가 맡느냐에 따라 같은 사건도 완전히 다르게 판결됩니다.</strong><br><span style="font-size:11px;opacity:0.58;">사건접수부터 수사·양측 변론·판결까지 담당 판사의 성격이 이어지는 오락용 AI 생활법정입니다.</span>';
+const HOME_NOTICE_HTML = '<strong>⚠️ 오락 서비스 안내</strong><br>소소킹 판결소는 사소한 생활분쟁을 7명의 개성 강한 AI 판사가 사건접수·수사보고·원고측 변론·피고측 변론·판결의 다섯 단계로 과하게 진지하게 심리하는 오락 서비스입니다. 실제 법률 판단이 아니며 결과에는 법적 효력이 없습니다.';
 const JUDGES = [
   { name: '꼰대형', icon: '🧓', desc: '기본·예의·사람 사는 도리로 끝까지 훈계하는 재판부' },
   { name: '냉혈형', icon: '🧊', desc: '감정보다 시간·수량·결과를 차갑게 계산하는 재판부' },
@@ -66,22 +68,18 @@ function syncHomeJudgeLineup(root) {
 
 function syncHomeCopy(root) {
   const heroSub = root.querySelector('.hero-sub');
-  if (heroSub && heroSub.dataset.judgeFinalVersion !== JUDGE_UI_VERSION) {
-    heroSub.innerHTML = '내 억울함은 AI 판사에게 맡기고,<br><strong>꼰대·냉혈·회피·추궁·오버·드립·빙의, 누가 맡느냐에 따라 같은 사건도 완전히 다르게 판결됩니다.</strong><br><span style="font-size:11px;opacity:0.58;">사건접수부터 수사·양측 변론·판결까지 담당 판사의 성격이 이어지는 오락용 AI 생활법정입니다.</span>';
-    heroSub.dataset.judgeFinalVersion = JUDGE_UI_VERSION;
-  }
+  if (heroSub && heroSub.innerHTML !== HOME_HERO_HTML) heroSub.innerHTML = HOME_HERO_HTML;
+  if (heroSub) heroSub.dataset.judgeFinalVersion = JUDGE_UI_VERSION;
 
-  const courtDescription = root.querySelector('#court-entrance .court-desc');
-  if (courtDescription) {
-    setText(courtDescription, '사건을 접수하면 7명의 개성 강한 AI 판사 중 한 명이 자동 배정되어 다섯 단계 전체를 자기 방식으로 심리합니다.');
-  }
+  setText(
+    root.querySelector('#court-entrance .court-desc'),
+    '사건을 접수하면 7명의 개성 강한 AI 판사 중 한 명이 자동 배정되어 다섯 단계 전체를 자기 방식으로 심리합니다.'
+  );
 
   const notice = [...root.querySelectorAll('.disclaimer')]
     .find(element => element.textContent?.includes('오락 서비스 안내'));
-  if (notice && notice.dataset.judgeFinalVersion !== JUDGE_UI_VERSION) {
-    notice.innerHTML = '<strong>⚠️ 오락 서비스 안내</strong><br>소소킹 판결소는 사소한 생활분쟁을 7명의 개성 강한 AI 판사가 사건접수·수사보고·원고측 변론·피고측 변론·판결의 다섯 단계로 과하게 진지하게 심리하는 오락 서비스입니다. 실제 법률 판단이 아니며 결과에는 법적 효력이 없습니다.';
-    notice.dataset.judgeFinalVersion = JUDGE_UI_VERSION;
-  }
+  if (notice && notice.innerHTML !== HOME_NOTICE_HTML) notice.innerHTML = HOME_NOTICE_HTML;
+  if (notice) notice.dataset.judgeFinalVersion = JUDGE_UI_VERSION;
 }
 
 function syncJudgeMetadata(root) {
@@ -108,9 +106,10 @@ function syncJudgeMetadata(root) {
 }
 
 function syncGuide(root) {
-  const cards = [...root.querySelectorAll('.card')];
-  const card = cards.find(element => element.textContent?.includes('AI 판사 자동 배정'));
+  const card = [...root.querySelectorAll('.card')]
+    .find(element => element.textContent?.includes('AI 판사 자동 배정'));
   if (!card) return;
+
   const textBlocks = [...card.querySelectorAll('div')].filter(element => !element.children.length);
   const description = textBlocks.find(element => LEGACY_JUDGE_NAMES.some(name => element.textContent?.includes(name)))
     || textBlocks.find(element => element.textContent?.includes('중 한 명이 사건마다 자동 배정'));
