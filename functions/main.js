@@ -6,6 +6,8 @@ if (!getApps().length) initializeApp();
 
 // Gemini 요청에 소소킹 전용 코미디 강도 규칙을 먼저 주입한다.
 require('./humor-prompt');
+// 사건별 코미디 DNA와 게임·주제별 고신뢰 용어 컨텍스트를 추가한다.
+require('./comedy-topic-context');
 // 번호 항목 분리와 문장 완결성을 보장하는 출력 규칙을 이어서 주입한다.
 require('./document-output-quality');
 
