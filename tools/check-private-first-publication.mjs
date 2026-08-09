@@ -73,7 +73,7 @@ if (!appVersion || !worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVers
 const trialGenerator = read('functions/generate-trial-lite.js');
 for (const required of [
   'function buildPrompt(description, judge, grievanceIndex, retry = false)',
-  "promptVersion: 'simple-document-v1.5-accounting-safety'",
+  "promptVersion: 'simple-document-v1.6-judge-personas'",
   'reception:',
   'investigation:',
   'plaintiffArg:',
