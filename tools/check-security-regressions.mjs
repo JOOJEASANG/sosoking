@@ -82,7 +82,7 @@ if (!trial.includes('totals.attempts += 1') || !trial.includes('geminiRequests: 
 if (!trial.includes('caseCount: FieldValue.increment(saved ? 1 : 0)')) {
   errors.push('functions/generate-trial-lite.js: case statistics include failed saves');
 }
-if (!trial.includes('generatedSafety = inspectContent') || !trial.includes('simple-document-v1.5-accounting-safety')) {
+if (!trial.includes('generatedSafety = inspectContent') || !trial.includes("promptVersion: 'simple-document-v1.6-judge-personas'")) {
   errors.push('functions/generate-trial-lite.js: generated trial safety validation is missing');
 }
 
