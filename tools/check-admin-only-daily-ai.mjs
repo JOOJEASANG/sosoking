@@ -50,13 +50,24 @@ if (deploy.includes('functions:createDailyAiCase')) {
 }
 for (const required of [
   'functions:generateDailyAiNow',
-  'Remove obsolete Functions',
-  'firebase functions:list --project sosoking-481e6',
-  'for function_name in createDailyAiCase',
-  'firebase functions:delete "$function_name" --region asia-northeast3 --force'
+  'Remove known obsolete Functions',
+  'firebase functions:list --project sosoking-481e6 --json',
+  'node tools/list-obsolete-deployed-functions.mjs',
+  'firebase functions:delete'
 ]) {
   if (!deploy.includes(required)) {
-    errors.push(`.github/workflows/firebase-deploy.yml: automatic schedule removal is incomplete: ${required}`);
+    errors.push(`.github/workflows/firebase-deploy.yml: automatic schedule cleanup is incomplete: ${required}`);
+  }
+}
+
+const obsoleteCleanup = read('tools/list-obsolete-deployed-functions.mjs');
+for (const required of [
+  "'createDailyAiCase'",
+  'KNOWN_OBSOLETE_FUNCTIONS',
+  'Unknown unmanaged Functions require review'
+]) {
+  if (!obsoleteCleanup.includes(required)) {
+    errors.push(`tools/list-obsolete-deployed-functions.mjs: automatic schedule cleanup guard missing: ${required}`);
   }
 }
 
@@ -96,4 +107,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only daily AI validation passed: scheduled generation is removed, obsolete functions are cleaned up, and the existing AI result contract remains intact.');
+console.log('Administrator-only daily AI validation passed: scheduled generation is removed, reviewed obsolete cleanup covers the old trigger, and the existing AI result contract remains intact.');

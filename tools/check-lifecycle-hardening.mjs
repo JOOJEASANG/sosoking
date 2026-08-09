@@ -68,6 +68,18 @@ if (deployedCheck.includes('reported without blocking deployment')) {
   errors.push('tools/check-deployed-functions.mjs: unmanaged Functions are still non-blocking');
 }
 
+const obsoleteCleanup = read('tools/list-obsolete-deployed-functions.mjs');
+for (const required of [
+  'KNOWN_OBSOLETE_FUNCTIONS',
+  "'sanitizePublicResult'",
+  "'generateCourtCaseV7'",
+  "'uploadFeedImage'",
+  'Unknown unmanaged Functions require review',
+  'classifyObsoleteFunctions(records)'
+]) {
+  if (!obsoleteCleanup.includes(required)) errors.push(`tools/list-obsolete-deployed-functions.mjs: missing reviewed cleanup guard ${required}`);
+}
+
 const immutableAction = action => new RegExp(`${action.replace('/', '\\/')}@[0-9a-f]{40}`);
 const workflowFiles = [
   '.github/workflows/firebase-deploy.yml',
@@ -85,6 +97,25 @@ for (const file of workflowFiles) {
 for (const file of ['.github/workflows/firebase-deploy.yml', '.github/workflows/validate-pr.yml']) {
   const source = read(file);
   if (!immutableAction('actions/setup-java').test(source)) errors.push(`${file}: setup-java action is not pinned to an immutable commit SHA`);
+}
+
+const deployWorkflow = read('.github/workflows/firebase-deploy.yml');
+for (const required of [
+  'Remove known obsolete Functions',
+  'node tools/list-obsolete-deployed-functions.mjs',
+  'firebase functions:delete',
+  '--force --project sosoking-481e6 --non-interactive',
+  'Verify deployed Functions match source'
+]) {
+  if (!deployWorkflow.includes(required)) errors.push(`firebase-deploy.yml: missing reviewed legacy cleanup step ${required}`);
+}
+const cleanupStep = deployWorkflow.indexOf('Remove known obsolete Functions');
+const strictVerifyStep = deployWorkflow.indexOf('Verify deployed Functions match source');
+if (cleanupStep < 0 || strictVerifyStep <= cleanupStep) {
+  errors.push('firebase-deploy.yml: reviewed legacy cleanup must run before strict deployed-function verification');
+}
+if (deployWorkflow.includes('firebase functions:delete "$function_name" --region asia-northeast3')) {
+  errors.push('firebase-deploy.yml: legacy cleanup must not assume all obsolete functions are in one region');
 }
 
 const prValidation = read('.github/workflows/validate-pr.yml');
@@ -121,4 +152,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Lifecycle and operational hardening validation passed: moderation, deletion races, public originals, single PR validation, immutable Actions pins, secret-file ignores, and strict deployed-function drift checks are intact.');
+console.log('Lifecycle and operational hardening validation passed: moderation, deletion races, public originals, reviewed legacy cleanup, single PR validation, immutable Actions pins, secret-file ignores, and strict deployed-function drift checks are intact.');
