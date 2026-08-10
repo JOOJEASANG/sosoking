@@ -24,8 +24,11 @@ for (const required of [
   "💬 카톡·친구 초대",
   "초대 링크를 복사했습니다. 카카오톡에 붙여넣어 보내주세요.",
   "${location.origin}/dripso/#/topic/${encodeURIComponent(topicId)}",
-  "정답 쓰면 지는 게임. 오답으로 붙자."
+  "정답 쓰면 지는 게임. 오답으로 붙자.",
+  "window.addEventListener('dripso:rendered', schedule)",
+  "window.addEventListener('pageshow', schedule)"
 ]) assert.ok(dripsoShare.includes(required), `드립소 공유 흐름 누락: ${required}`);
+assert.ok(!dripsoShare.includes('new MutationObserver'), '드립소 공유 보정기가 자기 DOM 변경을 다시 감지하는 전역 observer를 사용하면 안 됩니다.');
 
 for (const required of [
   "const ACTIVE_MODES = new Set(['naming', 'wrong'])",
@@ -47,7 +50,7 @@ for (const required of [
 
 for (const asset of [
   '/dripso/two-games-share.css?v=20260811-two-games-share-1',
-  '/dripso/two-games-share.js?v=20260811-two-games-share-1'
+  '/dripso/two-games-share.js?v=20260811-two-games-share-2'
 ]) {
   assert.ok(dripsoHtml.includes(asset), `드립소 공유 자산이 index에 없습니다: ${asset}`);
   assert.ok(sw.includes(`'${asset}'`), `드립소 공유 자산이 service worker에 없습니다: ${asset}`);
@@ -56,4 +59,4 @@ const resultAsset = '/js/result-link-share.js?v=20260811-result-share-1';
 assert.ok(courtIndex.includes(resultAsset), '판결 결과 공유 모듈이 판결소에 연결되어야 합니다.');
 assert.ok(sw.includes(`'${resultAsset}'`), '판결 결과 공유 모듈이 service worker 캐시에 포함되어야 합니다.');
 
-console.log('Share link validation passed: Dripso exposes two signature games with friend invitations and court verdicts can be published and shared by link.');
+console.log('Share link validation passed: Dripso exposes two signature games with friend invitations without recursive DOM observation, and court verdicts can be published and shared by link.');
