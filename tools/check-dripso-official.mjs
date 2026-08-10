@@ -74,12 +74,18 @@ assert.ok(obsolete.includes("'publishDailyOfficialDripsoBattle'"), '운영에 �
 
 for (const required of [
   "const RESET_ID = 'dripso-full-reset-20260810-v1'",
+  "const STORAGE_BUCKET = 'sosoking-481e6.firebasestorage.app'",
+  'initializeApp({ storageBucket: STORAGE_BUCKET })',
   "collectionRef.id.startsWith('dripso_')",
   'await db.recursiveDelete(collectionRef)',
+  'getStorage().bucket(STORAGE_BUCKET)',
   "await bucket.deleteFiles({ prefix: 'dripso/', force: true })",
+  "await bucket.getFiles({ prefix: 'dripso/', maxResults: 1 })",
+  'Dripso Firestore reset incomplete',
+  'Dripso Storage reset incomplete',
   "status: 'completed'"
 ]) assert.ok(reset.includes(required), `드립소 전체 초기화 보호장치 누락: ${required}`);
 
 assert.ok(moderation.includes("detail.classList.contains('official-topic')"), '공식 주제가 일반 신고 버튼으로 처리되지 않도록 보호해야 합니다.');
 
-console.log('Dripso official validation passed: users and admins register manually, official pool creation is admin-only, scheduled publishing is removed, and the one-time full Dripso reset is deployment-wired.');
+console.log('Dripso official validation passed: users and admins register manually, official pool creation is admin-only, scheduled publishing is removed, and the one-time full Dripso reset is deployment-wired with an explicit Storage bucket and post-delete verification.');
