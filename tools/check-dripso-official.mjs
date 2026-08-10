@@ -4,7 +4,6 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { MODE_ORDER, OFFICIAL_BATTLES, BY_MODE } = require('../functions/dripso-official-pool.js');
-const { officialSelection } = require('../functions/dripso-official.js');
 const read = file => fs.readFileSync(file, 'utf8');
 
 assert.equal(MODE_ORDER.length, 7, '공식 배틀 종목은 일곱 개여야 합니다.');
@@ -22,48 +21,65 @@ for (const item of OFFICIAL_BATTLES) {
   assert.equal(item.official, true, `공식 표시 누락: ${item.id}`);
 }
 
-const selections = Array.from({ length: 14 }, (_, index) => officialSelection(new Date(Date.UTC(2026, 7, 1 + index, 3))));
-assert.equal(new Set(selections.slice(0, 7).map(item => item.mode)).size, 7, '일주일 동안 일곱 종목이 순환해야 합니다.');
-assert.equal(new Set(selections.map(item => item.item.id)).size, 14, '연속 게시 문제는 중복되면 안 됩니다.');
-
 const html = read('public/dripso/index.html');
 const app = read('public/dripso/app-v4.js');
-const css = read('public/dripso/app-v4.css');
 const moderation = read('public/dripso/moderation.js');
+const bundle = read('functions/dripso-bundle.js');
 const main = read('functions/main.js');
 const server = read('functions/dripso-official.js');
 const deploy = read('.github/workflows/firebase-deploy.yml');
-const sw = read('public/sw.js');
+const obsolete = read('tools/list-obsolete-deployed-functions.mjs');
+const adminIndex = read('public/admin/index.html');
+const adminManual = read('public/admin/dripso-manual-official.js');
+const reset = read('functions/reset-dripso-data-cli.js');
 
 for (const required of [
   '/dripso/app-v4.css?v=20260804-dripso-v4-audit-1',
   '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'
-]) assert.ok(html.includes(required), `공식 배틀 통합 자산 누락: ${required}`);
-assert.ok(!html.includes('<script type="module" src="/dripso/official-ui.js'), '공식 배틀 보정 오버레이가 다시 활성화되었습니다.');
+]) assert.ok(html.includes(required), `드립소 통합 자산 누락: ${required}`);
 
 for (const required of [
-  '오늘의 공식 경기', 'official-spotlight-section', 'official-spotlight',
-  "el('span', 'official-battle-badge', '👑 드립소 공식 배틀')",
-  "topic.official ? '공식 운영'", "topic.official ? `👑 드립소 공식",
-  'Number(b.official) - Number(a.official)'
-]) assert.ok(app.includes(required), `통합 앱 공식 배틀 표시 누락: ${required}`);
-for (const required of ['.official-spotlight', '.official-guide', '.official-spotlight .v4-topic-card', '.topic-label-row .official-battle-badge']) {
-  assert.ok(css.includes(required), `공식 배틀 레이아웃 누락: ${required}`);
-}
+  'createDripsoTopic',
+  'createDripsoBattle',
+  'createDripsoTournamentBattle'
+]) assert.ok(bundle.includes(required), `일반 회원 직접 등록 함수 누락: ${required}`);
+assert.ok(app.includes('createDripsoBattle') || app.includes('createDripsoTournamentBattle'), '드립소 사용자 직접 배틀 등록 UI가 서버 함수와 연결되어야 합니다.');
+
+assert.ok(main.includes('exports.createOfficialDripsoBattleNow = dripsoOfficial.createOfficialDripsoBattleNow'), '관리자 공식 주제 수동 생성 함수가 main에 연결되어야 합니다.');
+assert.ok(!main.includes('publishDailyOfficialDripsoBattle'), '자동 공식 주제 스케줄 export가 남아 있습니다.');
+assert.ok(!server.includes('onSchedule'), '공식 드립소 주제가 스케줄러로 자동 생성되면 안 됩니다.');
+assert.ok(!server.includes("schedule: '0 9 * * *'"), '매일 9시 자동 생성 규칙이 남아 있습니다.');
+for (const required of [
+  'exports.createOfficialDripsoBattleNow = onCall',
+  'requireVerifiedUser(request)',
+  'isAdminAuth(request.auth)',
+  "officialKind: 'admin-manual'",
+  "const MANUAL_STATE_REF = 'dripso_official_state/manual'",
+  'nextIndex: currentIndex + 1'
+]) assert.ok(server.includes(required), `관리자 수동 공식 주제 규칙 누락: ${required}`);
+
+assert.ok(adminIndex.includes('/admin/dripso-manual-official.js?v=20260810-dripso-manual-1'), '관리자 드립소 수동 생성 UI 모듈이 로드되어야 합니다.');
+for (const required of [
+  "httpsCallable(functions, 'createOfficialDripsoBattleNow')",
+  '공식 주제 1개 생성',
+  '드립소 직접 등록 화면',
+  '일반 회원과 관리자 모두 드립소 화면에서 직접 주제·배틀을 등록'
+]) assert.ok(adminManual.includes(required), `관리자 드립소 수동 UI 누락: ${required}`);
+
+assert.ok(deploy.includes('functions:createOfficialDripsoBattleNow'), '관리자 수동 공식 주제 함수가 배포 목록에 있어야 합니다.');
+assert.ok(!deploy.includes('functions:publishDailyOfficialDripsoBattle'), '자동 공식 주제 스케줄 함수가 배포 목록에 남아 있습니다.');
+assert.ok(!deploy.includes('ensure-official-dripso-battle-cli.js'), '배포 직후 자동 공식 주제 생성 단계가 남아 있습니다.');
+assert.ok(deploy.includes('node functions/reset-dripso-data-cli.js'), '기존 드립소 데이터 1회 초기화가 배포 흐름에 연결되어야 합니다.');
+assert.ok(obsolete.includes("'publishDailyOfficialDripsoBattle'"), '운영에 남은 자동 스케줄 함수를 폐기 목록으로 정리해야 합니다.');
+
+for (const required of [
+  "const RESET_ID = 'dripso-full-reset-20260810-v1'",
+  "collectionRef.id.startsWith('dripso_')",
+  'await db.recursiveDelete(collectionRef)',
+  "await bucket.deleteFiles({ prefix: 'dripso/', force: true })",
+  "status: 'completed'"
+]) assert.ok(reset.includes(required), `드립소 전체 초기화 보호장치 누락: ${required}`);
+
 assert.ok(moderation.includes("detail.classList.contains('official-topic')"), '공식 주제가 일반 신고 버튼으로 처리되지 않도록 보호해야 합니다.');
 
-assert.ok(main.includes('exports.publishDailyOfficialDripsoBattle = dripsoOfficial.publishDailyOfficialDripsoBattle'), '공식 배틀 스케줄 함수가 main에 연결되어야 합니다.');
-for (const required of [
-  "schedule: '0 9 * * *'", 'timeZone: TIME_ZONE', 'official: true',
-  "nickname: '드립소 공식'", 'entryMinutes: ENTRY_MINUTES', "tournamentRound: 'prelim'"
-]) assert.ok(server.includes(required), `공식 배틀 서버 규칙 누락: ${required}`);
-
-assert.ok(deploy.includes('functions:publishDailyOfficialDripsoBattle'), '공식 배틀 스케줄 함수가 배포 목록에 있어야 합니다.');
-assert.ok(deploy.includes('node functions/ensure-official-dripso-battle-cli.js'), '배포 직후 공식 배틀 생성 단계가 필요합니다.');
-for (const asset of [
-  "'/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'",
-  "'/dripso/app-v4.css?v=20260804-dripso-v4-audit-1'",
-  "'/dripso/battle.css?v=20260804-official-layout-1'"
-]) assert.ok(sw.includes(asset), `공식 배틀 오프라인 자산 누락: ${asset}`);
-
-console.log('Dripso official validation passed: 1,400 unique prompts, seven-mode rotation, daily publishing, immediate seed, native official spotlight, protected moderation, and responsive layout are connected.');
+console.log('Dripso official validation passed: users and admins register manually, official pool creation is admin-only, scheduled publishing is removed, and the one-time full Dripso reset is deployment-wired.');
