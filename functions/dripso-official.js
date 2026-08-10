@@ -14,6 +14,8 @@ const PRELIM_MINUTES = 720;
 const FINALS_MINUTES = 60;
 const SYSTEM_UID = 'system-dripso-official';
 const MANUAL_STATE_REF = 'dripso_official_state/manual';
+const ACTIVE_MODES = new Set(['naming', 'wrong']);
+const ACTIVE_OFFICIAL_BATTLES = OFFICIAL_BATTLES.filter(item => ACTIVE_MODES.has(item.mode));
 
 function cleanText(value, maxLen = 200) {
   return String(value || '')
@@ -43,13 +45,15 @@ async function createOfficialBattle(options = {}) {
   let selected = null;
   let selectedIndex = 0;
 
+  if (!ACTIVE_OFFICIAL_BATTLES.length) throw new Error('활성 공식 드립 주제 풀을 찾을 수 없습니다.');
+
   await db.runTransaction(async tx => {
     const stateSnap = await tx.get(stateRef);
     const currentIndex = stateSnap.exists
       ? Math.max(0, Number(stateSnap.data()?.nextIndex) || 0)
       : 0;
-    selectedIndex = currentIndex % OFFICIAL_BATTLES.length;
-    selected = OFFICIAL_BATTLES[selectedIndex];
+    selectedIndex = currentIndex % ACTIVE_OFFICIAL_BATTLES.length;
+    selected = ACTIVE_OFFICIAL_BATTLES[selectedIndex];
     if (!selected) throw new Error('공식 드립 주제 풀을 찾을 수 없습니다.');
 
     const topicData = {
