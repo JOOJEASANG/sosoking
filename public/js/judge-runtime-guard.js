@@ -1,4 +1,4 @@
-const RUNTIME_JUDGE_VERSION = '20260810-judge-runtime-1';
+const RUNTIME_JUDGE_VERSION = '20260810-judge-runtime-2';
 
 const CURRENT_JUDGES = [
   { name: '꼰대형', icon: '🧓' },
@@ -12,9 +12,8 @@ const CURRENT_JUDGES = [
 
 const CURRENT_BY_NAME = new Map(CURRENT_JUDGES.map(judge => [judge.name, judge]));
 
-// trial.js의 구형 배열은 신규 배열과 동일한 7개 인덱스를 사용한다.
-// 새 사건의 실제 judgeType이 아직 화면 코드에 인식되지 않아 해시 fallback으로
-// 구형 이름이 노출되는 경우, 동일 인덱스의 신규 판사로 표시만 복구한다.
+// 구형 캐시의 trial.js가 남아 있는 사용자를 위한 호환 보정이다.
+// 현재 trial.js 본체는 신규 7종을 직접 사용하므로 이 매핑은 오래된 화면에만 적용한다.
 const LEGACY_TRIAL_TO_CURRENT = new Map([
   ['엄벌주의형', '꼰대형'],
   ['감성형', '냉혈형'],
@@ -86,20 +85,35 @@ const PROGRESS = {
   ]
 };
 
-function currentFromTrialMeta(meta) {
+function looksLikeLegacyDripProgress(root) {
+  const text = root.querySelector('#loading-text')?.textContent || '';
+  return text.includes('이 사건에서만 통하는 핵심 물건과 한 문장을 고르는 중입니다.')
+    || text.includes('사실관계 자체가 웃기는 배열을 만드는 중입니다.')
+    || text.includes('접수 첫 장면이 판결 마지막에 다시 나타날 준비를 마치는 중입니다.');
+}
+
+function currentFromTrialMeta(meta, root) {
   const text = meta?.textContent || '';
+
+  // 현재 판사 이름을 우선 인정한다. 특히 '드립형'은 구형 7번째와 이름이 겹치므로
+  // 구형 진행문구가 함께 보이는 경우에만 예전 7번째 -> 빙의형으로 보정한다.
+  for (const judge of CURRENT_JUDGES) {
+    if (!text.includes(`${judge.name} 판사 배정`)) continue;
+    if (judge.name === '드립형' && looksLikeLegacyDripProgress(root)) {
+      return { legacy: '드립형', current: '빙의형' };
+    }
+    return { legacy: '', current: judge.name };
+  }
+
   for (const [legacy, current] of LEGACY_TRIAL_TO_CURRENT) {
     if (text.includes(`${legacy} 판사 배정`)) return { legacy, current };
-  }
-  for (const judge of CURRENT_JUDGES) {
-    if (text.includes(`${judge.name} 판사 배정`)) return { legacy: '', current: judge.name };
   }
   return null;
 }
 
 function syncTrial(root) {
   const meta = root.querySelector('#docket-meta');
-  const match = currentFromTrialMeta(meta);
+  const match = currentFromTrialMeta(meta, root);
   if (!match) return;
 
   const judge = CURRENT_BY_NAME.get(match.current);
@@ -154,7 +168,9 @@ function queueApply() {
   });
 }
 
-const observeTarget = document.getElementById('page-content') || document.body;
+// app.js는 라우팅 때 #page-content 요소 자체를 교체하므로 body를 관찰해야
+// 새 재판 화면에서도 가드가 끊기지 않는다.
+const observeTarget = document.body;
 new MutationObserver(queueApply).observe(observeTarget, { childList: true, subtree: true, characterData: true });
 window.addEventListener('hashchange', queueApply);
 queueApply();
