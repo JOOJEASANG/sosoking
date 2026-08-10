@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260810-judge-ui-sync-1';
+const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-judge-ui-sync-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260806-unified-service-nav-1';
