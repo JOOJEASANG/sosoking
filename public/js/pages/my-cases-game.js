@@ -17,11 +17,37 @@ function badgeSet(count, completed, maxLv) {
   if (!badges.length) badges.push(['🔒', '배지 대기중']);
   return badges;
 }
+
+function ensureProfileGameStyle() {
+  if (document.getElementById('my-case-profile-game-style')) return;
+  const style = document.createElement('style');
+  style.id = 'my-case-profile-game-style';
+  style.textContent = `
+    #my-game-profile .my-case-achievement-badge{
+      display:inline-flex;align-items:center;gap:5px;
+      border:1px solid #d8bd84;
+      background:#f4ead5;
+      border-radius:999px;padding:7px 10px;
+      font-size:11px;font-weight:900;
+      color:#6a4b18;
+      line-height:1.2;
+      text-shadow:none;
+    }
+    [data-theme='dark'] #my-game-profile .my-case-achievement-badge{
+      border-color:rgba(201,168,76,.35);
+      background:rgba(201,168,76,.12);
+      color:#fff8ec;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function addProfileGame(container) {
   const inner = container.querySelector('.container');
   if (!inner || document.getElementById('my-game-profile')) return;
   const rows = Array.from(inner.querySelectorAll('[data-case-row]'));
   if (!rows.length) return;
+  ensureProfileGameStyle();
   const count = rows.length;
   const completed = rows.filter(card => card.textContent.includes('판결문 보기')).length;
   const maxLv = rows.reduce((m, card) => {
@@ -49,7 +75,7 @@ function addProfileGame(container) {
       <div><strong>Lv.${maxLv || 0}</strong><span>최고 억울함</span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
-      ${badges.map(([icon, label]) => `<span style="display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.12);border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;color:#fff8ec;">${icon} ${label}</span>`).join('')}
+      ${badges.map(([icon, label]) => `<span class="my-case-achievement-badge">${icon} ${label}</span>`).join('')}
     </div>`;
   const header = inner.querySelector('.card');
   header?.insertAdjacentElement('afterend', profile);
