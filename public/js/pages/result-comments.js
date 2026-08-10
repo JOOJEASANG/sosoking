@@ -96,9 +96,8 @@ function ensureOriginalAccordionStyle() {
 }
 
 function addOriginalAccordion(container, caseId) {
-  // 공개 판결에서만 생성되는 방청석 입력창을 공개 상태 판별 기준으로 사용한다.
-  if (!container.querySelector('#court-comment-input')) return;
-
+  // 판결기록의 공개 판결과 내 사건의 소유자 판결 모두 같은 원문 UI를 사용한다.
+  // 실제 원문 접근 권한은 getPublicCaseOriginal 서버 함수가 소유자/공개 여부로 최종 검증한다.
   const cover = container.querySelector('.result-cover');
   const judgeSummary = cover?.querySelector('.judge-summary');
   if (!cover || !judgeSummary || cover.querySelector('[data-original-accordion]')) return;
@@ -153,7 +152,7 @@ function addOriginalAccordion(container, caseId) {
       body.textContent = data.caseDescription || '기록된 접수 원문이 없습니다.';
       loaded = true;
     } catch (error) {
-      console.error('public case original load failed:', error);
+      console.error('case original load failed:', error);
       meta.textContent = '접수 원문';
       body.textContent = (error?.message || '접수 원문을 불러오지 못했습니다.')
         .replace('FirebaseError: ', '');
