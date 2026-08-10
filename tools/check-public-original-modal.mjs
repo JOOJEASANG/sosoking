@@ -51,6 +51,7 @@ assert.ok(myCases.includes("? `#/verdict/${encodeURIComponent(id)}`"), '내 사�
 assert.ok(app.includes("hash.startsWith('#/verdict/')"), '소유자 판결 경로가 누락되었습니다.');
 assert.ok(app.includes("hash.startsWith('#/result/')"), '공개 판결 경로가 누락되었습니다.');
 assert.ok((app.match(/renderResult\(content, caseId\)/g) || []).length >= 2, '공개/소유자 판결은 같은 렌더러를 사용해야 합니다.');
+assert.ok(app.includes("./pages/result-comments.js?v=20260810-owner-original-route-2"), '원문보기 결과 모듈 캐시 버전이 갱신되어야 합니다.');
 
 for (const required of [
   "createOriginalControl(cover, judgeSummary, caseId)",
@@ -65,6 +66,9 @@ for (const required of [
   "top:18px!important",
   "right:22px!important",
   "padding-top:70px!important",
+  "const host = document.body;",
+  "normalize(document);",
+  "window.addEventListener('hashchange', schedule)",
   "new MutationObserver(schedule)"
 ]) assert.ok(detailGuard.includes(required), `판결 상세 원문보기 보호 누락: ${required}`);
 
@@ -77,15 +81,22 @@ for (const required of [
   "trigger.dataset.originalHeaderPosition = 'top-right'",
   "accordion.classList.toggle('is-open', !panel.hidden)",
   "httpsCallable(functions, 'getPublicCaseOriginal')",
+  "const host = document.body;",
+  "normalizeOriginalUi(document);",
+  "window.addEventListener('hashchange', schedule)",
   "attributeFilter: ['aria-expanded', 'hidden']"
 ]) assert.ok(cacheGuard.includes(required), `개인·공개 판결 공통 원문보기 보호 누락: ${required}`);
+assert.ok(!cacheGuard.includes("const host = document.getElementById('page-content') || document.body;"), '원문보기 가드가 교체되는 옛 page-content에 묶이면 안 됩니다.');
+assert.ok(!detailGuard.includes("const host = document.getElementById('page-content') || document.body;"), '상세 원문보기 가드가 교체되는 옛 page-content에 묶이면 안 됩니다.');
 assert.ok(!cacheGuard.includes('const isPublicResult = Boolean('), '원문보기 보호가 공개 판결만 대상으로 제한되면 안 됩니다.');
 assert.ok(!cacheGuard.includes('if (!isPublicResult) return;'), '비공개 개인 판결에서 원문보기 생성을 중단하면 안 됩니다.');
 
-const publicGuardVersion = '20260802-original-header-button-1';
+const publicGuardVersion = '20260810-owner-original-route-2';
 const publicGuardAsset = `/js/original-inline-accordion-guard.js?v=${publicGuardVersion}`;
-assert.ok(index.includes(publicGuardAsset), 'index.html이 원문보기 보호 스크립트를 불러와야 합니다.');
-assert.ok(serviceWorker.includes(`'${publicGuardAsset}'`), '서비스워커가 원문보기 보호 스크립트를 캐시해야 합니다.');
-assert.ok(index.includes('/js/original-detail-header-guard.js'), 'index.html이 판결 상세 원문 헤더 보호 스크립트를 불러와야 합니다.');
+const detailGuardAsset = `/js/original-detail-header-guard.js?v=${publicGuardVersion}`;
+assert.ok(index.includes(publicGuardAsset), 'index.html이 원문보기 보호 스크립트를 현재 버전으로 불러와야 합니다.');
+assert.ok(serviceWorker.includes(`'${publicGuardAsset}'`), '서비스워커가 원문보기 보호 스크립트를 현재 버전으로 캐시해야 합니다.');
+assert.ok(index.includes(detailGuardAsset), 'index.html이 판결 상세 원문 헤더 보호 스크립트를 현재 버전으로 불러와야 합니다.');
+assert.ok(serviceWorker.includes(`'${detailGuardAsset}'`), '서비스워커가 판결 상세 원문 헤더 보호 스크립트를 현재 버전으로 캐시해야 합니다.');
 
-console.log('Original submission validation passed: public records and owner verdicts use the same original-view renderer with server authorization intact.');
+console.log('Original submission validation passed: public records and owner verdicts keep the same original-view control across SPA route replacement with server authorization intact.');
