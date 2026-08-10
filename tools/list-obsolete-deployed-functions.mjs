@@ -48,6 +48,7 @@ const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'onFeedPostCreate',
   'onReportCreate',
   'provisionUserProfile',
+  'publishDailyOfficialDripsoBattle',
   'reactDripItem',
   'reactToComment',
   'reactToPost',

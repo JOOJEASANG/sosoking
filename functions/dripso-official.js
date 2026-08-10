@@ -1,82 +1,71 @@
 'use strict';
 
-const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { randomUUID } = require('node:crypto');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
-const { MODE_ORDER, BY_MODE } = require('./dripso-official-pool');
+const { isAdminAuth } = require('./admin-utils');
+const { requireVerifiedUser } = require('./security');
+const { OFFICIAL_BATTLES } = require('./dripso-official-pool');
 
 const REGION = 'asia-northeast3';
-const TIME_ZONE = 'Asia/Seoul';
 const GAME_VERSION = 3;
 const ENTRY_MINUTES = 1440;
 const PRELIM_MINUTES = 720;
 const FINALS_MINUTES = 60;
 const SYSTEM_UID = 'system-dripso-official';
+const MANUAL_STATE_REF = 'dripso_official_state/manual';
 
-function koreaDateParts(value = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIME_ZONE,
-    year: 'numeric', month: '2-digit', day: '2-digit'
-  }).formatToParts(value);
-  const result = Object.fromEntries(parts.map(part => [part.type, part.value]));
-  return { year: Number(result.year), month: Number(result.month), day: Number(result.day) };
+function cleanText(value, maxLen = 200) {
+  return String(value || '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLen);
 }
 
-function officialSelection(value = new Date()) {
-  const { year, month, day } = koreaDateParts(value);
-  const dateKey = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
-  const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / 86400000);
-  const mode = MODE_ORDER[((dayNumber % MODE_ORDER.length) + MODE_ORDER.length) % MODE_ORDER.length];
-  const modePool = BY_MODE[mode];
-  const item = modePool[Math.floor(dayNumber / MODE_ORDER.length) % modePool.length];
-  return { dateKey, dayNumber, mode, item };
+function manualTopicId(now = new Date()) {
+  const stamp = now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+  return `official-manual-${stamp}-${randomUUID().slice(0, 8)}`;
 }
 
-async function ensureOfficialBattle(options = {}) {
+async function createOfficialBattle(options = {}) {
   const db = getFirestore();
   const now = options.now instanceof Date ? options.now : new Date();
   const startMs = Number(options.startMs) || now.getTime();
-  const { dateKey, mode, item } = officialSelection(now);
-  const topicId = `official-${dateKey}`;
+  const stateRef = db.doc(MANUAL_STATE_REF);
+  const topicId = manualTopicId(now);
   const topicRef = db.doc(`dripso_topics/${topicId}`);
   const authorRef = db.doc(`dripso_topic_authors/${topicId}`);
-  const runRef = db.doc(`dripso_official_runs/${dateKey}`);
-  const usageRef = db.doc(`dripso_official_usage/${item.id}`);
   const entryDeadlineMs = startMs + ENTRY_MINUTES * 60000;
   const prelimDeadlineMs = entryDeadlineMs + PRELIM_MINUTES * 60000;
   const semifinalDeadlineMs = prelimDeadlineMs + FINALS_MINUTES * 60000;
   const finalDeadlineMs = semifinalDeadlineMs + FINALS_MINUTES * 60000;
-  let created = false;
+  let selected = null;
+  let selectedIndex = 0;
 
   await db.runTransaction(async tx => {
-    const [topicSnap, runSnap] = await Promise.all([tx.get(topicRef), tx.get(runRef)]);
-    if (topicSnap.exists) {
-      if (!runSnap.exists) {
-        tx.set(runRef, {
-          topicId,
-          sourceId: item.id,
-          dateKey,
-          status: 'published',
-          repairedAt: FieldValue.serverTimestamp()
-        });
-      }
-      return;
-    }
+    const stateSnap = await tx.get(stateRef);
+    const currentIndex = stateSnap.exists
+      ? Math.max(0, Number(stateSnap.data()?.nextIndex) || 0)
+      : 0;
+    selectedIndex = currentIndex % OFFICIAL_BATTLES.length;
+    selected = OFFICIAL_BATTLES[selectedIndex];
+    if (!selected) throw new Error('공식 드립 주제 풀을 찾을 수 없습니다.');
 
     const topicData = {
-      type: mode === 'naming' ? 'naming' : 'situation',
-      mode,
+      type: selected.mode === 'naming' ? 'naming' : 'situation',
+      mode: selected.mode,
       gameVersion: GAME_VERSION,
       tournamentVersion: 1,
-      title: item.title,
-      prompt: `[[dripso-mode:${mode}]] ${item.prompt}`,
+      title: selected.title,
+      prompt: `[[dripso-mode:${selected.mode}]] ${selected.prompt}`,
       nickname: '드립소 공식',
       status: 'visible',
       official: true,
-      officialKind: 'daily',
-      officialDate: dateKey,
-      officialSourceId: item.id,
-      officialCategory: item.category,
-      officialDifficulty: item.difficulty,
+      officialKind: 'admin-manual',
+      officialSourceId: selected.id,
+      officialCategory: selected.category,
+      officialDifficulty: selected.difficulty,
       commentCount: 0,
       prelimVoteCount: 0,
       tournamentVoteCount: 0,
@@ -103,33 +92,29 @@ async function ensureOfficialBattle(options = {}) {
       official: true,
       createdAt: FieldValue.serverTimestamp()
     });
-    tx.set(runRef, {
-      topicId,
-      sourceId: item.id,
-      dateKey,
-      mode,
-      status: 'published',
-      publishedAt: FieldValue.serverTimestamp()
-    });
-    tx.set(usageRef, {
-      sourceId: item.id,
-      mode,
-      category: item.category,
+    tx.set(stateRef, {
+      nextIndex: currentIndex + 1,
       lastTopicId: topicId,
-      lastDateKey: dateKey,
+      lastSourceId: selected.id,
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    tx.set(db.doc(`dripso_official_usage/${selected.id}`), {
+      sourceId: selected.id,
+      mode: selected.mode,
+      category: selected.category,
+      lastTopicId: topicId,
       publishCount: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
-    created = true;
   });
 
   return {
-    created,
+    created: true,
     topicId,
-    dateKey,
-    sourceId: item.id,
-    mode,
-    title: item.title,
+    sourceId: selected.id,
+    sourceIndex: selectedIndex,
+    mode: selected.mode,
+    title: selected.title,
     entryDeadlineMs,
     prelimDeadlineMs,
     semifinalDeadlineMs,
@@ -137,20 +122,31 @@ async function ensureOfficialBattle(options = {}) {
   };
 }
 
-exports.publishDailyOfficialDripsoBattle = onSchedule({
+exports.createOfficialDripsoBattleNow = onCall({
   region: REGION,
-  schedule: '0 9 * * *',
-  timeZone: TIME_ZONE,
   timeoutSeconds: 120,
-  memory: '256MiB',
-  retryCount: 2
-}, async () => {
-  const result = await ensureOfficialBattle();
-  console.log('Official Dripso battle ensured:', result);
+  memory: '256MiB'
+}, async request => {
+  requireVerifiedUser(request);
+  if (!(await isAdminAuth(request.auth))) {
+    throw new HttpsError('permission-denied', '관리자만 공식 드립소 주제를 생성할 수 있습니다.');
+  }
+
+  const result = await createOfficialBattle();
+  await getFirestore().collection('admin_logs').add({
+    uid: cleanText(request.auth.uid, 128),
+    action: 'createOfficialDripsoBattleNow',
+    subjectId: result.topicId,
+    detail: {
+      sourceId: result.sourceId,
+      mode: result.mode,
+      title: cleanText(result.title, 80)
+    },
+    createdAt: FieldValue.serverTimestamp()
+  });
+  return result;
 });
 
-// CLI와 회귀검사에서만 접근한다. 비열거 속성이므로 Firebase 공개 함수 표면에는 포함되지 않는다.
 Object.defineProperties(module.exports, {
-  ensureOfficialBattle: { value: ensureOfficialBattle },
-  officialSelection: { value: officialSelection }
+  createOfficialBattle: { value: createOfficialBattle }
 });

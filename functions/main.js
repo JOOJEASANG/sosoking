@@ -22,7 +22,7 @@ Object.assign(exports, require('./discussion'));
 // 기존 자유형, 블라인드 배틀, 파이널4 공개 함수를 하나의 배포 표면으로 묶는다.
 Object.assign(exports, require('./dripso-bundle'));
 const dripsoOfficial = require('./dripso-official');
-exports.publishDailyOfficialDripsoBattle = dripsoOfficial.publishDailyOfficialDripsoBattle;
+exports.createOfficialDripsoBattleNow = dripsoOfficial.createOfficialDripsoBattleNow;
 Object.assign(exports, require('./dripso-moderation'));
 Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));
