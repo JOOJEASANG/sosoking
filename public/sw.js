@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260810-mycase-original-fix-1';
+const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-mycase-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-trial-judge-source-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-judge-ui-sync-1';
@@ -81,7 +82,7 @@ const APP_SHELL = [
   '/dripso/two-games-share.css?v=20260811-two-games-share-1',
   '/dripso/theme.js?v=20260806-dripso-shared-theme-1',
   '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
-  '/dripso/two-games-share.js?v=20260811-two-games-share-1',
+  '/dripso/two-games-share.js?v=20260811-two-games-share-2',
   '/dripso/moderation.js?v=20260804-dripso-v4-audit-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
