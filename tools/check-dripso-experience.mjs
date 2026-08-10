@@ -32,8 +32,10 @@ for (const required of [
   "naming: {", "label: '미친작명소'", "wrong: {", "label: '오답제작소'",
   "const RETIRED_MODES = new Set(['blank', 'comeback', 'headline', 'excuse', 'manual'])",
   '💬 카톡·친구 초대', 'navigator.share', '초대 링크를 복사했습니다',
-  "location.origin}/dripso/#/topic/", 'normalizeModeTiles()', 'normalizeModeFilters()'
+  "location.origin}/dripso/#/topic/", 'normalizeModeTiles()', 'normalizeModeFilters()',
+  "window.addEventListener('dripso:rendered', schedule)", "window.addEventListener('pageshow', schedule)"
 ]) assert.ok(twoGames.includes(required), `2종/친구 초대 흐름 누락: ${required}`);
+assert.ok(!twoGames.includes('new MutationObserver'), '드립소 2종 보정기는 자기 DOM 변경을 다시 감시하는 전역 MutationObserver를 사용하면 안 됩니다.');
 
 for (const required of [
   '둘 중 하나 골라 드립판을 열어주세요',
@@ -45,7 +47,7 @@ for (const required of [
   '/dripso/two-games-share.css?v=20260811-two-games-share-1',
   '/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1',
   '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
-  '/dripso/two-games-share.js?v=20260811-two-games-share-1'
+  '/dripso/two-games-share.js?v=20260811-two-games-share-2'
 ]) assert.ok(html.includes(required), `드립소 2종 화면 누락: ${required}`);
 
 for (const retired of [
@@ -144,11 +146,11 @@ for (const asset of [
 }
 for (const asset of [
   '/dripso/two-games-share.css?v=20260811-two-games-share-1',
-  '/dripso/two-games-share.js?v=20260811-two-games-share-1'
+  '/dripso/two-games-share.js?v=20260811-two-games-share-2'
 ]) {
   assert.ok(html.includes(asset), `드립소 2종 활성 자산 누락: ${asset}`);
   assert.ok(serviceWorker.includes(`'${asset}'`), `서비스워커 2종 자산 누락: ${asset}`);
 }
 assert.ok(serviceWorker.includes("'/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1'"));
 
-console.log('Dripso experience validation passed: two signature games keep the blind battle engine, add friend-link invitations, and share the court account/navigation.');
+console.log('Dripso experience validation passed: two signature games keep the blind battle engine and invitation sharing without recursive DOM observation.');
