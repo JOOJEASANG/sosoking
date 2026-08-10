@@ -6,6 +6,8 @@ const requiredFiles = [
   'public/dripso/index.html',
   'public/dripso/app-v4.js',
   'public/dripso/app-v4.css',
+  'public/dripso/two-games-share.js',
+  'public/dripso/two-games-share.css',
   'public/dripso/service-nav-unity.css',
   'public/dripso/moderation.js',
   'public/js/components/nav.js',
@@ -20,6 +22,8 @@ for (const file of requiredFiles) assert.ok(fs.existsSync(file), `필수 파일 
 
 const html = read('public/dripso/index.html');
 const app = read('public/dripso/app-v4.js');
+const twoGames = read('public/dripso/two-games-share.js');
+const twoGamesCss = read('public/dripso/two-games-share.css');
 const css = read('public/dripso/app-v4.css');
 const serviceNavCss = read('public/dripso/service-nav-unity.css');
 const courtNav = read('public/js/components/nav.js');
@@ -34,20 +38,24 @@ const courtAppAsset = courtIndex.match(/<script type="module" src="(\/js\/app\.j
 assert.ok(courtAppAsset, '판결소 현재 앱 자산 경로를 찾을 수 없습니다.');
 
 for (const required of [
-  '<title>드립소 - 블라인드 파이널4 드립배틀</title>',
+  '<title>드립소 - 미친작명소 · 오답제작소</title>',
   '/dripso/app-v4.css?v=20260804-dripso-v4-audit-1',
   '/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1',
+  '/dripso/two-games-share.css?v=20260811-two-games-share-1',
   '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
+  '/dripso/two-games-share.js?v=20260811-two-games-share-1',
   '/dripso/moderation.js?v=20260804-dripso-v4-audit-1',
   'id="dripso-app"', 'id="topic-dialog"', 'id="topic-form"',
   'id="open-topic-dialog" type="button" hidden aria-hidden="true" tabindex="-1"',
   'data-nav="home"', 'data-nav="browse"', 'data-nav="create"', 'data-nav="court"', 'data-nav="account"',
   'href="/#/" data-nav="court"', 'href="/#/auth" data-nav="account"',
   '<small>판결소</small>', '<small>내 정보</small>',
-  'value="blank"', 'value="naming"', 'value="comeback"', 'value="wrong"', 'value="headline"', 'value="excuse"', 'value="manual"'
+  '<option value="naming">🤪 미친작명소</option>',
+  '<option value="wrong">💥 오답제작소</option>'
 ]) assert.ok(html.includes(required), `드립소 HTML 누락: ${required}`);
 
 for (const retired of [
+  'value="blank"', 'value="comeback"', 'value="headline"', 'value="excuse"', 'value="manual"',
   '<script type="module" src="/dripso/battle-v2.js',
   '<script type="module" src="/dripso/battle-v2-pagination.js',
   '<script type="module" src="/dripso/tournament-v3.js',
@@ -61,8 +69,16 @@ assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), '인라인 스크립트�
 assert.ok(!/\son[a-z]+\s*=\s*["']/i.test(html), '인라인 이벤트 속성은 사용할 수 없습니다.');
 
 for (const mode of ['blank', 'naming', 'comeback', 'wrong', 'headline', 'excuse', 'manual']) {
-  assert.ok(app.includes(`${mode}: {`), `통합 앱 종목 메타 누락: ${mode}`);
+  assert.ok(app.includes(`${mode}: {`), `통합 앱 레거시 호환 메타 누락: ${mode}`);
 }
+for (const required of [
+  "naming: {", "label: '미친작명소'", "wrong: {", "label: '오답제작소'",
+  "const RETIRED_MODES = new Set(['blank', 'comeback', 'headline', 'excuse', 'manual'])",
+  "navigator.share", "💬 카톡·친구 초대", "#/topic/",
+  'normalizeModeTiles()', 'normalizeModeFilters()', 'normalizeModeBadges(document)',
+  "new MutationObserver(schedule).observe(document.body"
+]) assert.ok(twoGames.includes(required), `2종 드립소 보호 누락: ${required}`);
+
 for (const required of [
   "httpsCallable(functions, 'createDripsoTournamentBattle')",
   "httpsCallable(functions, 'submitDripsoTournamentEntry')",
@@ -87,6 +103,9 @@ for (const required of [
   '.v4-topic-card', '.v4-topic-detail', '.topic-dialog', 'grid-template-columns: repeat(2, minmax(0, 1fr))',
   'border-radius: 24px 24px 0 0', '@media (max-width: 390px)'
 ]) assert.ok(css.includes(required), `통합 레이아웃 스타일 누락: ${required}`);
+for (const required of ['.dripso-invite-bar', '.dripso-invite-button', '.battle-mode-grid', "[data-theme='light'] .dripso-invite-bar"]) {
+  assert.ok(twoGamesCss.includes(required), `2종/초대 스타일 누락: ${required}`);
+}
 
 for (const required of [
   "grid-template-columns: minmax(0, 1fr) !important",
@@ -150,8 +169,10 @@ for (const name of [
 
 for (const asset of [
   "'/dripso/app-v4.css?v=20260804-dripso-v4-audit-1'",
+  "'/dripso/two-games-share.css?v=20260811-two-games-share-1'",
   "'/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1'",
   "'/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'",
+  "'/dripso/two-games-share.js?v=20260811-two-games-share-1'",
   "'/dripso/moderation.js?v=20260804-dripso-v4-audit-1'",
   "'/css/dripso-entry.css?v=20260806-unified-service-nav-1'",
   `'${courtAppAsset}'`,
@@ -160,4 +181,4 @@ for (const asset of [
   "'/js/components/header-icons.js?v=20260806-unified-service-nav-1'"
 ]) assert.ok(sw.includes(asset), `서비스워커 통합 자산 누락: ${asset}`);
 
-console.log('Dripso validation passed: one consolidated responsive app keeps one create entry and uses matching five-item bottom navigation with the court and shared account.');
+console.log('Dripso validation passed: two signature games, invite sharing, one create entry, matching five-item navigation, and shared account remain connected.');
