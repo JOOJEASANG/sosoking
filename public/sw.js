@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
+const CACHE_NAME = 'sosoking-app-v20260810-trial-judge-source-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-judge-ui-sync-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
@@ -95,6 +96,7 @@ const APP_SHELL = [
   '/js/submit-draft-guard.js?v=20260807-submit-draft-1',
   '/js/home-copy-guard.js?v=20260802-no-real-cases-1',
   '/js/original-inline-accordion-guard.js?v=20260802-original-header-button-1',
+  '/js/judge-runtime-guard.js?v=20260810-judge-runtime-2',
   '/js/dripso-entry-guard.js?v=20260806-unified-service-nav-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
