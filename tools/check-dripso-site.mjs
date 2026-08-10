@@ -43,7 +43,7 @@ for (const required of [
   '/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1',
   '/dripso/two-games-share.css?v=20260811-two-games-share-1',
   '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
-  '/dripso/two-games-share.js?v=20260811-two-games-share-1',
+  '/dripso/two-games-share.js?v=20260811-two-games-share-2',
   '/dripso/moderation.js?v=20260804-dripso-v4-audit-1',
   'id="dripso-app"', 'id="topic-dialog"', 'id="topic-form"',
   'id="open-topic-dialog" type="button" hidden aria-hidden="true" tabindex="-1"',
@@ -76,8 +76,9 @@ for (const required of [
   "const RETIRED_MODES = new Set(['blank', 'comeback', 'headline', 'excuse', 'manual'])",
   "navigator.share", "💬 카톡·친구 초대", "#/topic/",
   'normalizeModeTiles()', 'normalizeModeFilters()', 'normalizeModeBadges(document)',
-  "new MutationObserver(schedule).observe(document.body"
+  "window.addEventListener('dripso:rendered', schedule)", "window.addEventListener('pageshow', schedule)"
 ]) assert.ok(twoGames.includes(required), `2종 드립소 보호 누락: ${required}`);
+assert.ok(!twoGames.includes('new MutationObserver'), '2종 드립소 보정기가 DOM 전체를 재귀 감시하면 자기 변경을 다시 감지해 화면이 멈출 수 있습니다.');
 
 for (const required of [
   "httpsCallable(functions, 'createDripsoTournamentBattle')",
@@ -172,7 +173,7 @@ for (const asset of [
   "'/dripso/two-games-share.css?v=20260811-two-games-share-1'",
   "'/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1'",
   "'/dripso/app-v4.js?v=20260804-dripso-v4-audit-1'",
-  "'/dripso/two-games-share.js?v=20260811-two-games-share-1'",
+  "'/dripso/two-games-share.js?v=20260811-two-games-share-2'",
   "'/dripso/moderation.js?v=20260804-dripso-v4-audit-1'",
   "'/css/dripso-entry.css?v=20260806-unified-service-nav-1'",
   `'${courtAppAsset}'`,
@@ -181,4 +182,4 @@ for (const asset of [
   "'/js/components/header-icons.js?v=20260806-unified-service-nav-1'"
 ]) assert.ok(sw.includes(asset), `서비스워커 통합 자산 누락: ${asset}`);
 
-console.log('Dripso validation passed: two signature games, invite sharing, one create entry, matching five-item navigation, and shared account remain connected.');
+console.log('Dripso validation passed: two signature games and invite sharing are connected without recursive DOM observation freezes.');
