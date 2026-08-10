@@ -38,7 +38,7 @@ if (homeJudgeTypes.join('|') !== expected.join('|')) {
 for (const oldType of legacy) {
   if (judgeBlock.includes(oldType)) throw new Error(`구형 판사 유형이 신규 JUDGES 목록에 남았습니다: ${oldType}`);
   if (homeJudgeBlock.includes(oldType)) throw new Error(`구형 판사 유형이 메인 판사 카드에 남았습니다: ${oldType}`);
-  if (guide.includes(oldType)) throw new Error(`구형 판사 유형이 이용안내에 남았습니다: ${oldType}`);
+  if (guide.includes(oldType)) throw new Error(`이용안내에 구형 판사 유형이 남았습니다: ${oldType}`);
 }
 
 for (const type of expected) {
@@ -91,11 +91,11 @@ if (!home.includes('같은 사건도 담당 판사의 성격에 따라 전혀 �
 }
 
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
-if (appVersion !== '20260810-judge-ui-sync-1') {
-  throw new Error(`판사 UI 캐시 버전이 갱신되지 않았습니다: ${appVersion || '없음'}`);
+if (appVersion !== '20260810-mycase-original-fix-1') {
+  throw new Error(`현재 앱 캐시 버전이 기대값과 다릅니다: ${appVersion || '없음'}`);
 }
 if (!worker.includes(`/js/app.js?v=${appVersion}`) || !worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
-  throw new Error('판사 UI 캐시 버전이 index/service worker 사이에서 일치하지 않습니다.');
+  throw new Error('현재 앱 캐시 버전이 index/service worker 사이에서 일치하지 않습니다.');
 }
 
-console.log('Judge persona validation passed: seven distinct 3-character comedy judges are synchronized across generation, five-stage prompting, main UI, guide copy, cache refresh, fallback rulings, and safety constraints.');
+console.log('Judge persona validation passed: seven distinct 3-character comedy judges are synchronized across generation, five-stage prompting, main UI, guide copy, current app cache, fallback rulings, and safety constraints.');

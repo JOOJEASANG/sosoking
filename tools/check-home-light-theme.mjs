@@ -30,6 +30,25 @@ const app = read('public/js/app.js');
 if (!app.includes("./components/court-design.js?v=20260729-light-home-1")) {
   errors.push('public/js/app.js: light home court design cache version is missing');
 }
+if (!app.includes("./pages/my-cases-game.js?v=20260810-mycase-light-1")) {
+  errors.push('public/js/app.js: current my-cases light profile cache version is missing');
+}
+
+const myCasesGame = read('public/js/pages/my-cases-game.js');
+for (const required of [
+  "style.id = 'my-case-profile-game-style'",
+  '#my-game-profile .my-case-achievement-badge',
+  'background:#f4ead5',
+  'color:#6a4b18',
+  "[data-theme='dark'] #my-game-profile .my-case-achievement-badge",
+  'color:#fff8ec',
+  'class="my-case-achievement-badge"'
+]) {
+  if (!myCasesGame.includes(required)) errors.push(`public/js/pages/my-cases-game.js: missing readable profile badge rule ${required}`);
+}
+if (myCasesGame.includes('font-weight:900;color:#fff8ec;">${icon} ${label}</span>')) {
+  errors.push('public/js/pages/my-cases-game.js: profile badge text must not stay fixed to near-white in light mode');
+}
 
 const index = read('public/index.html');
 const serviceWorker = read('public/sw.js');
@@ -44,6 +63,9 @@ const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
 if (!appVersion || !serviceWorker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: current application cache versions are inconsistent');
 }
+if (!serviceWorker.includes('/js/pages/my-cases-game.js?v=20260810-mycase-light-1')) {
+  errors.push('public/sw.js: current my-cases profile module is not in the active cache graph');
+}
 if (!/const CACHE_NAME = 'sosoking-app-v[^']+';/.test(serviceWorker)) {
   errors.push('public/sw.js: versioned cache name is missing');
 }
@@ -54,4 +76,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Home light theme validation passed: cream hero, readable statistics, card CTA, dark-mode isolation, and cache consistency.');
+console.log('Home light theme validation passed: cream hero, readable statistics, readable my-case achievement badges, dark-mode isolation, and cache consistency.');

@@ -208,24 +208,25 @@ function normalizeOriginalUi(root = document) {
 }
 
 function start() {
-  const host = document.getElementById('page-content') || document.body;
+  const host = document.body;
   let queued = false;
   const schedule = () => {
     if (queued) return;
     queued = true;
     queueMicrotask(() => {
       queued = false;
-      normalizeOriginalUi(host);
+      normalizeOriginalUi(document);
     });
   };
 
-  normalizeOriginalUi(host);
+  normalizeOriginalUi(document);
   new MutationObserver(schedule).observe(host, {
     childList: true,
     subtree: true,
     attributes: true,
     attributeFilter: ['aria-expanded', 'hidden']
   });
+  window.addEventListener('hashchange', schedule);
 }
 
 if (document.readyState === 'loading') {
