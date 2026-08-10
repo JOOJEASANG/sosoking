@@ -82,7 +82,7 @@ function normalizeSelect() {
   });
   for (const [key, meta] of Object.entries(ACTIVE_MODES)) {
     const option = Array.from(select.options).find(item => item.value === key);
-    if (option) option.textContent = `${meta.icon} ${meta.label}`;
+    if (option && option.textContent !== `${meta.icon} ${meta.label}`) option.textContent = `${meta.icon} ${meta.label}`;
   }
   if (!ACTIVE_KEYS.has(select.value)) {
     select.value = 'naming';
@@ -101,20 +101,21 @@ function normalizeModeTiles() {
       return;
     }
     const meta = ACTIVE_MODES[mode];
-    tile.querySelector('.battle-mode-icon')?.replaceChildren(meta.icon);
+    const icon = tile.querySelector('.battle-mode-icon');
     const strong = tile.querySelector('strong');
     const small = tile.querySelector('small');
     const em = tile.querySelector('em');
-    if (strong) strong.textContent = meta.label;
-    if (small) small.textContent = meta.short;
-    if (em) em.textContent = meta.example;
+    if (icon && icon.textContent !== meta.icon) icon.textContent = meta.icon;
+    if (strong && strong.textContent !== meta.label) strong.textContent = meta.label;
+    if (small && small.textContent !== meta.short) small.textContent = meta.short;
+    if (em && em.textContent !== meta.example) em.textContent = meta.example;
   });
   const section = grid.closest('.section-block');
   if (section) {
     const kicker = section.querySelector('.section-kicker');
     const heading = section.querySelector('.v4-section-heading h2');
-    if (kicker) kicker.textContent = '2 SIGNATURE GAMES';
-    if (heading) heading.textContent = '둘 중 하나만 골라 바로 붙어보세요';
+    if (kicker && kicker.textContent !== '2 SIGNATURE GAMES') kicker.textContent = '2 SIGNATURE GAMES';
+    if (heading && heading.textContent !== '둘 중 하나만 골라 바로 붙어보세요') heading.textContent = '둘 중 하나만 골라 바로 붙어보세요';
   }
 }
 
@@ -128,7 +129,8 @@ function normalizeModeFilters() {
     }
     if (ACTIVE_KEYS.has(mode)) {
       const meta = ACTIVE_MODES[mode];
-      link.textContent = `${meta.icon} ${meta.label}`;
+      const text = `${meta.icon} ${meta.label}`;
+      if (link.textContent !== text) link.textContent = text;
     }
   });
 }
@@ -136,7 +138,8 @@ function normalizeModeFilters() {
 function normalizeModeBadges(root = document) {
   for (const [mode, meta] of Object.entries(ACTIVE_MODES)) {
     root.querySelectorAll?.(`.type-badge.battle-${mode}`).forEach(badge => {
-      badge.textContent = `${meta.icon} ${meta.label}`;
+      const text = `${meta.icon} ${meta.label}`;
+      if (badge.textContent !== text) badge.textContent = text;
     });
   }
   for (const retired of RETIRED_MODES) {
@@ -156,11 +159,13 @@ function normalizeBrowseHeading() {
   const kicker = heading.querySelector('.section-kicker');
   if (active) {
     const meta = ACTIVE_MODES[active];
-    if (h1) h1.textContent = meta.label;
-    if (description) description.textContent = meta.short;
-    if (kicker) kicker.textContent = `${meta.icon} SIGNATURE GAME`;
+    if (h1 && h1.textContent !== meta.label) h1.textContent = meta.label;
+    if (description && description.textContent !== meta.short) description.textContent = meta.short;
+    const kickerText = `${meta.icon} SIGNATURE GAME`;
+    if (kicker && kicker.textContent !== kickerText) kicker.textContent = kickerText;
   } else if (description) {
-    description.textContent = '미친작명소와 오답제작소, 두 종목의 출전·심사·종료 배틀을 모아봅니다.';
+    const text = '미친작명소와 오답제작소, 두 종목의 출전·심사·종료 배틀을 모아봅니다.';
+    if (description.textContent !== text) description.textContent = text;
   }
 }
 
@@ -177,7 +182,8 @@ function renameTopicDetail() {
   if (!mode) return;
   const meta = ACTIVE_MODES[mode];
   const badge = detail.querySelector(`.type-badge.battle-${mode}`);
-  if (badge) badge.textContent = `${meta.icon} ${meta.label}`;
+  const text = `${meta.icon} ${meta.label}`;
+  if (badge && badge.textContent !== text) badge.textContent = text;
 }
 
 function ensureInviteButton() {
@@ -196,9 +202,13 @@ function ensureInviteButton() {
   bar.dataset.dripsoInvite = 'true';
   const copy = document.createElement('div');
   copy.className = 'dripso-invite-copy';
-  copy.innerHTML = recruiting
-    ? '<strong>친구랑 붙어볼까요?</strong><small>링크를 보내면 친구가 바로 이 배틀에 출전할 수 있습니다.</small>'
-    : '<strong>이 배틀이 웃겼다면 공유하세요</strong><small>친구에게 결과와 주제를 링크로 보낼 수 있습니다.</small>';
+  const strong = document.createElement('strong');
+  const small = document.createElement('small');
+  strong.textContent = recruiting ? '친구랑 붙어볼까요?' : '이 배틀이 웃겼다면 공유하세요';
+  small.textContent = recruiting
+    ? '링크를 보내면 친구가 바로 이 배틀에 출전할 수 있습니다.'
+    : '친구에게 결과와 주제를 링크로 보낼 수 있습니다.';
+  copy.append(strong, small);
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'dripso-invite-button';
@@ -238,5 +248,5 @@ function schedule() {
 
 window.addEventListener('hashchange', schedule);
 window.addEventListener('dripso:rendered', schedule);
-new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+window.addEventListener('pageshow', schedule);
 normalize();
