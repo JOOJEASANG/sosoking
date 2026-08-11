@@ -77,7 +77,8 @@ service cloud.firestore {
       return data.maxPlayers == 8 && (
         (data.type == 'chosung-bomb' && data.maxRounds == 7) ||
         (data.type == 'mind-reader' && data.maxRounds == 8) ||
-        (data.type == 'alibi-market' && data.maxRounds == 3)
+        (data.type == 'alibi-market' && data.maxRounds == 3) ||
+        (data.type == 'vault-run' && data.maxRounds == 9)
       );
     }
 
