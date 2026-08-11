@@ -64,10 +64,14 @@ button, input { font: inherit; }
 .section-heading h2 { margin: 7px 0 15px; font-size: 20px; }
 .game-card { min-height: 90px; padding: 15px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 17px; background: var(--panel); }
 .game-card + .game-card { margin-top: 9px; }
+.game-card-link { text-decoration: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+.game-card-link:active { transform: scale(.985); }
+.game-card-link:hover { border-color: rgba(255,209,102,.3); background: #151f30; }
 .game-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: var(--panel-2); font-size: 22px; }
 .game-card strong { display: block; margin-bottom: 4px; font-size: 14px; }
 .game-card p { margin: 0; color: var(--muted); font-size: 10.5px; line-height: 1.5; }
 .coming-label { color: #8f9aae; font-size: 10px; font-weight: 900; white-space: nowrap; }
+.live-label { color: var(--good); }
 
 .how-to { margin-top: 36px; padding: 22px; border: 1px solid var(--line); border-radius: 21px; background: rgba(255,255,255,.025); }
 .how-to h2 { margin: 8px 0 16px; font-size: 19px; }
