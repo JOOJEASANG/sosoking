@@ -6,9 +6,14 @@ const mainIndex = read('public/index.html');
 const nav = read('public/js/components/nav.js');
 const accountGuard = read('public/js/game-entry-guard.js');
 const gameHome = read('public/game/index.html');
+const partyCss = read('public/game/party.css');
 const chosungHome = read('public/game/chosung/index.html');
 const chosungScript = read('public/game/chosung/chosung.js');
 const restartCleanup = read('public/game/chosung/restart-cleanup.js');
+const mindHome = read('public/game/mind/index.html');
+const mindScript = read('public/game/mind/mind.js');
+const alibiHome = read('public/game/alibi/index.html');
+const alibiScript = read('public/game/alibi/alibi.js');
 const legacyEntry = read('public/dripso/index.html');
 
 assert.match(mainIndex, /game-entry\.css/);
@@ -18,10 +23,17 @@ assert.match(nav, /href="\/game\/"/);
 assert.match(nav, />게임소</);
 assert.doesNotMatch(nav, /\/dripso\//);
 assert.match(accountGuard, /title: '게임소'/);
+
 assert.match(gameHome, /초성 폭탄/);
-assert.match(gameHome, /거짓말 탐정/);
+assert.match(gameHome, /관심법/);
+assert.match(gameHome, /변명거래소/);
+assert.match(gameHome, /href="\/game\/mind\//);
+assert.match(gameHome, /href="\/game\/alibi\//);
 assert.match(gameHome, /권력전쟁/);
-assert.match(gameHome, /2~4글자 랜덤 초성/);
+assert.doesNotMatch(gameHome, /거짓말 탐정|눈치왕/);
+assert.match(partyCss, /balance-button/);
+assert.match(partyCss, /choice-button/);
+
 assert.match(chosungHome, /초성 폭탄/);
 assert.match(chosungHome, /restart-cleanup\.js/);
 assert.match(chosungScript, /game_rooms/);
@@ -42,7 +54,25 @@ assert.match(restartCleanup, /roundState: 'waiting'/);
 assert.match(restartCleanup, /roundMode: ''/);
 assert.match(restartCleanup, /multiplier: 1/);
 assert.match(restartCleanup, /score: 0/);
+
+assert.match(mindHome, /관심법/);
+assert.match(mindScript, /type: 'mind-reader'/);
+assert.match(mindScript, /kind: 'choice'/);
+assert.match(mindScript, /kind: 'guess'/);
+assert.match(mindScript, /targetForRound/);
+assert.match(mindScript, /관찰자 속임 \+1/);
+assert.match(mindScript, /navigator\.share/);
+
+assert.match(alibiHome, /변명거래소/);
+assert.match(alibiScript, /type: 'alibi-market'/);
+assert.match(alibiScript, /privateKeyword/);
+assert.match(alibiScript, /kind: 'alibi'/);
+assert.match(alibiScript, /kind: 'vote'/);
+assert.match(alibiScript, /trust-bid/);
+assert.match(alibiScript, /marketEvaluation/);
+assert.match(alibiScript, /navigator\.share/);
+
 assert.match(legacyEntry, /\/game\//);
 assert.doesNotMatch(legacyEntry, /미친작명소|오답제작소|드립 배틀/);
 
-console.log('Game hub regression passed: navigation, random 2-4 letter party rounds, invite-room multiplayer, clean restarts, and legacy redirect are present.');
+console.log('Game hub regression passed: original game navigation, party-mode chosung, mind-reader prediction, alibi trust market, invite sharing, clean restarts, and legacy redirect are present.');
