@@ -63,10 +63,10 @@ if (!theme.includes('prefers-reduced-motion:reduce') || !theme.includes(':focus-
 }
 
 const index = read('public/index.html');
-const dripsoIndex = read('public/dripso/index.html');
+const gameIndex = read('public/game/index.html');
 const adminIndex = read('public/admin/index.html');
 const themeInit = read('public/js/theme-init.js');
-if (!index.includes('/js/theme-init.js?v=') || !adminIndex.includes('/js/theme-init.js?v=')) {
+if (!index.includes('/js/theme-init.js?v=') || !gameIndex.includes('/js/theme-init.js?v=') || !adminIndex.includes('/js/theme-init.js?v=')) {
   errors.push('public index files: external first-paint theme script is missing');
 }
 if (!/try\s*\{[\s\S]*localStorage\.getItem\('theme'\)[\s\S]*catch/.test(themeInit)) {
@@ -83,9 +83,9 @@ if (!themeVersion || !serviceWorker.includes(`/js/theme-init.js?v=${themeVersion
 
 for (const [pagePath, html] of [
   ['public/index.html', index],
-  ['public/dripso/index.html', dripsoIndex]
+  ['public/game/index.html', gameIndex]
 ]) {
-  const versionedAssets = [...html.matchAll(/(?:src|href)=["'](\/(?:js|css|dripso)\/[^"']+\?v=[^"']+)["']/g)]
+  const versionedAssets = [...html.matchAll(/(?:src|href)=["'](\/(?:js|css|game)\/[^"']+\?v=[^"']+)["']/g)]
     .map(match => match[1]);
   for (const asset of versionedAssets) {
     if (!serviceWorker.includes(`'${asset}'`)) {

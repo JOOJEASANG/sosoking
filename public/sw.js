@@ -1,8 +1,8 @@
-const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
+const CACHE_NAME = 'sosoking-app-v20260812-game-theme-cleanup-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-originals-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-mycase-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-trial-judge-source-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
@@ -10,17 +10,10 @@ const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260806-unified-service-nav-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260805-dripso-header-entry-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-official-layout-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-2';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-public-original-modal-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-dripso-community-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-2';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-compact-record-card-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-final-audit-1';
@@ -50,34 +43,19 @@ const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
 // Cache lineage: /js/pages/board-search-pagination.js?v=20260730-judge-board-search-1
 // Cache lineage: /js/pages/board-court.js?v=20260730-discussion-court-1
 // Cache lineage: /js/pages/board.js?v=20260730-discussion-court-1
-// Cache lineage: /css/brand-logo.css?v=20260731-dripso-nav-1
 // Cache lineage: /css/brand-logo.css?v=20260729-sans-font-1
-// Historical Dripso assets are intentionally not precached after the game-hub migration.
-// '/dripso/battle-v2.js?v=20260803-blind-duel-1'
-// '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1'
-// '/dripso/tournament-v3.js?v=20260804-final-four-1'
-// '/dripso/official-ui.js?v=20260804-official-layout-1'
-// '/dripso/battle.js?v=20260803-seven-battles-1'
-// '/dripso/battle-pagination.js?v=20260803-seven-battles-1'
-// '/dripso/dripso.css?v=20260801-community-1'
-// '/dripso/dripso.js?v=20260801-community-1'
-// '/dripso/dripso.css?v=20260731-dripso-1'
-// '/dripso/copy-helper.css?v=20260731-dripso-1'
-// '/dripso/dripso.js?v=20260731-dripso-1'
-// '/css/dripso-entry.css?v=20260805-dripso-header-entry-1'
-// '/js/dripso-entry-guard.js?v=20260805-dripso-header-entry-1'
-// '/css/dripso-entry.css?v=20260802-dripso-bottom-entry-1'
-// '/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1'
 
 const APP_SHELL = [
   '/',
   '/index.html',
-  '/dripso/',
-  '/dripso/index.html',
   '/game/',
   '/game/index.html',
   '/game/game.css?v=20260812-quick-games-1',
   '/game/party.css?v=20260812-quick-games-1',
+  '/game/theme.css?v=20260812-game-theme-1',
+  '/game/theme.js?v=20260812-game-theme-1',
+  '/game/member-profile.css?v=20260812-game-member-1',
+  '/game/member-profile.js?v=20260812-game-member-1',
   '/game/vault/',
   '/game/vault/index.html',
   '/game/vault/vault.css?v=20260812-vault-run-1',
@@ -226,10 +204,6 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/__/auth/')) return;
 
   if (request.mode === 'navigate') {
-    if (url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')) {
-      event.respondWith(networkFirst(request, '/dripso/index.html').catch(() => caches.match('/dripso/index.html')));
-      return;
-    }
     if (url.pathname === '/game/vault' || url.pathname.startsWith('/game/vault/')) {
       event.respondWith(networkFirst(request, '/game/vault/index.html').catch(() => caches.match('/game/vault/index.html')));
       return;
