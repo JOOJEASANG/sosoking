@@ -16,6 +16,8 @@ const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
 // Cache lineage: /js/app.js?v=20260730-judge-board-search-1
 // Cache lineage: /js/app.js?v=20260730-discussion-court-1
 // Cache lineage: /js/app.js?v=20260730-final-audit-1
+// Cache lineage: /js/pages/submit-guard.js?v=20260730-configurable-limit-1
+// Cache lineage: /js/pages/submit-court.js?v=20260730-configurable-limit-1
 // Historical Dripso assets are intentionally not precached after the game-hub migration.
 
 const APP_SHELL = [
