@@ -6,6 +6,8 @@ const mainIndex = read('public/index.html');
 const nav = read('public/js/components/nav.js');
 const accountGuard = read('public/js/game-entry-guard.js');
 const gameHome = read('public/game/index.html');
+const gameThemeCss = read('public/game/theme.css');
+const gameThemeScript = read('public/game/theme.js');
 const partyCss = read('public/game/party.css');
 const memberProfileCss = read('public/game/member-profile.css');
 const memberProfileScript = read('public/game/member-profile.js');
@@ -28,7 +30,6 @@ const mindScript = read('public/game/mind/mind.js');
 const alibiHome = read('public/game/alibi/index.html');
 const alibiScript = read('public/game/alibi/alibi.js');
 const serviceWorker = read('public/sw.js');
-const legacyEntry = read('public/dripso/index.html');
 
 assert.match(mainIndex, /game-entry\.css/);
 assert.match(mainIndex, /game-entry-guard\.js/);
@@ -50,6 +51,19 @@ assert.doesNotMatch(gameHome, /개발중|개발 예정|기획중|다음 개발|�
 assert.doesNotMatch(gameHome, /href="\/game\/mind\//);
 assert.doesNotMatch(gameHome, /href="\/game\/alibi\//);
 assert.match(partyCss, /choice-button/);
+
+// 게임소 전체는 판결소와 같은 localStorage theme 설정을 공유한다.
+for (const home of [gameHome, vaultHome, greedHome, caughtHome, chosungHome, mindHome, alibiHome]) {
+  assert.match(home, /\/js\/theme-init\.js/);
+  assert.match(home, /\/game\/theme\.css/);
+  assert.match(home, /\/game\/theme\.js/);
+}
+assert.match(gameThemeCss, /html\[data-theme="light"\]/);
+assert.match(gameThemeCss, /game-theme-toggle/);
+assert.match(gameThemeScript, /localStorage\.getItem\(STORAGE_KEY\)/);
+assert.match(gameThemeScript, /localStorage\.setItem\(STORAGE_KEY, choice\)/);
+assert.match(gameThemeScript, /prefers-color-scheme: light/);
+assert.match(gameThemeScript, /game-theme-toggle/);
 
 // 회원 프로필은 네 메인 게임에 공통 연결하고, 비회원은 기존 임시 닉네임 흐름을 유지한다.
 for (const home of [vaultHome, greedHome, caughtHome, chosungHome]) {
@@ -114,7 +128,10 @@ assert.match(caughtScript, /navigator\.share/);
 assert.match(serviceWorker, /\/game\/vault\/index\.html/);
 assert.match(serviceWorker, /\/game\/greed\/index\.html/);
 assert.match(serviceWorker, /\/game\/caught\/index\.html/);
-assert.match(serviceWorker, /20260812-quick-games-1/);
+assert.match(serviceWorker, /\/game\/theme\.css/);
+assert.match(serviceWorker, /\/game\/theme\.js/);
+assert.match(serviceWorker, /20260812-game-theme-cleanup-1/);
+assert.doesNotMatch(serviceWorker, /\/dripso\//i);
 
 assert.match(chosungHome, /초성 폭탄/);
 assert.match(chosungHome, /restart-cleanup\.js/);
@@ -135,7 +152,7 @@ assert.match(mindScript, /type: 'mind-reader'/);
 assert.match(alibiHome, /변명거래소/);
 assert.match(alibiScript, /type: 'alibi-market'/);
 
-assert.match(legacyEntry, /\/game\//);
-assert.doesNotMatch(legacyEntry, /미친작명소|오답제작소|드립 배틀/);
+assert.ok(!fs.existsSync('public/dripso'), 'retired service directory must not exist');
+assert.ok(!fs.existsSync('functions/dripso.js'), 'retired service Functions must not exist');
 
-console.log('Game hub regression passed: four live quick games, automatic invite codes, safe member profiles, one-tap or short-input multiplayer, PWA routes, clean restarts, hidden experiment compatibility, and legacy redirect are present.');
+console.log('Game hub regression passed: four live quick games, shared dark/light theme, automatic invite codes, safe member profiles, PWA routes, clean restarts, hidden experiment compatibility, and retired service removal are present.');
