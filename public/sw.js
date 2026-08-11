@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260811-game-originals-1';
+const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-originals-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-mycase-original-fix-1';
@@ -76,6 +77,10 @@ const APP_SHELL = [
   '/game/index.html',
   '/game/game.css?v=20260811-game-originals-1',
   '/game/party.css?v=20260811-party-games-1',
+  '/game/vault/',
+  '/game/vault/index.html',
+  '/game/vault/vault.css?v=20260812-vault-run-1',
+  '/game/vault/vault.js?v=20260812-vault-run-1',
   '/game/chosung/',
   '/game/chosung/index.html',
   '/game/chosung/chosung.css?v=20260811-chosung-party-2',
@@ -164,20 +169,11 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(
-      keys
-        .filter(key => key.startsWith('sosoking-app-') && key !== CACHE_NAME)
-        .map(key => caches.delete(key))
-    );
-
+    await Promise.all(keys.filter(key => key.startsWith('sosoking-app-') && key !== CACHE_NAME).map(key => caches.delete(key)));
     const cache = await caches.open(CACHE_NAME);
     const allowed = appShellUrls();
     const cachedRequests = await cache.keys();
-    await Promise.all(
-      cachedRequests
-        .filter(request => !allowed.has(request.url))
-        .map(request => cache.delete(request))
-    );
+    await Promise.all(cachedRequests.filter(request => !allowed.has(request.url)).map(request => cache.delete(request)));
     await self.clients.claim();
   })());
 });
@@ -206,17 +202,8 @@ async function networkFirst(request, fallbackRequest = request) {
 
 async function staleWhileRevalidate(request) {
   const cached = await caches.match(request);
-  const network = fetch(request)
-    .then(async response => {
-      await putCache(request, response);
-      return response;
-    })
-    .catch(() => null);
-
-  if (cached) {
-    void network;
-    return cached;
-  }
+  const network = fetch(request).then(async response => { await putCache(request, response); return response; }).catch(() => null);
+  if (cached) { void network; return cached; }
   const response = await network;
   if (response) return response;
   throw new Error('Network and cache unavailable');
@@ -232,6 +219,10 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     if (url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')) {
       event.respondWith(networkFirst(request, '/dripso/index.html').catch(() => caches.match('/dripso/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/vault' || url.pathname.startsWith('/game/vault/')) {
+      event.respondWith(networkFirst(request, '/game/vault/index.html').catch(() => caches.match('/game/vault/index.html')));
       return;
     }
     if (url.pathname === '/game/chosung' || url.pathname.startsWith('/game/chosung/')) {
