@@ -78,7 +78,9 @@ service cloud.firestore {
         (data.type == 'chosung-bomb' && data.maxRounds == 7) ||
         (data.type == 'mind-reader' && data.maxRounds == 8) ||
         (data.type == 'alibi-market' && data.maxRounds == 3) ||
-        (data.type == 'vault-run' && data.maxRounds == 9)
+        (data.type == 'vault-run' && data.maxRounds == 9) ||
+        (data.type == 'greed-stairs' && data.maxRounds == 5) ||
+        (data.type == 'unique-low' && data.maxRounds == 8)
       );
     }
 
