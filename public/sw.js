@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
+const CACHE_NAME = 'sosoking-app-v20260811-game-originals-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-mycase-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-trial-judge-source-1';
@@ -73,11 +74,19 @@ const APP_SHELL = [
   '/dripso/index.html',
   '/game/',
   '/game/index.html',
-  '/game/game.css?v=20260811-game-hub-1',
+  '/game/game.css?v=20260811-game-originals-1',
+  '/game/party.css?v=20260811-party-games-1',
   '/game/chosung/',
   '/game/chosung/index.html',
-  '/game/chosung/chosung.css?v=20260811-chosung-mvp-1',
-  '/game/chosung/chosung.js?v=20260811-chosung-mvp-1',
+  '/game/chosung/chosung.css?v=20260811-chosung-party-2',
+  '/game/chosung/chosung.js?v=20260811-chosung-party-2',
+  '/game/chosung/restart-cleanup.js?v=20260811-chosung-party-2',
+  '/game/mind/',
+  '/game/mind/index.html',
+  '/game/mind/mind.js?v=20260811-mind-mvp-1',
+  '/game/alibi/',
+  '/game/alibi/index.html',
+  '/game/alibi/alibi.js?v=20260811-alibi-mvp-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260802-remove-daily-court-2',
@@ -222,24 +231,23 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     if (url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')) {
-      event.respondWith(
-        networkFirst(request, '/dripso/index.html')
-          .catch(() => caches.match('/dripso/index.html'))
-      );
+      event.respondWith(networkFirst(request, '/dripso/index.html').catch(() => caches.match('/dripso/index.html')));
       return;
     }
     if (url.pathname === '/game/chosung' || url.pathname.startsWith('/game/chosung/')) {
-      event.respondWith(
-        networkFirst(request, '/game/chosung/index.html')
-          .catch(() => caches.match('/game/chosung/index.html'))
-      );
+      event.respondWith(networkFirst(request, '/game/chosung/index.html').catch(() => caches.match('/game/chosung/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/mind' || url.pathname.startsWith('/game/mind/')) {
+      event.respondWith(networkFirst(request, '/game/mind/index.html').catch(() => caches.match('/game/mind/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/alibi' || url.pathname.startsWith('/game/alibi/')) {
+      event.respondWith(networkFirst(request, '/game/alibi/index.html').catch(() => caches.match('/game/alibi/index.html')));
       return;
     }
     if (url.pathname === '/game' || url.pathname.startsWith('/game/')) {
-      event.respondWith(
-        networkFirst(request, '/game/index.html')
-          .catch(() => caches.match('/game/index.html'))
-      );
+      event.respondWith(networkFirst(request, '/game/index.html').catch(() => caches.match('/game/index.html')));
       return;
     }
     if (url.pathname.startsWith('/result/')) {
