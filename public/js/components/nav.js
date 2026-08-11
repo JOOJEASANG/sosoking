@@ -57,9 +57,9 @@ export function renderNav(activeRoute = '') {
       <span class="nav-icon"><img class="nav-brand-icon" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="" width="25" height="25"></span>
       <span class="nav-label">사건접수</span>
     </a>
-    <a href="/dripso/#/" class="nav-item" aria-label="드립소로 이동">
-      <span class="nav-icon nav-service-mark" aria-hidden="true">ㅋ</span>
-      <span class="nav-label">드립소</span>
+    <a href="/game/" class="nav-item" aria-label="게임소로 이동">
+      <span class="nav-icon nav-service-mark" aria-hidden="true">🎮</span>
+      <span class="nav-label">게임소</span>
     </a>
     <a href="#/auth" class="nav-item${isAccount ? ' active' : ''}" id="nav-account-item"${isAccount ? ' aria-current="page"' : ''}>
       <span class="nav-icon" id="nav-account-icon" aria-hidden="true">${isLoggedIn ? '●' : '👤'}</span>
