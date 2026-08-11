@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#101828">
+  <title>초성 폭탄 | 소소킹 게임소</title>
+  <meta name="description" content="가족과 친구를 링크로 초대해 함께 즐기는 소소킹 초성 폭탄 게임입니다.">
+  <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/game/chosung/chosung.css?v=20260811-chosung-mvp-1">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/game/" class="back-link" aria-label="게임소로 돌아가기">‹</a>
+    <div><strong>💣 초성 폭탄</strong><small>소소킹 게임소</small></div>
+    <button type="button" class="ghost-button" id="share-room" hidden>초대</button>
+  </header>
+
+  <main id="game-app" class="game-app" aria-live="polite">
+    <section class="loading-panel">게임방을 준비하는 중입니다.</section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="/game/chosung/chosung.js?v=20260811-chosung-mvp-1"></script>
+</body>
+</html>
