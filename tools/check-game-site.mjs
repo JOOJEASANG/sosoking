@@ -7,6 +7,10 @@ const nav = read('public/js/components/nav.js');
 const accountGuard = read('public/js/game-entry-guard.js');
 const gameHome = read('public/game/index.html');
 const partyCss = read('public/game/party.css');
+const memberProfileCss = read('public/game/member-profile.css');
+const memberProfileScript = read('public/game/member-profile.js');
+const profileFunctions = read('functions/profile.js');
+const firebaseDeploy = read('.github/workflows/firebase-deploy.yml');
 const vaultHome = read('public/game/vault/index.html');
 const vaultCss = read('public/game/vault/vault.css');
 const vaultScript = read('public/game/vault/vault.js');
@@ -46,6 +50,24 @@ assert.doesNotMatch(gameHome, /개발중|개발 예정|기획중|다음 개발|�
 assert.doesNotMatch(gameHome, /href="\/game\/mind\//);
 assert.doesNotMatch(gameHome, /href="\/game\/alibi\//);
 assert.match(partyCss, /choice-button/);
+
+// 회원 프로필은 네 메인 게임에 공통 연결하고, 비회원은 기존 임시 닉네임 흐름을 유지한다.
+for (const home of [vaultHome, greedHome, caughtHome, chosungHome]) {
+  assert.match(home, /member-profile\.css/);
+  assert.match(home, /member-profile\.js/);
+}
+assert.match(memberProfileCss, /game-member-card/);
+assert.match(memberProfileCss, /game-member-badge/);
+assert.match(memberProfileScript, /getGamePlayerProfiles/);
+assert.match(memberProfileScript, /방을 만들면 6자리 초대코드가 자동으로 생성됩니다/);
+assert.match(memberProfileScript, /소소킹 회원 프로필로 참가합니다/);
+assert.match(memberProfileScript, /user\.isAnonymous/);
+assert.match(memberProfileScript, /profileFetchPending/);
+assert.match(profileFunctions, /exports\.getGamePlayerProfiles/);
+assert.match(profileFunctions, /게임방 참가자만 프로필을 볼 수 있습니다/);
+assert.match(profileFunctions, /photoURL: cleanUrl/);
+assert.doesNotMatch(profileFunctions.match(/exports\.getGamePlayerProfiles[\s\S]*$/)?.[0] || '', /email:/);
+assert.match(firebaseDeploy, /functions:getGamePlayerProfiles/);
 
 assert.match(vaultHome, /금고런/);
 assert.match(vaultHome, /vault\.js/);
@@ -116,4 +138,4 @@ assert.match(alibiScript, /type: 'alibi-market'/);
 assert.match(legacyEntry, /\/game\//);
 assert.doesNotMatch(legacyEntry, /미친작명소|오답제작소|드립 배틀/);
 
-console.log('Game hub regression passed: four live quick games, one-tap or short-input multiplayer, PWA routes, clean restarts, hidden experiment compatibility, and legacy redirect are present.');
+console.log('Game hub regression passed: four live quick games, automatic invite codes, safe member profiles, one-tap or short-input multiplayer, PWA routes, clean restarts, hidden experiment compatibility, and legacy redirect are present.');
