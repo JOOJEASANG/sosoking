@@ -1,9 +1,13 @@
-const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
+const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-originals-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-mycase-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-trial-judge-source-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-judge-ui-sync-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260806-unified-service-nav-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260805-dripso-header-entry-1';
@@ -27,6 +31,7 @@ const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
 // Cache lineage: /js/app.js?v=20260810-judge-ui-sync-1
 // Cache lineage: /js/app.js?v=20260806-unified-service-nav-1
+// Cache lineage: /js/app.js?v=20260731-compact-record-card-1
 // Cache lineage: /js/app.js?v=20260730-home-layout-route-1
 // Cache lineage: /js/app.js?v=20260730-header-icon-single-1
 // Cache lineage: /js/app.js?v=20260730-search-scope-1
@@ -36,7 +41,18 @@ const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: /js/pages/result-comments.js?v=20260801-public-original-modal-1
 // Cache lineage: /js/pages/result-comments.js?v=20260730-discussion-court-1
 // Cache lineage: /js/pages/my-cases-game.js?v=20260729-dark-record-participation-1
-// Historical Dripso app layers are retained as markers but are no longer precached.
+// Cache lineage: /js/pages/guide.js?v=20260730-configurable-limit-1
+// Cache lineage: /js/pages/policy.js?v=20260729-brand-policy-1
+// Cache lineage: /js/pages/policy-configurable-limit.js?v=20260730-final-audit-1
+// Cache lineage: /js/pages/submit-guard.js?v=20260730-configurable-limit-1
+// Cache lineage: /js/pages/submit-court.js?v=20260730-configurable-limit-1
+// Cache lineage: /js/pages/board-full-content-search.js?v=20260730-search-scope-1
+// Cache lineage: /js/pages/board-search-pagination.js?v=20260730-judge-board-search-1
+// Cache lineage: /js/pages/board-court.js?v=20260730-discussion-court-1
+// Cache lineage: /js/pages/board.js?v=20260730-discussion-court-1
+// Cache lineage: /css/brand-logo.css?v=20260731-dripso-nav-1
+// Cache lineage: /css/brand-logo.css?v=20260729-sans-font-1
+// Historical Dripso assets are intentionally not precached after the game-hub migration.
 // '/dripso/battle-v2.js?v=20260803-blind-duel-1'
 // '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1'
 // '/dripso/tournament-v3.js?v=20260804-final-four-1'
@@ -48,46 +64,47 @@ const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // '/dripso/dripso.css?v=20260731-dripso-1'
 // '/dripso/copy-helper.css?v=20260731-dripso-1'
 // '/dripso/dripso.js?v=20260731-dripso-1'
-// '/css/brand-logo.css?v=20260731-dripso-nav-1'
-// '/css/brand-logo.css?v=20260729-sans-font-1'
-// '/js/app.js?v=20260731-compact-record-card-1'
-// '/js/app.js?v=20260730-home-layout-route-1'
-// '/js/app.js?v=20260730-discussion-court-1'
-// '/js/pages/guide.js?v=20260730-configurable-limit-1'
-// '/js/pages/policy.js?v=20260729-brand-policy-1'
-// '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1'
-// '/js/pages/submit-guard.js?v=20260730-configurable-limit-1'
-// '/js/pages/submit-court.js?v=20260730-configurable-limit-1'
-// '/js/pages/board-full-content-search.js?v=20260730-search-scope-1'
-// '/js/pages/board-search-pagination.js?v=20260730-judge-board-search-1'
-// '/js/pages/board-court.js?v=20260730-discussion-court-1'
-// '/js/pages/board.js?v=20260730-discussion-court-1'
 // '/css/dripso-entry.css?v=20260805-dripso-header-entry-1'
 // '/js/dripso-entry-guard.js?v=20260805-dripso-header-entry-1'
 // '/css/dripso-entry.css?v=20260802-dripso-bottom-entry-1'
 // '/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1'
+
 const APP_SHELL = [
   '/',
   '/index.html',
   '/dripso/',
   '/dripso/index.html',
-  '/dripso/dripso.css?v=20260801-topic-image-1',
-  '/dripso/dripso-navigation.css?v=20260802-dripso-navigation-1',
-  '/dripso/battle.css?v=20260804-official-layout-1',
-  '/dripso/battle-game.css?v=20260803-blind-duel-1',
-  '/dripso/tournament-v3.css?v=20260804-final-four-1',
-  '/dripso/app-v4.css?v=20260804-dripso-v4-audit-1',
-  '/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1',
-  '/dripso/theme.css?v=20260806-dripso-shared-theme-1',
-  '/dripso/two-games-share.css?v=20260811-two-games-share-1',
-  '/dripso/theme.js?v=20260806-dripso-shared-theme-1',
-  '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
-  '/dripso/two-games-share.js?v=20260811-two-games-share-2',
-  '/dripso/moderation.js?v=20260804-dripso-v4-audit-1',
+  '/game/',
+  '/game/index.html',
+  '/game/game.css?v=20260812-quick-games-1',
+  '/game/party.css?v=20260812-quick-games-1',
+  '/game/vault/',
+  '/game/vault/index.html',
+  '/game/vault/vault.css?v=20260812-vault-run-1',
+  '/game/vault/vault.js?v=20260812-vault-run-1',
+  '/game/greed/',
+  '/game/greed/index.html',
+  '/game/greed/greed.css?v=20260812-greed-1',
+  '/game/greed/greed.js?v=20260812-greed-1',
+  '/game/caught/',
+  '/game/caught/index.html',
+  '/game/caught/caught.css?v=20260812-caught-1',
+  '/game/caught/caught.js?v=20260812-caught-1',
+  '/game/chosung/',
+  '/game/chosung/index.html',
+  '/game/chosung/chosung.css?v=20260811-chosung-party-2',
+  '/game/chosung/chosung.js?v=20260811-chosung-party-2',
+  '/game/chosung/restart-cleanup.js?v=20260811-chosung-party-2',
+  '/game/mind/',
+  '/game/mind/index.html',
+  '/game/mind/mind.js?v=20260811-mind-mvp-1',
+  '/game/alibi/',
+  '/game/alibi/index.html',
+  '/game/alibi/alibi.js?v=20260811-alibi-mvp-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260802-remove-daily-court-2',
-  '/css/dripso-entry.css?v=20260806-unified-service-nav-1',
+  '/css/game-entry.css?v=20260811-game-hub-1',
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/css/sans-font.css?v=20260729-sans-font-1',
@@ -102,8 +119,8 @@ const APP_SHELL = [
   '/js/home-copy-guard.js?v=20260802-no-real-cases-1',
   '/js/original-inline-accordion-guard.js?v=20260810-owner-original-route-2',
   '/js/original-detail-header-guard.js?v=20260810-owner-original-route-2',
+  '/js/game-entry-guard.js?v=20260811-game-hub-1',
   '/js/judge-runtime-guard.js?v=20260810-judge-runtime-2',
-  '/js/dripso-entry-guard.js?v=20260806-unified-service-nav-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
   '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1',
@@ -161,20 +178,11 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(
-      keys
-        .filter(key => key.startsWith('sosoking-app-') && key !== CACHE_NAME)
-        .map(key => caches.delete(key))
-    );
-
+    await Promise.all(keys.filter(key => key.startsWith('sosoking-app-') && key !== CACHE_NAME).map(key => caches.delete(key)));
     const cache = await caches.open(CACHE_NAME);
     const allowed = appShellUrls();
     const cachedRequests = await cache.keys();
-    await Promise.all(
-      cachedRequests
-        .filter(request => !allowed.has(request.url))
-        .map(request => cache.delete(request))
-    );
+    await Promise.all(cachedRequests.filter(request => !allowed.has(request.url)).map(request => cache.delete(request)));
     await self.clients.claim();
   })());
 });
@@ -203,17 +211,8 @@ async function networkFirst(request, fallbackRequest = request) {
 
 async function staleWhileRevalidate(request) {
   const cached = await caches.match(request);
-  const network = fetch(request)
-    .then(async response => {
-      await putCache(request, response);
-      return response;
-    })
-    .catch(() => null);
-
-  if (cached) {
-    void network;
-    return cached;
-  }
+  const network = fetch(request).then(async response => { await putCache(request, response); return response; }).catch(() => null);
+  if (cached) { void network; return cached; }
   const response = await network;
   if (response) return response;
   throw new Error('Network and cache unavailable');
@@ -228,10 +227,35 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     if (url.pathname === '/dripso' || url.pathname.startsWith('/dripso/')) {
-      event.respondWith(
-        networkFirst(request, '/dripso/index.html')
-          .catch(() => caches.match('/dripso/index.html'))
-      );
+      event.respondWith(networkFirst(request, '/dripso/index.html').catch(() => caches.match('/dripso/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/vault' || url.pathname.startsWith('/game/vault/')) {
+      event.respondWith(networkFirst(request, '/game/vault/index.html').catch(() => caches.match('/game/vault/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/greed' || url.pathname.startsWith('/game/greed/')) {
+      event.respondWith(networkFirst(request, '/game/greed/index.html').catch(() => caches.match('/game/greed/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/caught' || url.pathname.startsWith('/game/caught/')) {
+      event.respondWith(networkFirst(request, '/game/caught/index.html').catch(() => caches.match('/game/caught/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/chosung' || url.pathname.startsWith('/game/chosung/')) {
+      event.respondWith(networkFirst(request, '/game/chosung/index.html').catch(() => caches.match('/game/chosung/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/mind' || url.pathname.startsWith('/game/mind/')) {
+      event.respondWith(networkFirst(request, '/game/mind/index.html').catch(() => caches.match('/game/mind/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/alibi' || url.pathname.startsWith('/game/alibi/')) {
+      event.respondWith(networkFirst(request, '/game/alibi/index.html').catch(() => caches.match('/game/alibi/index.html')));
+      return;
+    }
+    if (url.pathname === '/game' || url.pathname.startsWith('/game/')) {
+      event.respondWith(networkFirst(request, '/game/index.html').catch(() => caches.match('/game/index.html')));
       return;
     }
     if (url.pathname.startsWith('/result/')) {

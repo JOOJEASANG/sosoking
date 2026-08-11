@@ -2,122 +2,13 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
-  <title>드립소 - 미친작명소 · 오답제작소</title>
-  <meta name="description" content="미친 이름을 짓는 미친작명소와 정답 금지 오답제작소. 친구에게 링크를 보내 출전하고 블라인드 대결로 승자를 가리는 드립 게임입니다.">
-  <meta name="theme-color" content="#17121f">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="드립소 - 미친작명소 · 오답제작소">
-  <meta property="og:description" content="둘 중 하나를 골라 한 방 제출하고, 친구에게 링크를 보내 같이 붙어보세요.">
-  <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
-  <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/dripso/dripso.css?v=20260801-topic-image-1">
-  <link rel="stylesheet" href="/dripso/dripso-navigation.css?v=20260802-dripso-navigation-1">
-  <link rel="stylesheet" href="/dripso/battle.css?v=20260804-official-layout-1">
-  <link rel="stylesheet" href="/dripso/battle-game.css?v=20260803-blind-duel-1">
-  <link rel="stylesheet" href="/dripso/tournament-v3.css?v=20260804-final-four-1">
-  <link rel="stylesheet" href="/dripso/app-v4.css?v=20260804-dripso-v4-audit-1">
-  <link rel="stylesheet" href="/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1">
-  <link rel="stylesheet" href="/dripso/theme.css?v=20260806-dripso-shared-theme-1">
-  <link rel="stylesheet" href="/dripso/two-games-share.css?v=20260811-two-games-share-1">
-  <!-- Retired app layers: battle-v2.js, battle-v2-pagination.js, tournament-v3.js, official-ui.js -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,follow">
+  <meta http-equiv="refresh" content="0;url=/game/">
+  <link rel="canonical" href="/game/">
+  <title>소소킹 게임소로 이동</title>
 </head>
 <body>
-  <header class="site-header">
-    <a class="dripso-brand" href="/dripso/#/" aria-label="드립소 홈">
-      <span class="brand-mark" aria-hidden="true">ㅋ</span>
-      <span class="brand-copy"><strong>드립소</strong><small>미친작명소 · 오답제작소</small></span>
-    </a>
-    <div class="header-actions" hidden>
-      <a class="account-link" id="account-link" href="/#/auth" tabindex="-1" aria-hidden="true">내 정보</a>
-    </div>
-  </header>
-
-  <main id="dripso-app" tabindex="-1">
-    <section class="loading-card" aria-live="polite">오늘의 드립 대결을 준비하는 중입니다.</section>
-  </main>
-
-  <button id="open-topic-dialog" type="button" hidden aria-hidden="true" tabindex="-1"></button>
-
-  <nav class="dripso-bottom-nav" aria-label="드립소 메뉴">
-    <a href="#/" data-nav="home"><span aria-hidden="true">🏠</span><small>홈</small></a>
-    <a href="#/browse" data-nav="browse"><span aria-hidden="true">🎮</span><small>배틀찾기</small></a>
-    <a href="#/create" data-nav="create"><span aria-hidden="true">＋</span><small>배틀열기</small></a>
-    <a href="/#/" data-nav="court" aria-label="판결소로 이동"><span aria-hidden="true">⚖️</span><small>판결소</small></a>
-    <a href="/#/auth" data-nav="account" aria-label="소소킹 내 정보로 이동"><span aria-hidden="true">👤</span><small>내 정보</small></a>
-  </nav>
-
-  <dialog class="topic-dialog" id="topic-dialog">
-    <form id="topic-form" method="dialog">
-      <div class="dialog-heading">
-        <div><span>새 경기</span><h2>둘 중 하나 골라 드립판을 열어주세요</h2></div>
-        <button class="dialog-close" id="close-topic-dialog" type="button" aria-label="닫기">×</button>
-      </div>
-      <label>경기 방식
-        <select id="battle-mode" name="mode" required>
-          <option value="naming">🤪 미친작명소</option>
-          <option value="wrong">💥 오답제작소</option>
-        </select>
-      </label>
-      <label>배틀 제목
-        <input id="topic-title" name="title" maxlength="60" required placeholder="예: 부장님의 퇴근 방해 기술">
-      </label>
-      <label>문제
-        <textarea id="topic-prompt" name="prompt" maxlength="260" required placeholder="예: 퇴근 직전에 일을 주는 기술의 이름을 지어주세요."></textarea>
-      </label>
-      <div class="battle-time-grid three-stage">
-        <label>출전 시간
-          <select id="entry-duration" name="entryDuration" required>
-            <option value="30">30분 번개전</option>
-            <option value="180" selected>3시간</option>
-            <option value="360">6시간</option>
-            <option value="720">12시간</option>
-            <option value="1440">24시간</option>
-          </select>
-        </label>
-        <label>익명 예선
-          <select id="voting-duration" name="votingDuration" required>
-            <option value="60">1시간</option>
-            <option value="180" selected>3시간</option>
-            <option value="360">6시간</option>
-            <option value="720">12시간</option>
-          </select>
-        </label>
-        <label>준결승·결승
-          <select id="finals-duration" name="finalsDuration" required>
-            <option value="30">각 30분</option>
-            <option value="60" selected>각 1시간</option>
-            <option value="180">각 3시간</option>
-          </select>
-        </label>
-      </div>
-      <div class="image-field">
-        <span class="image-field-title">사진 <small>선택사항</small></span>
-        <label class="image-picker" for="topic-image">
-          <span aria-hidden="true">📷</span>
-          <strong>사진 선택하기</strong>
-          <small>JPG·PNG·WEBP, 원본 12MB 이하</small>
-        </label>
-        <input id="topic-image" class="image-input" name="image" type="file" accept="image/jpeg,image/png,image/webp">
-        <div class="image-preview" id="topic-image-preview" hidden>
-          <img id="topic-image-preview-img" alt="선택한 배틀 사진 미리보기">
-          <button id="remove-topic-image" type="button">사진 삭제</button>
-        </div>
-        <p class="image-status" id="topic-image-status" aria-live="polite"></p>
-      </div>
-      <p class="form-help">출전작은 결승 종료 전까지 공개되지 않습니다. 익명 1대1 예선 상위 네 작품이 파이널4에 진출합니다. 배틀을 연 뒤 친구에게 초대 링크를 보내 같이 출전할 수 있습니다.</p>
-      <button class="submit-button" id="topic-submit" type="submit">드립 배틀 열기</button>
-    </form>
-  </dialog>
-
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-  <script type="module" src="/dripso/theme.js?v=20260806-dripso-shared-theme-1"></script>
-  <script type="module" src="/dripso/app-v4.js?v=20260804-dripso-v4-audit-1"></script>
-  <script type="module" src="/dripso/two-games-share.js?v=20260811-two-games-share-2"></script>
-  <script type="module" src="/dripso/moderation.js?v=20260804-dripso-v4-audit-1"></script>
+  <p><a href="/game/">소소킹 게임소로 이동</a></p>
 </body>
 </html>

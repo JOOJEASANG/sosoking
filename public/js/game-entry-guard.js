@@ -1,18 +1,9 @@
-const RETIRED_BUTTON_ID = 'dripso-quick-button';
-const RETIRED_PANEL_ID = 'dripso-quick-panel';
 const SERVICE_HUB_ID = 'sosoking-service-hub';
 
 function isAccountRoute() {
   const hash = location.hash || '';
   const path = location.pathname.replace(/\/$/, '') || '/';
   return (path === '/' && hash.startsWith('#/auth')) || path === '/auth';
-}
-
-function removeRetiredQuickEntry() {
-  document.getElementById(RETIRED_BUTTON_ID)?.remove();
-  document.getElementById(RETIRED_PANEL_ID)?.remove();
-  document.getElementById('dripso-home-entry')?.remove();
-  document.querySelectorAll('.dripso-home-entry, .dripso-quick-button, .dripso-quick-panel').forEach(node => node.remove());
 }
 
 function serviceLink({ href, icon, title, description, label }) {
@@ -53,10 +44,10 @@ function buildServiceHub() {
   eyebrow.textContent = 'SOSOKING ACCOUNT';
 
   const title = document.createElement('strong');
-  title.textContent = '한 계정으로 두 서비스를 이용합니다';
+  title.textContent = '한 계정으로 판결소와 게임소를 이용합니다';
 
   const description = document.createElement('p');
-  description.textContent = '판결소와 드립소에서 같은 닉네임과 로그인 정보를 사용합니다.';
+  description.textContent = '판결 기록을 관리하고 게임소에서 가족·친구와 함께 즐겨보세요.';
 
   heading.append(eyebrow, title, description);
 
@@ -71,11 +62,11 @@ function buildServiceHub() {
       label: '판결소 내 사건으로 이동'
     }),
     serviceLink({
-      href: '/dripso/#/browse',
-      icon: 'ㅋ',
-      title: '드립소 활동',
-      description: '배틀을 찾고 출전하기',
-      label: '드립소 배틀찾기로 이동'
+      href: '/game/',
+      icon: '🎮',
+      title: '게임소',
+      description: '가족·친구와 같이 놀기',
+      label: '소소킹 게임소로 이동'
     })
   );
 
@@ -84,8 +75,6 @@ function buildServiceHub() {
 }
 
 function normalizeAccountPage() {
-  removeRetiredQuickEntry();
-
   if (!isAccountRoute()) {
     document.getElementById(SERVICE_HUB_ID)?.remove();
     return;

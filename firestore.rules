@@ -55,6 +55,35 @@ service cloud.firestore {
       );
     }
 
+    function gameRoomExists(roomId) {
+      return exists(/databases/$(database)/documents/game_rooms/$(roomId));
+    }
+
+    function gameRoomDoc(roomId) {
+      return get(/databases/$(database)/documents/game_rooms/$(roomId));
+    }
+
+    function gamePlayerExists(roomId, uid) {
+      return exists(/databases/$(database)/documents/game_rooms/$(roomId)/players/$(uid));
+    }
+
+    function isGameHost(roomId) {
+      return signedIn()
+        && gameRoomExists(roomId)
+        && gameRoomDoc(roomId).data.hostUid == request.auth.uid;
+    }
+
+    function isValidGameRoom(data) {
+      return data.maxPlayers == 8 && (
+        (data.type == 'chosung-bomb' && data.maxRounds == 7) ||
+        (data.type == 'mind-reader' && data.maxRounds == 8) ||
+        (data.type == 'alibi-market' && data.maxRounds == 3) ||
+        (data.type == 'vault-run' && data.maxRounds == 9) ||
+        (data.type == 'greed-stairs' && data.maxRounds == 5) ||
+        (data.type == 'unique-low' && data.maxRounds == 8)
+      );
+    }
+
     function isVisibleDripsoData(data) {
       return data.status == 'visible';
     }
@@ -146,6 +175,64 @@ service cloud.firestore {
 
     match /court_comment_authors/{caseId}/items/{commentId} {
       allow read, write: if false;
+    }
+
+    // 게임소: 초대 코드를 아는 로그인 세션만 방을 읽고, 진행 상태는 방장이 관리한다.
+    match /game_rooms/{roomId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.status == 'lobby'
+        && isValidGameRoom(request.resource.data);
+      allow update, delete: if isGameHost(roomId);
+
+      match /players/{uid} {
+        allow read: if signedIn() && gameRoomExists(roomId);
+        allow create: if signedIn()
+          && gameRoomExists(roomId)
+          && gameRoomDoc(roomId).data.status == 'lobby'
+          && uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.score == 0
+          && request.resource.data.nickname is string
+          && request.resource.data.nickname.size() > 0
+          && request.resource.data.nickname.size() <= 12;
+        allow update: if signedIn() && gameRoomExists(roomId) && (
+          isGameHost(roomId)
+          || (
+            uid == request.auth.uid
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.score == resource.data.score
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'updatedAt'])
+            && request.resource.data.nickname is string
+            && request.resource.data.nickname.size() > 0
+            && request.resource.data.nickname.size() <= 12
+          )
+        );
+        allow delete: if signedIn() && gameRoomExists(roomId) && (
+          uid == request.auth.uid || isGameHost(roomId)
+        );
+      }
+
+      match /answers/{answerId} {
+        allow read: if signedIn()
+          && gameRoomExists(roomId)
+          && gamePlayerExists(roomId, request.auth.uid);
+        allow create, update: if signedIn()
+          && gameRoomExists(roomId)
+          && gamePlayerExists(roomId, request.auth.uid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.round == gameRoomDoc(roomId).data.round
+          && gameRoomDoc(roomId).data.status == 'playing'
+          && gameRoomDoc(roomId).data.roundState == 'open'
+          && gameRoomDoc(roomId).data.roundEndsAt is timestamp
+          && request.time <= gameRoomDoc(roomId).data.roundEndsAt
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 120;
+        allow delete: if isGameHost(roomId);
+      }
     }
 
     // 드립소 주제는 공개하고, 블라인드 게임 출전작은 각 게임의 최종 종료 뒤에만 직접 읽을 수 있다.
