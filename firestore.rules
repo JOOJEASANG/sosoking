@@ -96,83 +96,68 @@ service cloud.firestore {
         && topic.data.status == 'visible'
         && (
           !topic.data.keys().hasAll(['gameVersion'])
-          || topic.data.gameVersion == commentData.gameVersion
+          || (topic.data.gameVersion != 2 && topic.data.gameVersion != 3)
+          || (
+            topic.data.gameVersion == 2
+            && topic.data.keys().hasAll(['votingDeadline'])
+            && request.time >= topic.data.votingDeadline
+          )
+          || (
+            topic.data.gameVersion == 3
+            && topic.data.keys().hasAll(['finalDeadline'])
+            && request.time >= topic.data.finalDeadline
+          )
         )
       );
     }
 
-    match /cases/{caseId} {
-      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow write: if false;
-    }
-
-    match /results/{caseId} {
-      allow get: if signedIn() && (
-        isSafePublicResultData(resource.data) ||
-        isCaseOwner(caseId) ||
+    match /admins/{adminId} {
+      allow read: if signedIn() && (
+        request.auth.uid == adminId ||
+        adminEmail() == adminId ||
         isAdmin()
       );
-      allow list: if signedIn() && (
-        (resource.data.isPublic == true && resource.data.publicDataVersion == 1) || isAdmin()
-      );
-      allow write: if false;
-    }
-
-    match /public_results/{caseId} {
-      allow get, list: if signedIn() && isSafePublicResultData(resource.data);
-      allow write: if false;
-    }
-
-    match /public_result_originals/{caseId} {
-      allow read, write: if false;
-    }
-
-    match /case_originals/{caseId} {
-      allow read, write: if false;
-    }
-
-    match /appeals/{appealId} {
-      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow write: if false;
-    }
-
-    match /reports/{reportId} {
-      allow read, write: if false;
-    }
-
-    match /admins/{adminId} {
-      allow read: if signedIn() && isAdmin();
-      allow write: if false;
-    }
-
-    match /nicknames/{nickname} {
-      allow read: if signedIn();
       allow write: if false;
     }
 
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if false;
+      allow create, update: if false;
+      allow delete: if isAdmin();
     }
 
-    match /profiles/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if false;
+    match /user_names/{key} {
+      allow read, write: if false;
     }
 
-    match /user_settings/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if false;
+    match /cases/{caseId} {
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
-    match /rate_limits/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if false;
+    match /results/{caseId} {
+      allow get: if isSafePublicResultData(resource.data)
+        || isCaseOwner(caseId)
+        || isAdmin();
+      allow list: if isAdmin() || isPublicResultListData(resource.data);
+      allow update: if isAdmin();
+      allow create: if false;
+      allow delete: if isAdmin();
     }
 
-    match /court_votes/{caseId}/items/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+    match /result_reactions/{caseId} {
+      allow read: if canReadPublicCourt(caseId);
       allow write: if false;
+
+      match /votes/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow write: if false;
+      }
     }
 
     match /court_comments/{caseId}/items/{commentId} {
@@ -247,7 +232,7 @@ service cloud.firestore {
       }
     }
 
-    // 기존 서비스 데이터는 이전 결과 보존과 단계적 정리를 위해 읽기 규칙을 유지한다.
+    // 드립소 주제는 공개하고, 블라인드 게임 출전작은 각 게임의 최종 종료 뒤에만 직접 읽을 수 있다.
     match /dripso_topics/{topicId} {
       allow get, list: if isVisibleDripsoData(resource.data) || isAdmin();
       allow create, update, delete: if false;
@@ -263,42 +248,95 @@ service cloud.firestore {
       }
     }
 
-    match /dripso_users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if false;
+    // 작성자 UID, 익명 예선·토너먼트 대진·투표 기록은 Admin SDK에서만 사용한다.
+    match /dripso_topic_authors/{topicId} {
+      allow read, write: if false;
     }
 
-    match /dripso_battles/{battleId} {
-      allow get, list: if isVisibleDripsoData(resource.data) || isAdmin();
-      allow write: if false;
+    match /dripso_comment_authors/{topicId}/items/{commentId} {
+      allow read, write: if false;
     }
 
-    match /dripso_votes/{voteId} {
-      allow read: if signedIn() && isAdmin();
-      allow write: if false;
+    match /dripso_battle_voters/{topicId}/users/{uid}/votes/{voteId} {
+      allow read, write: if false;
+    }
+
+    match /dripso_tournament_matches/{topicId}/items/{matchId} {
+      allow read, write: if false;
+    }
+
+    match /dripso_tournament_prelim_voters/{topicId}/users/{uid}/votes/{voteId} {
+      allow read, write: if false;
+    }
+
+    match /dripso_tournament_voters/{topicId}/rounds/{roundId}/matches/{matchId}/users/{uid} {
+      allow read, write: if false;
     }
 
     match /dripso_reports/{reportId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /dripso_report_keys/{keyId} {
       allow read, write: if false;
     }
 
-    match /dripso_notifications/{uid}/items/{notificationId} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if false;
-    }
-
-    match /dripso_tournaments/{tournamentId} {
-      allow get, list: if isVisibleDripsoData(resource.data) || isAdmin();
-      allow write: if false;
-    }
-
-    match /dripso_official/{officialId} {
-      allow get, list: if isVisibleDripsoData(resource.data) || isAdmin();
-      allow write: if false;
-    }
-
-    match /{document=**} {
+    match /case_id_aliases/{aliasId} {
       allow read, write: if false;
+    }
+
+    match /usage_stats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /rate_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    match /action_limits/{limitId} {
+      allow read, write: if false;
+    }
+
+    match /ai_limits/{dailyId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /users/{userId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if false;
+      }
+    }
+
+    match /reports/{reportId} {
+      allow create: if false;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /report_keys/{keyId} {
+      allow read, write: if false;
+    }
+
+    match /site_settings/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /site_public/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /policy_docs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }
