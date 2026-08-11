@@ -63,6 +63,10 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/game_rooms/$(roomId));
     }
 
+    function gamePlayerExists(roomId, uid) {
+      return exists(/databases/$(database)/documents/game_rooms/$(roomId)/players/$(uid));
+    }
+
     function isGameHost(roomId) {
       return signedIn()
         && gameRoomExists(roomId)
@@ -178,6 +182,7 @@ service cloud.firestore {
         allow read: if signedIn() && gameRoomExists(roomId);
         allow create: if signedIn()
           && gameRoomExists(roomId)
+          && gameRoomDoc(roomId).data.status == 'lobby'
           && uid == request.auth.uid
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.score == 0
@@ -202,9 +207,12 @@ service cloud.firestore {
       }
 
       match /answers/{answerId} {
-        allow read: if signedIn() && gameRoomExists(roomId);
+        allow read: if signedIn()
+          && gameRoomExists(roomId)
+          && gamePlayerExists(roomId, request.auth.uid);
         allow create, update: if signedIn()
           && gameRoomExists(roomId)
+          && gamePlayerExists(roomId, request.auth.uid)
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.round == gameRoomDoc(roomId).data.round
           && gameRoomDoc(roomId).data.status == 'playing'
