@@ -14,6 +14,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      issues: write
+      pull-requests: write
     concurrency:
       group: firebase-game-hub-preview
       cancel-in-progress: true
@@ -62,6 +64,23 @@ jobs:
         run: firebase deploy --only firestore:rules --project sosoking-481e6 --non-interactive
 
       - name: Deploy game hub preview channel
+        id: hosting_preview
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase hosting:channel:deploy game-hub-425 --expires 7d --project sosoking-481e6 --non-interactive
+        run: |
+          set -o pipefail
+          OUTPUT="$(firebase hosting:channel:deploy game-hub-425 --expires 7d --project sosoking-481e6 --non-interactive 2>&1)"
+          printf '%s\n' "$OUTPUT"
+          PREVIEW_URL="$(printf '%s\n' "$OUTPUT" | grep -Eo 'https://[A-Za-z0-9.-]+\.web\.app' | tail -n 1)"
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "Preview deployment succeeded but the preview URL could not be parsed."
+            exit 1
+          fi
+          echo "PREVIEW_URL=$PREVIEW_URL" >> "$GITHUB_ENV"
+          echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Comment smartphone test URL on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment 425 --repo "$GITHUB_REPOSITORY" --body "🎮 **게임소 스마트폰 테스트 URL**\n\n${PREVIEW_URL}/game/\n\n- 초성 폭탄: ${PREVIEW_URL}/game/chosung/\n- Firebase Hosting Preview 채널: game-hub-425\n- 7일 후 자동 만료\n\n이 URL은 테스트용이며 운영 sosoking.co.kr Hosting은 변경하지 않았습니다."
