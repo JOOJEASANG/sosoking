@@ -64,15 +64,23 @@ try {
   await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${roomId}`), {
     status: 'playing', round: 1, roundState: 'open', target: 'ㄱㅅ', usedTargets: ['ㄱㅅ'], roundEndsAt: future, updatedAt: now
   }));
+  await assertFails(setDoc(doc(outsiderDb, `game_rooms/${roomId}/players/game-outsider`), {
+    uid: 'game-outsider', nickname: '늦은참가', score: 0, joinOrder: 3, joinedAt: now, updatedAt: now
+  }));
   await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${roomId}/answers/1-game-player`), {
     uid: 'game-player', nickname: '가족2', round: 1, text: '가수', createdAt: now, updatedAt: now
+  }));
+  await assertFails(setDoc(doc(outsiderDb, `game_rooms/${roomId}/answers/1-outsider`), {
+    uid: 'game-outsider', nickname: '늦은참가', round: 1, text: '가수', createdAt: now, updatedAt: now
   }));
   await assertFails(setDoc(doc(outsiderDb, `game_rooms/${roomId}/answers/1-spoof`), {
     uid: 'game-player', nickname: '가족2', round: 1, text: '가수', createdAt: now, updatedAt: now
   }));
+  await assertFails(getDocs(collection(outsiderDb, `game_rooms/${roomId}/answers`)));
+  await assertSucceeds(getDocs(collection(playerDb, `game_rooms/${roomId}/answers`)));
   await assertFails(updateDoc(doc(playerDb, `game_rooms/${roomId}`), { target: 'ㄴㅅ' }));
 
-  console.log('Game Firestore rules integration passed: authenticated invite-room reads, private listing, self-join, host scoring, timed answer writes, and host-only room control.');
+  console.log('Game Firestore rules integration passed: authenticated invite-room reads, private listing, lobby-only self-join, participant-only answers, host scoring, timed answer writes, and host-only room control.');
 } finally {
   await testEnv.cleanup();
 }
