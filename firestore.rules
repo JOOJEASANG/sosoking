@@ -55,6 +55,20 @@ service cloud.firestore {
       );
     }
 
+    function gameRoomExists(roomId) {
+      return exists(/databases/$(database)/documents/game_rooms/$(roomId));
+    }
+
+    function gameRoomDoc(roomId) {
+      return get(/databases/$(database)/documents/game_rooms/$(roomId));
+    }
+
+    function isGameHost(roomId) {
+      return signedIn()
+        && gameRoomExists(roomId)
+        && gameRoomDoc(roomId).data.hostUid == request.auth.uid;
+    }
+
     function isVisibleDripsoData(data) {
       return data.status == 'visible';
     }
@@ -148,7 +162,63 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // 드립소 주제는 공개하고, 블라인드 게임 출전작은 각 게임의 최종 종료 뒤에만 직접 읽을 수 있다.
+    // 게임소 초성 폭탄: 초대 코드를 아는 로그인 세션만 방을 읽고, 진행 상태는 방장이 관리한다.
+    match /game_rooms/{roomId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.type == 'chosung-bomb'
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.status == 'lobby'
+        && request.resource.data.maxPlayers == 8
+        && request.resource.data.maxRounds == 7;
+      allow update, delete: if isGameHost(roomId);
+
+      match /players/{uid} {
+        allow read: if signedIn() && gameRoomExists(roomId);
+        allow create: if signedIn()
+          && gameRoomExists(roomId)
+          && uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.score == 0
+          && request.resource.data.nickname is string
+          && request.resource.data.nickname.size() > 0
+          && request.resource.data.nickname.size() <= 12;
+        allow update: if signedIn() && gameRoomExists(roomId) && (
+          isGameHost(roomId)
+          || (
+            uid == request.auth.uid
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.score == resource.data.score
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'updatedAt'])
+            && request.resource.data.nickname is string
+            && request.resource.data.nickname.size() > 0
+            && request.resource.data.nickname.size() <= 12
+          )
+        );
+        allow delete: if signedIn() && gameRoomExists(roomId) && (
+          uid == request.auth.uid || isGameHost(roomId)
+        );
+      }
+
+      match /answers/{answerId} {
+        allow read: if signedIn() && gameRoomExists(roomId);
+        allow create, update: if signedIn()
+          && gameRoomExists(roomId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.round == gameRoomDoc(roomId).data.round
+          && gameRoomDoc(roomId).data.status == 'playing'
+          && gameRoomDoc(roomId).data.roundState == 'open'
+          && gameRoomDoc(roomId).data.roundEndsAt is timestamp
+          && request.time <= gameRoomDoc(roomId).data.roundEndsAt
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 24;
+        allow delete: if isGameHost(roomId);
+      }
+    }
+
+    // 기존 서비스 데이터는 이전 결과 보존과 단계적 정리를 위해 읽기 규칙을 유지한다.
     match /dripso_topics/{topicId} {
       allow get, list: if isVisibleDripsoData(resource.data) || isAdmin();
       allow create, update, delete: if false;
@@ -164,7 +234,6 @@ service cloud.firestore {
       }
     }
 
-    // 작성자 UID, 익명 예선·토너먼트 대진·투표 기록은 Admin SDK에서만 사용한다.
     match /dripso_topic_authors/{topicId} {
       allow read, write: if false;
     }
