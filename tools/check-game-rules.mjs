@@ -114,6 +114,45 @@ try {
     uid: 'game-outsider', nickname: '몰래참가', round: 1, kind: 'vault', text: 'v1', createdAt: now, updatedAt: now
   }));
 
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/GRD234'), {
+    type: 'greed-stairs', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
+    round: 0, maxRounds: 5, roundState: 'waiting', stage: 0, maxStages: 5,
+    reward: 0, risk: 0, roundSeconds: 10, lastResults: [], createdAt: now, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/GRD234/players/game-host'), {
+    uid: 'game-host', nickname: '방장', score: 0, runState: 'waiting', joinOrder: 1, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/GRD234/players/game-player'), {
+    uid: 'game-player', nickname: '친구', score: 0, runState: 'waiting', joinOrder: 2, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(updateDoc(doc(hostDb, 'game_rooms/GRD234'), {
+    status: 'playing', round: 1, roundState: 'open', stage: 1, reward: 100, risk: 8, roundEndsAt: future, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/GRD234/answers/greed-1-1-game-player'), {
+    uid: 'game-player', nickname: '친구', kind: 'greed', round: 1, stage: 1, text: 'climb', createdAt: now, updatedAt: now
+  }));
+
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/CAT234'), {
+    type: 'unique-low', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
+    round: 0, maxRounds: 8, roundState: 'waiting', roundSeconds: 10,
+    bannedNumber: 0, bonusNumber: 0, lastResults: [], createdAt: now, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/CAT234/players/game-host'), {
+    uid: 'game-host', nickname: '방장', score: 0, joinOrder: 1, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/CAT234/players/game-player'), {
+    uid: 'game-player', nickname: '친구', score: 0, joinOrder: 2, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(updateDoc(doc(hostDb, 'game_rooms/CAT234'), {
+    status: 'playing', round: 1, roundState: 'open', bannedNumber: 3, bonusNumber: 8, roundEndsAt: future, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/CAT234/answers/number-1-game-player'), {
+    uid: 'game-player', nickname: '친구', kind: 'number', round: 1, number: 5, text: '5', createdAt: now, updatedAt: now
+  }));
+  await assertFails(setDoc(doc(outsiderDb, 'game_rooms/CAT234/answers/number-1-outsider'), {
+    uid: 'game-outsider', nickname: '몰래참가', kind: 'number', round: 1, number: 5, text: '5', createdAt: now, updatedAt: now
+  }));
+
   await assertFails(setDoc(doc(hostDb, 'game_rooms/BAD234'), {
     type: 'copycat-party-game', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
     round: 0, maxRounds: 3, roundState: 'waiting', createdAt: now, updatedAt: now
@@ -135,7 +174,7 @@ try {
     uid: 'game-player', nickname: '친구', round: 1, kind: 'alibi', text: '가'.repeat(121), createdAt: now, updatedAt: now
   }));
 
-  console.log('Game Firestore rules integration passed: private invite-room listing, supported game types including vault-run, lobby-only self-join, participant submissions, host scoring, timed writes, and host-only room control.');
+  console.log('Game Firestore rules integration passed: private invite rooms, all four live quick-game types, timed participant submissions, outsider blocking, host scoring, and host-only room control.');
 } finally {
   await testEnv.cleanup();
 }
