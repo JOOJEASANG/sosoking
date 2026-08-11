@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   setDoc,
   Timestamp,
@@ -16,12 +17,33 @@ const toast = document.getElementById('toast');
 
 const MAX_PLAYERS = 8;
 const MAX_ROUNDS = 7;
-const ROUND_SECONDS = 20;
-const TARGETS = [
-  'ㄱㅅ', 'ㄱㅈ', 'ㄱㅂ', 'ㄴㅅ', 'ㄴㅈ', 'ㄷㄹ', 'ㄷㅅ', 'ㅁㅅ', 'ㅁㄹ', 'ㅂㄹ',
-  'ㅅㄱ', 'ㅅㅈ', 'ㅇㅅ', 'ㅇㅈ', 'ㅈㅁ', 'ㅈㅅ', 'ㅊㅅ', 'ㅋㅍ', 'ㅍㅅ', 'ㅎㄱ'
-];
+const DEFAULT_SECONDS = 20;
 const INITIALS = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+const TARGETS_BY_LENGTH = {
+  2: [
+    'ㄱㅅ','ㄱㅈ','ㄱㅂ','ㄱㅁ','ㄱㄹ','ㄴㅅ','ㄴㅁ','ㄴㄹ','ㄷㄹ','ㄷㅅ',
+    'ㄷㅂ','ㄷㅁ','ㄹㅁ','ㅁㅅ','ㅁㄹ','ㅁㅈ','ㅁㄷ','ㅂㄹ','ㅂㅅ','ㅂㅈ',
+    'ㅂㄷ','ㅅㄱ','ㅅㅈ','ㅅㅂ','ㅅㄹ','ㅇㅅ','ㅇㅈ','ㅇㅁ','ㅇㄹ','ㅈㅁ',
+    'ㅈㅅ','ㅈㄱ','ㅊㅅ','ㅊㄱ','ㅋㅍ','ㅌㅈ','ㅍㅅ','ㅎㄱ','ㅎㅂ','ㅎㅅ'
+  ],
+  3: [
+    'ㄱㄱㅁ','ㄱㅈㅁ','ㄱㅊㅇ','ㄴㄹㅂ','ㄴㅇㅌ','ㄷㄹㅁ','ㄷㅁㄴ','ㄹㅁㅋ','ㅁㄹㅌ','ㅁㅋㄹ',
+    'ㅁㅅㅋ','ㅂㄴㄴ','ㅂㅈㄱ','ㅂㅂㅂ','ㅅㄴㅇ','ㅅㅁㅌ','ㅅㅇㄷ','ㅇㄹㅈ','ㅇㅈㅇ','ㅇㅁㄴ',
+    'ㅇㅂㅈ','ㅈㄷㄱ','ㅉㅈㅁ','ㅊㅋㄹ','ㅋㅁㄹ','ㅌㅁㅌ','ㅎㄷㅍ','ㅎㅂㄱ'
+  ],
+  4: [
+    'ㄷㅎㅁㄱ','ㄴㅇㄱㅇ','ㄱㅅㄷㄹ','ㅂㅁㅂㅎ','ㅊㄷㅎㄱ','ㅅㄱㄱㅂ','ㅊㅈㄱㅂ','ㄱㅊㅉㄱ','ㅂㅂㄱㅅ','ㅅㅌㅂㅅ',
+    'ㅅㅁㅌㅍ','ㅇㅇㅍㄷ','ㅂㄷㅉㄱ','ㄷㅈㄱㅂ','ㄷㅈㅉㄱ','ㅅㄷㅇㅊ','ㅂㅇㄹㅅ','ㅍㅇㅇㅍ','ㅇㅈㅁㅎ','ㅌㄹㅂㅈ','ㅎㄱㅅㄱ'
+  ]
+};
+
+const ROUND_MODES = [
+  { id: 'classic', emoji: '🎯', label: '기본', seconds: 20, multiplier: 1, lengths: [2, 3, 4], help: '초성과 글자 수를 정확히 맞혀요.' },
+  { id: 'lightning', emoji: '⚡', label: '번개', seconds: 12, multiplier: 1, lengths: [2, 3], help: '12초 안에 떠올려야 합니다.' },
+  { id: 'double', emoji: '💥', label: '더블', seconds: 18, multiplier: 2, lengths: [2, 3, 4], help: '단독 정답 점수가 2배입니다.' }
+];
+const FINAL_MODE = { id: 'royal', emoji: '👑', label: '왕의 폭탄', seconds: 15, multiplier: 2, lengths: [3, 4], help: '마지막 라운드. 어려운 초성에 점수도 2배!' };
 
 let roomId = '';
 let room = null;
@@ -48,6 +70,10 @@ function showToast(message) {
   toast.hidden = false;
   clearTimeout(toastId);
   toastId = setTimeout(() => { toast.hidden = true; }, 2200);
+}
+
+function pick(list) {
+  return list[Math.floor(Math.random() * list.length)];
 }
 
 function randomCode() {
@@ -84,11 +110,22 @@ function normalizedAnswerKey(value) {
 
 function isValidAnswer(text, target) {
   const answer = cleanAnswer(text);
-  return answer.length >= 2 && getInitials(answer).startsWith(target);
+  if (!answer || !target) return false;
+  return getInitials(answer) === target;
 }
 
 function currentRoundAnswers() {
   return answers.filter(item => Number(item.round) === Number(room?.round || 0));
+}
+
+function currentMode() {
+  const id = room?.roundMode || 'classic';
+  return id === FINAL_MODE.id ? FINAL_MODE : ROUND_MODES.find(mode => mode.id === id) || ROUND_MODES[0];
+}
+
+function pointValue() {
+  const targetLength = Array.from(room?.target || '').length;
+  return Math.max(2, targetLength) * Math.max(1, Number(room?.multiplier || currentMode().multiplier || 1));
 }
 
 function answerEvaluation() {
@@ -99,10 +136,11 @@ function answerEvaluation() {
     const key = normalizedAnswerKey(item.text);
     counts.set(key, (counts.get(key) || 0) + 1);
   }
+  const points = pointValue();
   return list.map(item => {
     const valid = isValidAnswer(item.text, room?.target || '');
     const duplicate = valid && (counts.get(normalizedAnswerKey(item.text)) || 0) > 1;
-    return { ...item, valid, duplicate, points: valid && !duplicate ? 2 : 0 };
+    return { ...item, valid, duplicate, points: valid && !duplicate ? points : 0 };
   });
 }
 
@@ -123,16 +161,18 @@ function sortPlayers(list = players) {
 }
 
 function playerListMarkup(showScores = false) {
-  return sortPlayers(showScores ? players : [...players].sort((a, b) => Number(a.joinOrder || 0) - Number(b.joinOrder || 0)))
-    .map((player, index) => `
-      <li class="player-item">
-        <span class="player-copy">
-          <span class="player-avatar" aria-hidden="true">${index + 1}</span>
-          <span class="player-name">${escapeText(player.nickname || '플레이어')}</span>
-          ${player.uid === room?.hostUid ? '<span class="host-label">방장</span>' : ''}
-        </span>
-        ${showScores ? `<span class="player-score">${Number(player.score || 0)}점</span>` : ''}
-      </li>`).join('');
+  const source = showScores
+    ? sortPlayers(players)
+    : [...players].sort((a, b) => Number(a.joinOrder || 0) - Number(b.joinOrder || 0));
+  return source.map((player, index) => `
+    <li class="player-item">
+      <span class="player-copy">
+        <span class="player-avatar" aria-hidden="true">${index + 1}</span>
+        <span class="player-name">${escapeText(player.nickname || '플레이어')}</span>
+        ${player.uid === room?.hostUid ? '<span class="host-label">방장</span>' : ''}
+      </span>
+      ${showScores ? `<span class="player-score">${Number(player.score || 0)}점</span>` : ''}
+    </li>`).join('');
 }
 
 function setRoomUrl(nextRoomId) {
@@ -191,7 +231,12 @@ function renderLanding(prefilledCode = '') {
     <section class="panel">
       <span class="kicker">SOSOKING FAMILY GAME</span>
       <h1>💣 초성 폭탄</h1>
-      <p class="lead">초성이 뜨면 제한시간 안에 단어를 적어주세요. 정답 초성이 맞고 다른 사람과 겹치지 않으면 2점입니다.</p>
+      <p class="lead">2·3·4글자 초성이 랜덤으로 등장합니다. 남들과 겹치지 않는 정답을 찾아 점수를 모으세요.</p>
+      <div class="rule-strip">
+        <span><b>🎯</b> 글자 수만큼 점수</span>
+        <span><b>⚡</b> 번개 12초</span>
+        <span><b>💥</b> 더블 2배</span>
+      </div>
       <form id="create-room-form">
         <label class="field"><span>내 닉네임</span><input id="create-nickname" maxlength="12" autocomplete="nickname" placeholder="예: 아빠" required></label>
         <div class="button-row"><button class="primary-button" type="submit">새 게임방 만들기</button></div>
@@ -206,11 +251,11 @@ function renderLanding(prefilledCode = '') {
 
   document.getElementById('create-room-form').addEventListener('submit', event => {
     event.preventDefault();
-    createRoom(document.getElementById('create-nickname').value);
+    void createRoom(document.getElementById('create-nickname').value);
   });
   document.getElementById('join-room-form').addEventListener('submit', event => {
     event.preventDefault();
-    joinRoom(document.getElementById('join-code').value, document.getElementById('join-nickname').value);
+    void joinRoom(document.getElementById('join-code').value, document.getElementById('join-nickname').value);
   });
 }
 
@@ -239,6 +284,9 @@ async function createRoom(nicknameValue) {
       roundState: 'waiting',
       target: '',
       usedTargets: [],
+      roundMode: '',
+      roundSeconds: DEFAULT_SECONDS,
+      multiplier: 1,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     });
@@ -266,7 +314,7 @@ async function joinRoom(codeValue, nicknameValue) {
   const nickname = cleanNickname(nicknameValue);
   if (code.length !== 6) return showToast('6자리 초대 코드를 확인해주세요.');
   if (!nickname) return showToast('닉네임을 입력해주세요.');
-  const button = document.querySelector('#join-room-form button');
+  const button = document.querySelector('#join-room-form button, #invite-join-form button');
   if (button) button.disabled = true;
   try {
     const roomRef = doc(db, 'game_rooms', code);
@@ -276,12 +324,19 @@ async function joinRoom(codeValue, nicknameValue) {
     if (data.type !== 'chosung-bomb') throw new Error('wrong-game');
     if (data.status !== 'lobby') throw new Error('game-started');
 
-    await setDoc(doc(db, 'game_rooms', code, 'players', currentUid), {
+    const playerRef = doc(db, 'game_rooms', code, 'players', currentUid);
+    const [playersSnap, existingPlayer] = await Promise.all([
+      getDocs(collection(db, 'game_rooms', code, 'players')),
+      getDoc(playerRef)
+    ]);
+    if (playersSnap.size >= MAX_PLAYERS && !existingPlayer.exists()) throw new Error('room-full');
+
+    await setDoc(playerRef, {
       uid: currentUid,
       nickname,
       score: 0,
-      joinOrder: Date.now(),
-      joinedAt: Timestamp.now(),
+      joinOrder: existingPlayer.exists() ? Number(existingPlayer.data().joinOrder || Date.now()) : Date.now(),
+      joinedAt: existingPlayer.exists() ? existingPlayer.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
     });
     sessionStorage.setItem(`sosoking-game-nickname:${code}`, nickname);
@@ -292,9 +347,11 @@ async function joinRoom(codeValue, nicknameValue) {
     console.error('join room failed', error);
     const message = error?.message === 'game-started'
       ? '이미 게임이 시작된 방입니다.'
-      : error?.message === 'room-not-found'
-        ? '게임방을 찾지 못했습니다.'
-        : '게임방에 입장하지 못했습니다.';
+      : error?.message === 'room-full'
+        ? '이 방은 8명이 모두 들어왔습니다.'
+        : error?.message === 'room-not-found'
+          ? '게임방을 찾지 못했습니다.'
+          : '게임방에 입장하지 못했습니다.';
     showToast(message);
     if (button) button.disabled = false;
   }
@@ -316,7 +373,7 @@ function renderJoinInvite(code, savedNickname = '') {
     <section class="panel">
       <span class="kicker">게임 초대</span>
       <h1>💣 초성 폭탄에 초대됐어요</h1>
-      <p class="lead">닉네임만 정하면 바로 가족·친구가 기다리는 방으로 들어갑니다.</p>
+      <p class="lead">닉네임만 정하면 가족·친구가 기다리는 방으로 바로 들어갑니다.</p>
       <div class="room-code"><small>초대 코드</small><strong>${escapeText(code)}</strong></div>
       <form id="invite-join-form">
         <label class="field"><span>내 닉네임</span><input id="invite-nickname" maxlength="12" value="${escapeText(savedNickname)}" autocomplete="nickname" placeholder="예: 우주" required></label>
@@ -325,7 +382,7 @@ function renderJoinInvite(code, savedNickname = '') {
     </section>`;
   document.getElementById('invite-join-form').addEventListener('submit', event => {
     event.preventDefault();
-    joinRoom(code, document.getElementById('invite-nickname').value);
+    void joinRoom(code, document.getElementById('invite-nickname').value);
   });
 }
 
@@ -349,13 +406,14 @@ function subscribeRoom(code) {
 
   unsubscribePlayers = onSnapshot(collection(db, 'game_rooms', code, 'players'), snapshot => {
     players = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-    if (players.length > MAX_PLAYERS && isHost()) showToast('권장 인원 8명을 넘었습니다.');
-    renderCurrentState();
+    if (room?.status === 'playing' && room?.roundState === 'open') updateRoundLiveStatus();
+    else renderCurrentState();
   });
 
   unsubscribeAnswers = onSnapshot(collection(db, 'game_rooms', code, 'answers'), snapshot => {
     answers = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-    renderCurrentState();
+    if (room?.status === 'playing' && room?.roundState === 'open') updateRoundLiveStatus();
+    else renderCurrentState();
   });
 }
 
@@ -377,6 +435,7 @@ function renderLobby() {
     <section class="panel">
       <span class="kicker">게임 대기실</span>
       <h2>가족이 들어오면 시작하세요</h2>
+      <p class="lead">7라운드 동안 2~4글자 랜덤 초성과 특수 라운드가 섞여 나옵니다.</p>
       <div class="room-code"><small>초대 코드</small><strong>${escapeText(roomId)}</strong></div>
       <div class="button-row two">
         <button class="secondary-button" id="copy-invite" type="button">카톡으로 초대</button>
@@ -395,15 +454,23 @@ function renderLobby() {
   document.getElementById('start-game')?.addEventListener('click', startGame);
 }
 
-function chooseTarget(used = []) {
-  const available = TARGETS.filter(target => !used.includes(target));
-  const pool = available.length ? available : TARGETS;
-  return pool[Math.floor(Math.random() * pool.length)];
+function chooseTarget(lengths, used = []) {
+  const candidates = lengths.flatMap(length => TARGETS_BY_LENGTH[length] || []);
+  const available = candidates.filter(target => !used.includes(target));
+  return pick(available.length ? available : candidates);
+}
+
+function chooseRoundSpec(roundNumber, used = [], previousMode = '') {
+  const mode = roundNumber >= MAX_ROUNDS
+    ? FINAL_MODE
+    : pick(ROUND_MODES.filter(candidate => candidate.id !== previousMode) || ROUND_MODES);
+  const target = chooseTarget(mode.lengths, used);
+  return { mode, target };
 }
 
 async function startGame() {
   if (!isHost() || players.length < 2) return;
-  const target = chooseTarget([]);
+  const { mode, target } = chooseRoundSpec(1, [], '');
   const batch = writeBatch(db);
   for (const player of players) {
     batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score: 0, updatedAt: Timestamp.now() });
@@ -414,7 +481,10 @@ async function startGame() {
     roundState: 'open',
     target,
     usedTargets: [target],
-    roundEndsAt: Timestamp.fromMillis(Date.now() + ROUND_SECONDS * 1000),
+    roundMode: mode.id,
+    roundSeconds: mode.seconds,
+    multiplier: mode.multiplier,
+    roundEndsAt: Timestamp.fromMillis(Date.now() + mode.seconds * 1000),
     updatedAt: Timestamp.now()
   });
   try { await batch.commit(); }
@@ -426,29 +496,60 @@ function remainingSeconds() {
   return Math.max(0, Math.ceil((end - Date.now()) / 1000));
 }
 
+function allSubmitted() {
+  return players.length >= 2 && currentRoundAnswers().length >= players.length;
+}
+
+function canRevealNow() {
+  return remainingSeconds() <= 0 || allSubmitted();
+}
+
+function modeBadgeMarkup() {
+  const mode = currentMode();
+  const targetLength = Array.from(room?.target || '').length;
+  return `<div class="round-mode ${escapeText(mode.id)}"><strong>${mode.emoji} ${escapeText(mode.label)}</strong><span>${targetLength}글자 · 단독 정답 +${pointValue()}점</span></div>`;
+}
+
 function renderRound() {
   const myAnswer = currentRoundAnswers().find(item => item.uid === currentUid);
   app.innerHTML = `
-    <section class="panel">
+    <section class="panel round-panel">
       <div class="round-head">
         <span class="round-label">ROUND ${Number(room.round || 1)} / ${Number(room.maxRounds || MAX_ROUNDS)}</span>
         <span class="timer" id="round-timer">${remainingSeconds()}</span>
       </div>
+      ${modeBadgeMarkup()}
       <div class="consonants">${escapeText(room.target || '')}</div>
-      <p class="round-help">이 초성으로 시작하는 단어를 하나 적어주세요.</p>
+      <p class="round-help">${escapeText(currentMode().help)} 초성 글자 수도 정확히 맞아야 합니다.</p>
+      <div class="score-hint">남들과 다른 정답이면 <strong>+${pointValue()}점</strong> · 같은 답이면 0점</div>
       <form id="answer-form">
-        <label class="field"><span>내 단어</span><input id="answer-input" maxlength="24" autocomplete="off" value="${escapeText(myAnswer?.text || '')}" placeholder="예: ㄱㅅ → 가수, 과식, 고생"></label>
+        <label class="field"><span>내 정답</span><input id="answer-input" maxlength="24" autocomplete="off" value="${escapeText(myAnswer?.text || '')}" placeholder="${Array.from(room.target || '').length}글자 단어를 입력하세요"></label>
         <div class="button-row"><button class="primary-button" id="answer-submit" type="submit">${myAnswer ? '답 수정하기' : '답 제출하기'}</button></div>
       </form>
-      <div class="answer-status">${myAnswer ? `제출 완료 · ${escapeText(myAnswer.text)}` : ''}</div>
-      <div class="submitted-count">현재 ${currentRoundAnswers().length}/${players.length}명 제출</div>
-      ${isHost() ? '<div class="button-row"><button class="secondary-button" id="reveal-round" type="button" disabled>시간 종료 후 답 공개</button></div>' : ''}
+      <div class="answer-status" id="answer-status">${myAnswer ? `제출 완료 · ${escapeText(myAnswer.text)}` : ''}</div>
+      <div class="submitted-count" id="submitted-count">현재 ${currentRoundAnswers().length}/${players.length}명 제출</div>
+      ${isHost() ? `<div class="button-row"><button class="secondary-button" id="reveal-round" type="button" ${canRevealNow() ? '' : 'disabled'}>${allSubmitted() ? '전원 제출! 답 공개' : '시간 종료 후 답 공개'}</button></div>` : ''}
     </section>`;
 
-  const answerForm = document.getElementById('answer-form');
-  answerForm?.addEventListener('submit', submitAnswer);
+  document.getElementById('answer-form')?.addEventListener('submit', submitAnswer);
   document.getElementById('reveal-round')?.addEventListener('click', revealRound);
   runTimer();
+}
+
+function updateRoundLiveStatus() {
+  if (!room || room.status !== 'playing' || room.roundState !== 'open') return;
+  const count = document.getElementById('submitted-count');
+  if (count) count.textContent = `현재 ${currentRoundAnswers().length}/${players.length}명 제출`;
+  const mine = currentRoundAnswers().find(item => item.uid === currentUid);
+  const status = document.getElementById('answer-status');
+  if (status && mine) status.textContent = `제출 완료 · ${mine.text}`;
+  const button = document.getElementById('answer-submit');
+  if (button && mine) button.textContent = '답 수정하기';
+  const reveal = document.getElementById('reveal-round');
+  if (reveal) {
+    reveal.disabled = !canRevealNow();
+    reveal.textContent = allSubmitted() ? '전원 제출! 답 공개' : remainingSeconds() <= 0 ? '답 공개하고 채점' : '시간 종료 후 답 공개';
+  }
 }
 
 function runTimer() {
@@ -462,11 +563,12 @@ function runTimer() {
     }
     const input = document.getElementById('answer-input');
     const submit = document.getElementById('answer-submit');
-    const reveal = document.getElementById('reveal-round');
     if (seconds <= 0) {
       if (input) input.disabled = true;
       if (submit) submit.disabled = true;
-      if (reveal) { reveal.disabled = false; reveal.textContent = '답 공개하고 채점'; }
+    }
+    updateRoundLiveStatus();
+    if (seconds <= 0) {
       clearInterval(timerId);
       timerId = null;
     }
@@ -481,7 +583,7 @@ async function submitAnswer(event) {
   const input = document.getElementById('answer-input');
   const answer = cleanAnswer(input?.value);
   if (!answer) return showToast('단어를 입력해주세요.');
-  if (!isValidAnswer(answer, room.target || '')) return showToast(`${room.target} 초성으로 시작하는 단어를 적어주세요.`);
+  if (!isValidAnswer(answer, room.target || '')) return showToast(`${room.target}와 초성·글자 수가 정확히 맞는 단어를 적어주세요.`);
   const player = playerByUid(currentUid);
   try {
     await setDoc(doc(db, 'game_rooms', roomId, 'answers', `${room.round}-${currentUid}`), {
@@ -500,7 +602,7 @@ async function submitAnswer(event) {
 }
 
 async function revealRound() {
-  if (!isHost() || remainingSeconds() > 0 || room.roundState !== 'open') return;
+  if (!isHost() || !canRevealNow() || room.roundState !== 'open') return;
   const evaluation = answerEvaluation();
   const pointsByUid = new Map(evaluation.map(item => [item.uid, item.points]));
   const batch = writeBatch(db);
@@ -522,13 +624,13 @@ async function revealRound() {
 function renderReveal() {
   clearInterval(timerId);
   timerId = null;
-  const evaluation = answerEvaluation().sort((a, b) => String(a.nickname).localeCompare(String(b.nickname), 'ko'));
+  const evaluation = answerEvaluation();
   const answerRows = players.map(player => {
     const answer = evaluation.find(item => item.uid === player.uid);
     if (!answer) {
       return `<li class="answer-item"><strong>${escapeText(player.nickname)}</strong><small>미제출</small><span class="answer-tag bad">0점</span></li>`;
     }
-    const label = !answer.valid ? '초성 불일치' : answer.duplicate ? '중복' : '+2점';
+    const label = !answer.valid ? '초성 불일치' : answer.duplicate ? '💣 중복 0점' : `✨ +${answer.points}점`;
     const className = answer.valid && !answer.duplicate ? 'good' : 'bad';
     return `<li class="answer-item"><strong>${escapeText(answer.text)}</strong><small>${escapeText(player.nickname)}</small><span class="answer-tag ${className}">${label}</span></li>`;
   }).join('');
@@ -538,11 +640,12 @@ function renderReveal() {
     <section class="panel">
       <span class="kicker">ROUND ${Number(room.round)} 결과</span>
       <h2>${escapeText(room.target)} 답 공개</h2>
-      <p class="lead">초성이 맞고 다른 사람과 단어가 겹치지 않으면 2점입니다.</p>
+      ${modeBadgeMarkup()}
+      <p class="lead">같은 답을 낸 사람은 폭탄! 서로 다른 정답을 낸 사람만 점수를 가져갑니다.</p>
       <ul class="answer-list">${answerRows}</ul>
       <div class="divider"></div>
       <ul class="player-list">${playerListMarkup(true)}</ul>
-      ${isHost() ? `<div class="button-row"><button class="primary-button" id="next-round" type="button">${lastRound ? '최종 결과 보기' : '다음 라운드'}</button></div>` : '<p class="lobby-note">방장이 다음 라운드를 열 때까지 기다려주세요.</p>'}
+      ${isHost() ? `<div class="button-row"><button class="primary-button" id="next-round" type="button">${lastRound ? '최종 결과 보기' : '다음 폭탄 열기'}</button></div>` : '<p class="lobby-note">방장이 다음 라운드를 열 때까지 기다려주세요.</p>'}
     </section>`;
   document.getElementById('next-round')?.addEventListener('click', nextRound);
 }
@@ -558,30 +661,35 @@ async function nextRound() {
     return;
   }
   const used = Array.isArray(room.usedTargets) ? room.usedTargets : [];
-  const target = chooseTarget(used);
+  const { mode, target } = chooseRoundSpec(currentRound + 1, used, room.roundMode || '');
   try {
     await updateDoc(doc(db, 'game_rooms', roomId), {
       round: currentRound + 1,
       roundState: 'open',
       target,
       usedTargets: [...used, target],
-      roundEndsAt: Timestamp.fromMillis(Date.now() + ROUND_SECONDS * 1000),
+      roundMode: mode.id,
+      roundSeconds: mode.seconds,
+      multiplier: mode.multiplier,
+      roundEndsAt: Timestamp.fromMillis(Date.now() + mode.seconds * 1000),
       updatedAt: Timestamp.now()
     });
   } catch (error) { console.error('next round failed', error); showToast('다음 라운드를 열지 못했습니다.'); }
 }
 
 function renderFinished() {
+  clearInterval(timerId);
   const ranking = sortPlayers();
+  const medals = ['👑', '🥈', '🥉'];
   app.innerHTML = `
-    <section class="panel">
+    <section class="panel final-panel">
       <span class="kicker">GAME OVER</span>
-      <h1>🏆 최종 결과</h1>
-      <p class="lead">오늘의 초성 폭탄 우승자는 <strong>${escapeText(ranking[0]?.nickname || '플레이어')}</strong>!</p>
+      <h1>🏆 초성왕 탄생!</h1>
+      <p class="lead">오늘의 초성왕은 <strong>${escapeText(ranking[0]?.nickname || '플레이어')}</strong>입니다. 2~4글자 폭탄 7개를 모두 해체했습니다.</p>
       <ol class="ranking">
-        ${ranking.map((player, index) => `<li class="rank-item"><span class="rank-number">${index + 1}</span><span class="rank-name">${escapeText(player.nickname)}</span><span class="rank-score">${Number(player.score || 0)}점</span></li>`).join('')}
+        ${ranking.map((player, index) => `<li class="rank-item ${index === 0 ? 'winner' : ''}"><span class="rank-number">${medals[index] || index + 1}</span><span class="rank-name">${escapeText(player.nickname)}</span><span class="rank-score">${Number(player.score || 0)}점</span></li>`).join('')}
       </ol>
-      ${isHost() ? '<div class="button-row"><button class="primary-button" id="restart-game" type="button">같은 멤버로 다시 하기</button></div>' : '<p class="lobby-note">방장이 다시 시작하면 같은 방에서 한 판 더 할 수 있습니다.</p>'}
+      ${isHost() ? '<div class="button-row"><button class="primary-button" id="restart-game" type="button">같은 멤버로 한 판 더</button></div>' : '<p class="lobby-note">방장이 다시 시작하면 같은 방에서 한 판 더 할 수 있습니다.</p>'}
       <div class="button-row"><a class="secondary-button" href="/game/" style="display:grid;place-items:center;text-decoration:none;">게임소로 돌아가기</a></div>
     </section>`;
   document.getElementById('restart-game')?.addEventListener('click', restartGame);
@@ -599,6 +707,9 @@ async function restartGame() {
     roundState: 'waiting',
     target: '',
     usedTargets: [],
+    roundMode: '',
+    roundSeconds: DEFAULT_SECONDS,
+    multiplier: 1,
     updatedAt: Timestamp.now()
   });
   try { await batch.commit(); }
@@ -641,4 +752,4 @@ async function boot() {
 
 shareButton.addEventListener('click', shareRoom);
 window.addEventListener('pagehide', stopSubscriptions);
-boot();
+void boot();
