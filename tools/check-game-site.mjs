@@ -31,9 +31,11 @@ assert.match(accountGuard, /title: '게임소'/);
 assert.match(gameHome, /금고런/);
 assert.match(gameHome, /href="\/game\/vault\//);
 assert.match(gameHome, /초성 폭탄/);
-assert.match(gameHome, /관심법/);
-assert.match(gameHome, /변명거래소/);
+assert.match(gameHome, /욕심계단/);
+assert.match(gameHome, /딱걸렸어/);
 assert.match(gameHome, /권력전쟁/);
+assert.doesNotMatch(gameHome, /href="\/game\/mind\//);
+assert.doesNotMatch(gameHome, /href="\/game\/alibi\//);
 assert.doesNotMatch(gameHome, /거짓말 탐정|눈치왕/);
 assert.match(partyCss, /balance-button/);
 assert.match(partyCss, /choice-button/);
@@ -75,6 +77,7 @@ assert.match(restartCleanup, /roundMode: ''/);
 assert.match(restartCleanup, /multiplier: 1/);
 assert.match(restartCleanup, /score: 0/);
 
+// 이전 실험 게임은 직접 URL 호환과 회귀검사를 위해 보존하되 게임소 메인에서는 노출하지 않는다.
 assert.match(mindHome, /관심법/);
 assert.match(mindScript, /type: 'mind-reader'/);
 assert.match(mindScript, /kind: 'choice'/);
@@ -82,7 +85,6 @@ assert.match(mindScript, /kind: 'guess'/);
 assert.match(mindScript, /targetForRound/);
 assert.match(mindScript, /관찰자 속임 \+1/);
 assert.match(mindScript, /navigator\.share/);
-
 assert.match(alibiHome, /변명거래소/);
 assert.match(alibiScript, /type: 'alibi-market'/);
 assert.match(alibiScript, /privateKeyword/);
@@ -95,4 +97,4 @@ assert.match(alibiScript, /navigator\.share/);
 assert.match(legacyEntry, /\/game\//);
 assert.doesNotMatch(legacyEntry, /미친작명소|오답제작소|드립 배틀/);
 
-console.log('Game hub regression passed: vault-run one-tap collisions and specials, party-mode chosung, mind-reader prediction, alibi trust market, invite sharing, clean restarts, and legacy redirect are present.');
+console.log('Game hub regression passed: quick-play home focus, vault-run one-tap collisions and specials, party-mode chosung, preserved experiment routes, invite sharing, clean restarts, and legacy redirect are present.');
