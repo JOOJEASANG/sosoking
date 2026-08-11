@@ -6,6 +6,15 @@ on:
       - agent/game-hub
     paths:
       - '.github/workflows/firebase-game-preview.yml'
+      - 'public/game/**'
+      - 'public/dripso/index.html'
+      - 'public/index.html'
+      - 'public/css/game-entry.css'
+      - 'public/js/game-entry-guard.js'
+      - 'firestore.rules'
+      - 'tools/check-game-site.mjs'
+      - 'tools/check-game-rules.mjs'
+      - 'package.json'
   workflow_dispatch:
 
 jobs:
@@ -83,4 +92,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr comment 425 --repo "$GITHUB_REPOSITORY" --body "🎮 **게임소 스마트폰 테스트 URL**\n\n${PREVIEW_URL}/game/\n\n- 초성 폭탄: ${PREVIEW_URL}/game/chosung/\n- Firebase Hosting Preview 채널: game-hub-425\n- 7일 후 자동 만료\n\n이 URL은 테스트용이며 운영 sosoking.co.kr Hosting은 변경하지 않았습니다."
+          gh pr comment 425 --repo "$GITHUB_REPOSITORY" --body "🎮 **게임소 스마트폰 테스트 URL (최신 Preview)**\n\n${PREVIEW_URL}/game/\n\n- 초성 폭탄: ${PREVIEW_URL}/game/chosung/\n- Firebase Hosting Preview 채널: game-hub-425\n- 7일 후 자동 만료\n\n이 URL은 테스트용이며 운영 sosoking.co.kr Hosting은 변경하지 않았습니다."
