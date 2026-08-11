@@ -3,12 +3,13 @@ import { collection, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/fir
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
 const getGamePlayerProfiles = httpsCallable(functions, 'getGamePlayerProfiles');
-const roomId = String(new URL(location.href).searchParams.get('room') || '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 let ownProfile = null;
 let roomPlayers = [];
 let safeProfiles = {};
+let activeRoomId = '';
 let lastPlayerSignature = '';
 let profileFetchPending = false;
+let unsubscribePlayers = null;
 
 function escapeText(value) {
   return String(value ?? '')
@@ -22,6 +23,13 @@ function escapeText(value) {
 function cleanUrl(value) {
   const url = String(value || '').trim();
   return /^https:\/\//.test(url) ? url : '';
+}
+
+function currentRoomId() {
+  return String(new URL(location.href).searchParams.get('room') || '')
+    .toUpperCase()
+    .replace(/[^A-Z2-9]/g, '')
+    .slice(0, 6);
 }
 
 function hashCode(text) {
@@ -147,20 +155,15 @@ function decoratePlayerRows() {
   });
 }
 
-function enhanceDom() {
-  enhanceCreateForm();
-  enhanceJoinForms();
-  enhanceRoomCodeLabels();
-  decoratePlayerRows();
-}
-
 async function refreshSafeProfiles() {
+  const roomId = activeRoomId || currentRoomId();
   if (!roomId || profileFetchPending || !auth.currentUser) return;
   const me = roomPlayers.find(player => player.uid === auth.currentUser.uid);
   if (!me) return;
   profileFetchPending = true;
   try {
     const result = await getGamePlayerProfiles({ roomId });
+    if (roomId !== activeRoomId) return;
     safeProfiles = result?.data?.profiles || {};
     enhanceDom();
   } catch (error) {
@@ -170,9 +173,19 @@ async function refreshSafeProfiles() {
   }
 }
 
-function watchRoomPlayers() {
-  if (!roomId) return;
-  onSnapshot(collection(db, 'game_rooms', roomId, 'players'), snap => {
+function ensureRoomWatch() {
+  const nextRoomId = currentRoomId();
+  if (nextRoomId === activeRoomId) return;
+
+  unsubscribePlayers?.();
+  unsubscribePlayers = null;
+  activeRoomId = nextRoomId;
+  roomPlayers = [];
+  safeProfiles = {};
+  lastPlayerSignature = '';
+
+  if (!activeRoomId) return;
+  unsubscribePlayers = onSnapshot(collection(db, 'game_rooms', activeRoomId, 'players'), snap => {
     roomPlayers = snap.docs.map(item => ({ id: item.id, ...item.data() }));
     const signature = roomPlayers.map(player => player.uid).sort().join('|');
     if (signature !== lastPlayerSignature) {
@@ -183,12 +196,20 @@ function watchRoomPlayers() {
   }, error => console.warn('game player profile watch skipped:', error?.code || error));
 }
 
+function enhanceDom() {
+  ensureRoomWatch();
+  enhanceCreateForm();
+  enhanceJoinForms();
+  enhanceRoomCodeLabels();
+  decoratePlayerRows();
+}
+
 async function boot() {
   ownProfile = await loadOwnProfile().catch(() => null);
   enhanceDom();
-  watchRoomPlayers();
   const observer = new MutationObserver(() => enhanceDom());
   observer.observe(document.getElementById('game-app') || document.body, { childList: true, subtree: true });
+  window.addEventListener('pagehide', () => unsubscribePlayers?.(), { once: true });
 }
 
 void boot();
