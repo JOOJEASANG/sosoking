@@ -7,6 +7,9 @@ const nav = read('public/js/components/nav.js');
 const accountGuard = read('public/js/game-entry-guard.js');
 const gameHome = read('public/game/index.html');
 const partyCss = read('public/game/party.css');
+const vaultHome = read('public/game/vault/index.html');
+const vaultCss = read('public/game/vault/vault.css');
+const vaultScript = read('public/game/vault/vault.js');
 const chosungHome = read('public/game/chosung/index.html');
 const chosungScript = read('public/game/chosung/chosung.js');
 const restartCleanup = read('public/game/chosung/restart-cleanup.js');
@@ -14,6 +17,7 @@ const mindHome = read('public/game/mind/index.html');
 const mindScript = read('public/game/mind/mind.js');
 const alibiHome = read('public/game/alibi/index.html');
 const alibiScript = read('public/game/alibi/alibi.js');
+const serviceWorker = read('public/sw.js');
 const legacyEntry = read('public/dripso/index.html');
 
 assert.match(mainIndex, /game-entry\.css/);
@@ -24,15 +28,31 @@ assert.match(nav, />게임소</);
 assert.doesNotMatch(nav, /\/dripso\//);
 assert.match(accountGuard, /title: '게임소'/);
 
+assert.match(gameHome, /금고런/);
+assert.match(gameHome, /href="\/game\/vault\//);
 assert.match(gameHome, /초성 폭탄/);
 assert.match(gameHome, /관심법/);
 assert.match(gameHome, /변명거래소/);
-assert.match(gameHome, /href="\/game\/mind\//);
-assert.match(gameHome, /href="\/game\/alibi\//);
 assert.match(gameHome, /권력전쟁/);
 assert.doesNotMatch(gameHome, /거짓말 탐정|눈치왕/);
 assert.match(partyCss, /balance-button/);
 assert.match(partyCss, /choice-button/);
+
+assert.match(vaultHome, /금고런/);
+assert.match(vaultHome, /vault\.js/);
+assert.match(vaultCss, /vault-card/);
+assert.match(vaultScript, /type: 'vault-run'/);
+assert.match(vaultScript, /MAX_ROUNDS = 9/);
+assert.match(vaultScript, /ROUND_SECONDS = 12/);
+assert.match(vaultScript, /SPECIALS = \['gold', 'mystery', 'thief', 'comeback'\]/);
+assert.match(vaultScript, /MYSTERY_EFFECTS/);
+assert.match(vaultScript, /comboBonus/);
+assert.match(vaultScript, /roundMultiplier\(\)/);
+assert.match(vaultScript, /uids\.length > 1/);
+assert.match(vaultScript, /answersSnap\.docs\.forEach\(answer => batch\.delete\(answer\.ref\)\)/);
+assert.match(vaultScript, /navigator\.share/);
+assert.match(serviceWorker, /\/game\/vault\/index\.html/);
+assert.match(serviceWorker, /20260812-vault-run-1/);
 
 assert.match(chosungHome, /초성 폭탄/);
 assert.match(chosungHome, /restart-cleanup\.js/);
@@ -75,4 +95,4 @@ assert.match(alibiScript, /navigator\.share/);
 assert.match(legacyEntry, /\/game\//);
 assert.doesNotMatch(legacyEntry, /미친작명소|오답제작소|드립 배틀/);
 
-console.log('Game hub regression passed: original game navigation, party-mode chosung, mind-reader prediction, alibi trust market, invite sharing, clean restarts, and legacy redirect are present.');
+console.log('Game hub regression passed: vault-run one-tap collisions and specials, party-mode chosung, mind-reader prediction, alibi trust market, invite sharing, clean restarts, and legacy redirect are present.');
