@@ -80,7 +80,40 @@ try {
   await assertSucceeds(getDocs(collection(playerDb, `game_rooms/${roomId}/answers`)));
   await assertFails(updateDoc(doc(playerDb, `game_rooms/${roomId}`), { target: 'ㄴㅅ' }));
 
-  console.log('Game Firestore rules integration passed: authenticated invite-room reads, private listing, lobby-only self-join, participant-only answers, host scoring, timed answer writes, and host-only room control.');
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/MND234'), {
+    type: 'mind-reader', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
+    round: 0, maxRounds: 8, roundState: 'waiting', promptId: '', targetUid: '', usedPrompts: [],
+    createdAt: now, updatedAt: now
+  }));
+
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/ALB234'), {
+    type: 'alibi-market', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
+    round: 0, maxRounds: 3, roundState: 'waiting', phase: 'waiting', promptId: '', usedPrompts: [],
+    createdAt: now, updatedAt: now
+  }));
+
+  await assertFails(setDoc(doc(hostDb, 'game_rooms/BAD234'), {
+    type: 'copycat-party-game', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
+    round: 0, maxRounds: 3, roundState: 'waiting', createdAt: now, updatedAt: now
+  }));
+
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/ALB234/players/game-host'), {
+    uid: 'game-host', nickname: '방장', score: 0, joinOrder: 1, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/ALB234/players/game-player'), {
+    uid: 'game-player', nickname: '친구', score: 0, joinOrder: 2, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(updateDoc(doc(hostDb, 'game_rooms/ALB234'), {
+    status: 'playing', round: 1, roundState: 'open', phase: 'write', roundEndsAt: future, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/ALB234/answers/alibi-1-game-player'), {
+    uid: 'game-player', nickname: '친구', round: 1, kind: 'alibi', text: '가'.repeat(100), createdAt: now, updatedAt: now
+  }));
+  await assertFails(setDoc(doc(playerDb, 'game_rooms/ALB234/answers/alibi-too-long'), {
+    uid: 'game-player', nickname: '친구', round: 1, kind: 'alibi', text: '가'.repeat(121), createdAt: now, updatedAt: now
+  }));
+
+  console.log('Game Firestore rules integration passed: private invite-room listing, supported original game types, lobby-only self-join, participant submissions up to 120 chars, host scoring, timed writes, and host-only room control.');
 } finally {
   await testEnv.cleanup();
 }
