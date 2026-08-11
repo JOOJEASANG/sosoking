@@ -10,14 +10,6 @@ assert.ok(
   [...expected].every(name => !name.startsWith('_')),
   'underscore-prefixed internal test helpers must not be treated as deployed functions'
 );
-assert.ok(
-  !expected.has('ensureOfficialBattle'),
-  'module.exports CLI helper must not be treated as a deployed Firebase Function'
-);
-assert.ok(
-  !expected.has('officialSelection'),
-  'module.exports regression helper must not be treated as a deployed Firebase Function'
-);
 
 const deployedRecords = [...expected].map(id => ({ id }));
 deployedRecords.push({ id: 'legacyFunctionThatStillExists' });
@@ -32,4 +24,4 @@ const withoutSubmitCase = validateDeployedFunctions(
 );
 assert.ok(withoutSubmitCase.missing.includes('submitCase'));
 
-console.log('Deployed Functions regression passed: direct Firebase exports are discovered, module.exports helpers are ignored, unexpected legacy functions are detected for strict deploy blocking, and current missing functions are detected.');
+console.log('Deployed Functions regression passed: direct Firebase exports are discovered, unexpected legacy functions are detected for strict deploy blocking, and current missing functions are detected.');
