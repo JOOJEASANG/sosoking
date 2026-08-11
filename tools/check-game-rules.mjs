@@ -92,6 +92,28 @@ try {
     createdAt: now, updatedAt: now
   }));
 
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/VLT234'), {
+    type: 'vault-run', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
+    round: 0, maxRounds: 9, roundState: 'waiting', roundSeconds: 12, vaults: [], lastResults: [],
+    createdAt: now, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(hostDb, 'game_rooms/VLT234/players/game-host'), {
+    uid: 'game-host', nickname: '방장', score: 0, combo: 0, joinOrder: 1, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/VLT234/players/game-player'), {
+    uid: 'game-player', nickname: '친구', score: 0, combo: 0, joinOrder: 2, joinedAt: now, updatedAt: now
+  }));
+  await assertSucceeds(updateDoc(doc(hostDb, 'game_rooms/VLT234'), {
+    status: 'playing', round: 1, roundState: 'open', roundEndsAt: future,
+    vaults: [{ id: 'v1', kind: 'cash', value: 200 }], updatedAt: now
+  }));
+  await assertSucceeds(setDoc(doc(playerDb, 'game_rooms/VLT234/answers/1-game-player'), {
+    uid: 'game-player', nickname: '친구', round: 1, kind: 'vault', text: 'v1', createdAt: now, updatedAt: now
+  }));
+  await assertFails(setDoc(doc(outsiderDb, 'game_rooms/VLT234/answers/1-outsider'), {
+    uid: 'game-outsider', nickname: '몰래참가', round: 1, kind: 'vault', text: 'v1', createdAt: now, updatedAt: now
+  }));
+
   await assertFails(setDoc(doc(hostDb, 'game_rooms/BAD234'), {
     type: 'copycat-party-game', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
     round: 0, maxRounds: 3, roundState: 'waiting', createdAt: now, updatedAt: now
@@ -113,7 +135,7 @@ try {
     uid: 'game-player', nickname: '친구', round: 1, kind: 'alibi', text: '가'.repeat(121), createdAt: now, updatedAt: now
   }));
 
-  console.log('Game Firestore rules integration passed: private invite-room listing, supported original game types, lobby-only self-join, participant submissions up to 120 chars, host scoring, timed writes, and host-only room control.');
+  console.log('Game Firestore rules integration passed: private invite-room listing, supported game types including vault-run, lobby-only self-join, participant submissions, host scoring, timed writes, and host-only room control.');
 } finally {
   await testEnv.cleanup();
 }
