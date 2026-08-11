@@ -6,21 +6,28 @@ import {
   validateDeployedFunctions
 } from './check-deployed-functions.mjs';
 
-// 실제 운영 배포의 strict drift 검사에서 확인됐고, 현재 source export에는 없는
-// 과거 소소킹 Functions만 명시적으로 정리한다. 이 목록 밖의 예상치 못한 Function은
+// 실제 운영 배포의 strict drift 검사에서 확인됐고 현재 source export에는 없는
+// 과거 Functions만 명시적으로 정리한다. 이 목록 밖의 예상치 못한 Function은
 // 자동 삭제하지 않고 배포를 중단해 수동 검토하도록 한다.
 const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'addDripParticipation',
   'addDripReply',
+  'addDripsoComment',
   'castCommunityVote',
   'cleanupNotifications',
   'createCommunityPost',
   'createDailyAiCase',
+  'createDripsoBattle',
+  'createDripsoTopic',
+  'createDripsoTournamentBattle',
+  'createOfficialDripsoBattleNow',
   'dailyAdminAutomation',
   'dailyAiContent',
   'deleteAdminDocument',
   'deleteFeedPostDeep',
   'deleteMyAccount',
+  'deleteOwnDripsoComment',
+  'deleteOwnDripsoTopic',
   'deleteOwnPost',
   'deleteUploadedFeedImages',
   'generateAiCharacterCommentsTest',
@@ -35,6 +42,11 @@ const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'getAdminMemberList',
   'getAiCharacterSettings',
   'getDailyRealCourt',
+  'getDripsoBattleMatchup',
+  'getDripsoBattleView',
+  'getDripsoOwnership',
+  'getDripsoTournamentMatchup',
+  'getDripsoTournamentView',
   'getRegisteredMemberCount',
   'incrementPostView',
   'kakaoLogin',
@@ -42,6 +54,7 @@ const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'listAdminCollections',
   'migrateCommunityData',
   'migrateCommunityDataOnce',
+  'moderateDripsoReport',
   'onCommentCreated',
   'onCommentDeleted',
   'onCreateAiCharacterCommentsUnified',
@@ -59,14 +72,20 @@ const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'seoPost',
   'sitemapXml',
   'submitDailyRealCourtVerdict',
+  'submitDripsoBattleEntry',
+  'submitDripsoReport',
+  'submitDripsoTournamentEntry',
   'summarizeLink',
   'syncAcrosticAuthorIconOnCreate',
   'syncCommentAuthorIconOnCreate',
   'syncFeedAuthorIconOnCreate',
+  'toggleDripsoCommentLike',
   'updateCommunityPost',
   'updateNickname',
   'updateUserTitle',
-  'uploadFeedImage'
+  'uploadFeedImage',
+  'voteDripsoBattleMatchup',
+  'voteDripsoTournamentMatchup'
 ]);
 
 function classifyObsoleteFunctions(records) {
