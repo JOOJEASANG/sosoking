@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
+const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-mycase-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-trial-judge-source-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
@@ -6,24 +7,6 @@ const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260806-unified-service-nav-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260805-dripso-header-entry-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-v4-audit-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260804-dripso-official-layout-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-original-header-button-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-2';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260802-remove-daily-court-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-public-original-modal-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-dripso-topic-image-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260801-dripso-community-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-2';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-dripso-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-compact-record-card-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-final-audit-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-home-layout-route-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-header-icon-single-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-search-scope-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-judge-board-search-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
 // Cache lineage: /js/app.js?v=20260810-judge-ui-sync-1
 // Cache lineage: /js/app.js?v=20260806-unified-service-nav-1
@@ -33,61 +16,24 @@ const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
 // Cache lineage: /js/app.js?v=20260730-judge-board-search-1
 // Cache lineage: /js/app.js?v=20260730-discussion-court-1
 // Cache lineage: /js/app.js?v=20260730-final-audit-1
-// Cache lineage: /js/pages/result-comments.js?v=20260801-public-original-modal-1
-// Cache lineage: /js/pages/result-comments.js?v=20260730-discussion-court-1
-// Cache lineage: /js/pages/my-cases-game.js?v=20260729-dark-record-participation-1
-// Historical Dripso app layers are retained as markers but are no longer precached.
-// '/dripso/battle-v2.js?v=20260803-blind-duel-1'
-// '/dripso/battle-v2-pagination.js?v=20260803-blind-duel-1'
-// '/dripso/tournament-v3.js?v=20260804-final-four-1'
-// '/dripso/official-ui.js?v=20260804-official-layout-1'
-// '/dripso/battle.js?v=20260803-seven-battles-1'
-// '/dripso/battle-pagination.js?v=20260803-seven-battles-1'
-// '/dripso/dripso.css?v=20260801-community-1'
-// '/dripso/dripso.js?v=20260801-community-1'
-// '/dripso/dripso.css?v=20260731-dripso-1'
-// '/dripso/copy-helper.css?v=20260731-dripso-1'
-// '/dripso/dripso.js?v=20260731-dripso-1'
-// '/css/brand-logo.css?v=20260731-dripso-nav-1'
-// '/css/brand-logo.css?v=20260729-sans-font-1'
-// '/js/app.js?v=20260731-compact-record-card-1'
-// '/js/app.js?v=20260730-home-layout-route-1'
-// '/js/app.js?v=20260730-discussion-court-1'
-// '/js/pages/guide.js?v=20260730-configurable-limit-1'
-// '/js/pages/policy.js?v=20260729-brand-policy-1'
-// '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1'
-// '/js/pages/submit-guard.js?v=20260730-configurable-limit-1'
-// '/js/pages/submit-court.js?v=20260730-configurable-limit-1'
-// '/js/pages/board-full-content-search.js?v=20260730-search-scope-1'
-// '/js/pages/board-search-pagination.js?v=20260730-judge-board-search-1'
-// '/js/pages/board-court.js?v=20260730-discussion-court-1'
-// '/js/pages/board.js?v=20260730-discussion-court-1'
-// '/css/dripso-entry.css?v=20260805-dripso-header-entry-1'
-// '/js/dripso-entry-guard.js?v=20260805-dripso-header-entry-1'
-// '/css/dripso-entry.css?v=20260802-dripso-bottom-entry-1'
-// '/js/dripso-entry-guard.js?v=20260802-dripso-bottom-entry-1'
+// Historical Dripso assets are intentionally not precached after the game-hub migration.
+
 const APP_SHELL = [
   '/',
   '/index.html',
   '/dripso/',
   '/dripso/index.html',
-  '/dripso/dripso.css?v=20260801-topic-image-1',
-  '/dripso/dripso-navigation.css?v=20260802-dripso-navigation-1',
-  '/dripso/battle.css?v=20260804-official-layout-1',
-  '/dripso/battle-game.css?v=20260803-blind-duel-1',
-  '/dripso/tournament-v3.css?v=20260804-final-four-1',
-  '/dripso/app-v4.css?v=20260804-dripso-v4-audit-1',
-  '/dripso/service-nav-unity.css?v=20260806-unified-service-nav-1',
-  '/dripso/theme.css?v=20260806-dripso-shared-theme-1',
-  '/dripso/two-games-share.css?v=20260811-two-games-share-1',
-  '/dripso/theme.js?v=20260806-dripso-shared-theme-1',
-  '/dripso/app-v4.js?v=20260804-dripso-v4-audit-1',
-  '/dripso/two-games-share.js?v=20260811-two-games-share-2',
-  '/dripso/moderation.js?v=20260804-dripso-v4-audit-1',
+  '/game/',
+  '/game/index.html',
+  '/game/game.css?v=20260811-game-hub-1',
+  '/game/chosung/',
+  '/game/chosung/index.html',
+  '/game/chosung/chosung.css?v=20260811-chosung-mvp-1',
+  '/game/chosung/chosung.js?v=20260811-chosung-mvp-1',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260802-remove-daily-court-2',
-  '/css/dripso-entry.css?v=20260806-unified-service-nav-1',
+  '/css/game-entry.css?v=20260811-game-hub-1',
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/css/sans-font.css?v=20260729-sans-font-1',
@@ -102,8 +48,8 @@ const APP_SHELL = [
   '/js/home-copy-guard.js?v=20260802-no-real-cases-1',
   '/js/original-inline-accordion-guard.js?v=20260810-owner-original-route-2',
   '/js/original-detail-header-guard.js?v=20260810-owner-original-route-2',
+  '/js/game-entry-guard.js?v=20260811-game-hub-1',
   '/js/judge-runtime-guard.js?v=20260810-judge-runtime-2',
-  '/js/dripso-entry-guard.js?v=20260806-unified-service-nav-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
   '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1',
@@ -231,6 +177,20 @@ self.addEventListener('fetch', event => {
       event.respondWith(
         networkFirst(request, '/dripso/index.html')
           .catch(() => caches.match('/dripso/index.html'))
+      );
+      return;
+    }
+    if (url.pathname === '/game/chosung' || url.pathname.startsWith('/game/chosung/')) {
+      event.respondWith(
+        networkFirst(request, '/game/chosung/index.html')
+          .catch(() => caches.match('/game/chosung/index.html'))
+      );
+      return;
+    }
+    if (url.pathname === '/game' || url.pathname.startsWith('/game/')) {
+      event.respondWith(
+        networkFirst(request, '/game/index.html')
+          .catch(() => caches.match('/game/index.html'))
       );
       return;
     }
