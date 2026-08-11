@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
+const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-originals-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-hub-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-dripso-freeze-hotfix-1';
@@ -6,7 +7,7 @@ const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-trial-judge-source-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-owner-original-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260810-judge-ui-sync-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-private-original-fix-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260807-submit-draft-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260806-unified-service-nav-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260805-dripso-header-entry-1';
@@ -75,12 +76,20 @@ const APP_SHELL = [
   '/dripso/index.html',
   '/game/',
   '/game/index.html',
-  '/game/game.css?v=20260811-game-originals-1',
-  '/game/party.css?v=20260811-party-games-1',
+  '/game/game.css?v=20260812-quick-games-1',
+  '/game/party.css?v=20260812-quick-games-1',
   '/game/vault/',
   '/game/vault/index.html',
   '/game/vault/vault.css?v=20260812-vault-run-1',
   '/game/vault/vault.js?v=20260812-vault-run-1',
+  '/game/greed/',
+  '/game/greed/index.html',
+  '/game/greed/greed.css?v=20260812-greed-1',
+  '/game/greed/greed.js?v=20260812-greed-1',
+  '/game/caught/',
+  '/game/caught/index.html',
+  '/game/caught/caught.css?v=20260812-caught-1',
+  '/game/caught/caught.js?v=20260812-caught-1',
   '/game/chosung/',
   '/game/chosung/index.html',
   '/game/chosung/chosung.css?v=20260811-chosung-party-2',
@@ -223,6 +232,14 @@ self.addEventListener('fetch', event => {
     }
     if (url.pathname === '/game/vault' || url.pathname.startsWith('/game/vault/')) {
       event.respondWith(networkFirst(request, '/game/vault/index.html').catch(() => caches.match('/game/vault/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/greed' || url.pathname.startsWith('/game/greed/')) {
+      event.respondWith(networkFirst(request, '/game/greed/index.html').catch(() => caches.match('/game/greed/index.html')));
+      return;
+    }
+    if (url.pathname === '/game/caught' || url.pathname.startsWith('/game/caught/')) {
+      event.respondWith(networkFirst(request, '/game/caught/index.html').catch(() => caches.match('/game/caught/index.html')));
       return;
     }
     if (url.pathname === '/game/chosung' || url.pathname.startsWith('/game/chosung/')) {
