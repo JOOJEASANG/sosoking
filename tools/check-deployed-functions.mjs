@@ -2,11 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const INTERNAL_SOURCE_HELPERS = new Set([
-  'ensureOfficialBattle',
-  'officialSelection'
-]);
-
 function sourceExports() {
   const mainPath = path.resolve('functions/main.js');
   const main = fs.readFileSync(mainPath, 'utf8');
@@ -18,10 +13,9 @@ function sourceExports() {
     if (!fs.existsSync(file)) continue;
     const source = fs.readFileSync(file, 'utf8');
     // Firebase가 실제 배포 표면으로 읽는 직접 exports.foo 할당만 수집한다.
-    // 테스트·CLI용 헬퍼 이름은 파싱 방식과 관계없이 명시적으로 제외한다.
     for (const match of source.matchAll(/(^|[^\w$.])exports\.([A-Za-z_$][\w$]*)\s*=/g)) {
       const name = match[2];
-      if (!name.startsWith('_') && !INTERNAL_SOURCE_HELPERS.has(name)) names.add(name);
+      if (!name.startsWith('_')) names.add(name);
     }
   }
 
