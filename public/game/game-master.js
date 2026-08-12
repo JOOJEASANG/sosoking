@@ -15,8 +15,10 @@ function hasRoom(){return Boolean(new URL(location.href).searchParams.get('room'
 function findButton(selectors){for(const selector of selectors){const el=document.querySelector(selector);if(el instanceof HTMLButtonElement)return el;}return null;}
 function isHostView(){return Boolean(document.querySelector('#start,#reveal-round,#reveal,#next-round,#next,#show-results,#reveal-results'));}
 function currentPhase(){if(document.querySelector('#start'))return '대기실';if(findButton(REVEAL_SELECTORS))return '선택 진행';if(findButton(NEXT_SELECTORS))return '결과 공개';if(/최종|우승|게임 종료/.test(document.getElementById('game-app')?.textContent||''))return '게임 종료';return '자동 진행';}
+function setText(el,value){if(el&&el.textContent!==value)el.textContent=value;}
+function setOn(el,value){if(el&&el.classList.contains('is-on')!==value)el.classList.toggle('is-on',value);}
 function renderControl(){
-  if(!hasRoom()||!isHostView()){control?.setAttribute('hidden','');return;}
+  if(!hasRoom()||!isHostView()){if(control&&!control.hidden)control.hidden=true;return;}
   if(!control){
     control=document.createElement('aside');control.className='game-master-control';control.setAttribute('aria-label','게임마스터 자동진행');
     control.innerHTML='<div class="game-master-top"><div class="game-master-title">🎙️ 게임마스터 <span class="game-master-badge">AUTO</span></div><span class="game-master-state"></span></div><div class="game-master-actions"><button type="button" data-gm-auto></button><button type="button" data-gm-pause></button></div><div class="game-master-note">게임 시작 후 전원 제출 또는 시간 종료 시 결과를 열고, 잠시 뒤 다음 라운드로 자동 진행합니다.</div>';
@@ -24,10 +26,10 @@ function renderControl(){
     control.querySelector('[data-gm-auto]')?.addEventListener('click',()=>{auto=!auto;saveBool(AUTO_KEY,auto);if(!auto)clearScheduled();renderControl();});
     control.querySelector('[data-gm-pause]')?.addEventListener('click',()=>{paused=!paused;saveBool(PAUSE_KEY,paused);if(paused)clearScheduled();renderControl();});
   }
-  control.hidden=false;
-  const state=control.querySelector('.game-master-state');if(state)state.textContent=currentPhase();
-  const autoButton=control.querySelector('[data-gm-auto]');if(autoButton){autoButton.textContent=auto?'⏭ 자동 ON':'⏭ 자동 OFF';autoButton.classList.toggle('is-on',auto);}
-  const pauseButton=control.querySelector('[data-gm-pause]');if(pauseButton){pauseButton.textContent=paused?'▶ 계속':'⏸ 잠시멈춤';pauseButton.classList.toggle('is-on',paused);}
+  if(control.hidden)control.hidden=false;
+  setText(control.querySelector('.game-master-state'),currentPhase());
+  const autoButton=control.querySelector('[data-gm-auto]');setText(autoButton,auto?'⏭ 자동 ON':'⏭ 자동 OFF');setOn(autoButton,auto);
+  const pauseButton=control.querySelector('[data-gm-pause]');setText(pauseButton,paused?'▶ 계속':'⏸ 잠시멈춤');setOn(pauseButton,paused);
 }
 function clearScheduled(){if(scheduledTimer)clearTimeout(scheduledTimer);scheduledTimer=null;scheduledKey='';}
 function scheduleClick(button,delay,key){
