@@ -80,7 +80,8 @@ service cloud.firestore {
         (data.type == 'alibi-market' && data.maxRounds == 3) ||
         (data.type == 'vault-run' && data.maxRounds == 9) ||
         (data.type == 'greed-stairs' && data.maxRounds == 5) ||
-        (data.type == 'unique-low' && data.maxRounds == 8)
+        (data.type == 'unique-low' && data.maxRounds == 8) ||
+        (data.type == 'sosoking-world' && data.maxRounds == 24)
       );
     }
 
