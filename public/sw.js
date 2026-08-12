@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260812-fun-pack-1';
+const CACHE_NAME = 'sosoking-app-v20260812-game-guide-polish-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-fun-pack-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-theme-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
@@ -59,8 +60,8 @@ const APP_SHELL = [
   '/game/fun-pack.js?v=20260812-fun-pack-1',
   '/game/fun-room-reload.js?v=20260812-fun-pack-1',
   '/game/fun-reset.js?v=20260812-fun-pack-1',
-  '/game/member-profile.css?v=20260812-game-member-1',
-  '/game/member-profile.js?v=20260812-game-member-1',
+  '/game/member-profile.css?v=20260812-game-guide-polish-1',
+  '/game/member-profile.js?v=20260812-game-guide-polish-1',
   '/game/vault/',
   '/game/vault/index.html',
   '/game/vault/vault.css?v=20260812-vault-run-1',
