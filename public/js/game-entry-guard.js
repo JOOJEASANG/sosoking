@@ -47,7 +47,7 @@ function buildServiceHub() {
   title.textContent = '한 계정으로 판결소와 게임소를 이용합니다';
 
   const description = document.createElement('p');
-  description.textContent = '판결 기록을 관리하고 게임소에서 가족·친구와 함께 즐겨보세요.';
+  description.textContent = '판결 기록을 관리하고 게임소에서 친구·연인·지인과 함께 즐겨보세요.';
 
   heading.append(eyebrow, title, description);
 
@@ -65,7 +65,7 @@ function buildServiceHub() {
       href: '/game/',
       icon: '🎮',
       title: '게임소',
-      description: '가족·친구와 같이 놀기',
+      description: '친구·연인·지인과 같이 놀기',
       label: '소소킹 게임소로 이동'
     })
   );

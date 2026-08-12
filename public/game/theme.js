@@ -62,8 +62,31 @@ function mountToggle() {
   updateButton(button);
 }
 
+function removeCourtBottomNav() {
+  document.getElementById('bottom-nav')?.remove();
+}
+
+function normalizeGameAudienceCopy() {
+  document.querySelectorAll('.kicker').forEach(node => {
+    if (node.textContent?.trim() === 'SOSOKING FAMILY GAME') node.textContent = 'SOSOKING PARTY GAME';
+  });
+  document.querySelectorAll('input[placeholder]').forEach(input => {
+    if (input.placeholder === '예: 아빠') input.placeholder = '예: 초성왕';
+    if (input.placeholder === '예: 엄마') input.placeholder = '예: 폭탄맨';
+  });
+}
+
+function normalizeGameSurface() {
+  removeCourtBottomNav();
+  normalizeGameAudienceCopy();
+}
+
 applyTheme();
 mountToggle();
+normalizeGameSurface();
+
+const gameSurfaceObserver = new MutationObserver(normalizeGameSurface);
+gameSurfaceObserver.observe(document.body, { childList: true, subtree: true });
 
 window.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change', () => {
   if (storedTheme() === 'system') applyTheme('system');
@@ -71,3 +94,4 @@ window.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change'
 window.addEventListener('storage', event => {
   if (event.key === STORAGE_KEY) applyTheme();
 });
+window.addEventListener('pagehide', () => gameSurfaceObserver.disconnect(), { once: true });
