@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260812-auto-gm-world-1';
+const CACHE_NAME = 'sosoking-app-v20260812-world-v3-loop-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-auto-gm-world-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-surface-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-guide-polish-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-fun-pack-1';
@@ -70,6 +71,10 @@ const APP_SHELL = [
   '/game/world/index.html',
   '/game/world/world.css?v=20260812-world-1',
   '/game/world/world.js?v=20260812-world-1',
+  '/game/world/world-v2.css?v=20260812-world-v2-1',
+  '/game/world/world-v2.js?v=20260812-world-v2-1',
+  '/game/world/world-v3.css?v=20260812-world-v3-loop-1',
+  '/game/world/world-v3.js?v=20260812-world-v3-loop-1',
   '/game/vault/',
   '/game/vault/index.html',
   '/game/vault/vault.css?v=20260812-vault-run-1',
