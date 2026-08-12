@@ -16,7 +16,8 @@ const shareButton = document.getElementById('share-room');
 const toast = document.getElementById('toast');
 
 const MAX_PLAYERS = 8;
-const MAX_SCHEMA_ROUNDS = 48;
+const ROOM_SCHEMA_ROUNDS = 24;
+const MAX_TOTAL_TURNS = 48;
 const ROLL_SECONDS = 18;
 const LANDING_SECONDS = 5;
 const EVENT_SECONDS = 24;
@@ -120,8 +121,8 @@ function isHost() {
 
 function turnLimit() {
   if (Number(room?.totalTurns) > 0) return Number(room.totalTurns);
-  if (players.length >= 2) return clamp(players.length * 7, 18, MAX_SCHEMA_ROUNDS);
-  return 24;
+  if (players.length >= 2) return clamp(players.length * 7, 18, MAX_TOTAL_TURNS);
+  return ROOM_SCHEMA_ROUNDS;
 }
 
 function isChaos() {
@@ -387,7 +388,7 @@ async function createRoom(nicknameValue) {
       hostUid: currentUid,
       maxPlayers: MAX_PLAYERS,
       round: 0,
-      maxRounds: MAX_SCHEMA_ROUNDS,
+      maxRounds: ROOM_SCHEMA_ROUNDS,
       totalTurns: 0,
       pace: 'standard',
       roundState: 'waiting',
@@ -514,7 +515,7 @@ function renderCurrent() {
 }
 
 function estimatedTurns() {
-  const standard = clamp(players.length * 7, 18, MAX_SCHEMA_ROUNDS);
+  const standard = clamp(players.length * 7, 18, MAX_TOTAL_TURNS);
   const quick = clamp(players.length * 4, 12, 32);
   return { standard, quick };
 }
@@ -556,7 +557,7 @@ async function startGame() {
   const first = orderedPlayers()[0];
   const totalTurns = room?.pace === 'quick'
     ? clamp(players.length * 4, 12, 32)
-    : clamp(players.length * 7, 18, MAX_SCHEMA_ROUNDS);
+    : clamp(players.length * 7, 18, MAX_TOTAL_TURNS);
   const now = Timestamp.now();
   const batch = writeBatch(db);
   players.forEach(player => batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
@@ -792,16 +793,10 @@ function startTimer() {
   void driveHost(false);
 }
 
-function isImmediateEvent(kind) {
-  return ['coin','tax','steal','crown','lucky','revenge','chaos','throne','start'].includes(kind);
-}
-
 function eventDuration(kind) {
   if (kind === 'chosung') return CHOSUNG_SECONDS;
   if (['vault','caught','greed','minority'].includes(kind)) return EVENT_SECONDS;
-  if (kind === 'property') {
-    return room?.ownedTiles?.[String(room.eventTile)] ? INSTANT_EVENT_SECONDS : EVENT_SECONDS;
-  }
+  if (kind === 'property') return room?.ownedTiles?.[String(room.eventTile)] ? INSTANT_EVENT_SECONDS : EVENT_SECONDS;
   return INSTANT_EVENT_SECONDS;
 }
 
@@ -891,12 +886,7 @@ function addDelta(map, uid, delta) {
 }
 
 function resultRow(uid, delta, label) {
-  return {
-    uid,
-    nickname: playerByUid(uid)?.nickname || '플레이어',
-    delta,
-    label
-  };
+  return { uid, nickname: playerByUid(uid)?.nickname || '플레이어', delta, label };
 }
 
 async function resolveEvent() {
@@ -1110,10 +1100,7 @@ async function resolveEvent() {
   const batch = writeBatch(db);
   players.forEach(player => {
     const nextScore = Math.max(0, Number(player.score || 0) + (deltas.get(player.uid) || 0));
-    batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
-      score: nextScore,
-      updatedAt: now
-    });
+    batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score: nextScore, updatedAt: now });
   });
   batch.update(doc(db, 'game_rooms', roomId), {
     roundState: 'reveal',
@@ -1141,10 +1128,7 @@ async function nextTurn() {
   const now = Timestamp.now();
   const batch = writeBatch(db);
   if (next && crownBonus) {
-    batch.update(doc(db, 'game_rooms', roomId, 'players', next.uid), {
-      score: Number(next.score || 0) + crownBonus,
-      updatedAt: now
-    });
+    batch.update(doc(db, 'game_rooms', roomId, 'players', next.uid), { score: Number(next.score || 0) + crownBonus, updatedAt: now });
   }
   batch.update(doc(db, 'game_rooms', roomId), {
     round: Number(room.round) + 1,
@@ -1171,12 +1155,7 @@ async function finishGame() {
   const batch = writeBatch(db);
   if (room.crownUid) {
     const crowned = playerByUid(room.crownUid);
-    if (crowned) {
-      batch.update(doc(db, 'game_rooms', roomId, 'players', crowned.uid), {
-        score: Number(crowned.score || 0) + CROWN_FINAL_BONUS,
-        updatedAt: now
-      });
-    }
+    if (crowned) batch.update(doc(db, 'game_rooms', roomId, 'players', crowned.uid), { score: Number(crowned.score || 0) + CROWN_FINAL_BONUS, updatedAt: now });
   }
   batch.update(doc(db, 'game_rooms', roomId), {
     status: 'finished',
@@ -1193,14 +1172,10 @@ function renderFinished() {
   const ranked = rankedPlayers();
   const winner = ranked[0];
   app.innerHTML = `<section class="panel world-final">
-    <div class="crown-big">👑</div>
-    <span class="kicker">SOSOKING WORLD v2 FINAL</span>
-    <h1>${esc(winner?.nickname || '플레이어')}</h1>
-    <p class="lead">오늘의 소소킹 월드 챔피언!</p>
+    <div class="crown-big">👑</div><span class="kicker">SOSOKING WORLD v2 FINAL</span><h1>${esc(winner?.nickname || '플레이어')}</h1><p class="lead">오늘의 소소킹 월드 챔피언!</p>
     <div class="world-now-card result"><b>최종 계산</b><span>왕관 보유자에게 마지막 ${CROWN_FINAL_BONUS}C 보너스까지 반영했습니다.</span></div>
     <ul class="world-final-list">${ranked.map((player, index) => `<li><span>${index + 1}. ${player.uid === room.crownUid ? '👑 ' : ''}${esc(player.nickname)}</span><strong>${Number(player.score || 0).toLocaleString()}C</strong></li>`).join('')}</ul>
-    ${isHost() ? '<div class="button-row"><button class="primary-button" id="restart-world" type="button">같은 멤버로 다시 시작</button></div>' : ''}
-    <div class="button-row"><a class="secondary-button" href="/game/">게임소로 돌아가기</a></div>
+    ${isHost() ? '<div class="button-row"><button class="primary-button" id="restart-world" type="button">같은 멤버로 다시 시작</button></div>' : ''}<div class="button-row"><a class="secondary-button" href="/game/">게임소로 돌아가기</a></div>
   </section>`;
   document.getElementById('restart-world')?.addEventListener('click', restartWorld);
 }
@@ -1211,11 +1186,7 @@ async function restartWorld() {
   const now = Timestamp.now();
   const batch = writeBatch(db);
   answerSnapshot.docs.forEach(answer => batch.delete(answer.ref));
-  players.forEach(player => batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
-    score: 0,
-    position: 0,
-    updatedAt: now
-  }));
+  players.forEach(player => batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score: 0, position: 0, updatedAt: now }));
   batch.update(doc(db, 'game_rooms', roomId), {
     status: 'lobby',
     round: 0,
