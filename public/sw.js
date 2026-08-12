@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260812-game-guide-polish-1';
+const CACHE_NAME = 'sosoking-app-v20260812-game-surface-cleanup-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-guide-polish-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-fun-pack-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-theme-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
