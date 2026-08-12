@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260812-game-surface-cleanup-1';
+const CACHE_NAME = 'sosoking-app-v20260812-auto-gm-world-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-surface-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-guide-polish-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-fun-pack-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-theme-cleanup-1';
@@ -20,33 +21,6 @@ const CACHE_NAME = 'sosoking-app-v20260812-game-surface-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-compact-record-card-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-final-audit-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-home-layout-route-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-header-icon-single-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-search-scope-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-judge-board-search-1';
-// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
-// Cache lineage: /js/app.js?v=20260810-judge-ui-sync-1
-// Cache lineage: /js/app.js?v=20260806-unified-service-nav-1
-// Cache lineage: /js/app.js?v=20260731-compact-record-card-1
-// Cache lineage: /js/app.js?v=20260730-home-layout-route-1
-// Cache lineage: /js/app.js?v=20260730-header-icon-single-1
-// Cache lineage: /js/app.js?v=20260730-search-scope-1
-// Cache lineage: /js/app.js?v=20260730-judge-board-search-1
-// Cache lineage: /js/app.js?v=20260730-discussion-court-1
-// Cache lineage: /js/app.js?v=20260730-final-audit-1
-// Cache lineage: /js/pages/result-comments.js?v=20260801-public-original-modal-1
-// Cache lineage: /js/pages/result-comments.js?v=20260730-discussion-court-1
-// Cache lineage: /js/pages/my-cases-game.js?v=20260729-dark-record-participation-1
-// Cache lineage: /js/pages/guide.js?v=20260730-configurable-limit-1
-// Cache lineage: /js/pages/policy.js?v=20260729-brand-policy-1
-// Cache lineage: /js/pages/policy-configurable-limit.js?v=20260730-final-audit-1
-// Cache lineage: /js/pages/submit-guard.js?v=20260730-configurable-limit-1
-// Cache lineage: /js/pages/submit-court.js?v=20260730-configurable-limit-1
-// Cache lineage: /js/pages/board-full-content-search.js?v=20260730-search-scope-1
-// Cache lineage: /js/pages/board-search-pagination.js?v=20260730-judge-board-search-1
-// Cache lineage: /js/pages/board-court.js?v=20260730-discussion-court-1
-// Cache lineage: /js/pages/board.js?v=20260730-discussion-court-1
-// Cache lineage: /css/brand-logo.css?v=20260729-sans-font-1
 
 const APP_SHELL = [
   '/',
@@ -63,6 +37,12 @@ const APP_SHELL = [
   '/game/fun-reset.js?v=20260812-fun-pack-1',
   '/game/member-profile.css?v=20260812-game-guide-polish-1',
   '/game/member-profile.js?v=20260812-game-guide-polish-1',
+  '/game/game-master.css?v=20260812-auto-gm-world-1',
+  '/game/game-master.js?v=20260812-auto-gm-world-1',
+  '/game/world/',
+  '/game/world/index.html',
+  '/game/world/world.css?v=20260812-world-1',
+  '/game/world/world.js?v=20260812-world-1',
   '/game/vault/',
   '/game/vault/index.html',
   '/game/vault/vault.css?v=20260812-vault-run-1',
@@ -147,10 +127,7 @@ const APP_SHELL = [
 const STATIC_ASSET = /\.(?:js|css|svg|png|webp|jpg|jpeg|woff2)$/i;
 const NETWORK_FIRST = /\.(?:json|webmanifest)$/i;
 
-function appShellUrls() {
-  return new Set(APP_SHELL.map(url => new URL(url, self.location.origin).href));
-}
-
+function appShellUrls() { return new Set(APP_SHELL.map(url => new URL(url, self.location.origin).href)); }
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
@@ -160,7 +137,6 @@ self.addEventListener('install', event => {
   })());
   self.skipWaiting();
 });
-
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
@@ -172,85 +148,38 @@ self.addEventListener('activate', event => {
     await self.clients.claim();
   })());
 });
-
 async function putCache(request, response) {
-  try {
-    if (!response?.ok || response.type === 'opaque') return;
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(request, response.clone());
-  } catch (error) {
-    console.warn('service worker cache write skipped:', error);
-  }
+  try { if (!response?.ok || response.type === 'opaque') return; const cache = await caches.open(CACHE_NAME); await cache.put(request, response.clone()); }
+  catch (error) { console.warn('service worker cache write skipped:', error); }
 }
-
 async function networkFirst(request, fallbackRequest = request) {
-  try {
-    const response = await fetch(request);
-    await putCache(request, response);
-    return response;
-  } catch (error) {
-    const cached = await caches.match(request) || await caches.match(fallbackRequest);
-    if (cached) return cached;
-    throw error;
-  }
+  try { const response = await fetch(request); await putCache(request, response); return response; }
+  catch (error) { const cached = await caches.match(request) || await caches.match(fallbackRequest); if (cached) return cached; throw error; }
 }
-
 async function staleWhileRevalidate(request) {
   const cached = await caches.match(request);
   const network = fetch(request).then(async response => { await putCache(request, response); return response; }).catch(() => null);
   if (cached) { void network; return cached; }
-  const response = await network;
-  if (response) return response;
-  throw new Error('Network and cache unavailable');
+  const response = await network; if (response) return response; throw new Error('Network and cache unavailable');
 }
-
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/__/auth/')) return;
-
   if (request.mode === 'navigate') {
-    if (url.pathname === '/game/vault' || url.pathname.startsWith('/game/vault/')) {
-      event.respondWith(networkFirst(request, '/game/vault/index.html').catch(() => caches.match('/game/vault/index.html')));
-      return;
-    }
-    if (url.pathname === '/game/greed' || url.pathname.startsWith('/game/greed/')) {
-      event.respondWith(networkFirst(request, '/game/greed/index.html').catch(() => caches.match('/game/greed/index.html')));
-      return;
-    }
-    if (url.pathname === '/game/caught' || url.pathname.startsWith('/game/caught/')) {
-      event.respondWith(networkFirst(request, '/game/caught/index.html').catch(() => caches.match('/game/caught/index.html')));
-      return;
-    }
-    if (url.pathname === '/game/chosung' || url.pathname.startsWith('/game/chosung/')) {
-      event.respondWith(networkFirst(request, '/game/chosung/index.html').catch(() => caches.match('/game/chosung/index.html')));
-      return;
-    }
-    if (url.pathname === '/game/mind' || url.pathname.startsWith('/game/mind/')) {
-      event.respondWith(networkFirst(request, '/game/mind/index.html').catch(() => caches.match('/game/mind/index.html')));
-      return;
-    }
-    if (url.pathname === '/game/alibi' || url.pathname.startsWith('/game/alibi/')) {
-      event.respondWith(networkFirst(request, '/game/alibi/index.html').catch(() => caches.match('/game/alibi/index.html')));
-      return;
-    }
-    if (url.pathname === '/game' || url.pathname.startsWith('/game/')) {
-      event.respondWith(networkFirst(request, '/game/index.html').catch(() => caches.match('/game/index.html')));
-      return;
-    }
-    if (url.pathname.startsWith('/result/')) {
-      event.respondWith(fetch(request));
-      return;
-    }
-    event.respondWith(networkFirst(request, '/index.html').catch(() => caches.match('/')));
-    return;
+    if (url.pathname === '/game/world' || url.pathname.startsWith('/game/world/')) { event.respondWith(networkFirst(request, '/game/world/index.html').catch(() => caches.match('/game/world/index.html'))); return; }
+    if (url.pathname === '/game/vault' || url.pathname.startsWith('/game/vault/')) { event.respondWith(networkFirst(request, '/game/vault/index.html').catch(() => caches.match('/game/vault/index.html'))); return; }
+    if (url.pathname === '/game/greed' || url.pathname.startsWith('/game/greed/')) { event.respondWith(networkFirst(request, '/game/greed/index.html').catch(() => caches.match('/game/greed/index.html'))); return; }
+    if (url.pathname === '/game/caught' || url.pathname.startsWith('/game/caught/')) { event.respondWith(networkFirst(request, '/game/caught/index.html').catch(() => caches.match('/game/caught/index.html'))); return; }
+    if (url.pathname === '/game/chosung' || url.pathname.startsWith('/game/chosung/')) { event.respondWith(networkFirst(request, '/game/chosung/index.html').catch(() => caches.match('/game/chosung/index.html'))); return; }
+    if (url.pathname === '/game/mind' || url.pathname.startsWith('/game/mind/')) { event.respondWith(networkFirst(request, '/game/mind/index.html').catch(() => caches.match('/game/mind/index.html'))); return; }
+    if (url.pathname === '/game/alibi' || url.pathname.startsWith('/game/alibi/')) { event.respondWith(networkFirst(request, '/game/alibi/index.html').catch(() => caches.match('/game/alibi/index.html'))); return; }
+    if (url.pathname === '/game' || url.pathname.startsWith('/game/')) { event.respondWith(networkFirst(request, '/game/index.html').catch(() => caches.match('/game/index.html'))); return; }
+    if (url.pathname.startsWith('/result/')) { event.respondWith(fetch(request)); return; }
+    event.respondWith(networkFirst(request, '/index.html').catch(() => caches.match('/'))); return;
   }
-
-  if (STATIC_ASSET.test(url.pathname)) {
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
+  if (STATIC_ASSET.test(url.pathname)) { event.respondWith(staleWhileRevalidate(request)); return; }
   if (NETWORK_FIRST.test(url.pathname)) event.respondWith(networkFirst(request));
 });
