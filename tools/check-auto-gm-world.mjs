@@ -35,9 +35,9 @@ assert.match(gm,/data-number/);
 assert.match(gm,/자동 ON/);
 assert.match(gmCss,/game-master-control/);
 
-assert.match(worldHome,/게임 이용설명/);
 assert.match(worldHome,/world\.js\?v=20260812-world-1/);
 assert.match(worldCss,/world-board/);
+assert.match(world,/게임 이용설명/);
 assert.match(world,/MAX_TURNS=24/);
 assert.match(world,/TILES=\[/);
 assert.match(world,/kind:'vault'/);
