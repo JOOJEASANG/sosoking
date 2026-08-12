@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260812-game-theme-cleanup-1';
+const CACHE_NAME = 'sosoking-app-v20260812-fun-pack-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-theme-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-quick-games-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-vault-run-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260811-game-originals-1';
@@ -54,6 +55,10 @@ const APP_SHELL = [
   '/game/party.css?v=20260812-quick-games-1',
   '/game/theme.css?v=20260812-game-theme-1',
   '/game/theme.js?v=20260812-game-theme-1',
+  '/game/fun-pack.css?v=20260812-fun-pack-1',
+  '/game/fun-pack.js?v=20260812-fun-pack-1',
+  '/game/fun-room-reload.js?v=20260812-fun-pack-1',
+  '/game/fun-reset.js?v=20260812-fun-pack-1',
   '/game/member-profile.css?v=20260812-game-member-1',
   '/game/member-profile.js?v=20260812-game-member-1',
   '/game/vault/',
@@ -68,6 +73,7 @@ const APP_SHELL = [
   '/game/caught/index.html',
   '/game/caught/caught.css?v=20260812-caught-1',
   '/game/caught/caught.js?v=20260812-caught-1',
+  '/game/caught/fun-decoy-guard.js?v=20260812-fun-pack-1',
   '/game/chosung/',
   '/game/chosung/index.html',
   '/game/chosung/chosung.css?v=20260811-chosung-party-2',
