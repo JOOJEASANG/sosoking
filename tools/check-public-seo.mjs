@@ -100,7 +100,7 @@ if (!serviceWorker.includes("url.pathname.startsWith('/result/')")
   || !serviceWorker.includes('event.respondWith(fetch(request))')) {
   errors.push('public/sw.js: server-rendered public result navigations are intercepted by the app shell');
 }
-if (!serviceWorker.includes('await putCache(request, response)')) {
+if (!/await\s+putCache\(request,\s*response\)/.test(serviceWorker)) {
   errors.push('public/sw.js: network navigation responses can overwrite the index fallback cache');
 }
 
