@@ -1,5 +1,5 @@
 import { auth, db, functions, initAuth } from '/js/firebase.js?v=20260729-auth-session-1';
-import { collection, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { collection, doc, getDoc, onSnapshot, Timestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
 const getGamePlayerProfiles = httpsCallable(functions, 'getGamePlayerProfiles');
@@ -9,7 +9,9 @@ let safeProfiles = {};
 let activeRoomId = '';
 let lastPlayerSignature = '';
 let profileFetchPending = false;
+let timeBalancePending = false;
 let unsubscribePlayers = null;
+let unsubscribeRoomBalance = null;
 
 function escapeText(value) {
   return String(value ?? '')
@@ -30,6 +32,57 @@ function currentRoomId() {
     .toUpperCase()
     .replace(/[^A-Z2-9]/g, '')
     .slice(0, 6);
+}
+
+function isChosungPage() {
+  return /^\/game\/chosung(?:\/|$)/.test(location.pathname);
+}
+
+function chosungDesiredSeconds(data = {}) {
+  if (data.funRule === 'ultra') return 12;
+  return {
+    classic: 25,
+    lightning: 15,
+    double: 22,
+    royal: 20
+  }[data.roundMode] || 25;
+}
+
+async function balanceChosungTimer(snapshot) {
+  if (!isChosungPage() || !snapshot?.exists() || !auth.currentUser || timeBalancePending) return;
+  const data = snapshot.data() || {};
+  if (data.type !== 'chosung-bomb' || data.status !== 'playing' || data.roundState !== 'open') return;
+  if (data.hostUid !== auth.currentUser.uid) return;
+
+  const seconds = chosungDesiredSeconds(data);
+  const key = `${Number(data.round || 0)}:${data.roundMode || 'classic'}:${data.funRuleKey || data.funRule || 'base'}:${seconds}`;
+  if (data.timeBalanceKey === key && Number(data.roundSeconds || 0) === seconds) return;
+
+  timeBalancePending = true;
+  try {
+    await updateDoc(doc(db, 'game_rooms', activeRoomId), {
+      roundSeconds: seconds,
+      roundEndsAt: Timestamp.fromMillis(Date.now() + seconds * 1000),
+      timeBalanceKey: key,
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    console.warn('chosung timer balance skipped:', error?.code || error);
+  } finally {
+    timeBalancePending = false;
+  }
+}
+
+function enhanceChosungTimingCopy() {
+  if (!isChosungPage()) return;
+  document.querySelectorAll('.rule-strip span, .round-help, .fun-event').forEach(node => {
+    const before = String(node.textContent || '');
+    const after = before
+      .replace('번개 12초', '번개 15초')
+      .replace('12초 안에 떠올려야 합니다.', '15초 안에 떠올려야 합니다.')
+      .replace('제한시간이 8초로 줄어듭니다.', '제한시간이 12초로 줄어듭니다.');
+    if (after !== before) node.textContent = after;
+  });
 }
 
 function hashCode(text) {
@@ -178,7 +231,9 @@ function ensureRoomWatch() {
   if (nextRoomId === activeRoomId) return;
 
   unsubscribePlayers?.();
+  unsubscribeRoomBalance?.();
   unsubscribePlayers = null;
+  unsubscribeRoomBalance = null;
   activeRoomId = nextRoomId;
   roomPlayers = [];
   safeProfiles = {};
@@ -194,6 +249,12 @@ function ensureRoomWatch() {
     }
     enhanceDom();
   }, error => console.warn('game player profile watch skipped:', error?.code || error));
+
+  if (isChosungPage()) {
+    unsubscribeRoomBalance = onSnapshot(doc(db, 'game_rooms', activeRoomId), snap => {
+      void balanceChosungTimer(snap);
+    }, error => console.warn('chosung timer watch skipped:', error?.code || error));
+  }
 }
 
 function enhanceDom() {
@@ -202,6 +263,7 @@ function enhanceDom() {
   enhanceJoinForms();
   enhanceRoomCodeLabels();
   decoratePlayerRows();
+  enhanceChosungTimingCopy();
 }
 
 async function boot() {
@@ -209,7 +271,10 @@ async function boot() {
   enhanceDom();
   const observer = new MutationObserver(() => enhanceDom());
   observer.observe(document.getElementById('game-app') || document.body, { childList: true, subtree: true });
-  window.addEventListener('pagehide', () => unsubscribePlayers?.(), { once: true });
+  window.addEventListener('pagehide', () => {
+    unsubscribePlayers?.();
+    unsubscribeRoomBalance?.();
+  }, { once: true });
 }
 
 void boot();
