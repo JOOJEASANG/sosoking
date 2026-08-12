@@ -6,6 +6,7 @@ const read = file => fs.readFileSync(file, 'utf8');
 const fun = read('public/game/fun-pack.js');
 const reset = read('public/game/fun-reset.js');
 const reconnect = read('public/game/fun-room-reload.js');
+const memberProfile = read('public/game/member-profile.js');
 const css = read('public/game/fun-pack.css');
 const home = read('public/game/index.html');
 const vaultPage = read('public/game/vault/index.html');
@@ -14,7 +15,7 @@ const caughtPage = read('public/game/caught/index.html');
 const chosungPage = read('public/game/chosung/index.html');
 const pages = [vaultPage, greedPage, caughtPage, chosungPage];
 
-for (const file of ['public/game/fun-pack.js', 'public/game/fun-reset.js', 'public/game/fun-room-reload.js']) {
+for (const file of ['public/game/fun-pack.js', 'public/game/fun-reset.js', 'public/game/fun-room-reload.js', 'public/game/member-profile.js']) {
   const syntax = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
   assert.equal(syntax.status, 0, syntax.stderr || syntax.stdout || `${file} syntax check failed`);
 }
@@ -60,6 +61,20 @@ for (const required of [
 }
 
 for (const required of [
+  'classic: 25',
+  'lightning: 15',
+  'double: 22',
+  'royal: 20',
+  "data.funRule === 'ultra'",
+  'return 12',
+  'timeBalanceKey',
+  '번개 15초',
+  '제한시간이 12초로 줄어듭니다.'
+]) {
+  assert.ok(memberProfile.includes(required), `chosung timing balance missing: ${required}`);
+}
+
+for (const required of [
   '.fun-sound-toggle',
   '.fun-card.mission',
   '.fun-power-row',
@@ -76,4 +91,4 @@ assert.match(home, /랜덤 계단 이벤트와 탈락 후 생존자 베팅/);
 assert.match(home, /가짜 보너스·잭팟·유령카드/);
 assert.match(home, /초고속·스나이퍼·금지모음·잭팟 폭탄/);
 
-console.log('Game fun pack validation passed: audio, haptics, missions, powers, new-room reconnect, replay recharge, random events, betting, awards, and four-game series are wired to all live games.');
+console.log('Game fun pack validation passed: audio, haptics, missions, powers, new-room reconnect, replay recharge, relaxed Chosung timers, random events, betting, awards, and four-game series are wired to all live games.');
