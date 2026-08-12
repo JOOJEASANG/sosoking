@@ -21,6 +21,8 @@ const CACHE_NAME = 'sosoking-app-v20260812-auto-gm-world-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-private-first-publication-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260731-compact-record-card-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-final-audit-1';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-discussion-court-1';
+// Cache lineage: /js/app.js?v=20260730-discussion-court-1
 
 const APP_SHELL = [
   '/',
