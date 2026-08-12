@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0d1320">
   <title>소소킹 게임소</title>
-  <meta name="description" content="친한 사람과 링크로 만나 클릭하고 고르며 바로 즐기는 소소킹 퀵게임입니다.">
+  <meta name="description" content="친한 사람과 링크로 만나 소소킹 월드와 클릭형 퀵게임을 바로 즐기는 파티게임 공간입니다.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="소소킹 게임소 🎮">
-  <meta property="og:description" content="설치 없이 링크로 초대하고 친구들과 바로 한판 즐겨보세요.">
+  <meta property="og:description" content="설치 없이 링크로 초대하고 소소킹 월드와 퀵게임을 즐겨보세요.">
   <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
   <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,72 +20,26 @@
 </head>
 <body>
   <header class="game-header">
-    <a class="game-brand" href="/game/" aria-label="게임소 홈">
-      <span class="game-brand-mark" aria-hidden="true">🎮</span>
-      <span><strong>게임소</strong><small>소소킹 같이 놀기</small></span>
-    </a>
+    <a class="game-brand" href="/game/" aria-label="게임소 홈"><span class="game-brand-mark" aria-hidden="true">🎮</span><span><strong>게임소</strong><small>소소킹 같이 놀기</small></span></a>
     <a class="court-link" href="/#/">⚖️ 판결소</a>
   </header>
-
   <main class="game-shell">
-    <section class="hero">
-      <span class="eyebrow">SOSOKING QUICK GAME</span>
-      <h1>누르고 고르고,<br>바로 한 판 더</h1>
-      <p>복잡한 설명 없이 방을 만들고 링크로 초대하세요. 클릭·선택·짧은 입력만으로 결과가 바로 나오는 2~8인 퀵게임입니다.</p>
+    <section class="hero"><span class="eyebrow">SOSOKING PARTY PLAY</span><h1>한 번 시작하면,<br>게임마스터가 알아서</h1><p>방을 만들고 링크로 초대하세요. 퀵게임은 시작 버튼 한 번 뒤 자동 진행되고, 소소킹 월드에서는 주사위·사건·미니게임·왕관 쟁탈전이 한 판으로 이어집니다.</p></section>
+
+    <section class="featured-game" aria-labelledby="world-title">
+      <div class="featured-copy"><span class="status-badge">NEW · 메인 파티게임</span><h2 id="world-title">🎲 소소킹 월드</h2><p>24칸 보드에서 코인과 왕관을 모으고 영역을 점령하세요. 금고런·딱걸렸어·욕심계단·초성 폭탄이 사건칸에서 즉석 미니게임으로 터집니다.</p><div class="game-meta"><span>👥 2~8명</span><span>🎙️ 자동 게임마스터</span><span>⏱ 약 15~25분</span></div></div>
+      <a class="primary-button" href="/game/world/">소소킹 월드 시작</a>
     </section>
 
-    <section class="featured-game" aria-labelledby="featured-title">
-      <div class="featured-copy">
-        <span class="status-badge">추천 · 한 번 클릭 심리전</span>
-        <h2 id="featured-title">💰 금고런</h2>
-        <p>12초 안에 금고 하나만 선택. 혼자 고르면 코인을 먹고, 같은 금고를 고르면 함께 폭발합니다. 보험권·레이더·현상금까지 추가됐습니다.</p>
-        <div class="game-meta"><span>👥 2~8명</span><span>☝️ 라운드당 1클릭</span><span>⏱ 약 3분</span></div>
-      </div>
-      <a class="primary-button" href="/game/vault/">금고런 시작</a>
+    <section class="game-list" aria-labelledby="quick-title"><div class="section-heading"><span>QUICK PLAY</span><h2 id="quick-title">짧게 바로 플레이</h2></div>
+      <a class="game-card game-card-link" href="/game/vault/"><div class="game-icon">💰</div><div><strong>금고런</strong><p>금고 하나를 골라 남과 겹치지 않으면 획득. 보험·레이더·특수금고와 자동 진행.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
+      <a class="game-card game-card-link" href="/game/greed/"><div class="game-icon">🧨</div><div><strong>욕심계단</strong><p>먹고 나갈까, 한 칸 더 갈까. 랜덤 계단과 생존자 베팅, 자동 결과 공개.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
+      <a class="game-card game-card-link" href="/game/caught/"><div class="game-icon">🎯</div><div><strong>딱걸렸어</strong><p>1~12 중 하나만 선택. 중복을 피하고 가장 작은 단독 숫자를 노리는 눈치싸움.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
+      <a class="game-card game-card-link" href="/game/chosung/"><div class="game-icon">💣</div><div><strong>초성 폭탄</strong><p>2~4글자 랜덤 초성. 특수 폭탄과 중복방패, 시간 종료 후 자동 채점.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
     </section>
 
-    <section class="game-list" aria-labelledby="quick-title">
-      <div class="section-heading">
-        <span>QUICK PLAY</span>
-        <h2 id="quick-title">지금 바로 플레이</h2>
-      </div>
-
-      <a class="game-card game-card-link" href="/game/greed/">
-        <div class="game-icon" aria-hidden="true">🧨</div>
-        <div><strong>욕심계단</strong><p>먹고 나갈까, 한 칸 더 갈까. 랜덤 계단 이벤트와 탈락 후 생존자 베팅까지 추가된 욕심 게임.</p></div>
-        <span class="coming-label live-label">2~8명 · 플레이</span>
-      </a>
-
-      <a class="game-card game-card-link" href="/game/caught/">
-        <div class="game-icon" aria-hidden="true">🎯</div>
-        <div><strong>딱걸렸어</strong><p>1~12 중 하나만 선택. 홀짝 보너스·가짜 보너스·잭팟·유령카드가 판마다 섞입니다.</p></div>
-        <span class="coming-label live-label">2~8명 · 플레이</span>
-      </a>
-
-      <a class="game-card game-card-link" href="/game/chosung/">
-        <div class="game-icon" aria-hidden="true">💣</div>
-        <div><strong>초성 폭탄</strong><p>2~4글자 랜덤 초성. 초고속·스나이퍼·금지모음·잭팟 폭탄과 중복방패까지.</p></div>
-        <span class="coming-label live-label">2~8명 · 플레이</span>
-      </a>
-
-      <a class="game-card game-card-link" href="/game/vault/">
-        <div class="game-icon" aria-hidden="true">💰</div>
-        <div><strong>금고런</strong><p>금고 하나만 눌러 남과 겹치지 않으면 획득. 특수 금고와 콤보, 보험·레이더로 마지막까지 뒤집습니다.</p></div>
-        <span class="coming-label live-label">2~8명 · 플레이</span>
-      </a>
-    </section>
-
-    <section class="how-to">
-      <span class="eyebrow">HOW TO PLAY</span>
-      <h2>초대는 세 단계</h2>
-      <ol>
-        <li><strong>1</strong><span>게임방 만들기</span></li>
-        <li><strong>2</strong><span>카카오톡으로 초대 링크 공유</span></li>
-        <li><strong>3</strong><span>각자 스마트폰으로 선택하고 결과 보기</span></li>
-      </ol>
-    </section>
+    <section class="how-to"><span class="eyebrow">HOW TO PLAY</span><h2>초대는 세 단계</h2><ol><li><strong>1</strong><span>게임방 만들기</span></li><li><strong>2</strong><span>초대 링크 공유</span></li><li><strong>3</strong><span>시작 버튼 한 번 · 이후 자동 진행</span></li></ol></section>
   </main>
-
   <footer class="game-footer">소소킹 게임소 · 설치 없이 링크로 바로 한판</footer>
   <script type="module" src="/game/fun-pack.js?v=20260812-fun-pack-1"></script>
   <script type="module" src="/game/theme.js?v=20260812-game-theme-1"></script>
