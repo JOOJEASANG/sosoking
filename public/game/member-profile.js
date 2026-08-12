@@ -3,15 +3,66 @@ import { collection, doc, getDoc, onSnapshot, Timestamp, updateDoc } from 'https
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
 const getGamePlayerProfiles = httpsCallable(functions, 'getGamePlayerProfiles');
+const GAME_GUIDES = {
+  vault: {
+    match: /^\/game\/vault(?:\/|$)/,
+    emoji: '💰',
+    title: '금고런',
+    meta: '2~8명 · 9라운드 · 라운드 12초',
+    goal: '다른 사람과 겹치지 않는 금고를 골라 가장 많은 코인을 모으는 눈치게임입니다.',
+    steps: ['금고 5개 중 하나를 고릅니다.', '모두 고르면 선택이 동시에 공개됩니다.', '혼자 고른 금고는 성공, 같은 금고에 2명 이상 몰리면 충돌합니다.'],
+    scoring: ['일반 금고는 화면에 보이는 코인을 획득합니다.', '연속 단독 성공은 콤보 보너스로 이어집니다.', '마지막 라운드는 기본 보상이 2배가 됩니다.'],
+    specials: ['👑 황금 · ❓ 미스터리 · 🥷 도둑 · 🚀 역전 금고가 섞입니다.', '🎟 보험권은 충돌 피해를 줄이고, 📡 레이더는 현재 선택 분포를 한 번 보여줍니다.', '후반에는 1등과 충돌한 플레이어에게 현상금 견제 보너스가 생길 수 있습니다.'],
+    tips: ['무조건 가장 큰 금고만 노리면 다른 사람과 겹치기 쉽습니다.', '앞 라운드에서 자주 고른 사람의 습관을 기억해 두세요.', '보험권은 큰 금고를 과감하게 노릴 때 쓰는 편이 좋습니다.']
+  },
+  greed: {
+    match: /^\/game\/greed(?:\/|$)/,
+    emoji: '🧨',
+    title: '욕심계단',
+    meta: '2~8명 · 5번 등반 · 최대 5층 · 선택 10초',
+    goal: '더 올라갈수록 보상은 커지지만 계단이 무너지기 전에 챙겨야 하는 배짱게임입니다.',
+    steps: ['매 층에서 ‘한 칸 더’ 또는 ‘먹고 나가기’를 고릅니다.', '올라갈수록 받을 코인과 붕괴 위험이 함께 커집니다.', '안전하게 빠지거나 정상까지 살아남아 누적 코인을 확보합니다.'],
+    scoring: ['1층 100C부터 5층 900C까지 기본 보상이 올라갑니다.', '붕괴하면 이번 등반에서 노리던 보상을 놓칠 수 있습니다.', '이미 빠진 플레이어도 생존자 베팅을 맞히면 추가 코인을 얻습니다.'],
+    specials: ['🌟 황금계단 · 🕳️ 균열계단 · 🛡️ 안전계단 · 🥷 도둑계단이 랜덤 등장합니다.', '안전계단은 위험 0%, 균열계단은 평소보다 더 위험합니다.', '탈락하거나 현금화한 뒤에도 남은 플레이어에게 베팅할 수 있습니다.'],
+    tips: ['3층부터는 보상도 크지만 욕심의 대가도 빠르게 커집니다.', '다른 사람이 많이 남아 있을수록 한 번 더 갈지 고민해 보세요.', '안전계단은 평소보다 공격적으로 올라가기 좋은 기회입니다.']
+  },
+  caught: {
+    match: /^\/game\/caught(?:\/|$)/,
+    emoji: '🎯',
+    title: '딱걸렸어',
+    meta: '2~8명 · 8라운드 · 라운드 10초',
+    goal: '1~12 중 하나를 골라, 겹치지 않은 숫자 중 가장 작은 숫자를 만드는 심리전입니다.',
+    steps: ['1~12 숫자 중 하나를 누릅니다.', '같은 숫자를 고른 사람들은 그 숫자로 승리할 수 없습니다.', '남은 단독 숫자 중 가장 작은 숫자를 고른 사람이 라운드를 가져갑니다.'],
+    scoring: ['작은 숫자일수록 유리하지만 다른 사람과 겹칠 위험도 큽니다.', '금지 숫자는 피하고 보너스 숫자는 단독으로 잡으면 추가 이득이 생깁니다.', '마지막 라운드는 보상이 더 커져 역전이 가능합니다.'],
+    specials: ['🟣 홀수 데이 · 🔵 짝수 데이 · 🎭 가짜 보너스 · 💎 잭팟 라운드가 등장합니다.', '👻 유령카드는 게임당 1회, 중복된 선택에서도 구출 보너스를 받을 수 있습니다.', '가짜 보너스는 두 후보 중 진짜가 결과 공개 때 드러납니다.'],
+    tips: ['1만 계속 누르면 높은 확률로 겹칩니다. 상대의 성향을 읽는 게 핵심입니다.', '직전 라운드에 많이 몰린 숫자는 다음 판에 오히려 비어 있을 수도 있습니다.', '유령카드는 모두가 작은 숫자로 몰릴 것 같은 순간에 강합니다.']
+  },
+  chosung: {
+    match: /^\/game\/chosung(?:\/|$)/,
+    emoji: '💣',
+    title: '초성 폭탄',
+    meta: '2~8명 · 7라운드 · 기본 25초',
+    goal: '제시된 초성과 글자 수에 맞는 단어를 남들과 겹치지 않게 입력하는 순발력 게임입니다.',
+    steps: ['화면의 2~4글자 초성을 확인합니다.', '초성 순서와 글자 수가 정확히 맞는 단어를 입력합니다.', '정답이어도 다른 사람과 같은 단어면 중복 폭탄으로 기본점수를 받지 못합니다.'],
+    scoring: ['기본은 글자 수만큼 점수를 얻고, 더블/왕의 폭탄은 2배가 됩니다.', '번개 15초 · 더블 22초 · 왕의 폭탄 20초 · 초고속 특수폭탄 12초로 진행됩니다.', '🎯 스나이퍼와 💎 잭팟에서는 단독 정답에 추가점수가 붙습니다.'],
+    specials: ['🚫 금지모음은 지정 모음이 들어간 정답을 무효로 만듭니다.', '🛡️ 중복방패는 게임당 1회, 다른 사람과 답이 겹쳐도 일부 점수를 구해줍니다.', '번개·더블·왕의 폭탄과 재미 이벤트가 섞여 매 라운드 템포가 달라집니다.'],
+    tips: ['가장 먼저 떠오른 흔한 단어는 다른 사람도 생각했을 가능성이 큽니다.', '정답을 어렵게 만들 필요는 없고, “맞지만 덜 흔한 단어”가 가장 좋습니다.', '4글자 라운드는 점수가 크므로 긴 단어 후보를 미리 떠올려 보세요.']
+  }
+};
+
 let ownProfile = null;
 let roomPlayers = [];
 let safeProfiles = {};
 let activeRoomId = '';
+let roomData = null;
+let roomAnswers = [];
 let lastPlayerSignature = '';
 let profileFetchPending = false;
 let timeBalancePending = false;
+let guideAutoOpened = false;
 let unsubscribePlayers = null;
 let unsubscribeRoomBalance = null;
+let unsubscribeAnswersPolish = null;
 
 function escapeText(value) {
   return String(value ?? '')
@@ -34,8 +85,16 @@ function currentRoomId() {
     .slice(0, 6);
 }
 
+function currentGuide() {
+  return Object.entries(GAME_GUIDES).find(([, guide]) => guide.match.test(location.pathname))?.[1] || null;
+}
+
+function currentGameId() {
+  return Object.entries(GAME_GUIDES).find(([, guide]) => guide.match.test(location.pathname))?.[0] || '';
+}
+
 function isChosungPage() {
-  return /^\/game\/chosung(?:\/|$)/.test(location.pathname);
+  return currentGameId() === 'chosung';
 }
 
 function chosungDesiredSeconds(data = {}) {
@@ -208,6 +267,271 @@ function decoratePlayerRows() {
   });
 }
 
+function guideSeenKey() {
+  return `sosoking-game-guide-seen:${currentGameId()}`;
+}
+
+function hasSeenGuide() {
+  try { return localStorage.getItem(guideSeenKey()) === '1'; }
+  catch { return false; }
+}
+
+function markGuideSeen() {
+  try { localStorage.setItem(guideSeenKey(), '1'); } catch {}
+}
+
+function guideListMarkup(items = []) {
+  return `<ul>${items.map(item => `<li>${escapeText(item)}</li>`).join('')}</ul>`;
+}
+
+function guideStepsMarkup(items = []) {
+  return `<ol class="game-guide-steps">${items.map((item, index) => `<li><span>${index + 1}</span><p>${escapeText(item)}</p></li>`).join('')}</ol>`;
+}
+
+function closeGuide() {
+  document.querySelector('.game-guide-backdrop')?.remove();
+  document.body.classList.remove('game-guide-open');
+}
+
+function openGuide() {
+  const guide = currentGuide();
+  if (!guide) return;
+  markGuideSeen();
+  closeGuide();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'game-guide-backdrop';
+  backdrop.innerHTML = `
+    <section class="game-guide-modal" role="dialog" aria-modal="true" aria-labelledby="game-guide-title">
+      <header class="game-guide-header">
+        <div><span>GAME GUIDE</span><h2 id="game-guide-title">${guide.emoji} ${escapeText(guide.title)} 이용설명</h2><p>${escapeText(guide.meta)}</p></div>
+        <button type="button" class="game-guide-close" aria-label="게임 설명 닫기">×</button>
+      </header>
+      <div class="game-guide-body">
+        <div class="game-guide-goal"><b>🎯 목표</b><p>${escapeText(guide.goal)}</p></div>
+        <section><h3>이렇게 하면 됩니다</h3>${guideStepsMarkup(guide.steps)}</section>
+        <section><h3>점수 / 승리</h3>${guideListMarkup(guide.scoring)}</section>
+        <section><h3>특수 기능</h3>${guideListMarkup(guide.specials)}</section>
+        <section class="game-guide-tip"><h3>💡 이기기 팁</h3>${guideListMarkup(guide.tips)}</section>
+      </div>
+      <footer><button type="button" class="game-guide-ok">설명 확인 · 게임하러 가기</button></footer>
+    </section>`;
+  backdrop.addEventListener('click', event => { if (event.target === backdrop) closeGuide(); });
+  backdrop.querySelector('.game-guide-close')?.addEventListener('click', closeGuide);
+  backdrop.querySelector('.game-guide-ok')?.addEventListener('click', closeGuide);
+  document.body.append(backdrop);
+  document.body.classList.add('game-guide-open');
+  backdrop.querySelector('.game-guide-close')?.focus();
+}
+
+function mountGuideControls() {
+  const guide = currentGuide();
+  if (!guide) return;
+  if (!document.querySelector('.game-guide-fab')) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'game-guide-fab';
+    button.innerHTML = '<span>?</span>';
+    button.setAttribute('aria-label', `${guide.title} 게임 이용설명 보기`);
+    button.title = '게임 이용설명';
+    button.addEventListener('click', openGuide);
+    document.body.append(button);
+  }
+
+  const panel = document.querySelector('#game-app .panel');
+  const shouldInline = panel && (!activeRoomId || roomData?.status === 'lobby');
+  if (shouldInline && !panel.querySelector('.game-guide-inline')) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'game-guide-inline';
+    button.textContent = '📖 게임 이용설명';
+    button.addEventListener('click', openGuide);
+    const lead = panel.querySelector('.lead');
+    if (lead) lead.insertAdjacentElement('afterend', button);
+    else panel.insertAdjacentElement('afterbegin', button);
+  }
+}
+
+function maybeAutoOpenGuide() {
+  if (guideAutoOpened || !currentGuide() || hasSeenGuide()) return;
+  if (activeRoomId && !roomData) return;
+  if (activeRoomId && roomData?.status !== 'lobby') return;
+  guideAutoOpened = true;
+  setTimeout(() => {
+    if (!document.querySelector('.game-guide-backdrop')) openGuide();
+  }, 450);
+}
+
+function getInitials(value) {
+  const initials = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  return Array.from(String(value || '')).map(char => {
+    if (initials.includes(char)) return char;
+    const offset = char.charCodeAt(0) - 0xac00;
+    return offset >= 0 && offset <= 11171 ? initials[Math.floor(offset / 588)] : '';
+  }).join('');
+}
+
+function normalizedAnswer(value) {
+  return String(value || '').replace(/\s+/g, '').toLocaleLowerCase('ko-KR');
+}
+
+function playerName(uid) {
+  return roomPlayers.find(player => player.uid === uid)?.nickname || '플레이어';
+}
+
+function scoreUnit() {
+  return ['vault', 'greed'].includes(currentGameId()) ? 'C' : '점';
+}
+
+function pressureThreshold() {
+  return { vault: 250, greed: 250, caught: 250, chosung: 3 }[currentGameId()] || 0;
+}
+
+function upsertPanelCard(selector, className, html, afterSelector = '') {
+  const panel = document.querySelector('#game-app .panel');
+  if (!panel) return;
+  let node = panel.querySelector(selector);
+  if (!html) { node?.remove(); return; }
+  if (!node) {
+    node = document.createElement('div');
+    node.className = className;
+    if (afterSelector) panel.querySelector(afterSelector)?.insertAdjacentElement('afterend', node);
+    if (!node.isConnected) panel.insertAdjacentElement('afterbegin', node);
+  }
+  if (node.dataset.html !== html) {
+    node.dataset.html = html;
+    node.innerHTML = html;
+  }
+}
+
+function pressureMarkup() {
+  if (!roomData || roomData.status !== 'playing' || roomData.roundState !== 'open' || roomPlayers.length < 2) return '';
+  const ranking = [...roomPlayers].sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  const leader = ranking[0];
+  const second = ranking[1];
+  const gap = Math.max(0, Number(leader?.score || 0) - Number(second?.score || 0));
+  if (gap > pressureThreshold()) return '';
+  const me = auth.currentUser?.uid || '';
+  const mine = ranking.find(player => player.uid === me);
+  const message = leader?.uid === me
+    ? `현재 1위지만 ${escapeText(second?.nickname || '2위')}가 ${gap}${scoreUnit()} 차로 바로 뒤에 있습니다.`
+    : mine ? `1위 ${escapeText(leader?.nickname || '플레이어')}까지 ${Math.max(0, Number(leader?.score || 0) - Number(mine.score || 0))}${scoreUnit()} 차. 한 번이면 뒤집힐 수 있습니다.` : `1위와 2위가 ${gap}${scoreUnit()} 차입니다.`;
+  return `<span>⚔️ 초접전</span><b>${message}</b>`;
+}
+
+function revealKey() {
+  if (!roomData || roomData.roundState !== 'reveal') return '';
+  return `${activeRoomId}:${currentGameId()}:${Number(roomData.round || 0)}:${Number(roomData.stage || 0)}`;
+}
+
+function ownRoundPositive() {
+  const uid = auth.currentUser?.uid || '';
+  if (!uid || !roomData) return false;
+  if (['vault', 'greed', 'caught'].includes(currentGameId())) {
+    const result = (Array.isArray(roomData.lastResults) ? roomData.lastResults : []).find(item => item.uid === uid);
+    return Number(result?.delta || 0) > 0;
+  }
+  if (currentGameId() === 'chosung') {
+    const mine = roomAnswers.find(item => item.uid === uid && !item.kind && Number(item.round) === Number(roomData.round));
+    if (!mine || getInitials(mine.text || '') !== String(roomData.target || '')) return false;
+    return roomAnswers.filter(item => !item.kind && Number(item.round) === Number(roomData.round) && getInitials(item.text || '') === String(roomData.target || '') && normalizedAnswer(item.text) === normalizedAnswer(mine.text)).length === 1;
+  }
+  return false;
+}
+
+function streakStorageKey() {
+  return `sosoking-round-streak:${currentGameId()}:${activeRoomId}:${auth.currentUser?.uid || ''}`;
+}
+
+function updateAndReadStreak() {
+  const key = revealKey();
+  if (!key) return { current: 0, best: 0 };
+  let state = { processed: '', current: 0, best: 0 };
+  try { state = { ...state, ...JSON.parse(sessionStorage.getItem(streakStorageKey()) || '{}') }; } catch {}
+  if (state.processed !== key) {
+    state.current = ownRoundPositive() ? Number(state.current || 0) + 1 : 0;
+    state.best = Math.max(Number(state.best || 0), Number(state.current || 0));
+    state.processed = key;
+    try { sessionStorage.setItem(streakStorageKey(), JSON.stringify(state)); } catch {}
+  }
+  return state;
+}
+
+function revealStoryMarkup() {
+  if (!roomData || roomData.status !== 'playing' || roomData.roundState !== 'reveal') return '';
+  const game = currentGameId();
+  const results = Array.isArray(roomData.lastResults) ? roomData.lastResults : [];
+  let title = '🎲 이번 라운드 한눈에';
+  let text = '다음 라운드에서 바로 뒤집을 수 있습니다.';
+
+  if (game === 'vault') {
+    const collisions = results.filter(item => item.status === 'collision');
+    const best = [...results].sort((a, b) => Number(b.delta || 0) - Number(a.delta || 0))[0];
+    if (collisions.length >= 2) {
+      title = '💥 금고 앞 대참사';
+      text = `${collisions.length}명이 충돌했습니다. ${best && Number(best.delta || 0) > 0 ? `${playerName(best.uid)}는 +${Number(best.delta)}C로 틈새를 챙겼습니다.` : '이번 판은 욕심보다 눈치가 더 중요했습니다.'}`;
+    } else if (best && Number(best.delta || 0) > 0) {
+      title = '💰 이번 판 최고 한탕';
+      text = `${playerName(best.uid)}가 한 번에 +${Number(best.delta)}C를 챙겼습니다.`;
+    }
+  }
+
+  if (game === 'greed') {
+    const climbers = results.filter(item => item.choice === 'climb');
+    const cashers = results.filter(item => item.choice === 'cash');
+    const best = [...results].sort((a, b) => Number(b.delta || 0) - Number(a.delta || 0))[0];
+    if (roomData.collapsed) {
+      title = '💥 욕심이 계단을 무너뜨렸습니다';
+      text = `${climbers.length}명이 더 올라갔다가 붕괴를 맞았습니다. ${cashers.length ? `${cashers.length}명은 미리 챙겨 탈출했습니다.` : '이번 층에서는 아무도 안전하게 빠지지 못했습니다.'}`;
+    } else if (best && Number(best.delta || 0) > 0) {
+      title = '🧨 배짱 성공';
+      text = `${playerName(best.uid)}가 이번 선택으로 +${Number(best.delta)}C를 확보했습니다.`;
+    }
+  }
+
+  if (game === 'caught') {
+    const counts = new Map();
+    results.filter(item => Number(item.number) > 0).forEach(item => counts.set(Number(item.number), (counts.get(Number(item.number)) || 0) + 1));
+    const crowd = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+    const winner = results.find(item => item.uid === roomData.winnerUid);
+    if (winner) {
+      title = '🎯 딱 걸린 숫자';
+      text = `${playerName(winner.uid)}의 ${Number(winner.number)}번이 가장 작은 단독 숫자였습니다.${crowd?.[1] >= 2 ? ` ${crowd[0]}번에는 ${crowd[1]}명이 몰렸습니다.` : ''}`;
+    } else if (crowd?.[1] >= 2) {
+      title = '🌀 모두 같은 생각';
+      text = `${crowd[0]}번에 ${crowd[1]}명이 몰려 서로를 지웠습니다.`;
+    }
+  }
+
+  if (game === 'chosung') {
+    const roundAnswers = roomAnswers.filter(item => !item.kind && Number(item.round) === Number(roomData.round));
+    const valid = roundAnswers.filter(item => getInitials(item.text || '') === String(roomData.target || ''));
+    const counts = new Map();
+    valid.forEach(item => counts.set(normalizedAnswer(item.text), (counts.get(normalizedAnswer(item.text)) || 0) + 1));
+    const unique = valid.filter(item => (counts.get(normalizedAnswer(item.text)) || 0) === 1);
+    const duplicatePlayers = valid.length - unique.length;
+    const fastest = [...unique].sort((a, b) => Number(a.createdAt?.toMillis?.() || 9e15) - Number(b.createdAt?.toMillis?.() || 9e15))[0];
+    if (duplicatePlayers >= 2) {
+      title = '💣 텔레파시 폭발';
+      text = `${duplicatePlayers}명이 다른 사람과 답이 겹쳤습니다.${fastest ? ` 가장 빠른 단독 정답은 ${playerName(fastest.uid)}의 “${escapeText(fastest.text)}”.` : ''}`;
+    } else if (fastest) {
+      title = '⚡ 단독 정답 포착';
+      text = `${playerName(fastest.uid)}가 “${escapeText(fastest.text)}”로 빠르게 단독 정답을 만들었습니다.`;
+    } else {
+      title = '🫥 폭탄만 남았습니다';
+      text = '이번 라운드는 단독 정답이 없었습니다. 다음 초성에서 다시 노려보세요.';
+    }
+  }
+
+  const streak = updateAndReadStreak();
+  const streakHtml = streak.current >= 2 ? `<em>🔥 내 ${streak.current}연속 성공 중</em>` : streak.best >= 3 ? `<em>🏅 이번 게임 최고 ${streak.best}연속 성공</em>` : '';
+  return `<span>ROUND HIGHLIGHT</span><b>${title}</b><p>${text}</p>${streakHtml}`;
+}
+
+function enhanceGameMoments() {
+  upsertPanelCard('.game-pressure-card', 'game-pressure-card', pressureMarkup(), '.fun-card.mission');
+  upsertPanelCard('.game-round-story', 'game-round-story', revealStoryMarkup(), '.fun-analysis');
+}
+
 async function refreshSafeProfiles() {
   const roomId = activeRoomId || currentRoomId();
   if (!roomId || profileFetchPending || !auth.currentUser) return;
@@ -226,16 +550,35 @@ async function refreshSafeProfiles() {
   }
 }
 
+function ensureAnswersWatch() {
+  const me = roomPlayers.some(player => player.uid === auth.currentUser?.uid);
+  if (!activeRoomId || !me) {
+    unsubscribeAnswersPolish?.();
+    unsubscribeAnswersPolish = null;
+    roomAnswers = [];
+    return;
+  }
+  if (unsubscribeAnswersPolish) return;
+  unsubscribeAnswersPolish = onSnapshot(collection(db, 'game_rooms', activeRoomId, 'answers'), snap => {
+    roomAnswers = snap.docs.map(item => ({ id: item.id, ...item.data() }));
+    enhanceDom();
+  }, error => console.warn('game highlight answers skipped:', error?.code || error));
+}
+
 function ensureRoomWatch() {
   const nextRoomId = currentRoomId();
   if (nextRoomId === activeRoomId) return;
 
   unsubscribePlayers?.();
   unsubscribeRoomBalance?.();
+  unsubscribeAnswersPolish?.();
   unsubscribePlayers = null;
   unsubscribeRoomBalance = null;
+  unsubscribeAnswersPolish = null;
   activeRoomId = nextRoomId;
   roomPlayers = [];
+  roomData = null;
+  roomAnswers = [];
   safeProfiles = {};
   lastPlayerSignature = '';
 
@@ -247,14 +590,15 @@ function ensureRoomWatch() {
       lastPlayerSignature = signature;
       void refreshSafeProfiles();
     }
+    ensureAnswersWatch();
     enhanceDom();
   }, error => console.warn('game player profile watch skipped:', error?.code || error));
 
-  if (isChosungPage()) {
-    unsubscribeRoomBalance = onSnapshot(doc(db, 'game_rooms', activeRoomId), snap => {
-      void balanceChosungTimer(snap);
-    }, error => console.warn('chosung timer watch skipped:', error?.code || error));
-  }
+  unsubscribeRoomBalance = onSnapshot(doc(db, 'game_rooms', activeRoomId), snap => {
+    roomData = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    if (isChosungPage()) void balanceChosungTimer(snap);
+    enhanceDom();
+  }, error => console.warn('game room polish watch skipped:', error?.code || error));
 }
 
 function enhanceDom() {
@@ -264,6 +608,9 @@ function enhanceDom() {
   enhanceRoomCodeLabels();
   decoratePlayerRows();
   enhanceChosungTimingCopy();
+  mountGuideControls();
+  maybeAutoOpenGuide();
+  enhanceGameMoments();
 }
 
 async function boot() {
@@ -271,9 +618,11 @@ async function boot() {
   enhanceDom();
   const observer = new MutationObserver(() => enhanceDom());
   observer.observe(document.getElementById('game-app') || document.body, { childList: true, subtree: true });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeGuide(); });
   window.addEventListener('pagehide', () => {
     unsubscribePlayers?.();
     unsubscribeRoomBalance?.();
+    unsubscribeAnswersPolish?.();
   }, { once: true });
 }
 

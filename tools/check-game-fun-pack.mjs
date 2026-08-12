@@ -7,6 +7,7 @@ const fun = read('public/game/fun-pack.js');
 const reset = read('public/game/fun-reset.js');
 const reconnect = read('public/game/fun-room-reload.js');
 const memberProfile = read('public/game/member-profile.js');
+const memberCss = read('public/game/member-profile.css');
 const css = read('public/game/fun-pack.css');
 const home = read('public/game/index.html');
 const vaultPage = read('public/game/vault/index.html');
@@ -26,6 +27,8 @@ for (const page of [home, ...pages]) {
 }
 for (const page of pages) {
   assert.match(page, /fun-room-reload\.js\?v=20260812-fun-pack-1/);
+  assert.match(page, /member-profile\.css\?v=20260812-game-guide-polish-1/);
+  assert.match(page, /member-profile\.js\?v=20260812-game-guide-polish-1/);
 }
 for (const page of [vaultPage, caughtPage, chosungPage]) {
   assert.match(page, /fun-reset\.js\?v=20260812-fun-pack-1/);
@@ -69,9 +72,37 @@ for (const required of [
   'return 12',
   'timeBalanceKey',
   '번개 15초',
-  '제한시간이 12초로 줄어듭니다.'
+  '제한시간이 12초로 줄어듭니다.',
+  'const GAME_GUIDES',
+  '게임 이용설명',
+  '이렇게 하면 됩니다',
+  '점수 / 승리',
+  '특수 기능',
+  '이기기 팁',
+  'sosoking-game-guide-seen:',
+  'maybeAutoOpenGuide',
+  'game-pressure-card',
+  'game-round-story',
+  'ROUND HIGHLIGHT',
+  'sosoking-round-streak:'
 ]) {
-  assert.ok(memberProfile.includes(required), `chosung timing balance missing: ${required}`);
+  assert.ok(memberProfile.includes(required), `game guide/polish missing: ${required}`);
+}
+
+for (const title of ['금고런', '욕심계단', '딱걸렸어', '초성 폭탄']) {
+  assert.ok(memberProfile.includes(title), `game guide missing title: ${title}`);
+}
+
+for (const required of [
+  '.game-guide-fab',
+  '.game-guide-inline',
+  '.game-guide-backdrop',
+  '.game-guide-modal',
+  '.game-guide-steps',
+  '.game-pressure-card',
+  '.game-round-story'
+]) {
+  assert.ok(memberCss.includes(required), `game guide css missing: ${required}`);
 }
 
 for (const required of [
@@ -91,4 +122,4 @@ assert.match(home, /랜덤 계단 이벤트와 탈락 후 생존자 베팅/);
 assert.match(home, /가짜 보너스·잭팟·유령카드/);
 assert.match(home, /초고속·스나이퍼·금지모음·잭팟 폭탄/);
 
-console.log('Game fun pack validation passed: audio, haptics, missions, powers, new-room reconnect, replay recharge, relaxed Chosung timers, random events, betting, awards, and four-game series are wired to all live games.');
+console.log('Game fun pack validation passed: audio, haptics, missions, powers, relaxed Chosung timers, first-visit game guides, round highlights, close-score pressure, streaks, betting, awards, and four-game series are wired to all live games.');
