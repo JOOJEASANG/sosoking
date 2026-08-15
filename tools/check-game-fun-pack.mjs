@@ -117,9 +117,9 @@ for (const required of [
   assert.ok(css.includes(required), `fun pack css missing: ${required}`);
 }
 
-assert.match(home, /보험권·레이더·현상금/);
-assert.match(home, /랜덤 계단 이벤트와 탈락 후 생존자 베팅/);
-assert.match(home, /가짜 보너스·잭팟·유령카드/);
-assert.match(home, /초고속·스나이퍼·금지모음·잭팟 폭탄/);
+assert.match(home, /보험권·레이더·특수금고/);
+assert.match(home, /랜덤 계단과 붕괴 위험/);
+assert.match(home, /보너스와 유령카드/);
+assert.match(home, /특수폭탄과 자동 채점/);
 
 console.log('Game fun pack validation passed: audio, haptics, missions, powers, relaxed Chosung timers, first-visit game guides, round highlights, close-score pressure, streaks, betting, awards, and four-game series are wired to all live games.');

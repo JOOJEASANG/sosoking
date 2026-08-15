@@ -1,26 +1,29 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 
-const read = path => fs.readFileSync(path, 'utf8');
+const read = file => fs.readFileSync(file, 'utf8');
+const main = read('public/index.html');
 const gameHome = read('public/game/index.html');
-const gameThemeCss = read('public/game/theme.css');
-const gameThemeScript = read('public/game/theme.js');
-const accountGuard = read('public/js/game-entry-guard.js');
-const chosungHome = read('public/game/chosung/index.html');
-const serviceWorker = read('public/sw.js');
+const themeCss = read('public/game/theme.css');
+const themeScript = read('public/game/theme.js');
 
-assert.match(gameThemeCss, /#bottom-nav\{display:none!important\}/);
-assert.match(gameThemeCss, /body\{padding-bottom:0!important\}/);
-assert.match(gameThemeScript, /function removeCourtBottomNav\(\)/);
-assert.match(gameThemeScript, /SOSOKING PARTY GAME/);
-assert.match(gameThemeScript, /예: 초성왕/);
-assert.match(gameThemeScript, /예: 폭탄맨/);
+function gameSources(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) return gameSources(target);
+    return /\.(?:html|js|css)$/.test(entry.name) ? [read(target)] : [];
+  });
+}
 
-assert.doesNotMatch(gameHome, /가족/);
-assert.doesNotMatch(chosungHome, /가족/);
-assert.doesNotMatch(accountGuard, /가족/);
-assert.match(chosungHome, /친한 사람들과/);
-assert.match(accountGuard, /친구·연인·지인/);
-assert.match(serviceWorker, /sosoking-app-v20260812-game-surface-cleanup-1/);
+const allGameText = gameSources('public/game').join('\n');
 
-console.log('Game surface copy validation passed: court bottom navigation stays out of game pages and family-only wording is removed from visible game entry copy.');
+assert.match(main, /링크 하나로 모여,<br>바로 한판/);
+assert.match(main, /짧고 강한 한판/);
+assert.match(gameHome, /SOSOKING PLAY/);
+assert.doesNotMatch(allGameText, /판결소|생활법정|소소킹 게임소|게임소로 돌아가기/);
+assert.match(themeCss, /html\[data-theme="light"\]/);
+assert.match(themeScript, /SOSOKING PARTY GAME/);
+assert.match(themeScript, /prefers-color-scheme: light/);
+
+console.log('Game copy validation passed: Sosoking Play naming, short party-game promise, and court-free game surfaces are consistent.');
