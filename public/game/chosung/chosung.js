@@ -690,7 +690,7 @@ function renderFinished() {
         ${ranking.map((player, index) => `<li class="rank-item ${index === 0 ? 'winner' : ''}"><span class="rank-number">${medals[index] || index + 1}</span><span class="rank-name">${escapeText(player.nickname)}</span><span class="rank-score">${Number(player.score || 0)}점</span></li>`).join('')}
       </ol>
       ${isHost() ? '<div class="button-row"><button class="primary-button" id="restart-game" type="button">같은 멤버로 한 판 더</button></div>' : '<p class="lobby-note">방장이 다시 시작하면 같은 방에서 한 판 더 할 수 있습니다.</p>'}
-      <div class="button-row"><a class="secondary-button" href="/game/" style="display:grid;place-items:center;text-decoration:none;">게임소로 돌아가기</a></div>
+      <div class="button-row"><a class="secondary-button" href="/game/" style="display:grid;place-items:center;text-decoration:none;">소소킹 플레이 홈</a></div>
     </section>`;
   document.getElementById('restart-game')?.addEventListener('click', restartGame);
 }

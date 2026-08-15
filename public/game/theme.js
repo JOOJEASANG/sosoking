@@ -62,10 +62,6 @@ function mountToggle() {
   updateButton(button);
 }
 
-function removeCourtBottomNav() {
-  document.getElementById('bottom-nav')?.remove();
-}
-
 function normalizeGameAudienceCopy() {
   document.querySelectorAll('.kicker').forEach(node => {
     if (node.textContent?.trim() === 'SOSOKING FAMILY GAME') node.textContent = 'SOSOKING PARTY GAME';
@@ -77,7 +73,6 @@ function normalizeGameAudienceCopy() {
 }
 
 function normalizeGameSurface() {
-  removeCourtBottomNav();
   normalizeGameAudienceCopy();
 }
 

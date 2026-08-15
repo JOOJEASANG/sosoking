@@ -4,44 +4,53 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0d1320">
-  <title>소소킹 게임소</title>
-  <meta name="description" content="친한 사람과 링크로 만나 소소킹 월드와 클릭형 퀵게임을 바로 즐기는 파티게임 공간입니다.">
+  <meta name="sosoking-deploy-version" content="sosoking-play-20260816-1">
+  <title>소소킹 플레이 | 링크 하나로 모여, 바로 한판</title>
+  <meta name="description" content="설치 없이 링크로 초대하고 2~8명이 바로 즐기는 소소킹 파티게임 모음입니다.">
+  <link rel="canonical" href="https://sosoking.co.kr/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="소소킹 게임소 🎮">
-  <meta property="og:description" content="설치 없이 링크로 초대하고 소소킹 월드와 퀵게임을 즐겨보세요.">
-  <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
-  <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png">
+  <meta property="og:site_name" content="소소킹 플레이">
+  <meta property="og:title" content="소소킹 플레이 🎮">
+  <meta property="og:description" content="링크 하나로 모여, 바로 한판. 2~8명이 함께 즐기는 파티게임입니다.">
+  <meta property="og:url" content="https://sosoking.co.kr/">
+  <meta property="og:image" content="https://sosoking.co.kr/og-image.png?v=20260816-play-brand-1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="소소킹 플레이">
+  <script src="/js/theme-init.js?v=20260816-play-brand-1"></script>
+  <link rel="icon" href="/icons/favicon-32.png?v=20260816-play-brand-1" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/sosoking-192.png?v=20260816-play-brand-1">
+  <link rel="manifest" href="/site.webmanifest?v=20260816-play-brand-1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/game/game.css?v=20260812-quick-games-1">
-  <link rel="stylesheet" href="/game/theme.css?v=20260812-game-theme-1">
+  <link rel="stylesheet" href="/game/game.css?v=20260816-play-brand-1">
+  <link rel="stylesheet" href="/game/theme.css?v=20260816-play-brand-1">
   <link rel="stylesheet" href="/game/fun-pack.css?v=20260812-fun-pack-1">
 </head>
 <body>
   <header class="game-header">
-    <a class="game-brand" href="/game/" aria-label="게임소 홈"><span class="game-brand-mark" aria-hidden="true">🎮</span><span><strong>게임소</strong><small>소소킹 같이 놀기</small></span></a>
-    <a class="court-link" href="/#/">⚖️ 판결소</a>
+    <a class="game-brand" href="/" aria-label="소소킹 플레이 홈">
+      <img class="game-brand-logo" src="/logo.png?v=20260816-play-brand-1" alt="" width="42" height="42">
+      <span><strong>소소킹 플레이</strong><small>링크 하나로 모여, 바로 한판</small></span>
+    </a>
+    <button class="install-button" id="install-app" type="button" hidden>앱 설치</button>
   </header>
   <main class="game-shell">
-    <section class="hero"><span class="eyebrow">SOSOKING PARTY PLAY</span><h1>누르면 바로 놀고,<br>결과는 확실하게</h1><p>방을 만들고 링크로 초대하세요. 퀵게임은 빠르게, 소소킹 월드는 자동 게임마스터가 주사위·이동·칸 행동·결과를 단계별로 보여줍니다.</p></section>
-
-    <section class="featured-game" aria-labelledby="world-title">
-      <div class="featured-copy"><span class="status-badge">NEW · 마블형 메인 파티게임</span><h2 id="world-title">🎲 소소킹 월드</h2><p>입체 주사위를 던져 24칸 보드의 바깥길을 실제로 한 바퀴씩 돕니다. 영역을 사고 통행료를 받고, 왕관·금고런·딱걸렸어·욕심계단·초성 폭탄·소수파 대결이 중간중간 터집니다.</p><div class="game-meta"><span>👥 2~8명</span><span>🏁 짧게 1바퀴 · 보통 2바퀴</span><span>🎲 3D 주사위</span></div></div>
-      <a class="primary-button" href="/game/world/">소소킹 월드 시작</a>
+    <section class="hero"><span class="eyebrow">SOSOKING PLAY</span><h1>링크 하나로 모여,<br>바로 한판</h1><p>방을 만들고 초대 링크만 보내세요. 퀵게임은 가볍고 빠르게, 소소킹 월드는 주사위부터 결과까지 자동 게임마스터와 함께 즐길 수 있습니다.</p></section>
+    <section class="featured-game" aria-labelledby="world-title"><div class="featured-copy"><span class="status-badge">MAIN PARTY GAME</span><h2 id="world-title">🎲 소소킹 월드</h2><p>입체 주사위를 던져 24칸 보드를 돕니다. 영역을 사고 통행료를 받으며, 왕관·금고런·딱걸렸어·욕심계단·초성 폭탄 이벤트로 끝까지 순위가 뒤집힙니다.</p><div class="game-meta"><span>👥 2~8명</span><span>🏁 짧게 1바퀴 · 보통 2바퀴</span><span>🎲 3D 주사위</span></div></div><a class="primary-button" href="/game/world/">소소킹 월드 시작</a></section>
+    <section class="game-list" aria-labelledby="quick-title"><div class="section-heading"><span>QUICK PLAY</span><h2 id="quick-title">짧고 강한 한판</h2></div>
+      <a class="game-card game-card-link" href="/game/vault/"><div class="game-icon">💰</div><div><strong>금고런</strong><p>남과 겹치지 않는 금고를 골라 코인을 챙기는 눈치게임. 보험권·레이더·특수금고까지.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
+      <a class="game-card game-card-link" href="/game/greed/"><div class="game-icon">🧨</div><div><strong>욕심계단</strong><p>먹고 나갈까, 한 칸 더 갈까. 랜덤 계단과 붕괴 위험을 버티는 배짱게임.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
+      <a class="game-card game-card-link" href="/game/caught/"><div class="game-icon">🎯</div><div><strong>딱걸렸어</strong><p>중복을 피하고 가장 작은 단독 숫자를 노리는 심리전. 보너스와 유령카드로 역전.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
+      <a class="game-card game-card-link" href="/game/chosung/"><div class="game-icon">💣</div><div><strong>초성 폭탄</strong><p>랜덤 초성에 맞는 단어를 남과 다르게 입력하는 순발력게임. 특수폭탄과 자동 채점.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
     </section>
-
-    <section class="game-list" aria-labelledby="quick-title"><div class="section-heading"><span>QUICK PLAY</span><h2 id="quick-title">짧게 바로 플레이</h2></div>
-      <a class="game-card game-card-link" href="/game/vault/"><div class="game-icon">💰</div><div><strong>금고런</strong><p>금고 하나를 골라 남과 겹치지 않으면 획득. 보험권·레이더·현상금과 특수금고, 자동 진행까지.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
-      <a class="game-card game-card-link" href="/game/greed/"><div class="game-icon">🧨</div><div><strong>욕심계단</strong><p>먹고 나갈까, 한 칸 더 갈까. 랜덤 계단 이벤트와 탈락 후 생존자 베팅, 자동 결과 공개.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
-      <a class="game-card game-card-link" href="/game/caught/"><div class="game-icon">🎯</div><div><strong>딱걸렸어</strong><p>중복을 피하고 가장 작은 단독 숫자를 노리세요. 가짜 보너스·잭팟·유령카드와 자동 진행.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
-      <a class="game-card game-card-link" href="/game/chosung/"><div class="game-icon">💣</div><div><strong>초성 폭탄</strong><p>2~4글자 랜덤 초성. 초고속·스나이퍼·금지모음·잭팟 폭탄과 중복방패, 자동 채점.</p></div><span class="coming-label live-label">2~8명 · 플레이</span></a>
-    </section>
-
-    <section class="how-to"><span class="eyebrow">HOW TO PLAY</span><h2>초대는 세 단계</h2><ol><li><strong>1</strong><span>게임방 만들기</span></li><li><strong>2</strong><span>초대 링크 공유</span></li><li><strong>3</strong><span>화면의 ‘지금 할 일’만 따라가기</span></li></ol></section>
+    <section class="how-to"><span class="eyebrow">HOW TO PLAY</span><h2>초대는 세 단계</h2><ol><li><strong>1</strong><span>하고 싶은 게임 고르기</span></li><li><strong>2</strong><span>방을 만들고 링크 공유하기</span></li><li><strong>3</strong><span>화면의 ‘지금 할 일’만 따라가기</span></li></ol></section>
   </main>
-  <footer class="game-footer">소소킹 게임소 · 설치 없이 링크로 바로 한판</footer>
+  <footer class="game-footer">소소킹 플레이 · 같이 웃고, 바로 한판</footer>
+  <p class="install-status" id="install-status" aria-live="polite"></p>
+  <script type="module" src="/game/install.js?v=20260816-play-brand-1"></script>
   <script type="module" src="/game/fun-pack.js?v=20260812-fun-pack-1"></script>
-  <script type="module" src="/game/theme.js?v=20260812-game-theme-1"></script>
+  <script type="module" src="/game/theme.js?v=20260816-play-brand-1"></script>
 </body>
 </html>

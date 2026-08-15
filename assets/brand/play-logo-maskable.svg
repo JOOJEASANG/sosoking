@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="소소킹 플레이 마스커블 앱 아이콘">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#213758"/>
+      <stop offset=".55" stop-color="#121d30"/>
+      <stop offset="1" stop-color="#090e18"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="194" y1="135" x2="319" y2="214" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff0a3"/>
+      <stop offset=".45" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#f39a3d"/>
+    </linearGradient>
+    <linearGradient id="pad" x1="151" y1="246" x2="366" y2="371" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffdf7"/>
+      <stop offset="1" stop-color="#dfe8f4"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="60%">
+      <stop stop-color="#ffd166" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="232" r="220" fill="url(#glow)"/>
+  <path d="M192 213l-18-69 54 35 28-58 28 58 54-35-18 69H192Z" fill="url(#gold)" stroke="#101829" stroke-width="11" stroke-linejoin="round"/>
+  <path d="M198 213h116l-7 30H205l-7-30Z" fill="#f6b84e" stroke="#101829" stroke-width="11" stroke-linejoin="round"/>
+  <circle cx="174" cy="144" r="11" fill="#fff2ad" stroke="#101829" stroke-width="7"/>
+  <circle cx="256" cy="121" r="12" fill="#fff2ad" stroke="#101829" stroke-width="7"/>
+  <circle cx="338" cy="144" r="11" fill="#fff2ad" stroke="#101829" stroke-width="7"/>
+  <path d="M156 254c17-11 49-15 100-15s83 4 100 15c15 10 24 29 31 57l13 55c6 25-4 44-23 49-17 4-31-3-45-23l-20-29H200l-20 29c-14 20-28 27-45 23-19-5-29-24-23-49l13-55c7-28 16-47 31-57Z" fill="url(#pad)" stroke="#101829" stroke-width="13" stroke-linejoin="round"/>
+  <path d="M181 278v58M152 307h58" stroke="#17243a" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="323" cy="291" r="14" fill="#ff7163" stroke="#17243a" stroke-width="7"/>
+  <circle cx="353" cy="322" r="14" fill="#ffd166" stroke="#17243a" stroke-width="7"/>
+  <circle cx="293" cy="322" r="10" fill="#69db9c" stroke="#17243a" stroke-width="6"/>
+</svg>

@@ -1,26 +1,28 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  payloadRecords,
-  validateDeployedFunctions
-} from './check-deployed-functions.mjs';
+import { payloadRecords, validateDeployedFunctions } from './check-deployed-functions.mjs';
 
-// 실제 운영 배포의 strict drift 검사에서 확인됐고 현재 source export에는 없는
-// 과거 Functions만 명시적으로 정리한다. 이 목록 밖의 예상치 못한 Function은
-// 자동 삭제하지 않고 배포를 중단해 수동 검토하도록 한다.
-const KNOWN_OBSOLETE_FUNCTIONS = new Set([
+// 게임 전용 전환에서 명시적으로 폐기한 판결소 Functions와 과거 Functions만
+// 정리한다. 이 목록 밖의 예상치 못한 Function은 자동 삭제하지 않는다.
+const RETIRED_FUNCTIONS = new Set([
+  'addCourtComment',
+  'addDiscussionComment',
   'castCommunityVote',
+  'checkNickname',
   'cleanupNotifications',
   'createCommunityPost',
   'createDailyAiCase',
   'dailyAdminAutomation',
   'dailyAiContent',
   'deleteAdminDocument',
+  'deleteCourtPost',
   'deleteFeedPostDeep',
   'deleteMyAccount',
+  'deleteOwnCourtPost',
   'deleteOwnPost',
   'deleteUploadedFeedImages',
+  'deleteUserProfile',
   'generateAiCharacterCommentsTest',
   'generateAiContentNow',
   'generateAllAiContentNow',
@@ -28,11 +30,14 @@ const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'generateCourtCaseV3',
   'generateCourtCaseV6',
   'generateCourtCaseV7',
+  'generateDailyAiNow',
   'generateLatestAiCharacterComments',
+  'generateTrial',
   'getAdminAutomationStatus',
   'getAdminMemberList',
   'getAiCharacterSettings',
   'getDailyRealCourt',
+  'getPublicCaseOriginal',
   'getRegisteredMemberCount',
   'incrementPostView',
   'kakaoLogin',
@@ -40,36 +45,50 @@ const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'listAdminCollections',
   'migrateCommunityData',
   'migrateCommunityDataOnce',
+  'migrateLegacyCaseIds',
+  'moderateReport',
   'onCommentCreated',
   'onCommentDeleted',
   'onCreateAiCharacterCommentsUnified',
   'onFeedPostCreate',
   'onReportCreate',
   'provisionUserProfile',
+  'publicResultPage',
+  'publicSitemap',
   'reactToComment',
   'reactToPost',
+  'requestAppeal',
+  'resolveCaseAlias',
   'runAdminAutomationNow',
   'sanitizePublicResult',
   'saveAiCharacterSettings',
   'saveAiConfig',
   'seoPost',
+  'setAdminResultVisibility',
+  'setNickname',
+  'setResultVisibility',
   'sitemapXml',
+  'submitCase',
   'submitDailyRealCourtVerdict',
+  'submitReport',
   'summarizeLink',
   'syncAcrosticAuthorIconOnCreate',
   'syncCommentAuthorIconOnCreate',
   'syncFeedAuthorIconOnCreate',
+  'syncPublicStats',
+  'syncPublicStatsNow',
   'updateCommunityPost',
   'updateNickname',
   'updateUserTitle',
-  'uploadFeedImage'
+  'uploadFeedImage',
+  'voteResult'
 ]);
 
 function classifyObsoleteFunctions(records) {
   const { unexpected } = validateDeployedFunctions(records);
   return {
-    removable: unexpected.filter(name => KNOWN_OBSOLETE_FUNCTIONS.has(name)),
-    unknown: unexpected.filter(name => !KNOWN_OBSOLETE_FUNCTIONS.has(name))
+    removable: unexpected.filter(name => RETIRED_FUNCTIONS.has(name)),
+    unknown: unexpected.filter(name => !RETIRED_FUNCTIONS.has(name))
   };
 }
 
@@ -100,7 +119,4 @@ const invokedAsScript = Boolean(process.argv[1])
   && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 if (invokedAsScript) run(process.argv[2]);
 
-export {
-  KNOWN_OBSOLETE_FUNCTIONS,
-  classifyObsoleteFunctions
-};
+export { RETIRED_FUNCTIONS, classifyObsoleteFunctions };

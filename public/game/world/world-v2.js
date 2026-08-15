@@ -1175,7 +1175,7 @@ function renderFinished() {
     <div class="crown-big">👑</div><span class="kicker">SOSOKING WORLD v2 FINAL</span><h1>${esc(winner?.nickname || '플레이어')}</h1><p class="lead">오늘의 소소킹 월드 챔피언!</p>
     <div class="world-now-card result"><b>최종 계산</b><span>왕관 보유자에게 마지막 ${CROWN_FINAL_BONUS}C 보너스까지 반영했습니다.</span></div>
     <ul class="world-final-list">${ranked.map((player, index) => `<li><span>${index + 1}. ${player.uid === room.crownUid ? '👑 ' : ''}${esc(player.nickname)}</span><strong>${Number(player.score || 0).toLocaleString()}C</strong></li>`).join('')}</ul>
-    ${isHost() ? '<div class="button-row"><button class="primary-button" id="restart-world" type="button">같은 멤버로 다시 시작</button></div>' : ''}<div class="button-row"><a class="secondary-button" href="/game/">게임소로 돌아가기</a></div>
+    ${isHost() ? '<div class="button-row"><button class="primary-button" id="restart-world" type="button">같은 멤버로 다시 시작</button></div>' : ''}<div class="button-row"><a class="secondary-button" href="/game/">소소킹 플레이 홈</a></div>
   </section>`;
   document.getElementById('restart-world')?.addEventListener('click', restartWorld);
 }

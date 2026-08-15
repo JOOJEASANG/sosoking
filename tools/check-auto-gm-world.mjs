@@ -104,8 +104,7 @@ assert.match(worldV3Css,/@keyframes v3PawnHop/);
 assert.match(worldV3Css,/world-board-center/);
 
 assert.match(rules,/data\.type == 'sosoking-world' && data\.maxRounds == 24/);
-assert.match(sw,/sosoking-app-v20260812-world-v3-loop-1/);
-assert.match(sw,/sosoking-app-v20260812-auto-gm-world-1/);
+assert.match(sw,/sosoking-play-v20260816-brand-1/);
 assert.match(sw,/\/game\/world\/world-v3\.css\?v=20260812-world-v3-loop-1/);
 assert.match(sw,/\/game\/world\/world-v3\.js\?v=20260812-world-v3-loop-1/);
 assert.match(sw,/\/game\/world\/index\.html/);

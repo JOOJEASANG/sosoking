@@ -433,7 +433,7 @@ async function nextRound() {
 
 function renderFinished() {
   const ranking = rankedPlayers();
-  app.innerHTML = `<section class="panel"><span class="kicker">MARKET CLOSED</span><h1>🏆 최종 거래장부</h1><p class="lead">오늘 가장 믿음을 사고 판 사람은 <strong>${escapeText(ranking[0]?.nickname || '플레이어')}</strong>!</p><ol class="ranking">${ranking.map((player,index)=>`<li class="rank-item"><span class="rank-number">${index+1}</span><span class="rank-name">${escapeText(player.nickname)}</span><span class="rank-score">${Number(player.score||0)}점</span></li>`).join('')}</ol>${isHost()?'<div class="button-row"><button class="primary-button" id="restart">같은 멤버로 다시 거래</button></div>':'<p class="lobby-note">방장이 다시 열면 같은 방에서 계속할 수 있습니다.</p>'}<div class="button-row"><a class="secondary-button" href="/game/" style="display:grid;place-items:center;text-decoration:none">게임소로 돌아가기</a></div></section>`;
+  app.innerHTML = `<section class="panel"><span class="kicker">MARKET CLOSED</span><h1>🏆 최종 거래장부</h1><p class="lead">오늘 가장 믿음을 사고 판 사람은 <strong>${escapeText(ranking[0]?.nickname || '플레이어')}</strong>!</p><ol class="ranking">${ranking.map((player,index)=>`<li class="rank-item"><span class="rank-number">${index+1}</span><span class="rank-name">${escapeText(player.nickname)}</span><span class="rank-score">${Number(player.score||0)}점</span></li>`).join('')}</ol>${isHost()?'<div class="button-row"><button class="primary-button" id="restart">같은 멤버로 다시 거래</button></div>':'<p class="lobby-note">방장이 다시 열면 같은 방에서 계속할 수 있습니다.</p>'}<div class="button-row"><a class="secondary-button" href="/game/" style="display:grid;place-items:center;text-decoration:none">소소킹 플레이 홈</a></div></section>`;
   document.getElementById('restart')?.addEventListener('click', restartGame);
 }
 

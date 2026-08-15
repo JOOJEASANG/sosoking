@@ -4,27 +4,4 @@ const { getApps, initializeApp } = require('firebase-admin/app');
 
 if (!getApps().length) initializeApp();
 
-// Gemini 요청에 소소킹 전용 코미디 강도 규칙을 먼저 주입한다.
-require('./humor-prompt');
-// 사건별 코미디 DNA와 게임·주제별 고신뢰 용어 컨텍스트를 추가한다.
-require('./comedy-topic-context');
-// 목록 밖 게임과 일반 생활주제까지 해석하고 다섯 결과 모두에 서로 다른 코미디 역할을 부여한다.
-require('./five-stage-topic-comedy');
-// 3글자 판사 7종의 사고방식과 5단계 연출을 추가한다.
-require('./judge-persona-prompt');
-// 번호 항목 분리와 문장 완결성을 보장하는 출력 규칙을 이어서 주입한다.
-require('./document-output-quality');
-
-Object.assign(exports, require('./daily'));
-Object.assign(exports, require('./profile'));
-Object.assign(exports, require('./social'));
-Object.assign(exports, require('./discussion'));
-Object.assign(exports, require('./reports'));
-Object.assign(exports, require('./public-stats'));
-Object.assign(exports, require('./public-seo-safe'));
-Object.assign(exports, require('./public-original'));
-Object.assign(exports, require('./case-aliases'));
-Object.assign(exports, require('./submit-secure'));
-Object.assign(exports, require('./generate-trial-lite'));
-Object.assign(exports, require('./admin-actions'));
-Object.assign(exports, require('./admin-visibility'));
+Object.assign(exports, require('./game-profile'));

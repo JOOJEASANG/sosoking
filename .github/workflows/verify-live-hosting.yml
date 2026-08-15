@@ -2,7 +2,7 @@ name: Verify Live Hosting
 
 on:
   workflow_run:
-    workflows: ["Deploy Firebase"]
+    workflows: ["Deploy Sosoking Play"]
     types: [completed]
 
 jobs:
@@ -13,18 +13,18 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Require Firebase deployment success
+      - name: Require deployment success
         env:
           DEPLOY_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           if [ "$DEPLOY_CONCLUSION" != "success" ]; then
-            echo "Deploy Firebase did not succeed: $DEPLOY_CONCLUSION"
+            echo "Deployment did not succeed: $DEPLOY_CONCLUSION"
             exit 1
           fi
 
-      - name: Verify all production hosts serve the same release
+      - name: Verify production hosts
         env:
-          EXPECTED_VERSION: sosoking-judge-final-20260810-2
+          EXPECTED_VERSION: sosoking-play-20260816-1
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
@@ -35,20 +35,13 @@ jobs:
           )
 
           for host in "${hosts[@]}"; do
-            echo "Checking $host"
-            marker="$(curl --fail --silent --show-error --location \
-              --retry 4 --retry-delay 3 --connect-timeout 10 --max-time 30 \
-              -H 'Cache-Control: no-cache' \
-              "$host/deploy-version.txt?sha=$HEAD_SHA")"
+            marker="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/deploy-version.txt?sha=$HEAD_SHA")"
             if [ "$marker" != "$EXPECTED_VERSION" ]; then
               echo "Release mismatch on $host: expected '$EXPECTED_VERSION', got '$marker'"
               exit 1
             fi
 
-            html="$(curl --fail --silent --show-error --location \
-              --retry 4 --retry-delay 3 --connect-timeout 10 --max-time 30 \
-              -H 'Cache-Control: no-cache' \
-              "$host/?sha=$HEAD_SHA")"
+            html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/?sha=$HEAD_SHA")"
             if ! grep -Fq "<meta name=\"sosoking-deploy-version\" content=\"$EXPECTED_VERSION\">" <<< "$html"; then
               echo "HTML deployment marker missing on $host"
               exit 1
