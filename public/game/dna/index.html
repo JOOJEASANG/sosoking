@@ -4,27 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#101828">
-  <title>관심법 | 소소킹 플레이</title>
-  <meta name="description" content="친한 사람의 선택을 사람별로 예측하는 소소킹 심리게임 관심법입니다.">
+  <title>소소킹 DNA: 습관파괴왕 | 소소킹 플레이</title>
+  <meta name="description" content="친구들의 실제 플레이 버릇을 읽고 그날 멤버 전용 AI 보스와 개인 임무를 만드는 소소킹 오리지널 파티게임입니다.">
   <script src="/js/theme-init.js?v=20260816-play-brand-1"></script>
   <link rel="icon" href="/icons/favicon-32.png?v=20260816-play-brand-1" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/game/party.css?v=20260811-party-games-1">
+  <link rel="stylesheet" href="/game/dna/dna.css?v=20260816-dna-1">
   <link rel="stylesheet" href="/game/theme.css?v=20260816-play-brand-1">
   <link rel="stylesheet" href="/game/game-night.css?v=20260816-dna-1">
 </head>
 <body>
   <header class="topbar">
     <a href="/game/" class="back-link" aria-label="소소킹 플레이 홈">‹</a>
-    <div><strong>🧠 관심법</strong><small>넌 이럴 것 같았어</small></div>
+    <div><strong>🧬 소소킹 DNA</strong><small>친구들의 버릇이 다음 규칙이 된다</small></div>
     <button type="button" class="ghost-button" id="share-room" hidden>초대</button>
   </header>
-  <main id="game-app" class="game-app" aria-live="polite"><section class="loading-panel">게임방을 준비하는 중입니다.</section></main>
+  <main id="game-app" class="game-app dna-app" aria-live="polite">
+    <section class="loading-panel">플레이 DNA를 읽는 중입니다.</section>
+  </main>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="/game/game-night.js?v=20260816-dna-1"></script>
-  <script type="module" src="/game/mind/mind.js?v=20260816-dna-1"></script>
+  <script type="module" src="/game/dna/dna.js?v=20260816-dna-1"></script>
   <script type="module" src="/game/theme.js?v=20260816-play-brand-1"></script>
 </body>
 </html>

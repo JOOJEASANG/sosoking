@@ -11,6 +11,7 @@ import {
   updateDoc,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -186,7 +187,7 @@ async function createRoom(nicknameValue) {
       createdAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     await setDoc(doc(db, 'game_rooms', code, 'players', currentUid), {
-      uid: currentUid, nickname, score: 0, joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
+      uid: currentUid, nickname, score: 0, dna: emptyDna(), joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     sessionStorage.setItem(`sosoking-game-nickname:${code}`, nickname);
     roomId = code; setRoomUrl(code); subscribeRoom(code);
@@ -206,7 +207,7 @@ async function joinRoom(codeValue, nicknameValue) {
     const [playersSnap, existing] = await Promise.all([getDocs(collection(db, 'game_rooms', code, 'players')), getDoc(playerRef)]);
     if (playersSnap.size >= MAX_PLAYERS && !existing.exists()) throw new Error('full');
     await setDoc(playerRef, {
-      uid: currentUid, nickname, score: 0,
+      uid: currentUid, nickname, score: 0, dna: normalizeDna(existing.exists() ? existing.data().dna : {}),
       joinOrder: existing.exists() ? Number(existing.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existing.exists() ? existing.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -400,9 +401,22 @@ function marketEvaluation() {
 
 async function revealRound() {
   if (!isHost() || room?.phase !== 'bid' || (!allVotes() && remainingSeconds() > 0)) return;
-  const { deltas } = marketEvaluation();
+  const { deltas, entries, votes, winners } = marketEvaluation();
   const batch = writeBatch(db);
-  for (const player of players) batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score: Number(player.score || 0) + Number(deltas.get(player.uid) || 0), updatedAt: Timestamp.now() });
+  for (const player of players) {
+    const vote = votes.find(item => item.uid === player.uid);
+    const stake = Number(vote?.stake || 0);
+    const dna = entries.some(item => item.uid === player.uid) ? addDna(player.dna, {
+      bold: stake >= 3 ? 1 : 0,
+      safe: stake === 1 ? 1 : 0,
+      unique: winners.includes(player.uid) ? 2 : 0,
+      reader: vote && winners.includes(vote.targetUid) ? 1 : 0,
+      samples: 1
+    }) : normalizeDna(player.dna);
+    batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
+      score: Number(player.score || 0) + Number(deltas.get(player.uid) || 0), dna, updatedAt: Timestamp.now()
+    });
+  }
   batch.update(doc(db, 'game_rooms', roomId), { roundState: 'reveal', phase: 'reveal', updatedAt: Timestamp.now() });
   try { await batch.commit(); } catch (error) { console.error(error); showToast('거래 결과를 공개하지 못했습니다.'); }
 }

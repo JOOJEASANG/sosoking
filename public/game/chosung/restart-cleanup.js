@@ -48,7 +48,7 @@ async function cleanRestart(button) {
       target: '',
       usedTargets: [],
       roundMode: '',
-      roundSeconds: 20,
+      roundSeconds: 25,
       multiplier: 1,
       roundEndsAt: deleteField(),
       updatedAt: Timestamp.now()
