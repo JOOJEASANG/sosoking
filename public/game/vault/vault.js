@@ -10,6 +10,7 @@ import {
   updateDoc,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -260,7 +261,7 @@ async function createRoom(nicknameValue) {
       vaults: [], lastResults: [], createdAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     await setDoc(doc(db, 'game_rooms', code, 'players', currentUid), {
-      uid: currentUid, nickname, score: 0, combo: 0, joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
+      uid: currentUid, nickname, score: 0, combo: 0, dna: emptyDna(), joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     sessionStorage.setItem(`sosoking-game-nickname:${code}`, nickname);
     roomId = code;
@@ -294,6 +295,7 @@ async function joinRoom(codeValue, nicknameValue) {
       uid: currentUid, nickname,
       score: existing.exists() ? Number(existing.data().score || 0) : 0,
       combo: existing.exists() ? Number(existing.data().combo || 0) : 0,
+      dna: normalizeDna(existing.exists() ? existing.data().dna : {}),
       joinOrder: existing.exists() ? Number(existing.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existing.exists() ? existing.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -494,7 +496,12 @@ async function revealRound() {
   const batch = writeBatch(db);
   players.forEach(player => {
     const score = Math.max(0, Number(player.score || 0) + Number(deltas.get(player.uid) || 0));
-    batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score, combo: Number(combos.get(player.uid) || 0), updatedAt: Timestamp.now() });
+    const answer = selections.find(item => item.uid === player.uid);
+    const selectedVault = answer ? vaultById(answer.text) : null;
+    const solo = Boolean(answer && (groups.get(answer.text) || []).length === 1);
+    const risky = Boolean(selectedVault && (selectedVault.kind !== 'cash' || Number(selectedVault.value || 0) >= 400));
+    const dna = answer ? addDna(player.dna, { bold: risky ? 1 : 0, safe: risky ? 0 : 1, unique: solo ? 1 : 0, samples: 1 }) : normalizeDna(player.dna);
+    batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score, combo: Number(combos.get(player.uid) || 0), dna, updatedAt: Timestamp.now() });
   });
   batch.update(doc(db, 'game_rooms', roomId), { roundState: 'reveal', lastResults: results, updatedAt: Timestamp.now() });
   try { await batch.commit(); } catch (error) { console.error('reveal vault round failed', error); showToast('결과를 공개하지 못했습니다.'); }

@@ -19,7 +19,7 @@ function gameSources(directory) {
 const allGameText = gameSources('public/game').join('\n');
 
 assert.match(main, /링크 하나로 모여,<br>바로 한판/);
-assert.match(main, /짧고 강한 한판/);
+assert.match(main, /원하는 게임 골라 하기/);
 assert.match(gameHome, /SOSOKING PLAY/);
 assert.doesNotMatch(allGameText, /판결소|생활법정|소소킹 게임소|게임소로 돌아가기/);
 assert.match(themeCss, /html\[data-theme="light"\]/);

@@ -51,10 +51,10 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy game profile Function
+      - name: Deploy game Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:getGamePlayerProfiles --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:getGamePlayerProfiles,functions:generateDnaBoss --project sosoking-481e6 --non-interactive
 
       - name: Remove retired legacy Functions
         env:
@@ -93,4 +93,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Sosoking Play hosting, game-only rules, game profile Function, and retired legacy Function cleanup finished for $GITHUB_SHA"
+        run: echo "Sosoking Play hosting, game-only rules, profile and DNA director Functions, and retired Function cleanup finished for $GITHUB_SHA"

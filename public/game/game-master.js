@@ -46,10 +46,8 @@ function fallbackChoice(){
   if(!auto||paused||!hasRoom())return;
   const timer=document.getElementById('round-timer');
   const seconds=Number(timer?.textContent||99);if(!Number.isFinite(seconds)||seconds>1)return;
-  if(document.querySelector('.is-selected,[data-choice].is-selected,[data-number].is-selected'))return;
-  const cash=document.querySelector('[data-choice="cash"]');if(cash instanceof HTMLButtonElement&&!cash.disabled){cash.click();return;}
+  if(document.querySelector('.is-selected,[data-vault].is-selected'))return;
   const vaults=[...document.querySelectorAll('[data-vault]')].filter(el=>el instanceof HTMLButtonElement&&!el.disabled);if(vaults.length){vaults[Math.floor(Math.random()*vaults.length)].click();return;}
-  const numbers=[...document.querySelectorAll('[data-number]')].filter(el=>el instanceof HTMLButtonElement&&!el.disabled&&!el.classList.contains('is-banned'));if(numbers.length){numbers[Math.floor(Math.random()*numbers.length)].click();}
 }
 function drive(){
   renderControl();fallbackChoice();

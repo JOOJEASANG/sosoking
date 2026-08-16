@@ -24,7 +24,7 @@ jobs:
 
       - name: Verify production hosts
         env:
-          EXPECTED_VERSION: sosoking-play-20260816-1
+          EXPECTED_VERSION: sosoking-play-20260816-3
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail

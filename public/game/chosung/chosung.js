@@ -10,6 +10,7 @@ import {
   updateDoc,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -17,7 +18,7 @@ const toast = document.getElementById('toast');
 
 const MAX_PLAYERS = 8;
 const MAX_ROUNDS = 7;
-const DEFAULT_SECONDS = 20;
+const DEFAULT_SECONDS = 25;
 const INITIALS = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
 
 const TARGETS_BY_LENGTH = {
@@ -39,11 +40,11 @@ const TARGETS_BY_LENGTH = {
 };
 
 const ROUND_MODES = [
-  { id: 'classic', emoji: '🎯', label: '기본', seconds: 20, multiplier: 1, lengths: [2, 3, 4], help: '초성과 글자 수를 정확히 맞혀요.' },
-  { id: 'lightning', emoji: '⚡', label: '번개', seconds: 12, multiplier: 1, lengths: [2, 3], help: '12초 안에 떠올려야 합니다.' },
-  { id: 'double', emoji: '💥', label: '더블', seconds: 18, multiplier: 2, lengths: [2, 3, 4], help: '단독 정답 점수가 2배입니다.' }
+  { id: 'classic', emoji: '🎯', label: '기본', seconds: 25, multiplier: 1, lengths: [2, 3, 4], help: '초성과 글자 수를 정확히 맞혀요.' },
+  { id: 'lightning', emoji: '⚡', label: '번개', seconds: 15, multiplier: 1, lengths: [2, 3], help: '15초 안에 떠올려야 합니다.' },
+  { id: 'double', emoji: '💥', label: '더블', seconds: 22, multiplier: 2, lengths: [2, 3, 4], help: '단독 정답 점수가 2배입니다.' }
 ];
-const FINAL_MODE = { id: 'royal', emoji: '👑', label: '왕의 폭탄', seconds: 15, multiplier: 2, lengths: [3, 4], help: '마지막 라운드. 어려운 초성에 점수도 2배!' };
+const FINAL_MODE = { id: 'royal', emoji: '👑', label: '왕의 폭탄', seconds: 20, multiplier: 2, lengths: [3, 4], help: '마지막 라운드. 어려운 초성에 점수도 2배!' };
 
 let roomId = '';
 let room = null;
@@ -294,6 +295,7 @@ async function createRoom(nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
+      dna: emptyDna(),
       joinOrder: Date.now(),
       joinedAt: Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -335,6 +337,7 @@ async function joinRoom(codeValue, nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
+      dna: normalizeDna(existingPlayer.exists() ? existingPlayer.data().dna : {}),
       joinOrder: existingPlayer.exists() ? Number(existingPlayer.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existingPlayer.exists() ? existingPlayer.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -607,9 +610,19 @@ async function revealRound() {
   const pointsByUid = new Map(evaluation.map(item => [item.uid, item.points]));
   const batch = writeBatch(db);
   for (const player of players) {
-    const nextScore = Number(player.score || 0) + Number(pointsByUid.get(player.uid) || 0);
+    const item = evaluation.find(answer => answer.uid === player.uid);
+    const gained = Number(pointsByUid.get(player.uid) || 0);
+    const length = Array.from(item?.text || '').length;
+    const dna = item ? addDna(player.dna, {
+      bold: gained > 0 && length >= 4 ? 1 : 0,
+      safe: item.valid && length <= 2 ? 1 : 0,
+      unique: gained > 0 ? 1 : 0,
+      samples: 1
+    }) : normalizeDna(player.dna);
+    const nextScore = Number(player.score || 0) + gained;
     batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
       score: nextScore,
+      dna,
       updatedAt: Timestamp.now()
     });
   }

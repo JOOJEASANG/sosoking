@@ -29,9 +29,7 @@ service cloud.firestore {
         (data.type == 'mind-reader' && data.maxRounds == 8) ||
         (data.type == 'alibi-market' && data.maxRounds == 3) ||
         (data.type == 'vault-run' && data.maxRounds == 9) ||
-        (data.type == 'greed-stairs' && data.maxRounds == 5) ||
-        (data.type == 'unique-low' && data.maxRounds == 8) ||
-        (data.type == 'sosoking-world' && data.maxRounds == 24)
+        (data.type == 'dna-boss' && data.maxRounds == 6)
       );
     }
 
@@ -48,7 +46,8 @@ service cloud.firestore {
         && request.resource.data.hostUid == request.auth.uid
         && request.resource.data.status == 'lobby'
         && isValidGameRoom(request.resource.data);
-      allow update, delete: if isGameHost(roomId);
+      allow update: if isGameHost(roomId) && isValidGameRoom(request.resource.data);
+      allow delete: if isGameHost(roomId);
 
       match /players/{uid} {
         allow read: if signedIn() && gameRoomExists(roomId);
@@ -96,6 +95,7 @@ service cloud.firestore {
           && request.resource.data.text.size() <= 120;
         allow delete: if isGameHost(roomId);
       }
+
     }
 
     match /{document=**} {

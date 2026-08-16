@@ -11,6 +11,7 @@ import {
   updateDoc,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -226,6 +227,7 @@ async function createRoom(nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
+      dna: emptyDna(),
       joinOrder: Date.now(),
       joinedAt: Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -259,6 +261,7 @@ async function joinRoom(codeValue, nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
+      dna: normalizeDna(existing.exists() ? existing.data().dna : {}),
       joinOrder: existing.exists() ? Number(existing.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existing.exists() ? existing.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -541,8 +544,16 @@ async function revealRound() {
   }
   const batch = writeBatch(db);
   for (const player of players) {
+    const subjectResult = evaluation.find(item => item.player.uid === player.uid);
+    const correctReads = player.uid === targetUid ? evaluation.filter(item => item.correct).length : 0;
+    const dna = player.uid === targetUid
+      ? addDna(player.dna, { reader: correctReads, samples: evaluation.length })
+      : subjectResult
+        ? addDna(player.dna, { safe: subjectResult.correct ? 1 : 0, unique: subjectResult.correct ? 0 : 1, samples: 1 })
+        : normalizeDna(player.dna);
     batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
       score: Number(player.score || 0) + Number(deltas.get(player.uid) || 0),
+      dna,
       updatedAt: Timestamp.now()
     });
   }
