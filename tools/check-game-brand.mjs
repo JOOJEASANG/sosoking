@@ -37,7 +37,7 @@ assert.deepEqual(manifest.categories, ['games', 'entertainment', 'social']);
 assert.ok(manifest.icons.some(icon => icon.purpose === 'maskable'));
 assert.match(logoSvg, /왕관 게임패드 로고/);
 assert.match(maskableSvg, /마스커블 앱 아이콘/);
-assert.match(sw, /sosoking-play-v20260817-naming-1/);
+assert.match(sw, /sosoking-play-v20260817-state-fix-1/);
 assert.match(sw, /\/game\/install\.js/);
 
 for (const [file, size] of [
