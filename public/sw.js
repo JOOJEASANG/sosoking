@@ -5,7 +5,7 @@ const APP_SHELL = [
   '/game/',
   '/game/index.html',
   '/game/game.css?v=20260816-play-brand-1',
-  '/game/theme.css?v=20260816-play-brand-1',
+  '/game/theme.css?v=20260817-light-contrast-1',
   '/game/theme.js?v=20260816-play-brand-1',
   '/game/install.js?v=20260816-play-brand-1',
   '/game/game-night.css?v=20260817-naming-1',
