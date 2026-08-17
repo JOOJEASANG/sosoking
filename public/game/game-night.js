@@ -8,13 +8,12 @@ import {
   Timestamp,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const GAMES = [
   {
-    id: 'dna', type: 'dna-boss', path: '/game/dna/', emoji: '🧬', label: '소소킹 DNA', people: '2~8명',
-    summary: '친구들의 플레이 버릇으로 AI 보스를 만드는 오리지널', maxRounds: 6,
-    initial: { phase: 'waiting', bossHp: 0, bossMaxHp: 0, aiStatus: 'idle', aiMode: '', aiPack: {}, lastResults: [] }
+    id: 'grid', type: 'grid-rush', path: '/game/grid/', emoji: '🏁', label: '칸폭주 30', people: '2~8명',
+    summary: '30칸 장치를 방어하거나 역이용하는 동시 레이스', maxRounds: 24,
+    initial: { roundSeconds: 10, board: [], lastResults: [], winnerUid: '' }
   },
   {
     id: 'vault', type: 'vault-run', path: '/game/vault/', emoji: '💰', label: '금고런', people: '2~8명',
@@ -34,7 +33,7 @@ const GAMES = [
   {
     id: 'alibi', type: 'alibi-market', path: '/game/alibi/', emoji: '🧾', label: '변명거래소', people: '3~8명',
     summary: '황당한 변명을 사고파는 창작 게임', maxRounds: 3,
-    initial: { phase: 'waiting', promptId: '', usedPrompts: [] }
+    initial: { phase: 'waiting', promptId: '', usedPrompts: [], publishedAlibis: [], publishedAlibiUids: [] }
   }
 ];
 
@@ -50,7 +49,7 @@ let unsubscribeRoom = null;
 let observer = null;
 let carryBannerShown = false;
 
-window.sosokingGameNight = { version: '20260816-dna-1', games: GAMES.map(({ id, type, path }) => ({ id, type, path })) };
+window.sosokingGameNight = { version: '20260817-grid-2', games: GAMES.map(({ id, type, path }) => ({ id, type, path })) };
 
 function escapeText(value) {
   return String(value ?? '')
@@ -85,7 +84,7 @@ function showCarryBanner() {
 }
 
 function gameCard(game) {
-  return `<button class="game-night-choice ${game.id === 'dna' ? 'is-dna' : ''}" type="button" data-next-game="${game.id}">
+  return `<button class="game-night-choice ${game.id === 'grid' ? 'is-featured' : ''}" type="button" data-next-game="${game.id}">
     <span class="game-night-emoji">${game.emoji}</span>
     <span><strong>${escapeText(game.label)}</strong><small>${escapeText(game.summary)}</small></span>
     <em>${escapeText(game.people)}</em>
@@ -109,7 +108,7 @@ function pickerMarkup() {
     <button class="game-night-replay" type="button" data-next-game="${currentGame.id}"><span>🔁</span><strong>현재 게임 한 판 더</strong><small>${escapeText(currentGame.label)} · 같은 멤버로 바로 다시 시작</small></button>
     <div class="game-night-other-title">또는 다른 게임 고르기</div>
     <div class="game-night-grid">${GAMES.filter(game => game.type !== currentGame.type).map(gameCard).join('')}</div>
-    <small class="game-night-footnote">🧬 게임을 이어갈수록 플레이 DNA는 남고, 일반 점수만 새로 시작합니다.</small>
+    <small class="game-night-footnote">방 코드와 참가자는 유지되고, 게임별 점수와 진행 상태만 새로 시작합니다.</small>
   </section>`;
 }
 
@@ -184,10 +183,13 @@ async function switchGame(gameId) {
         score: 0,
         combo: 0,
         position: 0,
-        laps: 0,
-        damage: 0,
-        runState: 'waiting',
-        dna: normalizeDna(player.dna),
+        shield: 0,
+        scrap: 0,
+        banked: 0,
+        jammed: false,
+        barrierDent: false,
+        finishPower: 0,
+        lastDelta: 0,
         joinOrder: Number(player.joinOrder || Date.now()),
         joinedAt: player.joinedAt || now,
         updatedAt: now
@@ -195,6 +197,7 @@ async function switchGame(gameId) {
     });
     batch.set(roomRef, roomPayload(game, latestRoom, now));
     await batch.commit();
+    if (game.type === latestRoom.type) location.replace(targetUrl(game));
   } catch (error) {
     console.error('same-room game switch failed', error);
     switching = false;

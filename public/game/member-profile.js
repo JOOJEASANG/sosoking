@@ -1,9 +1,20 @@
 import { auth, db, functions, initAuth } from '/js/firebase.js?v=20260729-auth-session-1';
-import { collection, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { collection, doc, getDoc, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
 const getGamePlayerProfiles = httpsCallable(functions, 'getGamePlayerProfiles');
 const GAME_GUIDES = {
+  grid: {
+    match: /^\/game\/grid(?:\/|$)/,
+    emoji: '🏁',
+    title: '칸폭주 30',
+    meta: '2~8명 · 30칸 · 턴당 10초',
+    goal: '내 5×6 진행판의 30칸을 가장 먼저 채우는 동시 선택 방해물 레이스입니다.',
+    steps: ['앞에 놓인 장치를 확인합니다.', '질주·방어·역이용 중 한 도구를 모두 동시에 고릅니다.', '결과가 한꺼번에 적용되며 30칸을 먼저 채우면 승리합니다.'],
+    scoring: ['질주는 기본 3칸, 방어는 2칸과 보호막, 역이용은 1칸과 고철을 얻습니다.', '고철 3개는 즉시 보너스 4칸으로 재조립됩니다.', '같은 턴에 함께 완주하면 남은 도장·보호막·고철을 합친 완주 파워로 순위를 정합니다.'],
+    specials: ['🧱 이중벽은 도장 2개가 필요하고, 🕸️ 끈끈이는 지금과 다음 턴을 늦춥니다.', '🔒 정지문·💣 고철폭탄은 남은 도장을 멈추고, 🪞 반사판은 도장을 다음 턴으로 보냅니다.', '🚀 가속칸은 보너스 1칸을 주며, 모든 위험 장치는 보호하거나 고철로 바꿀 수 있습니다.'],
+    tips: ['다음 장치가 평범하면 질주, 위험하면 방어가 안정적입니다.', '장치 직전에 역이용을 고르면 느리지만 고철 보너스로 크게 치고 나갈 수 있습니다.', '보호막은 최대 2개이므로 가득 찼을 때는 다른 도구를 고르세요.']
+  },
   vault: {
     match: /^\/game\/vault(?:\/|$)/,
     emoji: '💰',
@@ -25,6 +36,28 @@ const GAME_GUIDES = {
     scoring: ['기본은 글자 수만큼 점수를 얻고, 더블/왕의 폭탄은 2배가 됩니다.', '기본 25초 · 번개 15초 · 더블 22초 · 왕의 폭탄 20초로 진행됩니다.', '초성이 맞아도 같은 단어가 겹치면 0점, 혼자 쓴 정답만 점수를 얻습니다.'],
     specials: ['⚡ 번개 라운드는 15초로 빠르게 진행됩니다.', '💥 더블과 👑 왕의 폭탄에서는 단독 정답 점수가 2배가 됩니다.', '라운드마다 2~4글자 초성이 섞여 템포와 난도가 달라집니다.'],
     tips: ['가장 먼저 떠오른 흔한 단어는 다른 사람도 생각했을 가능성이 큽니다.', '정답을 어렵게 만들 필요는 없고, “맞지만 덜 흔한 단어”가 가장 좋습니다.', '4글자 라운드는 점수가 크므로 긴 단어 후보를 미리 떠올려 보세요.']
+  },
+  mind: {
+    match: /^\/game\/mind(?:\/|$)/,
+    emoji: '🧠',
+    title: '관심법',
+    meta: '3~8명 · 참가자 수만큼 라운드 · 라운드 28초',
+    goal: '라운드마다 바뀌는 관찰자가 친구들의 실제 선택을 얼마나 잘 맞히는지 겨루는 관계 심리게임입니다.',
+    steps: ['관찰자는 친구 한 명씩 선택을 예측합니다.', '나머지는 관찰자에게 보이지 않게 실제 선택을 고릅니다.', '모두 고르면 실제 선택과 예측이 동시에 공개됩니다.'],
+    scoring: ['관찰자가 한 사람을 맞힐 때마다 관찰자 +2점입니다.', '관찰자가 틀리면 선택을 숨긴 해당 참가자가 +1점입니다.', '모든 참가자가 한 번씩 관찰자가 된 뒤 총점 1위가 승리합니다.'],
+    specials: ['진행 중에는 다른 참가자의 선택 원문이 공개되지 않습니다.', '관찰자는 모든 사람의 예측을 각각 완료해야 전원 선택으로 처리됩니다.', '참가자 수에 맞춰 3~8라운드로 자동 조정됩니다.'],
+    tips: ['평소 취향보다 상황에서 실제로 할 행동을 떠올리세요.', '관찰자일 때는 한 기준으로 모두 찍기보다 사람별 습관을 나눠 보세요.', '선택지는 마감 전까지 바꿀 수 있습니다.']
+  },
+  alibi: {
+    match: /^\/game\/alibi(?:\/|$)/,
+    emoji: '🧾',
+    title: '변명거래소',
+    meta: '3~8명 · 3개 사건 · 작성 45초/베팅 25초',
+    goal: '비밀 키워드를 자연스럽게 섞은 변명을 만들고, 익명 변명에 신뢰칩을 걸어 점수를 얻는 창작게임입니다.',
+    steps: ['내 비밀 키워드를 포함해 12~100자의 변명을 씁니다.', '작성 시간이 끝나면 변명이 익명으로 공개됩니다.', '내 글을 제외한 변명 하나에 신뢰칩 1~3개를 걸고 작성자를 공개합니다.'],
+    scoring: ['가장 많은 신뢰칩을 받은 작성자는 받은 칩만큼 점수를 얻습니다.', '시장 선택에 베팅하면 건 칩만큼 더하고, 빗나가면 그만큼 뺍니다.', '3개 사건이 끝난 뒤 총점 1위가 승리합니다.'],
+    specials: ['작성 단계에는 다른 사람의 변명과 베팅이 보이지 않습니다.', '베팅 단계에는 변명만 익명 공개되고 베팅 내용은 결과 전까지 비공개입니다.', '최고 신뢰가 동점이면 동점 작성자 모두 시장 선택으로 인정됩니다.'],
+    tips: ['키워드를 억지로 붙이지 말고 사건의 원인처럼 자연스럽게 숨기세요.', '3칩은 보상도 크지만 실패 감점도 큽니다.', '문체만 보고 사람을 맞히려 하기보다 변명의 설득력을 보세요.']
   }
 };
 
@@ -40,6 +73,7 @@ let guideAutoOpened = false;
 let unsubscribePlayers = null;
 let unsubscribeRoomPolish = null;
 let unsubscribeAnswersPolish = null;
+let answerScope = '';
 
 function escapeText(value) {
   return String(value ?? '')
@@ -357,9 +391,9 @@ function ownRoundPositive() {
     return Number(result?.delta || 0) > 0;
   }
   if (currentGameId() === 'chosung') {
-    const mine = roomAnswers.find(item => item.uid === uid && !item.kind && Number(item.round) === Number(roomData.round));
+    const mine = roomAnswers.find(item => item.uid === uid && item.kind === 'chosung' && Number(item.round) === Number(roomData.round));
     if (!mine || getInitials(mine.text || '') !== String(roomData.target || '')) return false;
-    return roomAnswers.filter(item => !item.kind && Number(item.round) === Number(roomData.round) && getInitials(item.text || '') === String(roomData.target || '') && normalizedAnswer(item.text) === normalizedAnswer(mine.text)).length === 1;
+    return roomAnswers.filter(item => item.kind === 'chosung' && Number(item.round) === Number(roomData.round) && getInitials(item.text || '') === String(roomData.target || '') && normalizedAnswer(item.text) === normalizedAnswer(mine.text)).length === 1;
   }
   return false;
 }
@@ -402,7 +436,7 @@ function revealStoryMarkup() {
   }
 
   if (game === 'chosung') {
-    const roundAnswers = roomAnswers.filter(item => !item.kind && Number(item.round) === Number(roomData.round));
+    const roundAnswers = roomAnswers.filter(item => item.kind === 'chosung' && Number(item.round) === Number(roomData.round));
     const valid = roundAnswers.filter(item => getInitials(item.text || '') === String(roomData.target || ''));
     const counts = new Map();
     valid.forEach(item => counts.set(normalizedAnswer(item.text), (counts.get(normalizedAnswer(item.text)) || 0) + 1));
@@ -450,18 +484,32 @@ async function refreshSafeProfiles() {
 }
 
 function ensureAnswersWatch() {
-  const me = roomPlayers.some(player => player.uid === auth.currentUser?.uid);
+  const uid = auth.currentUser?.uid || '';
+  const me = roomPlayers.some(player => player.uid === uid);
   if (!activeRoomId || !me) {
     unsubscribeAnswersPolish?.();
     unsubscribeAnswersPolish = null;
+    answerScope = '';
     roomAnswers = [];
     return;
   }
-  if (unsubscribeAnswersPolish) return;
-  unsubscribeAnswersPolish = onSnapshot(collection(db, 'game_rooms', activeRoomId, 'answers'), snap => {
+  const openRound = !roomData || (roomData.status === 'playing' && roomData.roundState === 'open');
+  const nextScope = openRound && roomData?.hostUid !== uid ? 'mine' : 'all';
+  if (unsubscribeAnswersPolish && answerScope === nextScope) return;
+  unsubscribeAnswersPolish?.();
+  unsubscribeAnswersPolish = null;
+  answerScope = nextScope;
+  roomAnswers = [];
+  const base = collection(db, 'game_rooms', activeRoomId, 'answers');
+  const source = nextScope === 'mine' ? query(base, where('uid', '==', uid)) : base;
+  unsubscribeAnswersPolish = onSnapshot(source, snap => {
     roomAnswers = snap.docs.map(item => ({ id: item.id, ...item.data() }));
     enhanceDom();
-  }, error => console.warn('game highlight answers skipped:', error?.code || error));
+  }, error => {
+    unsubscribeAnswersPolish = null;
+    answerScope = '';
+    console.warn('game highlight answers skipped:', error?.code || error);
+  });
 }
 
 function ensureRoomWatch() {
@@ -474,6 +522,7 @@ function ensureRoomWatch() {
   unsubscribePlayers = null;
   unsubscribeRoomPolish = null;
   unsubscribeAnswersPolish = null;
+  answerScope = '';
   activeRoomId = nextRoomId;
   roomPlayers = [];
   roomData = null;
@@ -495,6 +544,7 @@ function ensureRoomWatch() {
 
   unsubscribeRoomPolish = onSnapshot(doc(db, 'game_rooms', activeRoomId), snap => {
     roomData = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    ensureAnswersWatch();
     enhanceDom();
   }, error => console.warn('game room polish watch skipped:', error?.code || error));
 }

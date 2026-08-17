@@ -4,9 +4,10 @@ const { enforceActionRateLimit } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const ENFORCE_APP_CHECK = String(process.env.ENFORCE_APP_CHECK || '').toLowerCase() === 'true';
 
 function cleanNickname(value) {
-  return String(value || '').replace(/\s+/g, '').trim().slice(0, 20);
+  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 12);
 }
 
 function cleanUrl(value) {
@@ -18,7 +19,12 @@ function cleanRoomId(value) {
   return String(value || '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 }
 
-exports.getGamePlayerProfiles = onCall({ region: REGION, timeoutSeconds: 20, memory: '256MiB' }, async request => {
+exports.getGamePlayerProfiles = onCall({
+  region: REGION,
+  timeoutSeconds: 20,
+  memory: '256MiB',
+  enforceAppCheck: ENFORCE_APP_CHECK
+}, async request => {
   const uid = request.auth?.uid || '';
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
 

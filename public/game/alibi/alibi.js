@@ -6,12 +6,13 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
   setDoc,
   Timestamp,
   updateDoc,
+  where,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -45,6 +46,7 @@ let toastId = null;
 let unsubscribeRoom = null;
 let unsubscribePlayers = null;
 let unsubscribeAnswers = null;
+let answerScope = '';
 
 function escapeText(value) {
   return String(value ?? '')
@@ -109,6 +111,7 @@ function stopSubscriptions() {
   unsubscribeRoom = null;
   unsubscribePlayers = null;
   unsubscribeAnswers = null;
+  answerScope = '';
   clearInterval(timerId);
   timerId = null;
 }
@@ -183,11 +186,11 @@ async function createRoom(nicknameValue) {
     if (!code) throw new Error('room-code');
     await setDoc(doc(db, 'game_rooms', code), {
       type: 'alibi-market', status: 'lobby', hostUid: currentUid, maxPlayers: MAX_PLAYERS,
-      round: 0, maxRounds: MAX_ROUNDS, roundState: 'waiting', phase: 'waiting', promptId: '', usedPrompts: [],
+      round: 0, maxRounds: MAX_ROUNDS, roundState: 'waiting', phase: 'waiting', promptId: '', usedPrompts: [], publishedAlibis: [], publishedAlibiUids: [],
       createdAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     await setDoc(doc(db, 'game_rooms', code, 'players', currentUid), {
-      uid: currentUid, nickname, score: 0, dna: emptyDna(), joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
+      uid: currentUid, nickname, score: 0, joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     sessionStorage.setItem(`sosoking-game-nickname:${code}`, nickname);
     roomId = code; setRoomUrl(code); subscribeRoom(code);
@@ -207,7 +210,7 @@ async function joinRoom(codeValue, nicknameValue) {
     const [playersSnap, existing] = await Promise.all([getDocs(collection(db, 'game_rooms', code, 'players')), getDoc(playerRef)]);
     if (playersSnap.size >= MAX_PLAYERS && !existing.exists()) throw new Error('full');
     await setDoc(playerRef, {
-      uid: currentUid, nickname, score: 0, dna: normalizeDna(existing.exists() ? existing.data().dna : {}),
+      uid: currentUid, nickname, score: 0,
       joinOrder: existing.exists() ? Number(existing.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existing.exists() ? existing.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -236,16 +239,28 @@ function subscribeRoom(code) {
   stopSubscriptions(); roomId = code; shareButton.hidden = false;
   unsubscribeRoom = onSnapshot(doc(db, 'game_rooms', code), snapshot => {
     if (!snapshot.exists()) return renderLanding();
-    room = { id: snapshot.id, ...snapshot.data() }; renderCurrent();
+    room = { id: snapshot.id, ...snapshot.data() };
+    ensureAnswerSubscription(code);
+    renderCurrent();
   }, error => { console.error(error); renderError('거래소 정보를 불러오지 못했습니다.'); });
   unsubscribePlayers = onSnapshot(collection(db, 'game_rooms', code, 'players'), snapshot => {
     players = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
     if (room?.status === 'playing' && room?.roundState === 'open') updateLiveStatus(); else renderCurrent();
   });
-  unsubscribeAnswers = onSnapshot(collection(db, 'game_rooms', code, 'answers'), snapshot => {
+}
+
+function ensureAnswerSubscription(code) {
+  const nextScope = room?.status === 'playing' && room?.roundState === 'open' && !isHost() ? 'mine' : 'all';
+  if (answerScope === nextScope && unsubscribeAnswers) return;
+  unsubscribeAnswers?.();
+  answerScope = nextScope;
+  answers = [];
+  const base = collection(db, 'game_rooms', code, 'answers');
+  const source = nextScope === 'mine' ? query(base, where('uid', '==', currentUid)) : base;
+  unsubscribeAnswers = onSnapshot(source, snapshot => {
     answers = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
     if (room?.status === 'playing' && room?.roundState === 'open') updateLiveStatus(); else renderCurrent();
-  });
+  }, error => { console.error('alibi answers subscription failed', error); showToast('거래 정보를 불러오지 못했습니다.'); });
 }
 
 function renderCurrent() {
@@ -279,7 +294,7 @@ async function startGame() {
   const batch = writeBatch(db);
   for (const player of players) batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score: 0, updatedAt: Timestamp.now() });
   batch.update(doc(db, 'game_rooms', roomId), {
-    status: 'playing', round: 1, roundState: 'open', phase: 'write', promptId: incident.id, usedPrompts: [incident.id],
+    status: 'playing', round: 1, roundState: 'open', phase: 'write', promptId: incident.id, usedPrompts: [incident.id], publishedAlibis: [], publishedAlibiUids: [],
     roundEndsAt: Timestamp.fromMillis(Date.now() + WRITE_SECONDS * 1000), updatedAt: Timestamp.now()
   });
   try { await batch.commit(); } catch (error) { console.error(error); showToast('거래를 시작하지 못했습니다.'); }
@@ -313,7 +328,7 @@ async function submitAlibi(event) {
   if (value.length < 12) return showToast('변명을 12자 이상 적어주세요.');
   if (!value.includes(keyword)) return showToast(`비밀 키워드 “${keyword}”를 그대로 넣어주세요.`);
   try {
-    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `alibi-${room.round}-${currentUid}`), {
+    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `alibi-${currentUid}`), {
       uid: currentUid, nickname: playerByUid(currentUid)?.nickname || '플레이어', round: Number(room.round), kind: 'alibi', text: value,
       createdAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
@@ -324,12 +339,15 @@ async function submitAlibi(event) {
 async function openBidMarket() {
   if (!isHost() || room?.phase !== 'write' || (!allAlibis() && remainingSeconds() > 0)) return;
   try {
-    await updateDoc(doc(db, 'game_rooms', roomId), { phase: 'bid', roundEndsAt: Timestamp.fromMillis(Date.now() + BID_SECONDS * 1000), updatedAt: Timestamp.now() });
+    const publishedAlibis = currentRoundAnswers('alibi').map(item => ({ uid: item.uid, text: item.text }));
+    const publishedAlibiUids = publishedAlibis.map(item => item.uid);
+    await updateDoc(doc(db, 'game_rooms', roomId), { phase: 'bid', publishedAlibis, publishedAlibiUids, roundEndsAt: Timestamp.fromMillis(Date.now() + BID_SECONDS * 1000), updatedAt: Timestamp.now() });
   } catch (error) { console.error(error); showToast('시장을 열지 못했습니다.'); }
 }
 
 function shuffledAlibis() {
-  return [...currentRoundAnswers('alibi')].sort((a, b) => stableHash(`${room.promptId}|${a.uid}`) - stableHash(`${room.promptId}|${b.uid}`));
+  const source = room?.phase === 'bid' && Array.isArray(room.publishedAlibis) ? room.publishedAlibis : currentRoundAnswers('alibi');
+  return [...source].sort((a, b) => stableHash(`${room.promptId}|${a.uid}`) - stableHash(`${room.promptId}|${b.uid}`));
 }
 
 function renderBid() {
@@ -348,7 +366,7 @@ function renderBid() {
 async function submitVote(targetUid, stake) {
   if (!targetUid || targetUid === currentUid || room?.phase !== 'bid' || remainingSeconds() <= 0) return;
   try {
-    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `vote-${room.round}-${currentUid}`), {
+    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `vote-${currentUid}`), {
       uid: currentUid, nickname: playerByUid(currentUid)?.nickname || '플레이어', round: Number(room.round), kind: 'vote', text: 'trust-bid', targetUid, stake: Math.max(1, Math.min(3, Number(stake))),
       createdAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
@@ -359,7 +377,10 @@ async function submitVote(targetUid, stake) {
 function updateLiveStatus() {
   if (!room || room.roundState !== 'open') return;
   const status = document.getElementById('status');
-  if (status) status.textContent = room.phase === 'write' ? `변명 등록 ${currentRoundAnswers('alibi').length}/${players.length}` : `베팅 완료 ${currentRoundAnswers('vote').length}/${players.length}`;
+  if (status) {
+    if (isHost()) status.textContent = room.phase === 'write' ? `변명 등록 ${currentRoundAnswers('alibi').length}/${players.length}` : `베팅 완료 ${currentRoundAnswers('vote').length}/${players.length}`;
+    else status.textContent = room.phase === 'write' ? (myAlibi() ? '내 변명 등록 완료 · 시장 개장을 기다리는 중' : '비밀 키워드를 넣어 변명을 등록하세요.') : (myVote() ? '내 베팅 완료 · 공개를 기다리는 중' : '믿을 만한 변명에 베팅하세요.');
+  }
   const button = document.getElementById(room.phase === 'write' ? 'market' : 'reveal');
   const ready = room.phase === 'write' ? allAlibis() : allVotes();
   if (button) {
@@ -401,20 +422,11 @@ function marketEvaluation() {
 
 async function revealRound() {
   if (!isHost() || room?.phase !== 'bid' || (!allVotes() && remainingSeconds() > 0)) return;
-  const { deltas, entries, votes, winners } = marketEvaluation();
+  const { deltas } = marketEvaluation();
   const batch = writeBatch(db);
   for (const player of players) {
-    const vote = votes.find(item => item.uid === player.uid);
-    const stake = Number(vote?.stake || 0);
-    const dna = entries.some(item => item.uid === player.uid) ? addDna(player.dna, {
-      bold: stake >= 3 ? 1 : 0,
-      safe: stake === 1 ? 1 : 0,
-      unique: winners.includes(player.uid) ? 2 : 0,
-      reader: vote && winners.includes(vote.targetUid) ? 1 : 0,
-      samples: 1
-    }) : normalizeDna(player.dna);
     batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
-      score: Number(player.score || 0) + Number(deltas.get(player.uid) || 0), dna, updatedAt: Timestamp.now()
+      score: Number(player.score || 0) + Number(deltas.get(player.uid) || 0), updatedAt: Timestamp.now()
     });
   }
   batch.update(doc(db, 'game_rooms', roomId), { roundState: 'reveal', phase: 'reveal', updatedAt: Timestamp.now() });
@@ -439,7 +451,7 @@ async function nextRound() {
   const incident = pickIncident(used);
   try {
     await updateDoc(doc(db, 'game_rooms', roomId), {
-      round: Number(room.round) + 1, roundState: 'open', phase: 'write', promptId: incident.id, usedPrompts: [...used, incident.id],
+      round: Number(room.round) + 1, roundState: 'open', phase: 'write', promptId: incident.id, usedPrompts: [...used, incident.id], publishedAlibis: [], publishedAlibiUids: [],
       roundEndsAt: Timestamp.fromMillis(Date.now() + WRITE_SECONDS * 1000), updatedAt: Timestamp.now()
     });
   } catch (error) { console.error(error); showToast('다음 사건을 열지 못했습니다.'); }
@@ -458,7 +470,7 @@ async function restartGame() {
     const batch = writeBatch(db);
     answerSnap.docs.forEach(item => batch.delete(item.ref));
     for (const player of players) batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score: 0, updatedAt: Timestamp.now() });
-    batch.update(doc(db, 'game_rooms', roomId), { status: 'lobby', round: 0, roundState: 'waiting', phase: 'waiting', promptId: '', usedPrompts: [], roundEndsAt: deleteField(), updatedAt: Timestamp.now() });
+    batch.update(doc(db, 'game_rooms', roomId), { status: 'lobby', round: 0, roundState: 'waiting', phase: 'waiting', promptId: '', usedPrompts: [], publishedAlibis: [], publishedAlibiUids: [], roundEndsAt: deleteField(), updatedAt: Timestamp.now() });
     await batch.commit();
   } catch (error) { console.error(error); showToast('거래소를 다시 열지 못했습니다.'); }
 }

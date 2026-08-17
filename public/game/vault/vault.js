@@ -5,12 +5,13 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
   setDoc,
   Timestamp,
   updateDoc,
+  where,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -36,6 +37,7 @@ let currentUid = '';
 let unsubscribeRoom = null;
 let unsubscribePlayers = null;
 let unsubscribeAnswers = null;
+let answerScope = '';
 let timerId = null;
 let toastId = null;
 
@@ -90,6 +92,7 @@ function stopSubscriptions() {
   unsubscribeRoom = null;
   unsubscribePlayers = null;
   unsubscribeAnswers = null;
+  answerScope = '';
   clearInterval(timerId);
   timerId = null;
 }
@@ -261,7 +264,7 @@ async function createRoom(nicknameValue) {
       vaults: [], lastResults: [], createdAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     await setDoc(doc(db, 'game_rooms', code, 'players', currentUid), {
-      uid: currentUid, nickname, score: 0, combo: 0, dna: emptyDna(), joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
+      uid: currentUid, nickname, score: 0, combo: 0, joinOrder: Date.now(), joinedAt: Timestamp.now(), updatedAt: Timestamp.now()
     });
     sessionStorage.setItem(`sosoking-game-nickname:${code}`, nickname);
     roomId = code;
@@ -295,7 +298,6 @@ async function joinRoom(codeValue, nicknameValue) {
       uid: currentUid, nickname,
       score: existing.exists() ? Number(existing.data().score || 0) : 0,
       combo: existing.exists() ? Number(existing.data().combo || 0) : 0,
-      dna: normalizeDna(existing.exists() ? existing.data().dna : {}),
       joinOrder: existing.exists() ? Number(existing.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existing.exists() ? existing.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -336,16 +338,27 @@ function subscribeRoom(code) {
   unsubscribeRoom = onSnapshot(doc(db, 'game_rooms', code), snapshot => {
     if (!snapshot.exists()) { showToast('게임방이 종료되었습니다.'); setRoomUrl(''); renderLanding(); return; }
     room = { id: snapshot.id, ...snapshot.data() };
+    ensureAnswerSubscription(code);
     renderCurrentState();
   }, error => { console.error('vault room subscription failed', error); renderError('게임방 정보를 불러오지 못했습니다.'); });
   unsubscribePlayers = onSnapshot(collection(db, 'game_rooms', code, 'players'), snapshot => {
     players = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
     if (room?.status === 'playing' && room?.roundState === 'open') updateRoundLiveStatus(); else renderCurrentState();
   });
-  unsubscribeAnswers = onSnapshot(collection(db, 'game_rooms', code, 'answers'), snapshot => {
+}
+
+function ensureAnswerSubscription(code) {
+  const nextScope = room?.status === 'playing' && room?.roundState === 'open' && !isHost() ? 'mine' : 'all';
+  if (answerScope === nextScope && unsubscribeAnswers) return;
+  unsubscribeAnswers?.();
+  answerScope = nextScope;
+  answers = [];
+  const base = collection(db, 'game_rooms', code, 'answers');
+  const source = nextScope === 'mine' ? query(base, where('uid', '==', currentUid)) : base;
+  unsubscribeAnswers = onSnapshot(source, snapshot => {
     answers = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
     if (room?.status === 'playing' && room?.roundState === 'open') updateRoundLiveStatus(); else renderCurrentState();
-  });
+  }, error => { console.error('vault answers subscription failed', error); showToast('선택 정보를 불러오지 못했습니다.'); });
 }
 
 function renderCurrentState() {
@@ -380,11 +393,14 @@ function remainingSeconds() {
 }
 function allSubmitted() { return players.length >= 2 && currentRoundAnswers().length >= players.length; }
 function canRevealNow() { return remainingSeconds() <= 0 || allSubmitted(); }
+function submissionLabel(mine) {
+  return isHost() ? `${mine ? '🔒 선택 완료 · ' : ''}현재 ${currentRoundAnswers().length}/${players.length}명 선택` : mine ? '🔒 내 선택 완료 · 다른 참가자를 기다리는 중' : '금고 하나를 선택해주세요.';
+}
 
 function renderRound() {
   const mine = currentRoundAnswers().find(item => item.uid === currentUid);
   const myPlayer = playerByUid(currentUid);
-  app.innerHTML = `<section class="panel vault-panel"><div class="round-head"><div><span class="round-label">ROUND ${Number(room.round)} / ${MAX_ROUNDS}</span><div class="mini-score">내 금고액 <strong>${Number(myPlayer?.score || 0).toLocaleString()}C</strong>${Number(myPlayer?.combo || 0) >= 2 ? ` · 🔥 ${Number(myPlayer.combo)}콤보` : ''}</div></div><span class="timer" id="round-timer">${remainingSeconds()}</span></div>${roundMultiplier() > 1 ? '<div class="final-banner">👑 FINAL RUN · 이번 라운드 보상 2배</div>' : ''}<h2 class="pick-title">어느 금고를 열까?</h2><p class="round-copy">다른 사람과 겹치지 않을 것 같은 금고 하나를 고르세요. 마감 전에는 바꿀 수 있습니다.</p><div class="vault-grid" id="vault-grid">${(room.vaults || []).map(vault => vaultCardMarkup(vault, mine?.text || '')).join('')}</div><div class="status-line" id="submitted-count">${mine ? '🔒 선택 완료 · ' : ''}현재 ${currentRoundAnswers().length}/${players.length}명 선택</div>${isHost() ? `<div class="button-row"><button class="secondary-button" id="reveal-round" type="button" ${canRevealNow() ? '' : 'disabled'}>${allSubmitted() ? '전원 선택! 금고 열기' : '선택 종료 후 금고 열기'}</button></div>` : ''}</section>`;
+  app.innerHTML = `<section class="panel vault-panel"><div class="round-head"><div><span class="round-label">ROUND ${Number(room.round)} / ${MAX_ROUNDS}</span><div class="mini-score">내 금고액 <strong>${Number(myPlayer?.score || 0).toLocaleString()}C</strong>${Number(myPlayer?.combo || 0) >= 2 ? ` · 🔥 ${Number(myPlayer.combo)}콤보` : ''}</div></div><span class="timer" id="round-timer">${remainingSeconds()}</span></div>${roundMultiplier() > 1 ? '<div class="final-banner">👑 FINAL RUN · 이번 라운드 보상 2배</div>' : ''}<h2 class="pick-title">어느 금고를 열까?</h2><p class="round-copy">다른 사람과 겹치지 않을 것 같은 금고 하나를 고르세요. 마감 전에는 바꿀 수 있습니다.</p><div class="vault-grid" id="vault-grid">${(room.vaults || []).map(vault => vaultCardMarkup(vault, mine?.text || '')).join('')}</div><div class="status-line" id="submitted-count">${submissionLabel(mine)}</div>${isHost() ? `<div class="button-row"><button class="secondary-button" id="reveal-round" type="button" ${canRevealNow() ? '' : 'disabled'}>${allSubmitted() ? '전원 선택! 금고 열기' : '선택 종료 후 금고 열기'}</button></div>` : ''}</section>`;
   document.querySelectorAll('[data-vault]').forEach(button => button.addEventListener('click', () => void chooseVault(button.dataset.vault)));
   document.getElementById('reveal-round')?.addEventListener('click', revealRound);
   runTimer();
@@ -394,7 +410,7 @@ async function chooseVault(vaultId) {
   if (!room || room.roundState !== 'open' || remainingSeconds() <= 0 || !vaultById(vaultId)) return;
   const player = playerByUid(currentUid);
   try {
-    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `${room.round}-${currentUid}`), { uid: currentUid, nickname: player?.nickname || '플레이어', round: Number(room.round), kind: 'vault', text: vaultId, createdAt: Timestamp.now(), updatedAt: Timestamp.now() });
+    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `choice-${currentUid}`), { uid: currentUid, nickname: player?.nickname || '플레이어', round: Number(room.round), kind: 'vault', text: vaultId, createdAt: Timestamp.now(), updatedAt: Timestamp.now() });
     updateRoundLiveStatus();
   } catch (error) { console.error('choose vault failed', error); showToast('금고 선택을 저장하지 못했습니다.'); }
 }
@@ -408,7 +424,7 @@ function updateRoundLiveStatus() {
     if (button.dataset.vault === mine?.text) { const tag = document.createElement('em'); tag.textContent = '선택 완료'; button.append(tag); }
   });
   const count = document.getElementById('submitted-count');
-  if (count) count.textContent = `${mine ? '🔒 선택 완료 · ' : ''}현재 ${currentRoundAnswers().length}/${players.length}명 선택`;
+  if (count) count.textContent = submissionLabel(mine);
   const reveal = document.getElementById('reveal-round');
   if (reveal) { reveal.disabled = !canRevealNow(); reveal.textContent = allSubmitted() ? '전원 선택! 금고 열기' : remainingSeconds() <= 0 ? '금고 열고 결과 공개' : '선택 종료 후 금고 열기'; }
 }
@@ -496,12 +512,7 @@ async function revealRound() {
   const batch = writeBatch(db);
   players.forEach(player => {
     const score = Math.max(0, Number(player.score || 0) + Number(deltas.get(player.uid) || 0));
-    const answer = selections.find(item => item.uid === player.uid);
-    const selectedVault = answer ? vaultById(answer.text) : null;
-    const solo = Boolean(answer && (groups.get(answer.text) || []).length === 1);
-    const risky = Boolean(selectedVault && (selectedVault.kind !== 'cash' || Number(selectedVault.value || 0) >= 400));
-    const dna = answer ? addDna(player.dna, { bold: risky ? 1 : 0, safe: risky ? 0 : 1, unique: solo ? 1 : 0, samples: 1 }) : normalizeDna(player.dna);
-    batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score, combo: Number(combos.get(player.uid) || 0), dna, updatedAt: Timestamp.now() });
+    batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), { score, combo: Number(combos.get(player.uid) || 0), updatedAt: Timestamp.now() });
   });
   batch.update(doc(db, 'game_rooms', roomId), { roundState: 'reveal', lastResults: results, updatedAt: Timestamp.now() });
   try { await batch.commit(); } catch (error) { console.error('reveal vault round failed', error); showToast('결과를 공개하지 못했습니다.'); }

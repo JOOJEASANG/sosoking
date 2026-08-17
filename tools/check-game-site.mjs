@@ -9,17 +9,18 @@ const firebase = JSON.parse(read('firebase.json'));
 const rules = read('firestore.rules');
 const functionMain = read('functions/main.js');
 const gameProfile = read('functions/game-profile.js');
-const dnaDirector = read('functions/dna-director.js');
+const memberProfile = read('public/game/member-profile.js');
+const deployWorkflow = read('.github/workflows/firebase-deploy.yml');
 const sw = read('public/sw.js');
-const liveGames = ['dna', 'vault', 'chosung', 'mind', 'alibi'];
-const removedGames = ['world', 'greed', 'caught'];
+const liveGames = ['grid', 'vault', 'chosung', 'mind', 'alibi'];
+const removedGames = ['dna', 'world', 'greed', 'caught'];
 
 for (const page of [main, gameHome]) {
   for (const folder of liveGames) assert.match(page, new RegExp(`href="/game/${folder}/"`), `${folder} choice missing`);
   for (const folder of removedGames) assert.doesNotMatch(page, new RegExp(`/game/${folder}/`), `${folder} must not remain in hub`);
   assert.match(page, /소소킹 플레이/);
-  assert.match(page, /소소킹 DNA/);
-  assert.doesNotMatch(page, /판결소|#\/board|#\/submit|#\/trial/);
+  assert.match(page, /칸폭주 30/);
+  assert.doesNotMatch(page, /습관파괴|플레이 DNA|AI 보스|판결소|#\/board|#\/submit|#\/trial/i);
 }
 
 for (const folder of liveGames) assert.ok(fs.existsSync(`public/game/${folder}/index.html`), `${folder} page missing`);
@@ -30,30 +31,51 @@ for (const file of [
   'public/game/fun-pack.js',
   'public/game/game-master.js',
   'public/game/member-profile.js',
-  'public/game/dna-profile.js',
-  'public/game/dna/dna.js',
-  'functions/game-profile.js',
-  'functions/dna-director-core.js',
-  'functions/dna-director.js'
+  'public/game/game-night.js',
+  'public/game/grid/grid-core.js',
+  'public/game/grid/grid.js',
+  'public/game/vault/vault.js',
+  'public/game/chosung/chosung.js',
+  'public/game/mind/mind.js',
+  'public/game/alibi/alibi.js',
+  'functions/game-profile.js'
 ]) {
   const syntax = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
   assert.equal(syntax.status, 0, syntax.stderr || `${file} syntax failed`);
 }
 
-assert.match(rules, /match \/game_rooms\/\{roomId\}/);
-assert.match(rules, /data\.type == 'dna-boss'/);
-assert.doesNotMatch(rules, /sosoking-world|greed-stairs|unique-low|match \/reactions/);
+for (const deleted of [
+  'public/game/dna-profile.js',
+  'public/game/dna/index.html',
+  'public/game/dna/dna.js',
+  'public/game/dna/dna.css',
+  'functions/dna-director.js',
+  'functions/dna-director-core.js',
+  'tools/check-dna-game.mjs',
+  'tools/check-dna-rules.mjs'
+]) assert.ok(!fs.existsSync(deleted), `${deleted} must be deleted`);
+
+assert.match(rules, /data\.type == 'grid-rush'/);
+assert.match(rules, /data\.maxRounds >= 3 && data\.maxRounds <= 8/);
+assert.match(rules, /resource\.data\.uid == request\.auth\.uid/);
+assert.doesNotMatch(rules, /dna-boss|sosoking-world|greed-stairs|unique-low|match \/reactions/);
 assert.doesNotMatch(rules, /match \/cases|match \/results|court_comments|reports/);
 assert.match(functionMain, /require\('\.\/game-profile'\)/);
-assert.match(functionMain, /require\('\.\/dna-director'\)/);
+assert.doesNotMatch(functionMain, /dna|daily|social|reports|submit|trial|court/i);
+assert.match(rules, /isValidNewPlayer/);
+assert.match(rules, /data\.keys\(\)\.hasOnly/);
+assert.match(memberProfile, /query\(base, where\('uid', '==', uid\)\)/);
+assert.match(memberProfile, /item\.kind === 'chosung'/);
 assert.match(gameProfile, /exports\.getGamePlayerProfiles/);
-assert.match(dnaDirector, /exports\.generateDnaBoss/);
-assert.doesNotMatch(functionMain, /daily|social|reports|submit|trial|court/i);
+assert.match(gameProfile, /enforceAppCheck: ENFORCE_APP_CHECK/);
+assert.match(deployWorkflow, /functions\/\.env\.sosoking-481e6/);
+assert.match(deployWorkflow, /vars\.ENFORCE_APP_CHECK/);
 assert.equal(firebase.hosting.public, 'public');
 assert.ok(!firebase.hosting.rewrites, 'court rewrites must not remain');
-assert.match(sw, /\/game\/dna\/index\.html/);
+assert.match(sw, /\/game\/grid\/index\.html/);
 assert.match(sw, /\/game\/chosung\/index\.html/);
-assert.doesNotMatch(sw, /\/game\/(?:world|greed|caught)\//);
+assert.doesNotMatch(sw, /\/game\/(?:dna|world|greed|caught)\//);
+
 const appShell = sw.match(/const APP_SHELL = \[([\s\S]*?)\];/)?.[1] || '';
 const cachedPaths = [...appShell.matchAll(/'([^']+)'/g)].map(match => match[1]);
 const cachedSet = new Set(cachedPaths);
@@ -75,4 +97,4 @@ for (const removed of ['public/admin', 'public/css', 'public/js/pages', 'docs'])
   assert.ok(!fs.existsSync(removed), `${removed} should be removed`);
 }
 
-console.log('Game-first repository validation passed: five original game routes, DNA director, game-only rules, and deleted overlap routes are consistent.');
+console.log('Game-first repository validation passed: five live routes, Grid Rush, private round answers, one profile Function, and deleted DNA/legacy routes are consistent.');

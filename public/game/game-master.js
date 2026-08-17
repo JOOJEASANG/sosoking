@@ -1,7 +1,7 @@
 const AUTO_KEY='sosoking-game-master:auto';
 const PAUSE_KEY='sosoking-game-master:paused';
 const RESULT_DELAY=4200;
-const REVEAL_SELECTORS=['#reveal-round','#reveal','#show-results','#reveal-results'];
+const REVEAL_SELECTORS=['#reveal-round','#reveal','#market','#show-results','#reveal-results'];
 const NEXT_SELECTORS=['#next-round','#next','#next-step','#continue'];
 let auto=true;
 let paused=false;
@@ -48,6 +48,7 @@ function fallbackChoice(){
   const seconds=Number(timer?.textContent||99);if(!Number.isFinite(seconds)||seconds>1)return;
   if(document.querySelector('.is-selected,[data-vault].is-selected'))return;
   const vaults=[...document.querySelectorAll('[data-vault]')].filter(el=>el instanceof HTMLButtonElement&&!el.disabled);if(vaults.length){vaults[Math.floor(Math.random()*vaults.length)].click();return;}
+  const gridActions=[...document.querySelectorAll('[data-grid-action]')].filter(el=>el instanceof HTMLButtonElement&&!el.disabled);if(gridActions.length){gridActions[Math.floor(Math.random()*gridActions.length)].click();return;}
 }
 function drive(){
   renderControl();fallbackChoice();
