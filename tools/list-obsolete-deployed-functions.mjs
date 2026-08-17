@@ -31,6 +31,7 @@ const RETIRED_FUNCTIONS = new Set([
   'generateCourtCaseV6',
   'generateCourtCaseV7',
   'generateDailyAiNow',
+  'generateDnaBoss',
   'generateLatestAiCharacterComments',
   'generateTrial',
   'getAdminAutomationStatus',

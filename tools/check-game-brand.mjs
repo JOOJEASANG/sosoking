@@ -37,7 +37,7 @@ assert.deepEqual(manifest.categories, ['games', 'entertainment', 'social']);
 assert.ok(manifest.icons.some(icon => icon.purpose === 'maskable'));
 assert.match(logoSvg, /왕관 게임패드 로고/);
 assert.match(maskableSvg, /마스커블 앱 아이콘/);
-assert.match(sw, /sosoking-play-v20260816-dna-1/);
+assert.match(sw, /sosoking-play-v20260817-grid-2/);
 assert.match(sw, /\/game\/install\.js/);
 
 for (const [file, size] of [
@@ -56,6 +56,6 @@ for (const [file, size] of [
 const ogDimensions = pngSize('public/og-image.png');
 assert.equal(ogDimensions.width, 1200);
 assert.equal(ogDimensions.height, 630);
-assert.equal(read('public/deploy-version.txt').trim(), 'sosoking-play-20260816-3');
+assert.equal(read('public/deploy-version.txt').trim(), 'sosoking-play-20260817-2');
 
 console.log('Sosoking Play brand validation passed: game-first copy, crown gamepad logo, PWA install metadata, maskable icon, and social image are synchronized.');

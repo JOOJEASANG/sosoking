@@ -37,12 +37,10 @@ try {
   }));
   await assertSucceeds(setDoc(doc(hostDb, `game_rooms/${roomId}/players/night-host`), {
     uid: 'night-host', nickname: '방장', score: 0, combo: 0,
-    dna: { bold: 8, safe: 1, unique: 2, reader: 0, samples: 6 },
     joinOrder: 1, joinedAt: now, updatedAt: now
   }));
   await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${roomId}/players/night-player`), {
     uid: 'night-player', nickname: '친구', score: 0, combo: 0,
-    dna: { bold: 0, safe: 4, unique: 3, reader: 7, samples: 8 },
     joinOrder: 2, joinedAt: now, updatedAt: now
   }));
   await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${roomId}/players/night-host`), { score: 900, combo: 3, updatedAt: now }));
@@ -51,14 +49,14 @@ try {
     status: 'playing', round: 1, roundState: 'open', roundEndsAt: future,
     vaults: [{ id: 'v1', kind: 'cash', value: 200 }], updatedAt: now
   }));
-  await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${roomId}/answers/1-night-player`), {
+  await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${roomId}/answers/choice-night-player`), {
     uid: 'night-player', nickname: '친구', round: 1, kind: 'vault', text: 'v1', createdAt: now, updatedAt: now
   }));
   await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${roomId}`), {
     status: 'finished', roundState: 'finished', updatedAt: now
   }));
   await assertFails(updateDoc(doc(playerDb, `game_rooms/${roomId}`), {
-    type: 'dna-boss', status: 'lobby', round: 0, maxRounds: 6, roundState: 'waiting', updatedAt: now
+    type: 'grid-rush', status: 'lobby', round: 0, maxRounds: 24, roundState: 'waiting', updatedAt: now
   }));
 
   const [playersSnap, answersSnap, roomSnap] = await Promise.all([
@@ -66,22 +64,21 @@ try {
     getDocs(collection(hostDb, `game_rooms/${roomId}/answers`)),
     getDoc(doc(hostDb, `game_rooms/${roomId}`))
   ]);
-  const originalDna = Object.fromEntries(playersSnap.docs.map(item => [item.id, item.data().dna]));
   const batch = writeBatch(hostDb);
   answersSnap.docs.forEach(item => batch.delete(item.ref));
   playersSnap.docs.forEach(item => {
     const player = item.data();
     batch.set(item.ref, {
-      uid: player.uid, nickname: player.nickname, score: 0, combo: 0, position: 0, laps: 0,
-      damage: 0, runState: 'waiting', dna: player.dna,
+      uid: player.uid, nickname: player.nickname, score: 0, combo: 0, position: 0,
+      shield: 0, scrap: 0, banked: 0, jammed: false,
+      barrierDent: false, finishPower: 0, lastDelta: 0,
       joinOrder: player.joinOrder, joinedAt: player.joinedAt, updatedAt: now
     });
   });
   batch.set(doc(hostDb, `game_rooms/${roomId}`), {
-    type: 'dna-boss', status: 'lobby', hostUid: 'night-host', maxPlayers: 8,
-    round: 0, maxRounds: 6, roundState: 'waiting', phase: 'waiting',
-    bossHp: 0, bossMaxHp: 0, aiStatus: 'idle', aiMode: '', aiPack: {}, lastResults: [],
-    previousGameType: 'vault-run', nextGameId: 'dna', gameNightRound: 1,
+    type: 'grid-rush', status: 'lobby', hostUid: 'night-host', maxPlayers: 8,
+    round: 0, maxRounds: 24, roundState: 'waiting', roundSeconds: 10,
+    board: [], lastResults: [], winnerUid: '', previousGameType: 'vault-run', nextGameId: 'grid', gameNightRound: 1,
     createdAt: roomSnap.data().createdAt, updatedAt: now
   });
   await assertSucceeds(batch.commit());
@@ -91,12 +88,12 @@ try {
     getDocs(collection(hostDb, `game_rooms/${roomId}/players`)),
     getDocs(collection(hostDb, `game_rooms/${roomId}/answers`))
   ]);
-  if (switchedRoom.data().type !== 'dna-boss' || switchedRoom.data().status !== 'lobby') throw new Error('room did not switch');
-  if (switchedPlayers.docs.some(item => Number(item.data().score || 0) !== 0)) throw new Error('scores did not reset');
-  if (switchedPlayers.docs.some(item => JSON.stringify(item.data().dna) !== JSON.stringify(originalDna[item.id]))) throw new Error('DNA did not survive');
+  if (switchedRoom.data().type !== 'grid-rush' || switchedRoom.data().status !== 'lobby') throw new Error('room did not switch');
+  if (switchedPlayers.docs.some(item => Number(item.data().score || 0) !== 0 || Number(item.data().position || 0) !== 0)) throw new Error('game state did not reset');
+  if (switchedPlayers.docs.some(item => ['dna', 'laps', 'damage', 'runState'].some(field => Object.hasOwn(item.data(), field)))) throw new Error('retired player state survived reset');
   if (!emptyAnswers.empty) throw new Error('round answers did not clear');
 
-  console.log('Game night Firestore rules passed: only the host can switch games, answers and scores reset, and each member’s cumulative DNA survives the same-room transition.');
+  console.log('Game night Firestore rules passed: only the host can switch games, private answers clear, scores reset, and Grid state starts clean without DNA fields.');
 } finally {
   await testEnv.cleanup();
 }

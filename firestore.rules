@@ -23,13 +23,169 @@ service cloud.firestore {
         && gameRoomDoc(roomId).data.hostUid == request.auth.uid;
     }
 
+    function isGamePlayer(roomId) {
+      return signedIn() && gamePlayerExists(roomId, request.auth.uid);
+    }
+
     function isValidGameRoom(data) {
       return data.maxPlayers == 8 && (
+        (data.type == 'grid-rush' && data.maxRounds == 24) ||
         (data.type == 'chosung-bomb' && data.maxRounds == 7) ||
-        (data.type == 'mind-reader' && data.maxRounds == 8) ||
+        (data.type == 'mind-reader' && data.maxRounds >= 3 && data.maxRounds <= 8) ||
         (data.type == 'alibi-market' && data.maxRounds == 3) ||
-        (data.type == 'vault-run' && data.maxRounds == 9) ||
-        (data.type == 'dna-boss' && data.maxRounds == 6)
+        (data.type == 'vault-run' && data.maxRounds == 9)
+      );
+    }
+
+    function hasValidNewPlayerBase(uid, data) {
+      return data.keys().hasAll(['uid', 'nickname', 'score', 'joinOrder', 'joinedAt', 'updatedAt'])
+        && data.uid == uid
+        && data.score == 0
+        && data.nickname is string
+        && data.nickname.size() > 0
+        && data.nickname.size() <= 12
+        && data.joinOrder is int
+        && data.joinedAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNewPlayer(uid, roomId, data) {
+      return hasValidNewPlayerBase(uid, data) && (
+        (
+          gameRoomDoc(roomId).data.type == 'grid-rush'
+          && data.keys().hasOnly([
+            'uid', 'nickname', 'score', 'position', 'shield', 'scrap', 'banked',
+            'jammed', 'barrierDent', 'finishPower', 'lastDelta', 'joinOrder',
+            'joinedAt', 'updatedAt'
+          ])
+          && data.position == 0
+          && data.shield == 0
+          && data.scrap == 0
+          && data.banked == 0
+          && data.jammed == false
+          && data.barrierDent == false
+          && data.finishPower == 0
+          && data.lastDelta == 0
+        )
+        || (
+          gameRoomDoc(roomId).data.type == 'vault-run'
+          && data.keys().hasOnly([
+            'uid', 'nickname', 'score', 'combo', 'joinOrder', 'joinedAt', 'updatedAt'
+          ])
+          && data.combo == 0
+        )
+        || (
+          gameRoomDoc(roomId).data.type in ['chosung-bomb', 'mind-reader', 'alibi-market']
+          && data.keys().hasOnly([
+            'uid', 'nickname', 'score', 'joinOrder', 'joinedAt', 'updatedAt'
+          ])
+        )
+      );
+    }
+
+    function hasValidAnswerBase(roomId, data) {
+      return signedIn()
+        && gameRoomExists(roomId)
+        && isGamePlayer(roomId)
+        && data.keys().hasAll(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
+        && data.uid == request.auth.uid
+        && data.nickname is string
+        && data.nickname.size() > 0
+        && data.nickname.size() <= 12
+        && data.round is int
+        && data.round == gameRoomDoc(roomId).data.round
+        && data.text is string
+        && data.text.size() > 0
+        && data.text.size() <= 120
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && gameRoomDoc(roomId).data.status == 'playing'
+        && gameRoomDoc(roomId).data.roundState == 'open'
+        && gameRoomDoc(roomId).data.roundEndsAt is timestamp
+        && request.time <= gameRoomDoc(roomId).data.roundEndsAt;
+    }
+
+    function isValidGridAnswer(answerId, roomId, data) {
+      return gameRoomDoc(roomId).data.type == 'grid-rush'
+        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
+        && answerId == 'choice-' + request.auth.uid
+        && data.kind == 'grid-action'
+        && data.text in ['rush', 'guard', 'recycle'];
+    }
+
+    function isValidVaultAnswer(answerId, roomId, data) {
+      return gameRoomDoc(roomId).data.type == 'vault-run'
+        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
+        && answerId == 'choice-' + request.auth.uid
+        && data.kind == 'vault'
+        && data.text in ['v1', 'v2', 'v3', 'v4', 'v5'];
+    }
+
+    function isValidChosungAnswer(answerId, roomId, data) {
+      return gameRoomDoc(roomId).data.type == 'chosung-bomb'
+        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
+        && answerId == 'choice-' + request.auth.uid
+        && data.kind == 'chosung'
+        && data.text.size() <= 24;
+    }
+
+    function isValidMindChoice(answerId, roomId, data) {
+      return gameRoomDoc(roomId).data.type == 'mind-reader'
+        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
+        && answerId == 'choice-' + request.auth.uid
+        && request.auth.uid != gameRoomDoc(roomId).data.targetUid
+        && data.kind == 'choice'
+        && data.text in ['A', 'B', 'C', 'D'];
+    }
+
+    function isValidMindGuess(answerId, roomId, data) {
+      return gameRoomDoc(roomId).data.type == 'mind-reader'
+        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'subjectUid', 'text', 'createdAt', 'updatedAt'])
+        && data.subjectUid is string
+        && answerId == 'guess-' + data.subjectUid
+        && request.auth.uid == gameRoomDoc(roomId).data.targetUid
+        && data.subjectUid != request.auth.uid
+        && gamePlayerExists(roomId, data.subjectUid)
+        && data.kind == 'guess'
+        && data.text in ['A', 'B', 'C', 'D'];
+    }
+
+    function isValidAlibiText(answerId, roomId, data) {
+      return gameRoomDoc(roomId).data.type == 'alibi-market'
+        && gameRoomDoc(roomId).data.phase == 'write'
+        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
+        && answerId == 'alibi-' + request.auth.uid
+        && data.kind == 'alibi'
+        && data.text.size() >= 12
+        && data.text.size() <= 100;
+    }
+
+    function isValidAlibiVote(answerId, roomId, data) {
+      return gameRoomDoc(roomId).data.type == 'alibi-market'
+        && gameRoomDoc(roomId).data.phase == 'bid'
+        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'targetUid', 'stake', 'text', 'createdAt', 'updatedAt'])
+        && answerId == 'vote-' + request.auth.uid
+        && data.kind == 'vote'
+        && data.text == 'trust-bid'
+        && data.targetUid is string
+        && data.targetUid != request.auth.uid
+        && gamePlayerExists(roomId, data.targetUid)
+        && gameRoomDoc(roomId).data.publishedAlibiUids is list
+        && data.targetUid in gameRoomDoc(roomId).data.publishedAlibiUids
+        && data.stake is int
+        && data.stake >= 1
+        && data.stake <= 3;
+    }
+
+    function isValidGameAnswer(answerId, roomId, data) {
+      return hasValidAnswerBase(roomId, data) && (
+        isValidGridAnswer(answerId, roomId, data) ||
+        isValidVaultAnswer(answerId, roomId, data) ||
+        isValidChosungAnswer(answerId, roomId, data) ||
+        isValidMindChoice(answerId, roomId, data) ||
+        isValidMindGuess(answerId, roomId, data) ||
+        isValidAlibiText(answerId, roomId, data) ||
+        isValidAlibiVote(answerId, roomId, data)
       );
     }
 
@@ -40,30 +196,33 @@ service cloud.firestore {
     }
 
     match /game_rooms/{roomId} {
-      allow get: if signedIn();
+      allow get: if signedIn() && (
+        resource.data.status == 'lobby' || isGamePlayer(roomId)
+      );
       allow list: if false;
       allow create: if signedIn()
         && request.resource.data.hostUid == request.auth.uid
         && request.resource.data.status == 'lobby'
         && isValidGameRoom(request.resource.data);
-      allow update: if isGameHost(roomId) && isValidGameRoom(request.resource.data);
+      allow update: if isGameHost(roomId)
+        && request.resource.data.hostUid == resource.data.hostUid
+        && isValidGameRoom(request.resource.data);
       allow delete: if isGameHost(roomId);
 
       match /players/{uid} {
-        allow read: if signedIn() && gameRoomExists(roomId);
+        allow read: if signedIn() && gameRoomExists(roomId) && (
+          gameRoomDoc(roomId).data.status == 'lobby' || isGamePlayer(roomId)
+        );
         allow create: if signedIn()
           && gameRoomExists(roomId)
           && gameRoomDoc(roomId).data.status == 'lobby'
           && uid == request.auth.uid
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.score == 0
-          && request.resource.data.nickname is string
-          && request.resource.data.nickname.size() > 0
-          && request.resource.data.nickname.size() <= 12;
+          && isValidNewPlayer(uid, roomId, request.resource.data);
         allow update: if signedIn() && gameRoomExists(roomId) && (
           isGameHost(roomId)
           || (
             uid == request.auth.uid
+            && gameRoomDoc(roomId).data.status == 'lobby'
             && request.resource.data.uid == resource.data.uid
             && request.resource.data.score == resource.data.score
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'updatedAt'])
@@ -73,29 +232,21 @@ service cloud.firestore {
           )
         );
         allow delete: if signedIn() && gameRoomExists(roomId) && (
-          uid == request.auth.uid || isGameHost(roomId)
+          isGameHost(roomId)
+          || (uid == request.auth.uid && gameRoomDoc(roomId).data.status == 'lobby')
         );
       }
 
       match /answers/{answerId} {
-        allow read: if signedIn()
-          && gameRoomExists(roomId)
-          && gamePlayerExists(roomId, request.auth.uid);
-        allow create, update: if signedIn()
-          && gameRoomExists(roomId)
-          && gamePlayerExists(roomId, request.auth.uid)
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.round == gameRoomDoc(roomId).data.round
-          && gameRoomDoc(roomId).data.status == 'playing'
-          && gameRoomDoc(roomId).data.roundState == 'open'
-          && gameRoomDoc(roomId).data.roundEndsAt is timestamp
-          && request.time <= gameRoomDoc(roomId).data.roundEndsAt
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 120;
+        // 진행 중에는 방장과 작성자만 원문을 읽는다. 공개 단계가 되면 참가자 전체가 읽는다.
+        allow read: if isGamePlayer(roomId) && (
+          isGameHost(roomId)
+          || resource.data.uid == request.auth.uid
+          || gameRoomDoc(roomId).data.roundState != 'open'
+        );
+        allow create, update: if isValidGameAnswer(answerId, roomId, request.resource.data);
         allow delete: if isGameHost(roomId);
       }
-
     }
 
     match /{document=**} {

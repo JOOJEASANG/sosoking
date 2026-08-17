@@ -21,7 +21,7 @@
 .game-night-choice:hover{border-color:rgba(255,209,102,.5);background:rgba(255,209,102,.1)}
 .game-night-choice:active{transform:scale(.98)}
 .game-night-choice:disabled,.game-night-replay:disabled{opacity:.55;cursor:wait}
-.game-night-choice.is-dna{grid-column:1/-1;background:linear-gradient(125deg,rgba(134,104,255,.18),rgba(105,219,156,.1)),var(--panel2,var(--panel-2,#182235))}
+.game-night-choice.is-featured{grid-column:1/-1;background:linear-gradient(125deg,rgba(87,222,255,.17),rgba(134,104,255,.12)),var(--panel2,var(--panel-2,#182235))}
 .game-night-emoji{font-size:25px;text-align:center}
 .game-night-choice strong{display:block;font-size:11px}
 .game-night-choice small{display:block;margin-top:3px;color:var(--muted);font-size:8.5px;line-height:1.35}
@@ -34,5 +34,5 @@
 .game-night-picker.is-switching{pointer-events:none}
 .game-night-picker.is-switching::after{content:'같은 방으로 다음 게임을 준비하고 있습니다';display:block;margin-top:12px;color:var(--good,#69db9c);font-size:9px;font-weight:900;text-align:center}
 @keyframes gameNightWait{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}}
-@media(max-width:470px){.game-night-picker{padding:15px}.game-night-grid{grid-template-columns:1fr}.game-night-choice.is-dna{grid-column:auto}.game-night-choice{min-height:68px}}
+@media(max-width:470px){.game-night-picker{padding:15px}.game-night-grid{grid-template-columns:1fr}.game-night-choice.is-featured{grid-column:auto}.game-night-choice{min-height:68px}}
 @media(prefers-reduced-motion:reduce){.game-night-carry-banner,.game-night-choice,.game-night-replay,.game-night-waiting-dots i{animation:none;transition:none}}

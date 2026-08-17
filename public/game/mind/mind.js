@@ -6,12 +6,13 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
   setDoc,
   Timestamp,
   updateDoc,
+  where,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -45,6 +46,7 @@ let toastId = null;
 let unsubscribeRoom = null;
 let unsubscribePlayers = null;
 let unsubscribeAnswers = null;
+let answerScope = '';
 
 function escapeText(value) {
   return String(value ?? '')
@@ -84,6 +86,7 @@ function stopSubscriptions() {
   unsubscribeRoom = null;
   unsubscribePlayers = null;
   unsubscribeAnswers = null;
+  answerScope = '';
   clearInterval(timerId);
   timerId = null;
 }
@@ -227,7 +230,6 @@ async function createRoom(nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
-      dna: emptyDna(),
       joinOrder: Date.now(),
       joinedAt: Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -261,7 +263,6 @@ async function joinRoom(codeValue, nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
-      dna: normalizeDna(existing.exists() ? existing.data().dna : {}),
       joinOrder: existing.exists() ? Number(existing.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existing.exists() ? existing.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -310,6 +311,7 @@ function subscribeRoom(code) {
   unsubscribeRoom = onSnapshot(doc(db, 'game_rooms', code), snapshot => {
     if (!snapshot.exists()) return renderLanding();
     room = { id: snapshot.id, ...snapshot.data() };
+    ensureAnswerSubscription(code);
     renderCurrent();
   }, error => {
     console.error(error);
@@ -320,11 +322,20 @@ function subscribeRoom(code) {
     if (room?.status === 'playing' && room?.roundState === 'open') updateLiveStatus();
     else renderCurrent();
   });
-  unsubscribeAnswers = onSnapshot(collection(db, 'game_rooms', code, 'answers'), snapshot => {
+}
+
+function ensureAnswerSubscription(code) {
+  const nextScope = room?.status === 'playing' && room?.roundState === 'open' && !isHost() ? 'mine' : 'all';
+  if (answerScope === nextScope && unsubscribeAnswers) return;
+  unsubscribeAnswers?.();
+  answerScope = nextScope;
+  answers = [];
+  const base = collection(db, 'game_rooms', code, 'answers');
+  const source = nextScope === 'mine' ? query(base, where('uid', '==', currentUid)) : base;
+  unsubscribeAnswers = onSnapshot(source, snapshot => {
     answers = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-    if (room?.status === 'playing' && room?.roundState === 'open') updateLiveStatus();
-    else renderCurrent();
-  });
+    if (room?.status === 'playing' && room?.roundState === 'open') updateLiveStatus(); else renderCurrent();
+  }, error => { console.error('mind answers subscription failed', error); showToast('선택 정보를 불러오지 못했습니다.'); });
 }
 
 function renderCurrent() {
@@ -416,6 +427,12 @@ function allSubmitted() {
   return players.length >= 3 && submittedCount() >= expectedSubmissionCount();
 }
 
+function submissionLabel() {
+  if (isHost()) return `준비 ${Math.min(submittedCount(), expectedSubmissionCount())}/${expectedSubmissionCount()}`;
+  if (room?.targetUid === currentUid) return `내 예측 ${myGuesses().length}/${Math.max(0, players.length - 1)} 완료`;
+  return myChoice() ? '내 선택 완료 · 공개를 기다리는 중' : '내 선택을 골라주세요.';
+}
+
 function optionButtons(selected = '', prefix = '') {
   const scenario = currentScenario();
   return `<div class="balance-grid">${scenario.options.map((option, index) => {
@@ -463,7 +480,7 @@ function renderRound() {
 async function submitChoice(value) {
   if (remainingSeconds() <= 0 || room?.roundState !== 'open') return;
   try {
-    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `choice-${room.round}-${currentUid}`), {
+    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `choice-${currentUid}`), {
       uid: currentUid,
       nickname: playerByUid(currentUid)?.nickname || '플레이어',
       round: Number(room.round),
@@ -478,7 +495,7 @@ async function submitChoice(value) {
 async function submitGuess(subjectUid, value) {
   if (!subjectUid || remainingSeconds() <= 0 || room?.roundState !== 'open') return;
   try {
-    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `guess-${room.round}-${subjectUid}`), {
+    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `guess-${subjectUid}`), {
       uid: currentUid,
       nickname: playerByUid(currentUid)?.nickname || '관찰자',
       round: Number(room.round),
@@ -494,7 +511,7 @@ async function submitGuess(subjectUid, value) {
 function updateLiveStatus() {
   if (!room || room.roundState !== 'open') return;
   const status = document.getElementById('status-line');
-  if (status) status.textContent = `준비 ${Math.min(submittedCount(), expectedSubmissionCount())}/${expectedSubmissionCount()}`;
+  if (status) status.textContent = submissionLabel();
   const reveal = document.getElementById('reveal');
   if (reveal) {
     const ready = allSubmitted() || remainingSeconds() <= 0;
@@ -544,16 +561,8 @@ async function revealRound() {
   }
   const batch = writeBatch(db);
   for (const player of players) {
-    const subjectResult = evaluation.find(item => item.player.uid === player.uid);
-    const correctReads = player.uid === targetUid ? evaluation.filter(item => item.correct).length : 0;
-    const dna = player.uid === targetUid
-      ? addDna(player.dna, { reader: correctReads, samples: evaluation.length })
-      : subjectResult
-        ? addDna(player.dna, { safe: subjectResult.correct ? 1 : 0, unique: subjectResult.correct ? 0 : 1, samples: 1 })
-        : normalizeDna(player.dna);
     batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
       score: Number(player.score || 0) + Number(deltas.get(player.uid) || 0),
-      dna,
       updatedAt: Timestamp.now()
     });
   }

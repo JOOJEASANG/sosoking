@@ -41,6 +41,17 @@ jobs:
       - name: Validate game site and rules
         run: npm test
 
+      - name: Configure Functions App Check
+        env:
+          APP_CHECK_ENFORCEMENT: ${{ vars.ENFORCE_APP_CHECK }}
+        run: |
+          value="${APP_CHECK_ENFORCEMENT:-false}"
+          if [ "$value" != "true" ] && [ "$value" != "false" ]; then
+            echo "Repository variable ENFORCE_APP_CHECK must be true or false."
+            exit 1
+          fi
+          printf 'ENFORCE_APP_CHECK=%s\n' "$value" > functions/.env.sosoking-481e6
+
       - name: Prepare service account
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
@@ -54,7 +65,7 @@ jobs:
       - name: Deploy game Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:getGamePlayerProfiles,functions:generateDnaBoss --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:getGamePlayerProfiles --project sosoking-481e6 --non-interactive
 
       - name: Remove retired legacy Functions
         env:
@@ -93,4 +104,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Sosoking Play hosting, game-only rules, profile and DNA director Functions, and retired Function cleanup finished for $GITHUB_SHA"
+        run: echo "Sosoking Play hosting, game-only rules, profile Function, and retired Function cleanup finished for $GITHUB_SHA"

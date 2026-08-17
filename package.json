@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "prepare:icons": "node tools/prepare-brand-icons.mjs",
-    "check": "npm run prepare:icons && node tools/check-game-brand.mjs && node tools/check-game-site.mjs && node tools/check-game-surface-copy.mjs && node tools/check-game-fun-pack.mjs && node tools/check-auto-gm.mjs && node tools/check-game-night.mjs && node tools/check-dna-game.mjs",
+    "check": "npm run prepare:icons && node tools/check-game-brand.mjs && node tools/check-game-site.mjs && node tools/check-game-surface-copy.mjs && node tools/check-game-fun-pack.mjs && node tools/check-auto-gm.mjs && node tools/check-game-night.mjs && node tools/check-grid-game.mjs",
     "test": "npm run check && npm run test:rules",
-    "test:rules": "firebase emulators:exec --only firestore \"node tools/check-game-rules.mjs && node tools/check-dna-rules.mjs && node tools/check-game-night-rules.mjs\" --project sosoking-rules-test"
+    "test:rules": "firebase emulators:exec --only firestore \"node tools/check-game-rules.mjs && node tools/check-game-night-rules.mjs\" --project sosoking-rules-test"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",

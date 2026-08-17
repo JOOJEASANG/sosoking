@@ -5,12 +5,13 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
   setDoc,
   Timestamp,
   updateDoc,
+  where,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { addDna, emptyDna, normalizeDna } from '/game/dna-profile.js?v=20260816-dna-1';
 
 const app = document.getElementById('game-app');
 const shareButton = document.getElementById('share-room');
@@ -53,6 +54,7 @@ let answers = [];
 let unsubscribeRoom = null;
 let unsubscribePlayers = null;
 let unsubscribeAnswers = null;
+let answerScope = '';
 let timerId = null;
 let toastId = null;
 let currentUid = '';
@@ -218,6 +220,7 @@ function stopSubscriptions() {
   unsubscribeRoom = null;
   unsubscribePlayers = null;
   unsubscribeAnswers = null;
+  answerScope = '';
   clearInterval(timerId);
   timerId = null;
 }
@@ -295,7 +298,6 @@ async function createRoom(nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
-      dna: emptyDna(),
       joinOrder: Date.now(),
       joinedAt: Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -337,7 +339,6 @@ async function joinRoom(codeValue, nicknameValue) {
       uid: currentUid,
       nickname,
       score: 0,
-      dna: normalizeDna(existingPlayer.exists() ? existingPlayer.data().dna : {}),
       joinOrder: existingPlayer.exists() ? Number(existingPlayer.data().joinOrder || Date.now()) : Date.now(),
       joinedAt: existingPlayer.exists() ? existingPlayer.data().joinedAt || Timestamp.now() : Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -401,6 +402,7 @@ function subscribeRoom(code) {
       return;
     }
     room = { id: snapshot.id, ...snapshot.data() };
+    ensureAnswerSubscription(code);
     renderCurrentState();
   }, error => {
     console.error('room subscription failed', error);
@@ -413,11 +415,20 @@ function subscribeRoom(code) {
     else renderCurrentState();
   });
 
-  unsubscribeAnswers = onSnapshot(collection(db, 'game_rooms', code, 'answers'), snapshot => {
+}
+
+function ensureAnswerSubscription(code) {
+  const nextScope = room?.status === 'playing' && room?.roundState === 'open' && !isHost() ? 'mine' : 'all';
+  if (answerScope === nextScope && unsubscribeAnswers) return;
+  unsubscribeAnswers?.();
+  answerScope = nextScope;
+  answers = [];
+  const base = collection(db, 'game_rooms', code, 'answers');
+  const source = nextScope === 'mine' ? query(base, where('uid', '==', currentUid)) : base;
+  unsubscribeAnswers = onSnapshot(source, snapshot => {
     answers = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-    if (room?.status === 'playing' && room?.roundState === 'open') updateRoundLiveStatus();
-    else renderCurrentState();
-  });
+    if (room?.status === 'playing' && room?.roundState === 'open') updateRoundLiveStatus(); else renderCurrentState();
+  }, error => { console.error('chosung answers subscription failed', error); showToast('제출 정보를 불러오지 못했습니다.'); });
 }
 
 function renderCurrentState() {
@@ -503,6 +514,10 @@ function allSubmitted() {
   return players.length >= 2 && currentRoundAnswers().length >= players.length;
 }
 
+function submissionLabel(mine) {
+  return isHost() ? `현재 ${currentRoundAnswers().length}/${players.length}명 제출` : mine ? '내 답 제출 완료 · 다른 참가자를 기다리는 중' : '아직 답을 제출하지 않았습니다.';
+}
+
 function canRevealNow() {
   return remainingSeconds() <= 0 || allSubmitted();
 }
@@ -530,7 +545,7 @@ function renderRound() {
         <div class="button-row"><button class="primary-button" id="answer-submit" type="submit">${myAnswer ? '답 수정하기' : '답 제출하기'}</button></div>
       </form>
       <div class="answer-status" id="answer-status">${myAnswer ? `제출 완료 · ${escapeText(myAnswer.text)}` : ''}</div>
-      <div class="submitted-count" id="submitted-count">현재 ${currentRoundAnswers().length}/${players.length}명 제출</div>
+      <div class="submitted-count" id="submitted-count">${submissionLabel(myAnswer)}</div>
       ${isHost() ? `<div class="button-row"><button class="secondary-button" id="reveal-round" type="button" ${canRevealNow() ? '' : 'disabled'}>${allSubmitted() ? '전원 제출! 답 공개' : '시간 종료 후 답 공개'}</button></div>` : ''}
     </section>`;
 
@@ -542,8 +557,8 @@ function renderRound() {
 function updateRoundLiveStatus() {
   if (!room || room.status !== 'playing' || room.roundState !== 'open') return;
   const count = document.getElementById('submitted-count');
-  if (count) count.textContent = `현재 ${currentRoundAnswers().length}/${players.length}명 제출`;
   const mine = currentRoundAnswers().find(item => item.uid === currentUid);
+  if (count) count.textContent = submissionLabel(mine);
   const status = document.getElementById('answer-status');
   if (status && mine) status.textContent = `제출 완료 · ${mine.text}`;
   const button = document.getElementById('answer-submit');
@@ -589,10 +604,11 @@ async function submitAnswer(event) {
   if (!isValidAnswer(answer, room.target || '')) return showToast(`${room.target}와 초성·글자 수가 정확히 맞는 단어를 적어주세요.`);
   const player = playerByUid(currentUid);
   try {
-    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `${room.round}-${currentUid}`), {
+    await setDoc(doc(db, 'game_rooms', roomId, 'answers', `choice-${currentUid}`), {
       uid: currentUid,
       nickname: player?.nickname || '플레이어',
       round: Number(room.round),
+      kind: 'chosung',
       text: answer,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -610,19 +626,10 @@ async function revealRound() {
   const pointsByUid = new Map(evaluation.map(item => [item.uid, item.points]));
   const batch = writeBatch(db);
   for (const player of players) {
-    const item = evaluation.find(answer => answer.uid === player.uid);
     const gained = Number(pointsByUid.get(player.uid) || 0);
-    const length = Array.from(item?.text || '').length;
-    const dna = item ? addDna(player.dna, {
-      bold: gained > 0 && length >= 4 ? 1 : 0,
-      safe: item.valid && length <= 2 ? 1 : 0,
-      unique: gained > 0 ? 1 : 0,
-      samples: 1
-    }) : normalizeDna(player.dna);
     const nextScore = Number(player.score || 0) + gained;
     batch.update(doc(db, 'game_rooms', roomId, 'players', player.uid), {
       score: nextScore,
-      dna,
       updatedAt: Timestamp.now()
     });
   }
