@@ -54,7 +54,7 @@ for (const asset of [
   '/game/grid/grid-core.js?v=20260817-grid-2',
   '/game/grid/index.html'
 ]) assert.ok(sw.includes(asset), `service worker missing ${asset}`);
-assert.match(sw, /sosoking-play-v20260817-naming-1/);
+assert.match(sw, /sosoking-play-v20260817-state-fix-1/);
 assert.match(sw, /\/game\/naming\/naming-core\.js\?v=20260817-naming-1/);
 assert.doesNotMatch(sw, /\/game\/(?:alibi|dna|world|greed|caught)\//);
 
