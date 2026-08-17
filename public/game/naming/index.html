@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#101828">
-  <title>변명거래소 | 소소킹 플레이</title>
-  <meta name="description" content="황당한 사건에 비밀 키워드를 섞어 변명을 만들고 신뢰칩을 거는 소소킹 오리지널 게임입니다.">
+  <title>작명톡 생존전 | 소소킹 플레이</title>
+  <meta name="description" content="인원 제한 없이 주제에 맞는 이름을 채팅처럼 한 명씩 만들고, 포기하거나 시간이 끝나면 탈락하며 모든 작명 기록을 저장하는 생존게임입니다.">
   <script src="/js/theme-init.js?v=20260816-play-brand-1"></script>
   <link rel="icon" href="/icons/favicon-32.png?v=20260816-play-brand-1" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,24 +14,25 @@
   <link rel="stylesheet" href="/game/party.css?v=20260811-party-games-1">
   <link rel="stylesheet" href="/game/member-profile.css?v=20260812-game-guide-polish-1">
   <link rel="stylesheet" href="/game/theme.css?v=20260816-play-brand-1">
-  <link rel="stylesheet" href="/game/fun-pack.css?v=20260817-grid-2">
+  <link rel="stylesheet" href="/game/fun-pack.css?v=20260817-naming-1">
   <link rel="stylesheet" href="/game/game-master.css?v=20260816-auto-gm-1">
-  <link rel="stylesheet" href="/game/game-night.css?v=20260817-grid-2">
+  <link rel="stylesheet" href="/game/game-night.css?v=20260817-naming-1">
+  <link rel="stylesheet" href="/game/naming/naming.css?v=20260817-naming-1">
 </head>
 <body>
   <header class="topbar">
     <a href="/game/" class="back-link" aria-label="소소킹 플레이 홈">‹</a>
-    <div><strong>🧾 변명거래소</strong><small>믿을지 말지는 네 신뢰칩으로</small></div>
+    <div><strong>✍️ 작명톡 생존전</strong><small>이름은 남고, 한 명만 살아남는다</small></div>
     <button type="button" class="ghost-button" id="share-room" hidden>초대</button>
   </header>
-  <main id="game-app" class="game-app" aria-live="polite"><section class="loading-panel">거래소를 준비하는 중입니다.</section></main>
+  <main id="game-app" class="game-app" aria-live="polite"><section class="loading-panel">작명방을 준비하는 중입니다.</section></main>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-  <script type="module" src="/game/game-night.js?v=20260817-grid-2"></script>
-  <script type="module" src="/game/member-profile.js?v=20260817-grid-2"></script>
+  <script type="module" src="/game/game-night.js?v=20260817-naming-1"></script>
+  <script type="module" src="/game/member-profile.js?v=20260817-naming-1"></script>
   <script type="module" src="/game/fun-room-reload.js?v=20260812-fun-pack-1"></script>
-  <script type="module" src="/game/fun-pack.js?v=20260817-grid-2"></script>
-  <script type="module" src="/game/alibi/alibi.js?v=20260817-grid-2"></script>
-  <script type="module" src="/game/game-master.js?v=20260816-auto-gm-1"></script>
+  <script type="module" src="/game/fun-pack.js?v=20260817-naming-1"></script>
+  <script type="module" src="/game/naming/naming.js?v=20260817-naming-1"></script>
+  <script type="module" src="/game/game-master.js?v=20260817-naming-1"></script>
   <script type="module" src="/game/theme.js?v=20260816-play-brand-1"></script>
 </body>
 </html>

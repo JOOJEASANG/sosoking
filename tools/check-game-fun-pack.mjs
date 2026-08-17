@@ -9,7 +9,7 @@ const memberProfile = read('public/game/member-profile.js');
 const memberCss = read('public/game/member-profile.css');
 const css = read('public/game/fun-pack.css');
 const chosung = read('public/game/chosung/chosung.js');
-const liveGames = ['grid', 'vault', 'chosung', 'mind', 'alibi'];
+const liveGames = ['grid', 'vault', 'chosung', 'mind', 'naming'];
 
 for (const file of ['public/game/fun-pack.js', 'public/game/fun-room-reload.js', 'public/game/member-profile.js']) {
   const syntax = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
@@ -18,18 +18,18 @@ for (const file of ['public/game/fun-pack.js', 'public/game/fun-room-reload.js',
 
 for (const folder of liveGames) {
   const page = read(`public/game/${folder}/index.html`);
-  assert.match(page, /fun-pack\.css\?v=20260817-grid-2/);
-  assert.match(page, /fun-pack\.js\?v=20260817-grid-2/);
+  assert.match(page, /fun-pack\.css\?v=20260817-naming-1/);
+  assert.match(page, /fun-pack\.js\?v=20260817-naming-1/);
   assert.match(page, /fun-room-reload\.js\?v=20260812-fun-pack-1/);
   assert.match(page, /member-profile\.css\?v=20260812-game-guide-polish-1/);
-  assert.match(page, /member-profile\.js\?v=20260817-grid-2/);
+  assert.match(page, /member-profile\.js\?v=20260817-naming-1/);
 }
 
 assert.match(reconnect, /history\.replaceState/);
 assert.match(reconnect, /!beforeRoom && afterRoom/);
 assert.match(reconnect, /location\.reload\(\)/);
 for (const required of [
-  "'/game/grid/'", "'/game/vault/'", "'/game/chosung/'", "'/game/mind/'", "'/game/alibi/'",
+  "'/game/grid/'", "'/game/vault/'", "'/game/chosung/'", "'/game/mind/'", "'/game/naming/'",
   'navigator.vibrate', 'AudioContext', 'fun-sound-toggle', "particles('👑'", "playSound('good')"
 ]) assert.ok(fun.includes(required), `fun pack missing: ${required}`);
 assert.doesNotMatch(fun, /greed|caught|world|seriesInviteUrl|fun-bet/);
@@ -43,7 +43,7 @@ for (const required of [
   'DEFAULT_SECONDS = 25', "id: 'classic'", 'seconds: 25', "id: 'lightning'", 'seconds: 15',
   "id: 'double'", 'seconds: 22', "id: 'royal'", 'seconds: 20'
 ]) assert.ok(chosung.includes(required), `Chosung timing missing: ${required}`);
-for (const title of ['칸폭주 30', '금고런', '초성 폭탄', '관심법', '변명거래소']) {
+for (const title of ['칸폭주 30', '금고런', '초성 폭탄', '관심법', '작명톡 생존전']) {
   assert.ok(memberProfile.includes(title), `game guide missing title: ${title}`);
 }
 assert.doesNotMatch(memberProfile, /DNA|greed|caught|욕심계단|딱걸렸어/i);

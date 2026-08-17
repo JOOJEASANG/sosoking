@@ -32,6 +32,7 @@ const outsiderDb = testEnv.authenticatedContext('game-outsider').firestore();
 const publicDb = testEnv.unauthenticatedContext().firestore();
 const now = Timestamp.now();
 const future = Timestamp.fromMillis(Date.now() + 60_000);
+const past = Timestamp.fromMillis(Date.now() - 1_000);
 
 function player(uid, nickname, joinOrder) {
   return { uid, nickname, score: 0, joinOrder, joinedAt: now, updatedAt: now };
@@ -49,6 +50,10 @@ function gridPlayer(uid, nickname, joinOrder) {
     finishPower: 0,
     lastDelta: 0
   };
+}
+
+function namingPlayer(uid, nickname, joinOrder) {
+  return { ...player(uid, nickname, joinOrder), eliminated: false };
 }
 
 try {
@@ -133,38 +138,67 @@ try {
   }));
   await assertFails(getDoc(doc(playerDb, `game_rooms/${mindId}/answers/choice-game-third`)));
 
-  const alibiId = 'ALB234';
-  await assertSucceeds(setDoc(doc(hostDb, `game_rooms/${alibiId}`), {
-    type: 'alibi-market', status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
-    round: 0, maxRounds: 3, roundState: 'waiting', phase: 'waiting', promptId: '', usedPrompts: [], publishedAlibis: [], publishedAlibiUids: [],
-    createdAt: now, updatedAt: now
+  const namingId = 'NAM234';
+  const sessionId = 'SESSION234';
+  const firstToken = 'TURNPLAYER234';
+  const secondToken = 'TURNTIMEOUT234';
+  await assertSucceeds(setDoc(doc(hostDb, `game_rooms/${namingId}`), {
+    type: 'naming-survival', status: 'lobby', hostUid: 'game-host', maxPlayers: 0,
+    round: 0, maxRounds: 0, roundState: 'waiting', phase: 'waiting', topic: '새 카페 이름',
+    sessionId: '', currentTurnUid: '', turnToken: '', turnNumber: 0, cycle: 0,
+    lastProcessedToken: '', winnerUid: '', createdAt: now, updatedAt: now
   }));
-  await assertSucceeds(setDoc(doc(hostDb, `game_rooms/${alibiId}/players/game-host`), player('game-host', '방장', 1)));
-  await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${alibiId}/players/game-player`), player('game-player', '친구', 2)));
-  await assertSucceeds(setDoc(doc(thirdDb, `game_rooms/${alibiId}/players/game-third`), player('game-third', '세번째', 3)));
-  await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${alibiId}`), {
-    status: 'playing', round: 1, roundState: 'open', phase: 'write', promptId: 'a1', roundEndsAt: future, updatedAt: now
+  await assertSucceeds(setDoc(doc(hostDb, `game_rooms/${namingId}/players/game-host`), namingPlayer('game-host', '방장', 1)));
+  await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${namingId}/players/game-player`), namingPlayer('game-player', '친구', 2)));
+  await assertSucceeds(setDoc(doc(thirdDb, `game_rooms/${namingId}/players/game-third`), namingPlayer('game-third', '세번째', 3)));
+  await assertFails(setDoc(doc(thirdDb, `game_rooms/${namingId}/players/game-outsider`), namingPlayer('game-outsider', '위조', 4)));
+  await assertSucceeds(setDoc(doc(hostDb, `game_rooms/${namingId}/naming_sessions/${sessionId}`), {
+    sessionId, roomId: namingId, topic: '새 카페 이름', hostUid: 'game-host',
+    participantCount: 3, status: 'playing', winnerUid: '', winnerNickname: '',
+    totalTurns: 0, startedAt: now, updatedAt: now
   }));
-  const alibiText = '비밀 키워드를 넣은 충분히 긴 변명입니다';
-  await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${alibiId}/answers/alibi-game-player`), {
-    uid: 'game-player', nickname: '친구', round: 1, kind: 'alibi', text: alibiText, createdAt: now, updatedAt: now
+  await assertFails(setDoc(doc(playerDb, `game_rooms/${namingId}/naming_sessions/FAKESESSION`), {
+    sessionId: 'FAKESESSION', roomId: namingId, topic: '가짜 주제', hostUid: 'game-player',
+    participantCount: 3, status: 'playing', winnerUid: '', winnerNickname: '',
+    totalTurns: 0, startedAt: now, updatedAt: now
   }));
-  await assertFails(setDoc(doc(playerDb, `game_rooms/${alibiId}/answers/alibi-spam`), {
-    uid: 'game-player', nickname: '친구', round: 1, kind: 'alibi', text: alibiText, createdAt: now, updatedAt: now
+  await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${namingId}`), {
+    status: 'playing', round: 1, roundState: 'open', phase: 'turn', sessionId,
+    currentTurnUid: 'game-player', turnToken: firstToken, turnNumber: 1, cycle: 1,
+    roundEndsAt: future, updatedAt: now
   }));
-  await assertFails(setDoc(doc(playerDb, `game_rooms/${alibiId}/answers/alibi-game-player`), {
-    uid: 'game-player', nickname: '친구', round: 1, kind: 'alibi', text: '짧은 변명', createdAt: now, updatedAt: now
+  const firstEntry = {
+    sessionId, topic: '새 카페 이름', turn: 1, cycle: 1,
+    uid: 'game-player', nickname: '친구', kind: 'name',
+    text: '달빛 정거장', normalized: '달빛정거장', createdAt: now
+  };
+  const entryPath = `game_rooms/${namingId}/naming_sessions/${sessionId}/entries`;
+  await assertSucceeds(setDoc(doc(playerDb, `${entryPath}/${firstToken}`), firstEntry));
+  await assertFails(setDoc(doc(playerDb, `${entryPath}/WRONGTOKEN`), firstEntry));
+  await assertFails(setDoc(doc(thirdDb, `${entryPath}/${firstToken}`), { ...firstEntry, uid: 'game-third', nickname: '세번째' }));
+  await assertFails(updateDoc(doc(playerDb, `${entryPath}/${firstToken}`), { text: '수정 시도' }));
+  await assertFails(deleteDoc(doc(hostDb, `${entryPath}/${firstToken}`)));
+  await assertSucceeds(getDocs(collection(playerDb, entryPath)));
+  await assertFails(getDocs(collection(outsiderDb, entryPath)));
+
+  await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${namingId}`), {
+    round: 2, currentTurnUid: 'game-third', turnToken: secondToken,
+    turnNumber: 2, lastProcessedToken: firstToken, roundEndsAt: past, updatedAt: now
   }));
-  await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${alibiId}`), {
-    phase: 'bid', publishedAlibis: [{ uid: 'game-player', text: alibiText }, { uid: 'game-third', text: '세번째 참가자의 충분히 긴 변명입니다' }], publishedAlibiUids: ['game-player', 'game-third'], roundEndsAt: future, updatedAt: now
+  const timeoutEntry = {
+    sessionId, topic: '새 카페 이름', turn: 2, cycle: 1,
+    uid: 'game-third', nickname: '세번째', kind: 'timeout',
+    text: '', normalized: '', createdAt: now
+  };
+  await assertSucceeds(setDoc(doc(hostDb, `${entryPath}/${secondToken}`), timeoutEntry));
+  await assertFails(setDoc(doc(playerDb, `${entryPath}/BADTIMEOUT`), { ...timeoutEntry, uid: 'game-player', nickname: '친구' }));
+  await assertSucceeds(updateDoc(doc(hostDb, `game_rooms/${namingId}/naming_sessions/${sessionId}`), {
+    status: 'finished', winnerUid: 'game-host', winnerNickname: '방장',
+    totalTurns: 2, finishedAt: now, updatedAt: now
   }));
-  await assertSucceeds(setDoc(doc(playerDb, `game_rooms/${alibiId}/answers/vote-game-player`), {
-    uid: 'game-player', nickname: '친구', round: 1, kind: 'vote', targetUid: 'game-third', stake: 3, text: 'trust-bid', createdAt: now, updatedAt: now
+  await assertFails(updateDoc(doc(playerDb, `game_rooms/${namingId}/naming_sessions/${sessionId}`), {
+    totalTurns: 999, updatedAt: now
   }));
-  await assertFails(setDoc(doc(playerDb, `game_rooms/${alibiId}/answers/vote-game-player`), {
-    uid: 'game-player', nickname: '친구', round: 1, kind: 'vote', targetUid: 'game-third', stake: 99, text: 'trust-bid', createdAt: now, updatedAt: now
-  }));
-  await assertFails(getDocs(collection(playerDb, `game_rooms/${alibiId}/answers`)));
 
   for (const [id, type, maxRounds] of [
     ['VLT234', 'vault-run', 9],
@@ -179,7 +213,8 @@ try {
     ['BAD234', 'copycat-party-game', 3],
     ['OLD234', 'sosoking-world', 24],
     ['GRE234', 'greed-stairs', 5],
-    ['DNA234', 'dna-boss', 6]
+    ['DNA234', 'dna-boss', 6],
+    ['ALB234', 'alibi-market', 3]
   ]) {
     await assertFails(setDoc(doc(hostDb, `game_rooms/${id}`), {
       type, status: 'lobby', hostUid: 'game-host', maxPlayers: 8,
@@ -187,7 +222,7 @@ try {
     }));
   }
 
-  console.log('Game Firestore rules passed: five live game types, Mind 3–8 player rounds, exact answer IDs and schemas, private open-round answers, outsider blocking, and immutable hosts.');
+  console.log('Game Firestore rules passed: five live game types, unlimited Naming rooms, immutable Naming archives, exact answer schemas, private open-round answers, outsider blocking, and immutable hosts.');
 } finally {
   await testEnv.cleanup();
 }

@@ -12,28 +12,31 @@ import {
 const GAMES = [
   {
     id: 'grid', type: 'grid-rush', path: '/game/grid/', emoji: '🏁', label: '칸폭주 30', people: '2~8명',
-    summary: '30칸 장치를 방어하거나 역이용하는 동시 레이스', maxRounds: 24,
+    summary: '30칸 장치를 방어하거나 역이용하는 동시 레이스', maxRounds: 24, maxPlayers: 8,
     initial: { roundSeconds: 10, board: [], lastResults: [], winnerUid: '' }
   },
   {
     id: 'vault', type: 'vault-run', path: '/game/vault/', emoji: '💰', label: '금고런', people: '2~8명',
-    summary: '겹치지 않는 금고를 고르는 눈치전', maxRounds: 9,
+    summary: '겹치지 않는 금고를 고르는 눈치전', maxRounds: 9, maxPlayers: 8,
     initial: { roundSeconds: 12, vaults: [], lastResults: [] }
   },
   {
     id: 'chosung', type: 'chosung-bomb', path: '/game/chosung/', emoji: '💣', label: '초성 폭탄', people: '2~8명',
-    summary: '남과 다른 초성 단어를 만드는 순발력전', maxRounds: 7,
+    summary: '남과 다른 초성 단어를 만드는 순발력전', maxRounds: 7, maxPlayers: 8,
     initial: { target: '', usedTargets: [], roundMode: '', roundSeconds: 25, multiplier: 1 }
   },
   {
     id: 'mind', type: 'mind-reader', path: '/game/mind/', emoji: '🧠', label: '관심법', people: '3~8명',
-    summary: '친구의 선택을 맞히는 관계 심리전', maxRounds: 8,
+    summary: '친구의 선택을 맞히는 관계 심리전', maxRounds: 8, maxPlayers: 8,
     initial: { promptId: '', targetUid: '', usedPrompts: [] }
   },
   {
-    id: 'alibi', type: 'alibi-market', path: '/game/alibi/', emoji: '🧾', label: '변명거래소', people: '3~8명',
-    summary: '황당한 변명을 사고파는 창작 게임', maxRounds: 3,
-    initial: { phase: 'waiting', promptId: '', usedPrompts: [], publishedAlibis: [], publishedAlibiUids: [] }
+    id: 'naming', type: 'naming-survival', path: '/game/naming/', emoji: '✍️', label: '작명톡 생존전', people: '2명~무제한',
+    summary: '주제별 이름을 채팅처럼 이어가는 생존 작명전', maxRounds: 0, maxPlayers: 0,
+    initial: {
+      phase: 'waiting', topic: '', sessionId: '', currentTurnUid: '', turnToken: '',
+      turnNumber: 0, cycle: 0, lastProcessedToken: '', lastEvent: {}, winnerUid: ''
+    }
   }
 ];
 
@@ -49,7 +52,7 @@ let unsubscribeRoom = null;
 let observer = null;
 let carryBannerShown = false;
 
-window.sosokingGameNight = { version: '20260817-grid-2', games: GAMES.map(({ id, type, path }) => ({ id, type, path })) };
+window.sosokingGameNight = { version: '20260817-naming-1', games: GAMES.map(({ id, type, path }) => ({ id, type, path })) };
 
 function escapeText(value) {
   return String(value ?? '')
@@ -136,7 +139,7 @@ function roomPayload(game, latestRoom, now) {
     type: game.type,
     status: 'lobby',
     hostUid: latestRoom.hostUid,
-    maxPlayers: 8,
+    maxPlayers: Number(game.maxPlayers ?? 8),
     round: 0,
     maxRounds: game.maxRounds,
     roundState: 'waiting',
@@ -171,6 +174,8 @@ async function switchGame(gameId) {
       getDocs(collection(db, 'game_rooms', roomId, 'answers'))
     ]);
     if (playersSnap.size < 2) throw new Error('players-missing');
+    const playerLimit = Number(game.maxPlayers ?? 8);
+    if (playerLimit > 0 && playersSnap.size > playerLimit) throw new Error('too-many-players');
 
     const now = Timestamp.now();
     const batch = writeBatch(db);
@@ -190,6 +195,7 @@ async function switchGame(gameId) {
         barrierDent: false,
         finishPower: 0,
         lastDelta: 0,
+        eliminated: false,
         joinOrder: Number(player.joinOrder || Date.now()),
         joinedAt: player.joinedAt || now,
         updatedAt: now
@@ -203,7 +209,9 @@ async function switchGame(gameId) {
     switching = false;
     picker?.classList.remove('is-switching');
     picker?.querySelectorAll('button').forEach(button => { button.disabled = false; });
-    if (selected) selected.querySelector('small').textContent = '전환 실패 · 다시 눌러주세요';
+    if (selected) selected.querySelector('small').textContent = error?.message === 'too-many-players'
+      ? '8명 초과 방은 작명톡만 다시 선택할 수 있어요'
+      : '전환 실패 · 다시 눌러주세요';
   }
 }
 

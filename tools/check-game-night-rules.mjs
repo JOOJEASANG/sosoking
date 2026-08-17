@@ -71,7 +71,7 @@ try {
     batch.set(item.ref, {
       uid: player.uid, nickname: player.nickname, score: 0, combo: 0, position: 0,
       shield: 0, scrap: 0, banked: 0, jammed: false,
-      barrierDent: false, finishPower: 0, lastDelta: 0,
+      barrierDent: false, finishPower: 0, lastDelta: 0, eliminated: false,
       joinOrder: player.joinOrder, joinedAt: player.joinedAt, updatedAt: now
     });
   });
@@ -89,7 +89,7 @@ try {
     getDocs(collection(hostDb, `game_rooms/${roomId}/answers`))
   ]);
   if (switchedRoom.data().type !== 'grid-rush' || switchedRoom.data().status !== 'lobby') throw new Error('room did not switch');
-  if (switchedPlayers.docs.some(item => Number(item.data().score || 0) !== 0 || Number(item.data().position || 0) !== 0)) throw new Error('game state did not reset');
+  if (switchedPlayers.docs.some(item => Number(item.data().score || 0) !== 0 || Number(item.data().position || 0) !== 0 || item.data().eliminated !== false)) throw new Error('game state did not reset');
   if (switchedPlayers.docs.some(item => ['dna', 'laps', 'damage', 'runState'].some(field => Object.hasOwn(item.data(), field)))) throw new Error('retired player state survived reset');
   if (!emptyAnswers.empty) throw new Error('round answers did not clear');
 
