@@ -24,7 +24,7 @@ jobs:
 
       - name: Verify production hosts
         env:
-          EXPECTED_VERSION: sosoking-play-20260817-2
+          EXPECTED_VERSION: sosoking-play-20260817-3
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
@@ -46,6 +46,18 @@ jobs:
               echo "HTML deployment marker missing on $host"
               exit 1
             fi
+
+            naming_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/game/naming/?sha=$HEAD_SHA")"
+            if ! grep -Fq "<title>작명톡 생존전 | 소소킹 플레이</title>" <<< "$naming_html"; then
+              echo "Naming game route is missing on $host"
+              exit 1
+            fi
+
+            alibi_status="$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' -H 'Cache-Control: no-cache' "$host/game/alibi/?sha=$HEAD_SHA")"
+            if [ "$alibi_status" != "404" ]; then
+              echo "Retired Alibi route still responds on $host: HTTP $alibi_status"
+              exit 1
+            fi
           done
 
-          echo "All production hosts serve $EXPECTED_VERSION"
+          echo "All production hosts serve $EXPECTED_VERSION with Naming live and Alibi removed"

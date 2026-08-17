@@ -12,8 +12,8 @@ const gameProfile = read('functions/game-profile.js');
 const memberProfile = read('public/game/member-profile.js');
 const deployWorkflow = read('.github/workflows/firebase-deploy.yml');
 const sw = read('public/sw.js');
-const liveGames = ['grid', 'vault', 'chosung', 'mind', 'alibi'];
-const removedGames = ['dna', 'world', 'greed', 'caught'];
+const liveGames = ['grid', 'vault', 'chosung', 'mind', 'naming'];
+const removedGames = ['alibi', 'dna', 'world', 'greed', 'caught'];
 
 for (const page of [main, gameHome]) {
   for (const folder of liveGames) assert.match(page, new RegExp(`href="/game/${folder}/"`), `${folder} choice missing`);
@@ -37,7 +37,8 @@ for (const file of [
   'public/game/vault/vault.js',
   'public/game/chosung/chosung.js',
   'public/game/mind/mind.js',
-  'public/game/alibi/alibi.js',
+  'public/game/naming/naming-core.js',
+  'public/game/naming/naming.js',
   'functions/game-profile.js'
 ]) {
   const syntax = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
@@ -52,13 +53,17 @@ for (const deleted of [
   'functions/dna-director.js',
   'functions/dna-director-core.js',
   'tools/check-dna-game.mjs',
-  'tools/check-dna-rules.mjs'
+  'tools/check-dna-rules.mjs',
+  'public/game/alibi/index.html',
+  'public/game/alibi/alibi.js'
 ]) assert.ok(!fs.existsSync(deleted), `${deleted} must be deleted`);
 
 assert.match(rules, /data\.type == 'grid-rush'/);
+assert.match(rules, /data\.type == 'naming-survival'/);
+assert.match(rules, /match \/naming_sessions\/\{sessionId\}/);
 assert.match(rules, /data\.maxRounds >= 3 && data\.maxRounds <= 8/);
 assert.match(rules, /resource\.data\.uid == request\.auth\.uid/);
-assert.doesNotMatch(rules, /dna-boss|sosoking-world|greed-stairs|unique-low|match \/reactions/);
+assert.doesNotMatch(rules, /alibi-market|dna-boss|sosoking-world|greed-stairs|unique-low|match \/reactions/);
 assert.doesNotMatch(rules, /match \/cases|match \/results|court_comments|reports/);
 assert.match(functionMain, /require\('\.\/game-profile'\)/);
 assert.doesNotMatch(functionMain, /dna|daily|social|reports|submit|trial|court/i);
@@ -70,11 +75,16 @@ assert.match(gameProfile, /exports\.getGamePlayerProfiles/);
 assert.match(gameProfile, /enforceAppCheck: ENFORCE_APP_CHECK/);
 assert.match(deployWorkflow, /functions\/\.env\.sosoking-481e6/);
 assert.match(deployWorkflow, /vars\.ENFORCE_APP_CHECK/);
+const liveVerifyWorkflow = read('.github/workflows/verify-live-hosting.yml');
+assert.match(liveVerifyWorkflow, /game\/naming/);
+assert.match(liveVerifyWorkflow, /game\/alibi/);
+assert.match(liveVerifyWorkflow, /alibi_status.*404/s);
 assert.equal(firebase.hosting.public, 'public');
 assert.ok(!firebase.hosting.rewrites, 'court rewrites must not remain');
 assert.match(sw, /\/game\/grid\/index\.html/);
 assert.match(sw, /\/game\/chosung\/index\.html/);
-assert.doesNotMatch(sw, /\/game\/(?:dna|world|greed|caught)\//);
+assert.match(sw, /\/game\/naming\/index\.html/);
+assert.doesNotMatch(sw, /\/game\/(?:alibi|dna|world|greed|caught)\//);
 
 const appShell = sw.match(/const APP_SHELL = \[([\s\S]*?)\];/)?.[1] || '';
 const cachedPaths = [...appShell.matchAll(/'([^']+)'/g)].map(match => match[1]);
@@ -97,4 +107,4 @@ for (const removed of ['public/admin', 'public/css', 'public/js/pages', 'docs'])
   assert.ok(!fs.existsSync(removed), `${removed} should be removed`);
 }
 
-console.log('Game-first repository validation passed: five live routes, Grid Rush, private round answers, one profile Function, and deleted DNA/legacy routes are consistent.');
+console.log('Game-first repository validation passed: five live routes, Grid Rush, persistent Naming sessions, private round answers, one profile Function, and deleted Alibi/DNA routes are consistent.');

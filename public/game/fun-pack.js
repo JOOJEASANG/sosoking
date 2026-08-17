@@ -1,4 +1,4 @@
-const SUPPORTED = ['/game/grid/', '/game/vault/', '/game/chosung/', '/game/mind/', '/game/alibi/'];
+const SUPPORTED = ['/game/grid/', '/game/vault/', '/game/chosung/', '/game/mind/', '/game/naming/'];
 const active = SUPPORTED.some(path => location.pathname.startsWith(path));
 
 let audioContext = null;

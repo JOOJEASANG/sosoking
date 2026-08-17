@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-play-v20260817-grid-2';
+const CACHE_NAME = 'sosoking-play-v20260817-naming-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,16 +8,16 @@ const APP_SHELL = [
   '/game/theme.css?v=20260816-play-brand-1',
   '/game/theme.js?v=20260816-play-brand-1',
   '/game/install.js?v=20260816-play-brand-1',
-  '/game/game-night.css?v=20260817-grid-2',
-  '/game/game-night.js?v=20260817-grid-2',
+  '/game/game-night.css?v=20260817-naming-1',
+  '/game/game-night.js?v=20260817-naming-1',
   '/game/party.css?v=20260811-party-games-1',
-  '/game/fun-pack.css?v=20260817-grid-2',
-  '/game/fun-pack.js?v=20260817-grid-2',
+  '/game/fun-pack.css?v=20260817-naming-1',
+  '/game/fun-pack.js?v=20260817-naming-1',
   '/game/fun-room-reload.js?v=20260812-fun-pack-1',
   '/game/member-profile.css?v=20260812-game-guide-polish-1',
-  '/game/member-profile.js?v=20260817-grid-2',
+  '/game/member-profile.js?v=20260817-naming-1',
   '/game/game-master.css?v=20260816-auto-gm-1',
-  '/game/game-master.js?v=20260816-auto-gm-1',
+  '/game/game-master.js?v=20260817-naming-1',
   '/game/grid/index.html',
   '/game/grid/grid.css?v=20260817-grid-2',
   '/game/grid/grid-core.js?v=20260817-grid-2',
@@ -31,8 +31,10 @@ const APP_SHELL = [
   '/game/chosung/restart-cleanup.js?v=20260817-grid-2',
   '/game/mind/index.html',
   '/game/mind/mind.js?v=20260817-grid-2',
-  '/game/alibi/index.html',
-  '/game/alibi/alibi.js?v=20260817-grid-2',
+  '/game/naming/index.html',
+  '/game/naming/naming.css?v=20260817-naming-1',
+  '/game/naming/naming-core.js?v=20260817-naming-1',
+  '/game/naming/naming.js?v=20260817-naming-1',
   '/js/theme-init.js?v=20260816-play-brand-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/firebase-config.js',
@@ -51,7 +53,7 @@ const GAME_FALLBACKS = [
   ['/game/vault', '/game/vault/index.html'],
   ['/game/chosung', '/game/chosung/index.html'],
   ['/game/mind', '/game/mind/index.html'],
-  ['/game/alibi', '/game/alibi/index.html'],
+  ['/game/naming', '/game/naming/index.html'],
   ['/game', '/game/index.html']
 ];
 

@@ -2,7 +2,7 @@
   "id": "/",
   "name": "소소킹 플레이",
   "short_name": "소소킹",
-  "description": "링크 하나로 모여 2~8명이 바로 즐기는 파티게임",
+  "description": "링크 하나로 모여 2명부터 인원 제한 없이 바로 즐기는 파티게임",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",

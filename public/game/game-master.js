@@ -1,7 +1,7 @@
 const AUTO_KEY='sosoking-game-master:auto';
 const PAUSE_KEY='sosoking-game-master:paused';
 const RESULT_DELAY=4200;
-const REVEAL_SELECTORS=['#reveal-round','#reveal','#market','#show-results','#reveal-results'];
+const REVEAL_SELECTORS=['#reveal-round','#reveal','#show-results','#reveal-results'];
 const NEXT_SELECTORS=['#next-round','#next','#next-step','#continue'];
 let auto=true;
 let paused=false;

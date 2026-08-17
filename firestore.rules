@@ -28,12 +28,17 @@ service cloud.firestore {
     }
 
     function isValidGameRoom(data) {
-      return data.maxPlayers == 8 && (
-        (data.type == 'grid-rush' && data.maxRounds == 24) ||
-        (data.type == 'chosung-bomb' && data.maxRounds == 7) ||
-        (data.type == 'mind-reader' && data.maxRounds >= 3 && data.maxRounds <= 8) ||
-        (data.type == 'alibi-market' && data.maxRounds == 3) ||
-        (data.type == 'vault-run' && data.maxRounds == 9)
+      return (
+        data.type == 'naming-survival'
+        && data.maxPlayers == 0
+        && data.maxRounds == 0
+      ) || (
+        data.maxPlayers == 8 && (
+          (data.type == 'grid-rush' && data.maxRounds == 24) ||
+          (data.type == 'chosung-bomb' && data.maxRounds == 7) ||
+          (data.type == 'mind-reader' && data.maxRounds >= 3 && data.maxRounds <= 8) ||
+          (data.type == 'vault-run' && data.maxRounds == 9)
+        )
       );
     }
 
@@ -75,10 +80,17 @@ service cloud.firestore {
           && data.combo == 0
         )
         || (
-          gameRoomDoc(roomId).data.type in ['chosung-bomb', 'mind-reader', 'alibi-market']
+          gameRoomDoc(roomId).data.type in ['chosung-bomb', 'mind-reader']
           && data.keys().hasOnly([
             'uid', 'nickname', 'score', 'joinOrder', 'joinedAt', 'updatedAt'
           ])
+        )
+        || (
+          gameRoomDoc(roomId).data.type == 'naming-survival'
+          && data.keys().hasOnly([
+            'uid', 'nickname', 'score', 'eliminated', 'joinOrder', 'joinedAt', 'updatedAt'
+          ])
+          && data.eliminated == false
         )
       );
     }
@@ -150,43 +162,79 @@ service cloud.firestore {
         && data.text in ['A', 'B', 'C', 'D'];
     }
 
-    function isValidAlibiText(answerId, roomId, data) {
-      return gameRoomDoc(roomId).data.type == 'alibi-market'
-        && gameRoomDoc(roomId).data.phase == 'write'
-        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
-        && answerId == 'alibi-' + request.auth.uid
-        && data.kind == 'alibi'
-        && data.text.size() >= 12
-        && data.text.size() <= 100;
-    }
-
-    function isValidAlibiVote(answerId, roomId, data) {
-      return gameRoomDoc(roomId).data.type == 'alibi-market'
-        && gameRoomDoc(roomId).data.phase == 'bid'
-        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'targetUid', 'stake', 'text', 'createdAt', 'updatedAt'])
-        && answerId == 'vote-' + request.auth.uid
-        && data.kind == 'vote'
-        && data.text == 'trust-bid'
-        && data.targetUid is string
-        && data.targetUid != request.auth.uid
-        && gamePlayerExists(roomId, data.targetUid)
-        && gameRoomDoc(roomId).data.publishedAlibiUids is list
-        && data.targetUid in gameRoomDoc(roomId).data.publishedAlibiUids
-        && data.stake is int
-        && data.stake >= 1
-        && data.stake <= 3;
-    }
-
     function isValidGameAnswer(answerId, roomId, data) {
       return hasValidAnswerBase(roomId, data) && (
         isValidGridAnswer(answerId, roomId, data) ||
         isValidVaultAnswer(answerId, roomId, data) ||
         isValidChosungAnswer(answerId, roomId, data) ||
         isValidMindChoice(answerId, roomId, data) ||
-        isValidMindGuess(answerId, roomId, data) ||
-        isValidAlibiText(answerId, roomId, data) ||
-        isValidAlibiVote(answerId, roomId, data)
+        isValidMindGuess(answerId, roomId, data)
       );
+    }
+
+    function hasValidNamingEntryBase(entryId, sessionId, roomId, data) {
+      return signedIn()
+        && gameRoomExists(roomId)
+        && isGamePlayer(roomId)
+        && gameRoomDoc(roomId).data.type == 'naming-survival'
+        && gameRoomDoc(roomId).data.status == 'playing'
+        && gameRoomDoc(roomId).data.roundState == 'open'
+        && gameRoomDoc(roomId).data.phase == 'turn'
+        && gameRoomDoc(roomId).data.sessionId == sessionId
+        && entryId == gameRoomDoc(roomId).data.turnToken
+        && data.keys().hasOnly([
+          'sessionId', 'topic', 'turn', 'cycle', 'uid', 'nickname',
+          'kind', 'text', 'normalized', 'createdAt'
+        ])
+        && data.sessionId == sessionId
+        && data.topic == gameRoomDoc(roomId).data.topic
+        && data.topic is string
+        && data.topic.size() > 0
+        && data.topic.size() <= 40
+        && data.turn is int
+        && data.turn == gameRoomDoc(roomId).data.turnNumber
+        && data.cycle is int
+        && data.cycle == gameRoomDoc(roomId).data.cycle
+        && data.uid is string
+        && data.nickname is string
+        && data.nickname.size() > 0
+        && data.nickname.size() <= 12
+        && data.text is string
+        && data.normalized is string
+        && data.createdAt is timestamp;
+    }
+
+    function isValidNamingPlayerEntry(entryId, sessionId, roomId, data) {
+      return hasValidNamingEntryBase(entryId, sessionId, roomId, data)
+        && gameRoomDoc(roomId).data.roundEndsAt is timestamp
+        && request.time <= gameRoomDoc(roomId).data.roundEndsAt
+        && request.auth.uid == gameRoomDoc(roomId).data.currentTurnUid
+        && data.uid == request.auth.uid
+        && (
+          (
+            data.kind == 'name'
+            && data.text.size() > 0
+            && data.text.size() <= 24
+            && data.normalized.size() > 0
+            && data.normalized.size() <= 24
+          )
+          || (
+            data.kind == 'forfeit'
+            && data.text == ''
+            && data.normalized == ''
+          )
+        );
+    }
+
+    function isValidNamingTimeout(entryId, sessionId, roomId, data) {
+      return hasValidNamingEntryBase(entryId, sessionId, roomId, data)
+        && isGameHost(roomId)
+        && gameRoomDoc(roomId).data.roundEndsAt is timestamp
+        && request.time >= gameRoomDoc(roomId).data.roundEndsAt
+        && data.uid == gameRoomDoc(roomId).data.currentTurnUid
+        && data.kind == 'timeout'
+        && data.text == ''
+        && data.normalized == '';
     }
 
     // 기존 회원 프로필은 게임방 참가자 표시용으로만 본인이 읽을 수 있다.
@@ -246,6 +294,50 @@ service cloud.firestore {
         );
         allow create, update: if isValidGameAnswer(answerId, roomId, request.resource.data);
         allow delete: if isGameHost(roomId);
+      }
+
+      match /naming_sessions/{sessionId} {
+        allow read: if isGamePlayer(roomId);
+        allow create: if isGameHost(roomId)
+          && gameRoomDoc(roomId).data.type == 'naming-survival'
+          && gameRoomDoc(roomId).data.status == 'lobby'
+          && request.resource.data.keys().hasOnly([
+            'sessionId', 'roomId', 'topic', 'hostUid', 'participantCount',
+            'status', 'winnerUid', 'winnerNickname', 'totalTurns',
+            'startedAt', 'updatedAt'
+          ])
+          && request.resource.data.sessionId == sessionId
+          && request.resource.data.roomId == roomId
+          && request.resource.data.hostUid == request.auth.uid
+          && request.resource.data.topic is string
+          && request.resource.data.topic.size() > 0
+          && request.resource.data.topic.size() <= 40
+          && request.resource.data.participantCount is int
+          && request.resource.data.participantCount >= 2
+          && request.resource.data.status == 'playing'
+          && request.resource.data.winnerUid == ''
+          && request.resource.data.winnerNickname == ''
+          && request.resource.data.totalTurns == 0
+          && request.resource.data.startedAt is timestamp
+          && request.resource.data.updatedAt is timestamp;
+        allow update: if isGameHost(roomId)
+          && request.resource.data.sessionId == resource.data.sessionId
+          && request.resource.data.roomId == resource.data.roomId
+          && request.resource.data.topic == resource.data.topic
+          && request.resource.data.hostUid == resource.data.hostUid
+          && request.resource.data.participantCount == resource.data.participantCount
+          && request.resource.data.startedAt == resource.data.startedAt
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'winnerUid', 'winnerNickname', 'totalTurns', 'finishedAt', 'updatedAt'
+          ]);
+        allow delete: if false;
+
+        match /entries/{entryId} {
+          allow read: if isGamePlayer(roomId);
+          allow create: if isValidNamingPlayerEntry(entryId, sessionId, roomId, request.resource.data)
+            || isValidNamingTimeout(entryId, sessionId, roomId, request.resource.data);
+          allow update, delete: if false;
+        }
       }
     }
 
