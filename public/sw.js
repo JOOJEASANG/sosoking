@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-play-v20260817-naming-1';
+const CACHE_NAME = 'sosoking-play-v20260817-state-fix-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   '/game/index.html',
   '/game/game.css?v=20260816-play-brand-1',
   '/game/theme.css?v=20260817-light-contrast-1',
+  '/game/theme-v2.css?v=20260817-state-fix-1',
   '/game/theme.js?v=20260816-play-brand-1',
   '/game/install.js?v=20260816-play-brand-1',
   '/game/game-night.css?v=20260817-naming-1',
