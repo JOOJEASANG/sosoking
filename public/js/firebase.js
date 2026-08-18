@@ -69,13 +69,17 @@ export async function requireMemberAuth() {
   return null;
 }
 
-// 방 생성/입장 폼은 익명 UID로 방을 만들지 않도록 회원 인증을 먼저 요구한다.
-// 게임 내부의 답안 입력 등 다른 폼에는 영향을 주지 않는다.
+// 모든 방 생성/입장 경로는 익명 UID로 Firestore에 방을 쓰지 못하도록 회원 인증을 먼저 요구한다.
+const ROOM_FORM_IDS = new Set([
+  'create-room-form', 'join-room-form', 'invite-form', 'room-form',
+  'create-form', 'join-form', 'create', 'join', 'invite-join-form'
+]);
+
 function installRoomAuthGate() {
   document.addEventListener('submit', event => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement)) return;
-    if (!/^create-room-form$|^join-room-form$|^invite-form$|^room-form$/.test(form.id || '')) return;
+    if (!ROOM_FORM_IDS.has(form.id)) return;
     if (isMemberUser()) return;
     event.preventDefault();
     event.stopImmediatePropagation();
