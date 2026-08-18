@@ -1,7 +1,11 @@
-const CACHE_NAME = 'sosoking-play-v20260817-state-fix-1';
+const CACHE_NAME = 'sosoking-play-v20260818-auth-1';
 const APP_SHELL = [
   '/',
   '/index.html',
+  '/auth/',
+  '/auth/index.html',
+  '/auth/auth.css?v=20260818-auth-1',
+  '/auth/auth.js?v=20260818-auth-1',
   '/game/',
   '/game/index.html',
   '/game/game.css?v=20260816-play-brand-1',
@@ -38,6 +42,7 @@ const APP_SHELL = [
   '/game/naming/naming.js?v=20260817-naming-1',
   '/js/theme-init.js?v=20260816-play-brand-1',
   '/js/firebase.js?v=20260729-auth-session-1',
+  '/js/firebase.js?v=20260818-auth-1',
   '/js/firebase-config.js',
   '/site.webmanifest?v=20260816-play-brand-1',
   '/logo.png?v=20260816-play-brand-1',
