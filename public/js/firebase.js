@@ -54,3 +54,33 @@ export async function initAuth() {
   }
   return authInitPromise;
 }
+
+export function isMemberUser(user = auth.currentUser) {
+  return Boolean(user && !user.isAnonymous);
+}
+
+export async function requireMemberAuth() {
+  await initAuth();
+  const user = auth.currentUser;
+  if (isMemberUser(user)) return user;
+
+  const returnTo = `${location.pathname}${location.search}${location.hash}`;
+  location.assign(`/auth/?return=${encodeURIComponent(returnTo)}`);
+  return null;
+}
+
+// 방 생성/입장 폼은 익명 UID로 방을 만들지 않도록 회원 인증을 먼저 요구한다.
+// 게임 내부의 답안 입력 등 다른 폼에는 영향을 주지 않는다.
+function installRoomAuthGate() {
+  document.addEventListener('submit', event => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    if (!/^create-room-form$|^join-room-form$|^invite-form$|^room-form$/.test(form.id || '')) return;
+    if (isMemberUser()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    void requireMemberAuth();
+  }, true);
+}
+
+if (typeof document !== 'undefined') installRoomAuthGate();
