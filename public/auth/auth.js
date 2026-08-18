@@ -1,4 +1,4 @@
-import { auth, db, functions } from '/js/firebase.js?v=20260818-auth-1';
+import { auth, db, functions } from '/js/firebase.js?v=20260818-auth-2';
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import {
   EmailAuthProvider,
@@ -8,8 +8,7 @@ import {
   linkWithPopup,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut
+  signInWithPopup
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
@@ -63,14 +62,21 @@ function errorText(error) {
 function setMode(next) {
   mode = next;
   const signup = mode === 'signup';
-  title.textContent = signup ? '회원가입' : '로그인';
-  description.textContent = signup
-    ? '이메일·비밀번호를 만든 뒤 사용할 닉네임을 정해주세요.'
-    : '로그인하면 내 닉네임으로 방을 만들고 어디서든 이어서 플레이할 수 있습니다.';
-  nicknameWrap.classList.toggle('hidden', !signup);
-  submitButton.textContent = signup ? '회원가입' : '로그인';
-  modeToggle.textContent = signup ? '이미 계정이 있나요? 로그인' : '처음이신가요? 회원가입';
-  resetButton.classList.toggle('hidden', signup);
+  const profile = mode === 'profile';
+  title.textContent = profile ? '닉네임 설정' : signup ? '회원가입' : '로그인';
+  description.textContent = profile
+    ? 'Google 계정으로 로그인되었습니다. 게임에서 사용할 닉네임을 정해주세요.'
+    : signup
+      ? '이메일·비밀번호를 만든 뒤 사용할 닉네임을 정해주세요.'
+      : '로그인하면 내 닉네임으로 방을 만들고 어디서든 이어서 플레이할 수 있습니다.';
+  nicknameWrap.classList.toggle('hidden', !signup && !profile);
+  email.closest('.field').classList.toggle('hidden', profile);
+  password.closest('.field').classList.toggle('hidden', profile);
+  googleButton.classList.toggle('hidden', profile);
+  document.querySelector('.auth-divider').classList.toggle('hidden', profile);
+  submitButton.textContent = profile ? '닉네임 저장' : signup ? '회원가입' : '로그인';
+  modeToggle.classList.toggle('hidden', profile);
+  resetButton.classList.toggle('hidden', signup || profile);
   password.autocomplete = signup ? 'new-password' : 'current-password';
   nicknameStatus.textContent = '';
   nicknameStatus.className = 'field-status';
@@ -91,9 +97,9 @@ async function profileExists(user) {
 async function ensureProfile(user, preferredNickname = '') {
   if (!user || user.isAnonymous) return false;
   if (await profileExists(user)) return true;
-  setMode('signup');
+  setMode('profile');
   nickname.value = preferredNickname || '';
-  setMessage('닉네임을 정하면 회원가입이 완료됩니다.');
+  setMessage('닉네임을 정하면 로그인이 완료됩니다.');
   nickname.focus();
   return false;
 }
@@ -104,6 +110,7 @@ async function saveProfile() {
   if (nicknameChecked !== value) {
     const result = await checkNickname({ nickname: value });
     if (!result.data?.available) throw Object.assign(new Error('이미 사용 중인 닉네임입니다.'), { code: 'functions/already-exists' });
+    nicknameChecked = value;
   }
   await saveMemberProfile({ nickname: value });
 }
@@ -177,8 +184,14 @@ emailForm.addEventListener('submit', async event => {
   googleButton.disabled = true;
   setMessage('처리 중…');
   try {
-    if (mode === 'signup') await signupEmail();
-    else await loginEmail();
+    if (mode === 'profile') {
+      await saveProfile();
+      redirectAfterAuth();
+    } else if (mode === 'signup') {
+      await signupEmail();
+    } else {
+      await loginEmail();
+    }
   } catch (error) {
     setMessage(errorText(error), true);
   } finally {
