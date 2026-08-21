@@ -23,7 +23,7 @@ function pngSize(file) {
 
 for (const html of [main, gameHome]) {
   assert.match(html, /소소킹 플레이/);
-  assert.match(html, /링크 하나로 모여,<br>바로 한판/);
+  assert.match(html, /(?:링크 하나로|가볍게) 모여,<br>바로 한판/);
   assert.match(html, /\/logo\.png\?v=20260816-play-brand-1/);
   assert.match(html, /\/site\.webmanifest\?v=20260816-play-brand-1/);
   assert.match(html, /id="install-app"/);
