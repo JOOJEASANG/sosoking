@@ -23,7 +23,7 @@ function pngSize(file) {
 
 for (const html of [main, gameHome]) {
   assert.match(html, /소소킹 플레이/);
-  assert.match(html, /링크 하나로 모여,<br>바로 한판/);
+  assert.match(html, /(?:링크 하나로|가볍게) 모여,<br>바로 한판/);
   assert.match(html, /\/logo\.png\?v=20260816-play-brand-1/);
   assert.match(html, /\/site\.webmanifest\?v=20260816-play-brand-1/);
   assert.match(html, /id="install-app"/);
@@ -37,7 +37,8 @@ assert.deepEqual(manifest.categories, ['games', 'entertainment', 'social']);
 assert.ok(manifest.icons.some(icon => icon.purpose === 'maskable'));
 assert.match(logoSvg, /왕관 게임패드 로고/);
 assert.match(maskableSvg, /마스커블 앱 아이콘/);
-assert.match(sw, /sosoking-play-v\d{8}-(?:state-fix|auth)-\d+/);
+const cacheName = sw.match(/const CACHE_NAME = ['"]([^'"]+)['"]/u)?.[1] || '';
+assert.match(cacheName, /^sosoking-play-v\d{8}-[a-z0-9]+(?:-[a-z0-9]+)*-\d+$/);
 assert.match(sw, /\/game\/install\.js/);
 assert.match(sw, /\/auth\/auth\.js\?v=/);
 

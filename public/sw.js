@@ -1,16 +1,17 @@
-const CACHE_NAME = 'sosoking-play-v20260821-auth-3';
+const CACHE_NAME = 'sosoking-play-v20260821-account-room-1';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/auth/',
   '/auth/index.html',
   '/auth/auth.css?v=20260821-auth-live-1',
-  '/auth/auth.js?v=20260821-auth-live-1',
+  '/auth/auth.js?v=20260821-account-room-1',
   '/game/',
   '/game/index.html',
-  '/game/game.css?v=20260816-play-brand-1',
+  '/game/game.css?v=20260821-account-room-1',
   '/game/theme.css?v=20260817-light-contrast-1',
   '/game/theme-v2.css?v=20260817-state-fix-1',
+  '/game/theme.js?v=20260821-account-room-1',
   '/game/theme.js?v=20260816-play-brand-1',
   '/game/install.js?v=20260816-play-brand-1',
   '/game/game-night.css?v=20260817-naming-1',
@@ -41,7 +42,9 @@ const APP_SHELL = [
   '/game/naming/naming-core.js?v=20260817-naming-1',
   '/game/naming/naming.js?v=20260817-naming-1',
   '/js/theme-init.js?v=20260816-play-brand-1',
-  '/js/firebase.js?v=20260818-auth-2',
+  '/js/firebase.js?v=20260821-account-room-1',
+  '/js/firebase.js?v=20260729-auth-session-1',
+  '/js/account-ui.js?v=20260821-account-room-1',
   '/js/firebase-config.js',
   '/site.webmanifest?v=20260816-play-brand-1',
   '/logo.png?v=20260816-play-brand-1',
@@ -64,6 +67,14 @@ const GAME_FALLBACKS = [
 
 const STATIC_ASSET = /\.(?:js|css|svg|png|webp|jpg|jpeg|woff2)$/i;
 const NETWORK_FIRST = /\.(?:json|webmanifest)$/i;
+const FRESH_ASSET_PATHS = new Set([
+  '/game/game.css',
+  '/game/theme.js',
+  '/js/firebase.js',
+  '/js/account-ui.js',
+  '/auth/auth.js',
+  '/auth/auth.css'
+]);
 
 async function cacheResponse(request, response) {
   if (!response?.ok || response.type === 'opaque') return;
@@ -73,7 +84,7 @@ async function cacheResponse(request, response) {
 
 async function networkFirst(request, fallback) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: 'no-store' });
     await cacheResponse(request, response);
     return response;
   } catch (error) {
@@ -123,6 +134,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  if (FRESH_ASSET_PATHS.has(url.pathname)) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
   if (STATIC_ASSET.test(url.pathname)) {
     event.respondWith(staleWhileRevalidate(request));
     return;
