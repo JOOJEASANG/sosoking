@@ -65,7 +65,7 @@ jobs:
       - name: Deploy game Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:getGamePlayerProfiles,functions:checkNickname,functions:saveMemberProfile --project sosoking-481e6 --non-interactive
 
       - name: Remove retired legacy Functions
         env:
@@ -104,4 +104,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Sosoking Play hosting, all current Functions, game-only rules, and retired Function cleanup finished for $GITHUB_SHA"
+        run: echo "Sosoking Play hosting, current auth/profile Functions, game-only rules, and retired Function cleanup finished for $GITHUB_SHA"
