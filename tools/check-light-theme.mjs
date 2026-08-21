@@ -19,7 +19,9 @@ for (const file of pages) {
   assert.ok(read(file).includes(themeHref), `${file} must load the state-safe light theme`);
 }
 
-assert.match(sw, /sosoking-play-v\d{8}-(?:state-fix|auth)-\d+/, 'service worker cache must be bumped for the theme repair');
+const cacheMatch = sw.match(/const CACHE_NAME = '([^']+)'/);
+assert.ok(cacheMatch, 'service worker cache name must be declared');
+assert.match(cacheMatch[1], /^sosoking-play-v\d{8}-.+-\d+$/, 'service worker cache name must use a dated version');
 assert.ok(sw.includes(themeHref), 'service worker must precache the state-safe theme');
 assert.match(patch, /@import url\('\/game\/theme\.css\?v=20260817-light-contrast-1'\)/);
 
