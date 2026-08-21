@@ -37,7 +37,8 @@ assert.deepEqual(manifest.categories, ['games', 'entertainment', 'social']);
 assert.ok(manifest.icons.some(icon => icon.purpose === 'maskable'));
 assert.match(logoSvg, /왕관 게임패드 로고/);
 assert.match(maskableSvg, /마스커블 앱 아이콘/);
-assert.match(sw, /sosoking-play-v\d{8}-(?:state-fix|auth)-\d+/);
+const cacheName = sw.match(/const CACHE_NAME = ['"]([^'"]+)['"]/u)?.[1] || '';
+assert.match(cacheName, /^sosoking-play-v\d{8}-[a-z0-9]+(?:-[a-z0-9]+)*-\d+$/);
 assert.match(sw, /\/game\/install\.js/);
 assert.match(sw, /\/auth\/auth\.js\?v=/);
 
