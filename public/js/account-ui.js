@@ -39,7 +39,7 @@ async function profileFor(user) {
 function targetContainer() {
   const existing = document.querySelector('.home-actions');
   if (existing) return existing;
-  const header = document.querySelector('.game-header, .topbar');
+  const header = document.querySelector('.game-header');
   if (!header) return null;
   let actions = header.querySelector('.account-actions');
   if (!actions) {
@@ -59,10 +59,10 @@ function memberMarkup(profile, user) {
   const nickname = profile?.nickname || user.displayName || '회원';
   const photo = safePhoto(profile?.photoURL || user.photoURL) || fallbackAvatar(nickname);
   return `<div class="account-member" data-account-member>
-    <a class="account-profile" href="/auth/" aria-label="${escapeText(nickname)} 계정" title="내 계정">
+    <span class="account-profile" aria-label="${escapeText(nickname)} 계정" title="내 계정">
       <img class="account-avatar" src="${escapeText(photo)}" alt="" referrerpolicy="no-referrer">
       <span>${escapeText(nickname)}</span>
-    </a>
+    </span>
     <button class="account-logout" type="button" data-account-logout aria-label="로그아웃" title="로그아웃">${LOGOUT_ICON}</button>
   </div>`;
 }
@@ -70,8 +70,7 @@ function memberMarkup(profile, user) {
 async function render(container, user) {
   if (!container) return;
   container.querySelectorAll('.account-login-icon,.account-member').forEach(node => node.remove());
-  const legacy = container.querySelector('.account-button');
-  if (legacy) legacy.remove();
+  container.querySelector('.account-button')?.remove();
 
   if (!isMemberUser(user)) {
     container.insertAdjacentHTML('afterbegin', loginMarkup());
