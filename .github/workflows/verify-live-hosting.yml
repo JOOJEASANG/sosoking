@@ -24,7 +24,7 @@ jobs:
 
       - name: Verify production hosts
         env:
-          EXPECTED_VERSION: sosoking-play-20260817-3
+          EXPECTED_VERSION: sosoking-play-20260821-auth-live-1
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
@@ -46,6 +46,20 @@ jobs:
               echo "HTML deployment marker missing on $host"
               exit 1
             fi
+            if ! grep -Fq 'href="/auth/">로그인 / 회원가입</a>' <<< "$html"; then
+              echo "Login/signup entry point is missing on $host"
+              exit 1
+            fi
+
+            auth_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/auth/?sha=$HEAD_SHA")"
+            if ! grep -Fq '<title>로그인 · 소소킹 플레이</title>' <<< "$auth_html"; then
+              echo "Auth route is missing on $host"
+              exit 1
+            fi
+            if ! grep -Fq 'Google로 계속하기' <<< "$auth_html"; then
+              echo "Google login UI is missing on $host"
+              exit 1
+            fi
 
             naming_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/game/naming/?sha=$HEAD_SHA")"
             if ! grep -Fq "<title>작명톡 생존전 | 소소킹 플레이</title>" <<< "$naming_html"; then
@@ -60,4 +74,4 @@ jobs:
             fi
           done
 
-          echo "All production hosts serve $EXPECTED_VERSION with Naming live and Alibi removed"
+          echo "All production hosts serve $EXPECTED_VERSION with auth and game routes live"

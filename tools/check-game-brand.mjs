@@ -57,6 +57,12 @@ for (const [file, size] of [
 const ogDimensions = pngSize('public/og-image.png');
 assert.equal(ogDimensions.width, 1200);
 assert.equal(ogDimensions.height, 630);
-assert.equal(read('public/deploy-version.txt').trim(), 'sosoking-play-20260817-3');
+
+const deployVersion = read('public/deploy-version.txt').trim();
+assert.match(deployVersion, /^sosoking-play-\d{8}-[a-z0-9-]+$/);
+assert.ok(
+  main.includes(`<meta name="sosoking-deploy-version" content="${deployVersion}">`),
+  'index.html deploy marker must match deploy-version.txt'
+);
 
 console.log('Sosoking Play brand validation passed: game-first copy, crown gamepad logo, PWA install metadata, maskable icon, and social image are synchronized.');
