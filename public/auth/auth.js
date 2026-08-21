@@ -1,4 +1,4 @@
-import { auth, db, functions } from '/js/firebase.js?v=20260818-auth-2';
+import { auth, db, functions, clearMemberProfileCache } from '/js/firebase.js?v=20260821-account-room-1';
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import {
   EmailAuthProvider,
@@ -28,7 +28,7 @@ const resetButton = document.getElementById('reset-button');
 const message = document.getElementById('auth-message');
 const title = document.getElementById('auth-title');
 const description = document.getElementById('auth-description');
-let mode = 'login';
+let mode = new URLSearchParams(location.search).get('mode') === 'signup' ? 'signup' : 'login';
 let nicknameChecked = '';
 
 function safeReturnUrl() {
@@ -53,8 +53,10 @@ function errorText(error) {
     'auth/popup-closed-by-user': 'Google 로그인 창을 닫았습니다.',
     'auth/popup-blocked': '팝업이 차단되었습니다. 브라우저에서 팝업을 허용해주세요.',
     'auth/account-exists-with-different-credential': '같은 이메일의 다른 로그인 방식이 이미 있습니다. 이메일 로그인으로 먼저 로그인해주세요.',
+    'auth/operation-not-allowed': 'Firebase에서 이 로그인 방식이 아직 활성화되지 않았습니다.',
     'functions/already-exists': '이미 사용 중인 닉네임입니다.',
-    'functions/unauthenticated': '회원 로그인이 필요합니다.'
+    'functions/unauthenticated': '회원 로그인이 필요합니다.',
+    'functions/unavailable': '회원 서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요.'
   };
   return map[error?.code] || error?.message || '처리하지 못했습니다. 잠시 후 다시 시도해주세요.';
 }
@@ -65,10 +67,10 @@ function setMode(next) {
   const profile = mode === 'profile';
   title.textContent = profile ? '닉네임 설정' : signup ? '회원가입' : '로그인';
   description.textContent = profile
-    ? 'Google 계정으로 로그인되었습니다. 게임에서 사용할 닉네임을 정해주세요.'
+    ? '계정 연결이 완료되었습니다. 게임에서 사용할 닉네임을 정해주세요.'
     : signup
       ? '이메일·비밀번호를 만든 뒤 사용할 닉네임을 정해주세요.'
-      : '로그인하면 내 닉네임으로 방을 만들고 어디서든 이어서 플레이할 수 있습니다.';
+      : '로그인하면 내 프로필로 방을 만들고 어디서든 이어서 플레이할 수 있습니다.';
   nicknameWrap.classList.toggle('hidden', !signup && !profile);
   email.closest('.field').classList.toggle('hidden', profile);
   password.closest('.field').classList.toggle('hidden', profile);
@@ -88,20 +90,23 @@ function redirectAfterAuth() {
   location.assign(returnUrl || '/game/');
 }
 
-async function profileExists(user) {
-  if (!user || user.isAnonymous) return false;
+async function readProfile(user) {
+  if (!user || user.isAnonymous) return null;
   const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
-  return Boolean(snap?.exists() && String(snap.data()?.nickname || '').trim());
+  if (!snap?.exists()) return null;
+  const data = snap.data() || {};
+  return String(data.nickname || '').trim() ? data : null;
 }
 
 async function ensureProfile(user, preferredNickname = '') {
-  if (!user || user.isAnonymous) return false;
-  if (await profileExists(user)) return true;
+  if (!user || user.isAnonymous) return null;
+  const profile = await readProfile(user);
+  if (profile) return profile;
   setMode('profile');
   nickname.value = preferredNickname || '';
   setMessage('닉네임을 정하면 로그인이 완료됩니다.');
   nickname.focus();
-  return false;
+  return null;
 }
 
 async function saveProfile() {
@@ -112,7 +117,9 @@ async function saveProfile() {
     if (!result.data?.available) throw Object.assign(new Error('이미 사용 중인 닉네임입니다.'), { code: 'functions/already-exists' });
     nicknameChecked = value;
   }
+  await auth.currentUser?.getIdToken(true);
   await saveMemberProfile({ nickname: value });
+  clearMemberProfileCache(auth.currentUser?.uid || '');
 }
 
 async function signupEmail() {
@@ -127,9 +134,10 @@ async function signupEmail() {
       if (error?.code !== 'auth/credential-already-in-use') throw error;
       await signInWithEmailAndPassword(auth, emailValue, passwordValue);
     }
-  } else {
+  } else if (!current) {
     await createUserWithEmailAndPassword(auth, emailValue, passwordValue);
   }
+  await auth.currentUser?.getIdToken(true);
   await saveProfile();
   redirectAfterAuth();
 }
@@ -139,8 +147,9 @@ async function loginEmail() {
   const passwordValue = String(password.value || '');
   if (!emailValue || !passwordValue) throw new Error('이메일과 비밀번호를 입력해주세요.');
   const credential = await signInWithEmailAndPassword(auth, emailValue, passwordValue);
-  const ready = await ensureProfile(credential.user);
-  if (ready) redirectAfterAuth();
+  await credential.user.getIdToken(true);
+  const profile = await ensureProfile(credential.user);
+  if (profile) redirectAfterAuth();
 }
 
 async function loginGoogle() {
@@ -158,8 +167,13 @@ async function loginGoogle() {
   } else {
     result = await signInWithPopup(auth, provider);
   }
-  const ready = await ensureProfile(result.user, result.user.displayName || '');
-  if (ready) redirectAfterAuth();
+  await result.user.getIdToken(true);
+  const profile = await ensureProfile(result.user, result.user.displayName || '');
+  if (profile) {
+    await saveMemberProfile({ nickname: String(profile.nickname || result.user.displayName || '').trim() });
+    clearMemberProfileCache(result.user.uid);
+    redirectAfterAuth();
+  }
 }
 
 document.getElementById('check-nickname').addEventListener('click', async () => {
@@ -227,13 +241,14 @@ resetButton.addEventListener('click', async () => {
   }
 });
 
+setMode(mode);
 void (async () => {
   try {
     await auth.authStateReady();
     const user = auth.currentUser;
     if (user && !user.isAnonymous) {
-      const ready = await ensureProfile(user, user.displayName || '');
-      if (ready) redirectAfterAuth();
+      const profile = await ensureProfile(user, user.displayName || '');
+      if (profile) redirectAfterAuth();
     }
   } catch (error) {
     setMessage(errorText(error), true);
