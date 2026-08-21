@@ -35,7 +35,7 @@ for (const marker of requiredAuthMarkers) {
 if (!authPage.includes('id="nickname"') || !authPage.includes('id="check-nickname"')) {
   throw new Error('Nickname signup/check UI is missing');
 }
-for (const marker of ['requireMemberAuth', 'requireMemberProfile', 'create-room-form', 'form.requestSubmit()', 'getMemberProfile']) {
+for (const marker of ['requireMemberAuth', 'requireMemberProfile', 'create-room-form', 'prepareRoomForm', "addEventListener('click'", 'form.requestSubmit', 'getMemberProfile']) {
   if (!firebaseJs.includes(marker)) throw new Error(`Room member flow marker missing: ${marker}`);
 }
 for (const marker of ['signOut', 'account-login-icon', 'account-avatar', 'photoURL', 'account-logout']) {
@@ -50,4 +50,4 @@ for (const marker of ['/js/account-ui.js?v=20260821-account-room-1', '/js/fireba
   if (!sw.includes(marker)) throw new Error(`Service worker account/room asset missing: ${marker}`);
 }
 
-console.log('Authentication, account header, Google avatar, logout, and room member gate checks passed.');
+console.log('Authentication, account header, Google avatar, logout, and pre-validation room member gate checks passed.');
