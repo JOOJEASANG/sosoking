@@ -1,5 +1,5 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { enforceActionRateLimit } = require('./security');
 
 const db = getFirestore();
@@ -10,6 +10,10 @@ function cleanNickname(value) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 12);
 }
 
+function normalizeNickname(value) {
+  return cleanNickname(value).normalize('NFKC').toLocaleLowerCase('ko-KR');
+}
+
 function cleanUrl(value) {
   const url = String(value || '').trim();
   return /^https:\/\//.test(url) ? url.slice(0, 500) : '';
@@ -18,6 +22,83 @@ function cleanUrl(value) {
 function cleanRoomId(value) {
   return String(value || '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 }
+
+function requireAuth(request) {
+  const uid = request.auth?.uid || '';
+  if (!uid || request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('unauthenticated', '회원 로그인이 필요합니다.');
+  }
+  return uid;
+}
+
+exports.checkNickname = onCall({
+  region: REGION,
+  timeoutSeconds: 10,
+  memory: '256MiB',
+  enforceAppCheck: ENFORCE_APP_CHECK
+}, async request => {
+  const nickname = cleanNickname(request.data?.nickname);
+  const normalized = normalizeNickname(nickname);
+  if (nickname.length < 2 || normalized.length < 2) {
+    throw new HttpsError('invalid-argument', '닉네임은 2자 이상 입력해주세요.');
+  }
+  if (nickname.length > 12) throw new HttpsError('invalid-argument', '닉네임은 12자까지 가능합니다.');
+  await enforceActionRateLimit(request.auth?.uid || 'anonymous', 'nickname-check', { cooldownSeconds: 1, dailyLimit: 100 });
+  const snap = await db.doc(`nicknames/${normalized}`).get();
+  return { available: !snap.exists, nickname, normalized };
+});
+
+exports.saveMemberProfile = onCall({
+  region: REGION,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  enforceAppCheck: ENFORCE_APP_CHECK
+}, async request => {
+  const uid = requireAuth(request);
+  const nickname = cleanNickname(request.data?.nickname);
+  const normalized = normalizeNickname(nickname);
+  if (nickname.length < 2 || normalized.length < 2 || nickname.length > 12) {
+    throw new HttpsError('invalid-argument', '닉네임은 2~12자로 입력해주세요.');
+  }
+
+  await enforceActionRateLimit(uid, 'profile-save', { cooldownSeconds: 1, dailyLimit: 30 });
+  const userRecord = await require('firebase-admin/auth').getAuth().getUser(uid);
+  const userRef = db.doc(`users/${uid}`);
+  const nicknameRef = db.doc(`nicknames/${normalized}`);
+  const existing = await userRef.get();
+  const previousNormalized = String(existing.get('nicknameNormalized') || '');
+
+  await db.runTransaction(async tx => {
+    const nicknameSnap = await tx.get(nicknameRef);
+    if (nicknameSnap.exists && nicknameSnap.get('uid') !== uid) {
+      throw new HttpsError('already-exists', '이미 사용 중인 닉네임입니다.');
+    }
+
+    const now = FieldValue.serverTimestamp();
+    tx.set(nicknameRef, {
+      uid,
+      nickname,
+      updatedAt: now
+    }, { merge: true });
+    tx.set(userRef, {
+      uid,
+      nickname,
+      nicknameNormalized: normalized,
+      email: String(userRecord.email || ''),
+      displayName: String(userRecord.displayName || ''),
+      photoURL: cleanUrl(userRecord.photoURL || ''),
+      avatarSeed: uid,
+      isAnonymous: false,
+      updatedAt: now,
+      createdAt: existing.exists ? (existing.get('createdAt') || now) : now
+    }, { merge: true });
+    if (previousNormalized && previousNormalized !== normalized) {
+      tx.delete(db.doc(`nicknames/${previousNormalized}`));
+    }
+  });
+
+  return { ok: true, nickname };
+});
 
 exports.getGamePlayerProfiles = onCall({
   region: REGION,
