@@ -38,7 +38,20 @@ button, input { font: inherit; }
 .game-brand span:last-child { display: flex; flex-direction: column; gap: 1px; }
 .game-brand strong { font-size: 17px; font-weight: 900; }
 .game-brand small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.install-button { margin-left: auto; min-height: 38px; padding: 8px 12px; border: 1px solid rgba(255, 209, 102, .34); border-radius: 12px; background: rgba(255, 209, 102, .1); color: var(--accent); font-size: 11px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+.home-actions, .account-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.account-button { display: none !important; }
+.account-login-icon, .account-profile, .account-logout { border: 1px solid var(--line); background: rgba(255,255,255,.045); color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+.account-login-icon { min-height: 40px; padding: 7px 11px 7px 8px; display: inline-flex; align-items: center; gap: 7px; border-radius: 14px; text-decoration: none; font-size: 11px; font-weight: 900; }
+.account-login-icon svg { width: 22px; height: 22px; padding: 3px; border-radius: 9px; background: rgba(255,209,102,.14); fill: var(--accent); }
+.account-login-icon:hover, .account-profile:hover, .account-logout:hover { border-color: rgba(255,209,102,.38); background: rgba(255,209,102,.08); }
+.account-member { display: flex; align-items: center; gap: 6px; }
+.account-profile { min-height: 40px; max-width: 160px; padding: 5px 10px 5px 5px; display: flex; align-items: center; gap: 7px; border-radius: 14px; text-decoration: none; }
+.account-profile > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 900; }
+.account-avatar { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; object-fit: cover; background: var(--panel-2); box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+.account-logout { width: 40px; height: 40px; padding: 9px; display: grid; place-items: center; border-radius: 14px; cursor: pointer; }
+.account-logout svg { width: 19px; height: 19px; fill: currentColor; }
+.account-logout:disabled { opacity: .45; cursor: wait; }
+.install-button { margin-left: 0; min-height: 38px; padding: 8px 12px; border: 1px solid rgba(255, 209, 102, .34); border-radius: 12px; background: rgba(255, 209, 102, .1); color: var(--accent); font-size: 11px; font-weight: 900; cursor: pointer; white-space: nowrap; }
 .install-button:hover { background: rgba(255, 209, 102, .18); }
 .install-button:active { transform: scale(.97); }
 .install-button[hidden] { display: none; }
@@ -93,9 +106,15 @@ button, input { font: inherit; }
 
 @media (max-width: 430px) {
   .game-shell { width: min(100% - 22px, 760px); padding-top: 22px; }
+  .game-header { gap: 7px; padding-inline: 11px; }
   .game-brand strong { font-size: 15px; }
-  .game-brand small { max-width: 150px; }
-  .install-button { padding-inline: 10px; }
+  .game-brand small { max-width: 105px; }
+  .account-login-icon { width: 40px; padding: 8px; justify-content: center; }
+  .account-login-icon span { display: none; }
+  .account-profile { max-width: 104px; padding-right: 7px; }
+  .account-profile > span { max-width: 58px; }
+  .account-logout { width: 38px; height: 38px; }
+  .install-button { padding-inline: 9px; }
   .featured-game { padding: 20px; border-radius: 20px; }
   .game-card { grid-template-columns: auto 1fr; }
   .coming-label { grid-column: 2; }
