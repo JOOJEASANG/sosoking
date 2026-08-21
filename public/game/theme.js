@@ -1,3 +1,5 @@
+import { mountAccountUI } from '/js/account-ui.js?v=20260821-account-room-1';
+
 const STORAGE_KEY = 'theme';
 
 function systemTheme() {
@@ -79,6 +81,7 @@ function normalizeGameSurface() {
 applyTheme();
 mountToggle();
 normalizeGameSurface();
+void mountAccountUI();
 
 const gameSurfaceObserver = new MutationObserver(normalizeGameSurface);
 gameSurfaceObserver.observe(document.body, { childList: true, subtree: true });
