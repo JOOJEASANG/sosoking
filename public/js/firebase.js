@@ -114,7 +114,44 @@ function nicknameInputs(form) {
   }).filter(input => !/room|code|topic|answer|word/.test(`${input.id} ${input.name}`.toLowerCase()));
 }
 
+async function prepareRoomForm(form, submitter = null) {
+  if (!(form instanceof HTMLFormElement) || !ROOM_FORM_IDS.has(form.id)) return false;
+  const profile = await requireMemberProfile();
+  if (!profile) return false;
+
+  nicknameInputs(form).forEach(input => {
+    if (!String(input.value || '').trim()) {
+      input.value = profile.nickname;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+
+  form.dataset.memberAuthReady = '1';
+  if (submitter instanceof HTMLElement && typeof form.requestSubmit === 'function') form.requestSubmit(submitter);
+  else form.requestSubmit();
+  return true;
+}
+
+function roomGateFailure(error) {
+  console.error('room member gate failed', error);
+  location.assign(`/auth/?return=${encodeURIComponent(authReturnUrl())}`);
+}
+
 function installRoomAuthGate() {
+  // required 닉네임 필드의 브라우저 기본 검증보다 먼저 회원 프로필을 채운다.
+  document.addEventListener('click', event => {
+    const submitter = event.target instanceof Element ? event.target.closest('button,input[type="submit"]') : null;
+    const form = submitter?.form;
+    if (!(form instanceof HTMLFormElement) || !ROOM_FORM_IDS.has(form.id)) return;
+    if (form.dataset.memberAuthReady === '1') return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    void prepareRoomForm(form, submitter).catch(roomGateFailure);
+  }, true);
+
+  // Enter 제출이나 이미 유효한 폼 제출도 동일한 회원 인증 흐름을 탄다.
   document.addEventListener('submit', event => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || !ROOM_FORM_IDS.has(form.id)) return;
@@ -125,24 +162,7 @@ function installRoomAuthGate() {
 
     event.preventDefault();
     event.stopImmediatePropagation();
-
-    void (async () => {
-      const profile = await requireMemberProfile();
-      if (!profile) return;
-      const inputs = nicknameInputs(form);
-      inputs.forEach(input => {
-        if (!String(input.value || '').trim()) {
-          input.value = profile.nickname;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      });
-      form.dataset.memberAuthReady = '1';
-      form.requestSubmit();
-    })().catch(error => {
-      console.error('room member gate failed', error);
-      location.assign(`/auth/?return=${encodeURIComponent(authReturnUrl())}`);
-    });
+    void prepareRoomForm(form, event.submitter || null).catch(roomGateFailure);
   }, true);
 }
 
