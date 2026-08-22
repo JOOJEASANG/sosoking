@@ -46,8 +46,12 @@ if (!home.includes('href="/auth/"')) throw new Error('Home auth entry point is m
 for (const marker of ['exports.checkNickname', 'exports.saveMemberProfile', 'photoURL: cleanUrl(userRecord.photoURL']) {
   if (!profile.includes(marker)) throw new Error(`Profile callable marker missing: ${marker}`);
 }
-for (const marker of ['/js/account-ui.js?v=20260821-account-room-1', '/js/firebase.js?v=20260821-account-room-1', 'sosoking-play-v20260821-account-room-1']) {
+for (const marker of ['/js/account-ui.js?v=20260821-account-room-1', '/js/firebase.js?v=20260821-account-room-1']) {
   if (!sw.includes(marker)) throw new Error(`Service worker account/room asset missing: ${marker}`);
+}
+const cacheName = sw.match(/const CACHE_NAME = ['"]([^'"]+)['"]/u)?.[1] || '';
+if (!/^sosoking-play-v\d{8}-[a-z0-9]+(?:-[a-z0-9]+)*-\d+$/.test(cacheName)) {
+  throw new Error(`Invalid service worker cache name: ${cacheName}`);
 }
 
 console.log('Authentication, account header, Google avatar, logout, and pre-validation room member gate checks passed.');
