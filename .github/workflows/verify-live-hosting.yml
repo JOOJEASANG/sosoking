@@ -77,7 +77,7 @@ jobs:
 
             for route in grid vault chosung mind naming; do
               game_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/game/$route/?sha=$HEAD_SHA")"
-              if ! grep -Fq '/game/lobby-tools.js?v=20260822-lobby-tools-1' <<< "$game_html"; then
+              if ! grep -Fq '/game/lobby-tools.js?v=20260822-lobby-polish-1' <<< "$game_html"; then
                 echo "Lobby tools are missing from $route on $host"
                 exit 1
               fi
