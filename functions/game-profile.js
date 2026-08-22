@@ -23,6 +23,19 @@ function cleanRoomId(value) {
   return String(value || '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 }
 
+function googleProvider(userRecord) {
+  return userRecord?.providerData?.find(item => item?.providerId === 'google.com') || null;
+}
+
+function authProfileFields(userRecord) {
+  const google = googleProvider(userRecord);
+  return {
+    email: String(userRecord?.email || google?.email || ''),
+    displayName: String(userRecord?.displayName || google?.displayName || ''),
+    photoURL: cleanUrl(userRecord?.photoURL || google?.photoURL || '')
+  };
+}
+
 function requireAuth(request) {
   const uid = request.auth?.uid || '';
   if (!uid || request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
@@ -63,6 +76,7 @@ exports.saveMemberProfile = onCall({
 
   await enforceActionRateLimit(uid, 'profile-save', { cooldownSeconds: 1, dailyLimit: 30 });
   const userRecord = await require('firebase-admin/auth').getAuth().getUser(uid);
+  const authProfile = authProfileFields(userRecord);
   const userRef = db.doc(`users/${uid}`);
   const nicknameRef = db.doc(`nicknames/${normalized}`);
   const existing = await userRef.get();
@@ -84,9 +98,9 @@ exports.saveMemberProfile = onCall({
       uid,
       nickname,
       nicknameNormalized: normalized,
-      email: String(userRecord.email || ''),
-      displayName: String(userRecord.displayName || ''),
-      photoURL: cleanUrl(userRecord.photoURL || ''),
+      email: authProfile.email,
+      displayName: authProfile.displayName,
+      photoURL: authProfile.photoURL,
       avatarSeed: uid,
       isAnonymous: false,
       updatedAt: now,
@@ -97,7 +111,7 @@ exports.saveMemberProfile = onCall({
     }
   });
 
-  return { ok: true, nickname };
+  return { ok: true, nickname, photoURL: authProfile.photoURL };
 });
 
 exports.getGamePlayerProfiles = onCall({
@@ -122,8 +136,6 @@ exports.getGamePlayerProfiles = onCall({
     throw new HttpsError('permission-denied', '게임방 참가자만 프로필을 볼 수 있습니다.');
   }
 
-  // 일반 게임은 최대 8명, 작명톡은 대기실 인원 상한이 없으므로 프로필 표시 범위를 넓힌다.
-  // 응답 크기와 Firestore 비용을 무제한으로 키우지 않도록 작명톡은 최대 100명까지 제공한다.
   const profileLimit = roomSnap.get('type') === 'naming-survival' ? 100 : 8;
   const playersSnap = await db.collection(`game_rooms/${roomId}/players`).limit(profileLimit + 1).get();
   const truncated = playersSnap.size > profileLimit;
