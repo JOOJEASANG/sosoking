@@ -35,15 +35,15 @@ for (const marker of requiredAuthMarkers) {
 if (!authPage.includes('id="nickname"') || !authPage.includes('id="check-nickname"')) {
   throw new Error('Nickname signup/check UI is missing');
 }
-for (const marker of ['requireMemberAuth', 'requireMemberProfile', 'create-room-form', 'prepareRoomForm', "addEventListener('click'", 'form.requestSubmit', 'getMemberProfile']) {
+for (const marker of ['requireMemberAuth', 'requireMemberProfile', 'create-room-form', 'prepareRoomForm', "addEventListener('click'", 'form.requestSubmit', 'getMemberProfile', 'memberFallbackProfile']) {
   if (!firebaseJs.includes(marker)) throw new Error(`Room member flow marker missing: ${marker}`);
 }
-for (const marker of ['signOut', 'account-login-icon', 'account-avatar', 'photoURL', 'account-logout']) {
+for (const marker of ['signOut', 'account-login-icon', 'account-avatar', 'photoURL', 'account-logout', 'providerData']) {
   if (!accountUi.includes(marker)) throw new Error(`Account header marker missing: ${marker}`);
 }
 if (!themeJs.includes('mountAccountUI')) throw new Error('Account header is not mounted from the shared theme module');
 if (!home.includes('href="/auth/"')) throw new Error('Home auth entry point is missing');
-for (const marker of ['exports.checkNickname', 'exports.saveMemberProfile', 'photoURL: cleanUrl(userRecord.photoURL']) {
+for (const marker of ['exports.checkNickname', 'exports.saveMemberProfile', 'authProfileFields', "providerId === 'google.com'", 'photoURL: authProfile.photoURL']) {
   if (!profile.includes(marker)) throw new Error(`Profile callable marker missing: ${marker}`);
 }
 for (const marker of ['/js/account-ui.js?v=20260821-account-room-1', '/js/firebase.js?v=20260821-account-room-1']) {
@@ -54,4 +54,4 @@ if (!/^sosoking-play-v\d{8}-[a-z0-9]+(?:-[a-z0-9]+)*-\d+$/.test(cacheName)) {
   throw new Error(`Invalid service worker cache name: ${cacheName}`);
 }
 
-console.log('Authentication, account header, Google avatar, logout, and pre-validation room member gate checks passed.');
+console.log('Authentication, account header, Google provider avatar, logout, and room member fallback checks passed.');
