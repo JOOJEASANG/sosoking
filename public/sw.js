@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-play-v20260821-account-room-1';
+const CACHE_NAME = 'sosoking-play-v20260822-home-upgrade-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const APP_SHELL = [
   '/game/',
   '/game/index.html',
   '/game/game.css?v=20260821-account-room-1',
+  '/game/home-upgrade.css?v=20260822-home-upgrade-1',
   '/game/theme.css?v=20260817-light-contrast-1',
   '/game/theme-v2.css?v=20260817-state-fix-1',
   '/game/theme.js?v=20260821-account-room-1',
@@ -45,6 +46,7 @@ const APP_SHELL = [
   '/js/firebase.js?v=20260821-account-room-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/account-ui.js?v=20260821-account-room-1',
+  '/js/home-upgrade.js?v=20260822-home-upgrade-1',
   '/js/firebase-config.js',
   '/site.webmanifest?v=20260816-play-brand-1',
   '/logo.png?v=20260816-play-brand-1',
@@ -69,9 +71,11 @@ const STATIC_ASSET = /\.(?:js|css|svg|png|webp|jpg|jpeg|woff2)$/i;
 const NETWORK_FIRST = /\.(?:json|webmanifest)$/i;
 const FRESH_ASSET_PATHS = new Set([
   '/game/game.css',
+  '/game/home-upgrade.css',
   '/game/theme.js',
   '/js/firebase.js',
   '/js/account-ui.js',
+  '/js/home-upgrade.js',
   '/auth/auth.js',
   '/auth/auth.css'
 ]);
