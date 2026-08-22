@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-play-v20260822-final-audit-1';
+const CACHE_NAME = 'sosoking-play-v20260823-auth-room-photo-1';
 const APP_SHELL = [
   '/',
   '/index.html',
