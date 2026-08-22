@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-play-v20260822-lobby-polish-1';
+const CACHE_NAME = 'sosoking-play-v20260822-final-audit-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -66,7 +66,7 @@ const GAME_FALLBACKS = [
   ['/game/chosung', '/game/chosung/index.html'],
   ['/game/mind', '/game/mind/index.html'],
   ['/game/naming', '/game/naming/index.html'],
-  ['/game', '/game/index.html']
+  ['/game', '/index.html']
 ];
 
 const STATIC_ASSET = /\.(?:js|css|svg|png|webp|jpg|jpeg|woff2)$/i;
