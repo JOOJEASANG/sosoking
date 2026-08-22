@@ -114,15 +114,24 @@ exports.getGamePlayerProfiles = onCall({
 
   await enforceActionRateLimit(uid, 'game-profile-read', { cooldownSeconds: 1, dailyLimit: 500 });
 
-  const memberSnap = await db.doc(`game_rooms/${roomId}/players/${uid}`).get();
-  if (!memberSnap.exists) throw new HttpsError('permission-denied', '게임방 참가자만 프로필을 볼 수 있습니다.');
+  const [roomSnap, memberSnap] = await Promise.all([
+    db.doc(`game_rooms/${roomId}`).get(),
+    db.doc(`game_rooms/${roomId}/players/${uid}`).get()
+  ]);
+  if (!roomSnap.exists || !memberSnap.exists) {
+    throw new HttpsError('permission-denied', '게임방 참가자만 프로필을 볼 수 있습니다.');
+  }
 
-  const playersSnap = await db.collection(`game_rooms/${roomId}/players`).limit(8).get();
+  // 일반 게임은 최대 8명, 작명톡은 대기실 인원 상한이 없으므로 프로필 표시 범위를 넓힌다.
+  // 응답 크기와 Firestore 비용을 무제한으로 키우지 않도록 작명톡은 최대 100명까지 제공한다.
+  const profileLimit = roomSnap.get('type') === 'naming-survival' ? 100 : 8;
+  const playersSnap = await db.collection(`game_rooms/${roomId}/players`).limit(profileLimit + 1).get();
+  const truncated = playersSnap.size > profileLimit;
   const playerUids = playersSnap.docs
+    .slice(0, profileLimit)
     .map(snap => String(snap.get('uid') || snap.id || '').trim())
-    .filter(Boolean)
-    .slice(0, 8);
-  if (!playerUids.length) return { profiles: {} };
+    .filter(Boolean);
+  if (!playerUids.length) return { profiles: {}, truncated, profileLimit };
 
   const userSnaps = await db.getAll(...playerUids.map(playerUid => db.doc(`users/${playerUid}`)));
   const profiles = {};
@@ -142,5 +151,5 @@ exports.getGamePlayerProfiles = onCall({
     };
   });
 
-  return { profiles };
+  return { profiles, truncated, profileLimit };
 });
