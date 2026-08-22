@@ -58,20 +58,50 @@ export function isMemberUser(user = auth.currentUser) {
   return Boolean(user && !user.isAnonymous);
 }
 
+function googleProvider(user) {
+  return user?.providerData?.find(item => item?.providerId === 'google.com') || null;
+}
+
+function providerPhoto(user) {
+  return String(user?.photoURL || googleProvider(user)?.photoURL || '').trim();
+}
+
+function providerDisplayName(user) {
+  return String(user?.displayName || googleProvider(user)?.displayName || '').trim();
+}
+
+export function memberFallbackProfile(user = auth.currentUser) {
+  if (!isMemberUser(user)) return null;
+  const displayName = providerDisplayName(user);
+  const email = String(user?.email || googleProvider(user)?.email || '').trim();
+  const nickname = String(displayName || email.split('@')[0] || '회원').trim().slice(0, 12) || '회원';
+  return {
+    uid: user.uid,
+    nickname,
+    photoURL: providerPhoto(user),
+    email,
+    displayName
+  };
+}
+
 export async function getMemberProfile(user = auth.currentUser, { fresh = false } = {}) {
   if (!isMemberUser(user)) return null;
   if (!fresh && profileCache.has(user.uid)) return profileCache.get(user.uid);
-  const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+  const snap = await getDoc(doc(db, 'users', user.uid)).catch(error => {
+    console.warn('member profile read failed, using auth profile:', error?.code || error);
+    return null;
+  });
   if (!snap?.exists()) return null;
   const data = snap.data() || {};
-  const nickname = String(data.nickname || user.displayName || '').trim().slice(0, 12);
+  const fallback = memberFallbackProfile(user);
+  const nickname = String(data.nickname || fallback?.nickname || '').trim().slice(0, 12);
   if (!nickname) return null;
   const profile = {
     uid: user.uid,
     nickname,
-    photoURL: String(data.photoURL || user.photoURL || '').trim(),
-    email: String(data.email || user.email || '').trim(),
-    displayName: String(data.displayName || user.displayName || '').trim()
+    photoURL: String(data.photoURL || fallback?.photoURL || '').trim(),
+    email: String(data.email || fallback?.email || '').trim(),
+    displayName: String(data.displayName || fallback?.displayName || '').trim()
   };
   profileCache.set(user.uid, profile);
   return profile;
@@ -98,8 +128,7 @@ export async function requireMemberProfile() {
   if (!user) return null;
   const profile = await getMemberProfile(user, { fresh: true });
   if (profile) return profile;
-  location.assign(`/auth/?mode=profile&return=${encodeURIComponent(authReturnUrl())}`);
-  return null;
+  return memberFallbackProfile(user);
 }
 
 const ROOM_FORM_IDS = new Set([
@@ -139,7 +168,6 @@ function roomGateFailure(error) {
 }
 
 function installRoomAuthGate() {
-  // required 닉네임 필드의 브라우저 기본 검증보다 먼저 회원 프로필을 채운다.
   document.addEventListener('click', event => {
     const submitter = event.target instanceof Element ? event.target.closest('button,input[type="submit"]') : null;
     const form = submitter?.form;
@@ -151,7 +179,6 @@ function installRoomAuthGate() {
     void prepareRoomForm(form, submitter).catch(roomGateFailure);
   }, true);
 
-  // Enter 제출이나 이미 유효한 폼 제출도 동일한 회원 인증 흐름을 탄다.
   document.addEventListener('submit', event => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || !ROOM_FORM_IDS.has(form.id)) return;
