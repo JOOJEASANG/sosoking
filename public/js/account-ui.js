@@ -1,6 +1,5 @@
-import { auth, db, getMemberProfile, isMemberUser } from '/js/firebase.js?v=20260821-account-room-1';
+import { auth, getMemberProfile, isMemberUser, memberFallbackProfile } from '/js/firebase.js?v=20260821-account-room-1';
 import { signOut } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
 const USER_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2.1c-4.4 0-8 2.4-8 5.3 0 .6.5 1 1 1h14c.6 0 1-.4 1-1 0-2.9-3.6-5.3-8-5.3Z"/></svg>`;
 const LOGOUT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5.8A1.8 1.8 0 0 0 4 5.8v12.4A1.8 1.8 0 0 0 5.8 20H10v-2H6V6h4V4Zm6.6 3.4-1.4 1.4 2.2 2.2H9v2h8.4l-2.2 2.2 1.4 1.4 4.6-4.6-4.6-4.6Z"/></svg>`;
@@ -22,17 +21,19 @@ function fallbackAvatar(name = '소') {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+function providerPhoto(user) {
+  const google = user?.providerData?.find(item => item?.providerId === 'google.com');
+  return safePhoto(user?.photoURL || google?.photoURL || '');
+}
+
 async function profileFor(user) {
-  const profile = await getMemberProfile(user).catch(() => null);
-  if (profile) return profile;
   if (!isMemberUser(user)) return null;
-  const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
-  const data = snap?.exists() ? (snap.data() || {}) : {};
+  const stored = await getMemberProfile(user).catch(() => null);
+  const fallback = memberFallbackProfile(user);
   return {
-    uid: user.uid,
-    nickname: String(data.nickname || user.displayName || user.email?.split('@')[0] || '회원').slice(0, 12),
-    photoURL: String(data.photoURL || user.photoURL || ''),
-    email: String(data.email || user.email || '')
+    ...(fallback || {}),
+    ...(stored || {}),
+    photoURL: safePhoto(stored?.photoURL) || providerPhoto(user) || safePhoto(fallback?.photoURL)
   };
 }
 
@@ -57,10 +58,10 @@ function loginMarkup() {
 
 function memberMarkup(profile, user) {
   const nickname = profile?.nickname || user.displayName || '회원';
-  const photo = safePhoto(profile?.photoURL || user.photoURL) || fallbackAvatar(nickname);
+  const photo = safePhoto(profile?.photoURL) || providerPhoto(user) || fallbackAvatar(nickname);
   return `<div class="account-member" data-account-member>
     <span class="account-profile" aria-label="${escapeText(nickname)} 계정" title="내 계정">
-      <img class="account-avatar" src="${escapeText(photo)}" alt="" referrerpolicy="no-referrer">
+      <img class="account-avatar" src="${escapeText(photo)}" alt="" referrerpolicy="no-referrer" data-account-avatar>
       <span>${escapeText(nickname)}</span>
     </span>
     <button class="account-logout" type="button" data-account-logout aria-label="로그아웃" title="로그아웃">${LOGOUT_ICON}</button>
@@ -80,6 +81,11 @@ async function render(container, user) {
   const profile = await profileFor(user);
   if (!auth.currentUser || auth.currentUser.uid !== user.uid) return;
   container.insertAdjacentHTML('afterbegin', memberMarkup(profile, user));
+  const avatar = container.querySelector('[data-account-avatar]');
+  avatar?.addEventListener('error', () => {
+    const nickname = profile?.nickname || user.displayName || '회원';
+    avatar.src = fallbackAvatar(nickname);
+  }, { once: true });
   container.querySelector('[data-account-logout]')?.addEventListener('click', async buttonEvent => {
     const button = buttonEvent.currentTarget;
     button.disabled = true;
