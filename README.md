@@ -1,6 +1,6 @@
 # 소소킹 플레이
 
-링크 하나로 모여 2명부터 인원 제한 없이 바로 즐기는 모바일 파티게임 웹앱입니다.
+링크 하나로 모여 바로 즐기는 모바일 파티게임 웹앱입니다. 대부분의 게임은 2~8명이 함께 플레이하며, 작명톡 생존전은 별도 인원 상한 없이 참가할 수 있습니다.
 
 ## 게임
 
@@ -42,4 +42,4 @@ Firebase 프로젝트: `sosoking-481e6`
 회원 프로필 callable Function은 App Check 강제 여부를 배포 환경으로 제어합니다. Firebase Console에서
 웹 앱을 reCAPTCHA v3에 등록하고 `public/js/firebase-config.js`의 `appCheckSiteKey`를 입력한 뒤,
 GitHub Actions 저장소 변수 `ENFORCE_APP_CHECK`를 `true`로 설정해야 합니다. 사이트 키를 넣기 전에는
-기본값 `false`를 유지해야 익명 참가자의 프로필 호출이 차단되지 않습니다.
+기본값 `false`를 유지해야 인증·회원 프로필 callable 호출이 차단되지 않습니다.

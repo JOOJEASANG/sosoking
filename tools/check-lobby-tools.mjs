@@ -21,8 +21,10 @@ for (const game of games) {
   assert.ok(html.includes('/game/lobby-tools.css?v=20260822-lobby-polish-1'), `${game} lobby CSS missing`);
   assert.ok(html.includes('/game/lobby-tools.js?v=20260822-lobby-polish-1'), `${game} lobby JS missing`);
 }
-for (const marker of ['/game/lobby-tools.css?v=20260822-lobby-polish-1', '/game/lobby-tools.js?v=20260822-lobby-polish-1', 'sosoking-play-v20260822-lobby-polish-1']) {
+for (const marker of ['/game/lobby-tools.css?v=20260822-lobby-polish-1', '/game/lobby-tools.js?v=20260822-lobby-polish-1']) {
   assert.ok(sw.includes(marker), `Service worker lobby marker missing: ${marker}`);
 }
+const cacheName = sw.match(/const CACHE_NAME = ['"]([^'"]+)['"]/u)?.[1] || '';
+assert.match(cacheName, /^sosoking-play-v\d{8}-[a-z0-9]+(?:-[a-z0-9]+)*-\d+$/, `Invalid service worker cache name: ${cacheName}`);
 
 console.log('Lobby tools validation passed: share/copy, participant state, safe guest leave, mobile/light styling, and PWA caching are wired across all live games.');

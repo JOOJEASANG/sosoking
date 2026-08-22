@@ -26,7 +26,8 @@
       }
     ],
     "redirects": [
-      { "source": "/game", "destination": "/", "type": 301 }
+      { "source": "/game", "destination": "/", "type": 301 },
+      { "source": "/game/", "destination": "/", "type": 301 }
     ]
   },
   "functions": {

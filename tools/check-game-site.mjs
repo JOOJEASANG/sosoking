@@ -32,6 +32,7 @@ for (const file of [
   'public/game/game-master.js',
   'public/game/member-profile.js',
   'public/game/game-night.js',
+  'public/game/lobby-tools.js',
   'public/game/grid/grid-core.js',
   'public/game/grid/grid.js',
   'public/game/vault/vault.js',
@@ -76,7 +77,8 @@ assert.match(gameProfile, /enforceAppCheck: ENFORCE_APP_CHECK/);
 assert.match(deployWorkflow, /functions\/\.env\.sosoking-481e6/);
 assert.match(deployWorkflow, /vars\.ENFORCE_APP_CHECK/);
 const liveVerifyWorkflow = read('.github/workflows/verify-live-hosting.yml');
-assert.match(liveVerifyWorkflow, /game\/naming/);
+assert.match(liveVerifyWorkflow, /for route in grid vault chosung mind naming/);
+assert.match(liveVerifyWorkflow, /\$host\/game\/\$route\//);
 assert.match(liveVerifyWorkflow, /game\/alibi/);
 assert.match(liveVerifyWorkflow, /alibi_status.*404/s);
 assert.equal(firebase.hosting.public, 'public');
@@ -107,4 +109,4 @@ for (const removed of ['public/admin', 'public/css', 'public/js/pages', 'docs'])
   assert.ok(!fs.existsSync(removed), `${removed} should be removed`);
 }
 
-console.log('Game-first repository validation passed: five live routes, Grid Rush, persistent Naming sessions, private round answers, one profile Function, and deleted Alibi/DNA routes are consistent.');
+console.log('Game-first repository validation passed: five live routes, Grid Rush, persistent Naming sessions, private round answers, current lobby tools, profile Functions, and removed legacy routes are consistent.');

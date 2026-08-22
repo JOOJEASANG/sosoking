@@ -22,12 +22,22 @@ jobs:
             exit 1
           fi
 
+      - name: Checkout deployed commit
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
       - name: Verify production hosts
         env:
-          EXPECTED_VERSION: sosoking-play-20260821-auth-live-1
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
+          EXPECTED_VERSION="$(tr -d '\r\n' < public/deploy-version.txt)"
+          if [ -z "$EXPECTED_VERSION" ]; then
+            echo "public/deploy-version.txt is empty"
+            exit 1
+          fi
+
           hosts=(
             "https://sosoking-481e6.web.app"
             "https://sosoking.co.kr"
@@ -46,8 +56,12 @@ jobs:
               echo "HTML deployment marker missing on $host"
               exit 1
             fi
-            if ! grep -Fq 'href="/auth/">로그인 / 회원가입</a>' <<< "$html"; then
-              echo "Login/signup entry point is missing on $host"
+            if ! grep -Fq 'account-login-icon account-static-login' <<< "$html" || ! grep -Fq 'href="/auth/"' <<< "$html"; then
+              echo "Current account login entry point is missing on $host"
+              exit 1
+            fi
+            if ! grep -Fq 'id="quick-join-form"' <<< "$html"; then
+              echo "Quick room join UI is missing on $host"
               exit 1
             fi
 
@@ -61,11 +75,13 @@ jobs:
               exit 1
             fi
 
-            naming_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/game/naming/?sha=$HEAD_SHA")"
-            if ! grep -Fq "<title>작명톡 생존전 | 소소킹 플레이</title>" <<< "$naming_html"; then
-              echo "Naming game route is missing on $host"
-              exit 1
-            fi
+            for route in grid vault chosung mind naming; do
+              game_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/game/$route/?sha=$HEAD_SHA")"
+              if ! grep -Fq '/game/lobby-tools.js?v=20260822-lobby-polish-1' <<< "$game_html"; then
+                echo "Lobby tools are missing from $route on $host"
+                exit 1
+              fi
+            done
 
             alibi_status="$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' -H 'Cache-Control: no-cache' "$host/game/alibi/?sha=$HEAD_SHA")"
             if [ "$alibi_status" != "404" ]; then
@@ -74,4 +90,4 @@ jobs:
             fi
           done
 
-          echo "All production hosts serve $EXPECTED_VERSION with auth and game routes live"
+          echo "All production hosts serve $EXPECTED_VERSION with current auth, quick join, and lobby tools live"
