@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-play-v20260822-home-upgrade-1';
+const CACHE_NAME = 'sosoking-play-v20260822-lobby-polish-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -23,6 +23,8 @@ const APP_SHELL = [
   '/game/fun-room-reload.js?v=20260812-fun-pack-1',
   '/game/member-profile.css?v=20260812-game-guide-polish-1',
   '/game/member-profile.js?v=20260817-naming-1',
+  '/game/lobby-tools.css?v=20260822-lobby-polish-1',
+  '/game/lobby-tools.js?v=20260822-lobby-polish-1',
   '/game/game-master.css?v=20260816-auto-gm-1',
   '/game/game-master.js?v=20260817-naming-1',
   '/game/grid/index.html',
@@ -72,6 +74,8 @@ const NETWORK_FIRST = /\.(?:json|webmanifest)$/i;
 const FRESH_ASSET_PATHS = new Set([
   '/game/game.css',
   '/game/home-upgrade.css',
+  '/game/lobby-tools.css',
+  '/game/lobby-tools.js',
   '/game/theme.js',
   '/js/firebase.js',
   '/js/account-ui.js',
