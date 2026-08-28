@@ -2,7 +2,7 @@ name: Verify Live Hosting
 
 on:
   workflow_run:
-    workflows: ["Deploy Sosoking Play"]
+    workflows: ["Deploy Sosoking"]
     types: [completed]
 
 jobs:
@@ -22,21 +22,11 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout deployed commit
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
       - name: Verify production hosts
         env:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          EXPECTED_VERSION="$(tr -d '\r\n' < public/deploy-version.txt)"
-          if [ -z "$EXPECTED_VERSION" ]; then
-            echo "public/deploy-version.txt is empty"
-            exit 1
-          fi
 
           hosts=(
             "https://sosoking-481e6.web.app"
@@ -45,49 +35,10 @@ jobs:
           )
 
           for host in "${hosts[@]}"; do
-            marker="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/deploy-version.txt?sha=$HEAD_SHA")"
-            if [ "$marker" != "$EXPECTED_VERSION" ]; then
-              echo "Release mismatch on $host: expected '$EXPECTED_VERSION', got '$marker'"
-              exit 1
-            fi
-
             html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/?sha=$HEAD_SHA")"
-            if ! grep -Fq "<meta name=\"sosoking-deploy-version\" content=\"$EXPECTED_VERSION\">" <<< "$html"; then
-              echo "HTML deployment marker missing on $host"
+            if ! grep -Fq '<html lang="ko"' <<< "$html"; then
+              echo "Unexpected document served by $host"
               exit 1
             fi
-            if ! grep -Fq 'account-login-icon account-static-login' <<< "$html" || ! grep -Fq 'href="/auth/"' <<< "$html"; then
-              echo "Current account login entry point is missing on $host"
-              exit 1
-            fi
-            if ! grep -Fq 'id="quick-join-form"' <<< "$html"; then
-              echo "Quick room join UI is missing on $host"
-              exit 1
-            fi
-
-            auth_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/auth/?sha=$HEAD_SHA")"
-            if ! grep -Fq '<title>로그인 · 소소킹 플레이</title>' <<< "$auth_html"; then
-              echo "Auth route is missing on $host"
-              exit 1
-            fi
-            if ! grep -Fq 'Google로 계속하기' <<< "$auth_html"; then
-              echo "Google login UI is missing on $host"
-              exit 1
-            fi
-
-            for route in grid vault chosung mind naming; do
-              game_html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/game/$route/?sha=$HEAD_SHA")"
-              if ! grep -Fq '/game/lobby-tools.js?v=20260822-lobby-polish-1' <<< "$game_html"; then
-                echo "Lobby tools are missing from $route on $host"
-                exit 1
-              fi
-            done
-
-            alibi_status="$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' -H 'Cache-Control: no-cache' "$host/game/alibi/?sha=$HEAD_SHA")"
-            if [ "$alibi_status" != "404" ]; then
-              echo "Retired Alibi route still responds on $host: HTTP $alibi_status"
-              exit 1
-            fi
+            echo "$host is live"
           done
-
-          echo "All production hosts serve $EXPECTED_VERSION with current auth, quick join, and lobby tools live"

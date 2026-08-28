@@ -1,26 +1,17 @@
-# 소소킹 플레이
+# sosoking
 
-링크 하나로 모여 바로 즐기는 모바일 파티게임 웹앱입니다. 대부분의 게임은 2~8명이 함께 플레이하며, 작명톡 생존전은 별도 인원 상한 없이 참가할 수 있습니다.
+Firebase 프로젝트 `sosoking-481e6` 위에서 새로 시작하는 프로젝트입니다.
+이전 파티게임 앱 코드는 모두 비웠고, 배포 파이프라인과 설정만 남겼습니다.
 
-## 게임
+## 구조
 
-- 칸폭주 30: 5×6 진행판의 장치를 방어하거나 역이용해 30칸을 먼저 채우는 동시 선택 레이스
-- 금고런: 남과 겹치지 않는 금고를 고르는 눈치게임
-- 초성 폭탄: 남과 겹치지 않는 초성 단어 게임
-- 관심법: 친구의 선택을 사람별로 예측하는 관계 심리게임
-- 작명톡 생존전: 주제를 정하고 이름을 한 명씩 채팅처럼 이어가는 기록형 생존 작명게임
-
-게임이 끝나면 방장이 원하는 다음 게임을 고를 수 있습니다. 방 코드와 참가자는 유지되고,
-모든 참가자가 새 게임 화면으로 자동 이동하며 게임별 점수와 진행 상태만 새로 시작합니다.
-
-칸폭주 30은 주사위 이동이나 줄 완성이 아니라, 매 턴 모두가 `질주·방어·역이용` 중 하나를
-동시에 고르는 방식입니다. 이중벽·끈끈이·정지문·반사판·고철폭탄·가속칸이 섞이며, 위험
-장치를 고철로 바꿔 보너스 진행을 만드는 것이 핵심입니다.
-
-작명톡 생존전은 대기실 인원에 별도 상한을 두지 않습니다. 차례당 30초 안에 아직 나오지 않은
-이름을 등록하며 중복·포기·시간초과 시 탈락합니다. 이름과 탈락 기록은
-`game_rooms/{roomId}/naming_sessions/{sessionId}/entries`에 세션별로 보관하며,
-재경기나 다른 게임 전환 때도 삭제하지 않습니다.
+| 경로 | 역할 |
+| --- | --- |
+| `public/` | Firebase Hosting 정적 파일. 현재는 자리표시 페이지만 있습니다. |
+| `functions/` | Cloud Functions. 배포 대상 함수는 아직 없습니다. |
+| `firestore.rules` | Firestore 보안 규칙. 기본값은 전체 차단입니다. |
+| `firestore.indexes.json` | Firestore 색인 정의. 비어 있습니다. |
+| `tools/check-site.mjs` | Hosting 산출물과 규칙에 대한 최소 검증 스크립트. |
 
 ## 개발
 
@@ -29,17 +20,27 @@ npm ci
 npm run check
 ```
 
-Firestore 규칙 검증은 Firebase CLI와 Java가 필요합니다.
+로컬에서 미리보기:
 
 ```bash
-npm test
+npx firebase-tools serve --only hosting
 ```
 
-Firebase 프로젝트: `sosoking-481e6`
+## 배포
 
-## App Check 배포 설정
+| 워크플로 | 트리거 | 하는 일 |
+| --- | --- | --- |
+| `validate-pr.yml` | `main` 대상 PR | `npm test` 실행 |
+| `firebase-deploy.yml` | `main` 푸시 / 수동 | 검증 후 Firestore 규칙·색인과 Hosting 배포 |
+| `hosting-only-deploy.yml` | 수동 | Hosting만 배포 |
+| `verify-live-hosting.yml` | 배포 성공 후 | 운영 도메인이 정상 응답하는지 확인 |
 
-회원 프로필 callable Function은 App Check 강제 여부를 배포 환경으로 제어합니다. Firebase Console에서
-웹 앱을 reCAPTCHA v3에 등록하고 `public/js/firebase-config.js`의 `appCheckSiteKey`를 입력한 뒤,
-GitHub Actions 저장소 변수 `ENFORCE_APP_CHECK`를 `true`로 설정해야 합니다. 사이트 키를 넣기 전에는
-기본값 `false`를 유지해야 인증·회원 프로필 callable 호출이 차단되지 않습니다.
+배포에는 저장소 시크릿 `FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6`가 필요합니다.
+
+## 새 앱을 붙일 때 확인할 것
+
+- `firestore.rules`는 전체 차단 상태입니다. 사용할 컬렉션마다 규칙을 명시적으로 추가하세요.
+- `public/robots.txt`가 전체 크롤링을 막고 있습니다. 실제 서비스를 공개할 때 해제하세요.
+- Cloud Functions를 추가하면 `functions/main.js`에서 export 하고,
+  `firebase-deploy.yml`에 Functions 배포 단계를 다시 넣으세요.
+- `public/index.html`의 `noindex` 메타 태그도 공개 시점에 제거해야 합니다.
