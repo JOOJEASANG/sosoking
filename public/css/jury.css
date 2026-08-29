@@ -285,6 +285,118 @@
   color: var(--gold);
 }
 
+/* 사건 목록 — 예전 판결기록처럼 훑어보고 고른다 (판결은 절대 노출하지 않음) */
+.jury-list-head {
+  font-size: 13px;
+  color: var(--cream-dim);
+  margin: 4px 0 10px;
+}
+
+.jury-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.jury-list-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  color: var(--cream);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.jury-list-card:hover,
+.jury-list-card:focus-visible {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.jury-list-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.jury-list-title {
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.42;
+  color: var(--cream);
+  margin-bottom: 6px;
+}
+
+.jury-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 11px;
+  color: var(--cream-dim);
+}
+
+.jury-list-judge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--navy-light);
+  font-weight: 800;
+  color: var(--cream);
+}
+
+.jury-list-cta {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.jury-list-card.judged {
+  opacity: 0.72;
+}
+
+.jury-list-card.judged .jury-list-cta {
+  color: var(--cream-dim);
+}
+
+[data-theme='light'] .jury-list-card {
+  background: #fffaf1;
+}
+
+[data-theme='light'] .jury-list-title {
+  color: #241a0f;
+}
+
+/* 목록으로 돌아가는 상단 바 */
+.jury-backrow {
+  margin-bottom: 12px;
+}
+
+.jury-back-btn {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--cream-dim);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.jury-back-btn:hover {
+  border-color: var(--gold);
+  color: var(--cream);
+}
+
 /* 투표 뒤 같은 화면에서 벌이는 댓글논쟁 — 참여 아레나 */
 .jury-debate {
   margin-top: 18px;

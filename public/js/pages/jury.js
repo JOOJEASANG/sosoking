@@ -165,11 +165,10 @@ export async function renderJury(container) {
       <div class="page-header"><a href="#/" class="back-btn">‹</a><span class="logo">민심소</span></div>
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div class="jury-intro">
-          <div class="jury-intro-title">판결문을 가리고 먼저 맞혀보세요</div>
+          <div class="jury-intro-title">가려진 판결을 먼저 맞혀보세요</div>
           <p class="jury-intro-copy">
-            민심소는 <strong>가려진 판결을 맞히고, 그 자리에서 논쟁하는 곳</strong>입니다.
-            사건 개요와 양측 주장을 읽고 한쪽을 고르면 AI 판사의 판결이 열리고,
-            같은 화면에서 다른 배심원들과 댓글로 논쟁할 수 있습니다.
+            사건 목록에서 하나를 골라 사건 개요와 양측 주장을 읽고 한쪽에 투표하면,
+            <strong>가려졌던 AI 판사의 판결과 민심 집계가 열리고</strong> 그 자리에서 논쟁까지 이어집니다.
           </p>
           <div class="jury-scoreboard" id="jury-scoreboard"></div>
         </div>
@@ -178,29 +177,40 @@ export async function renderJury(container) {
     </div>`;
 
   renderScoreboard();
-  await loadJuryCase(container);
+  await loadJuryList(container);
 }
 
-async function loadJuryCase(container) {
+// 판정할 수 있는 공개 사건을 모은다. (양측 주장 또는 접수 내용이 있어야 판단 가능)
+async function loadJuryRows() {
+  const rows = await loadSafePublicResults(db, { maxRows: 60, fallbackRows: 120 });
+  return rows.filter(([, data]) => data?.plaintiffArg || data?.publicCaseDescription || data?.reception);
+}
+
+// 예전 판결기록처럼 사건을 목록으로 훑어보게 한다. 카드에는 판결을 절대 노출하지
+// 않는다(블라인드 유지). 이미 판정한 사건은 '판정 완료'로 표시만 하고 목록에는
+// 그대로 남겨, 다시 열어 판결·논쟁을 볼 수 있게 한다.
+async function loadJuryList(container) {
   const slot = container.querySelector('#jury-slot');
   if (!slot) return;
+  slot.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  renderScoreboard();
 
-  let picked = null;
+  let rows;
   try {
-    const rows = await loadSafePublicResults(db, { maxRows: 60 });
-    picked = pickCase(rows);
+    rows = await loadJuryRows();
   } catch (error) {
-    console.error('jury case load failed:', error);
+    console.error('jury list load failed:', error);
     slot.innerHTML = `
       <div class="card jury-empty">
         <p>사건을 불러오지 못했습니다.</p>
         <button type="button" class="btn btn-primary" id="jury-retry">다시 시도</button>
       </div>`;
-    slot.querySelector('#jury-retry')?.addEventListener('click', () => loadJuryCase(container));
+    slot.querySelector('#jury-retry')?.addEventListener('click', () => loadJuryList(container));
     return;
   }
+  if (!container.isConnected) return;
 
-  if (!picked) {
+  if (!rows.length) {
     slot.innerHTML = `
       <div class="card jury-empty">
         <p>아직 공개된 사건이 없습니다.</p>
@@ -209,7 +219,86 @@ async function loadJuryCase(container) {
     return;
   }
 
-  renderCaseCard(container, slot, picked);
+  const seen = jurySeenSet();
+  const cards = rows.map(([caseId, data]) => juryListCard(caseId, data, seen.has(caseId))).join('');
+  slot.innerHTML = `
+    <div class="jury-list-head">사건 ${rows.length}건 · 하나를 골라 판정해보세요</div>
+    <div class="jury-list">${cards}</div>`;
+
+  slot.querySelectorAll('.jury-list-card').forEach(cardEl => {
+    cardEl.addEventListener('click', () => {
+      const caseId = cardEl.dataset.caseId;
+      const row = rows.find(([id]) => id === caseId);
+      if (row) openCase(container, row[0], row[1]);
+    });
+  });
+}
+
+function juryListCard(caseId, data, judged) {
+  const title = escapeHtml(data?.caseTitle || '생활분쟁 사건');
+  const icon = escapeHtml(data?.judgeIcon || '⚖️');
+  const judgeType = escapeHtml(data?.judgeType || '소소킹 AI 재판부');
+  const grievance = Math.max(1, Math.min(10, Number(data?.grievanceIndex) || 5));
+  return `
+    <button type="button" class="jury-list-card${judged ? ' judged' : ''}" data-case-id="${escapeHtml(caseId)}">
+      <div class="jury-list-main">
+        <div class="jury-list-title">${title}</div>
+        <div class="jury-list-meta">
+          <span class="jury-list-judge">${icon} ${judgeType} 판사</span>
+          <span class="jury-list-grievance">억울지수 ${grievance}/10</span>
+        </div>
+      </div>
+      <span class="jury-list-cta">${judged ? '판정 완료 · 다시 보기' : '판정하기 ›'}</span>
+    </button>`;
+}
+
+// 목록에서 사건 하나를 열어 블라인드 판정 → 결과 확인 → 논쟁까지 진행한다.
+// 이미 투표한 사건이면 서버에 남은 내 표를 읽어 결과를 바로 열어준다(점수는 다시 집계하지 않음).
+async function openCase(container, caseId, data) {
+  const slot = container.querySelector('#jury-slot');
+  if (!slot) return;
+  slot.innerHTML = `
+    <div class="jury-backrow"><button type="button" class="jury-back-btn" id="jury-back">‹ 사건 목록으로</button></div>
+    <div id="jury-case"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
+  slot.querySelector('#jury-back')?.addEventListener('click', () => loadJuryList(container));
+  const caseSlot = slot.querySelector('#jury-case');
+  container.querySelector('.jury-page')?.scrollIntoView({ block: 'start' });
+
+  let priorSide = '';
+  const user = auth.currentUser;
+  if (user && !user.isAnonymous) {
+    try {
+      const voteSnap = await getDoc(doc(db, `result_reactions/${caseId}/votes/${user.uid}`));
+      if (voteSnap.exists()) priorSide = String(voteSnap.data().reaction || '');
+    } catch (error) {
+      console.warn('jury prior vote load failed:', error?.code || error);
+    }
+  }
+  if (!caseSlot.isConnected) return;
+
+  if (['plaintiff', 'defendant', 'both'].includes(priorSide)) {
+    revealVerdict(container, caseSlot, caseId, data, priorSide, { recordScore: false });
+  } else {
+    renderCaseCard(container, caseSlot, [caseId, data]);
+  }
+}
+
+// '다음 사건' — 아직 판정하지 않은 사건을 하나 골라 바로 연다.
+async function openRandomUnseen(container) {
+  const slot = container.querySelector('#jury-slot');
+  if (slot) slot.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  let rows = [];
+  try {
+    rows = await loadJuryRows();
+  } catch (error) {
+    console.error('jury next load failed:', error);
+  }
+  const picked = pickCase(rows);
+  if (!picked) {
+    loadJuryList(container);
+    return;
+  }
+  openCase(container, picked[0], picked[1]);
 }
 
 function renderCaseCard(container, slot, [caseId, data]) {
@@ -275,7 +364,7 @@ async function castVote(container, slot, caseId, data, side) {
   await revealVerdict(container, slot, caseId, data, side);
 }
 
-async function revealVerdict(container, slot, caseId, data, mySide) {
+async function revealVerdict(container, slot, caseId, data, mySide, { recordScore = true } = {}) {
   let counts = {};
   let total = 0;
   try {
@@ -292,7 +381,8 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
 
   const aiSide = verdictWinner(data);
   const agreed = Boolean(aiSide) && aiSide === mySide;
-  const score = updateScore(agreed, Boolean(aiSide));
+  // 새 투표일 때만 연속 적중 기록을 갱신한다. 이미 판정한 사건을 다시 열 때는 집계하지 않는다.
+  const score = recordScore ? updateScore(agreed, Boolean(aiSide)) : readScore();
 
   const headline = aiSide
     ? (agreed
@@ -310,12 +400,12 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
         ${aiSide ? (agreed ? '민심과 판결이 일치' : '민심과 판결이 엇갈림') : '판결 기록 없음'}
       </div>
       <div class="jury-case-title">${escapeHtml(data?.caseTitle || '생활분쟁 사건')}</div>
-      <p class="jury-reveal-line">당신의 선택은 <strong>${SIDE_LABEL[mySide]}</strong>이었습니다.</p>
+      ${mySide ? `<p class="jury-reveal-line">당신의 선택은 <strong>${SIDE_LABEL[mySide]}</strong>이었습니다.</p>` : ''}
       <p class="jury-reveal-line">${headline}</p>
       ${total > 0
         ? `<p class="jury-reveal-line">배심원 ${total}명 중 <strong>${majorityPercent}%</strong>가 ${SIDE_LABEL[majority]}을 택했습니다.</p>${tallyBar(counts, total)}`
         : '<p class="jury-reveal-line">이 사건의 첫 배심원입니다.</p>'}
-      ${aiSide && score.total
+      ${recordScore && aiSide && score.total
         ? `<p class="jury-score-line">${agreed
             ? `${score.streak}연속 적중 중입니다.`
             : '연속 기록이 끊겼습니다.'} 지금까지 ${score.total}건 중 ${Math.round((score.hit / score.total) * 100)}% 일치.</p>`
@@ -341,14 +431,15 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
       </div>
       <div class="jury-actions">
         <a class="btn" href="#/result/${encodeURIComponent(caseId)}">판결문 전문 보기</a>
-        <button type="button" class="btn btn-primary" id="jury-next">다음 사건 판정하기</button>
+        <button type="button" class="btn" id="jury-to-list">사건 목록으로</button>
+        <button type="button" class="btn btn-primary" id="jury-next">다음 사건 판정</button>
       </div>
     </article>`;
 
+  slot.querySelector('#jury-to-list')?.addEventListener('click', () => loadJuryList(container));
   slot.querySelector('#jury-next')?.addEventListener('click', () => {
-    slot.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
     renderScoreboard();
-    loadJuryCase(container);
+    openRandomUnseen(container);
   });
 
   wireDebate(container, slot, caseId, mySide);
