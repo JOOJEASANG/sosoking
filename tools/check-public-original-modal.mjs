@@ -18,9 +18,8 @@ for (const required of [
   "const isOwner = Boolean(requesterUid && ownerUid && requesterUid === ownerUid)",
   "const isPublic = Boolean(resultSnap.exists && isSanitizedPublicResult(resultData))",
   "if (!isOwner && !isPublic)",
-  "if (!isOwner) {",
-  "const safety = inspectContent(caseDescription);",
-  "개인정보 보호를 위해 이 접수 원문은 공개할 수 없습니다.",
+  "const caseDescription = selectCaseDescription({ isOwner, caseData, resultData })",
+  "originalVisible: isOwner",
   "caseDescription"
 ]) assert.ok(backend.includes(required), `접수 원문 서버 안전장치 누락: ${required}`);
 
@@ -30,9 +29,15 @@ for (const required of [
   "Number(data.publicDataVersion || 0) === 1",
   "!Object.prototype.hasOwnProperty.call(data, 'userId')",
   "!Object.prototype.hasOwnProperty.call(data, 'caseDescription')",
-  "!Object.prototype.hasOwnProperty.call(data, 'nickname')"
+  "!Object.prototype.hasOwnProperty.call(data, 'nickname')",
+  "function selectCaseDescription({ isOwner, caseData = {}, resultData = {} } = {})",
+  "if (isOwner) {",
+  "return cleanText(caseData.caseDescription, 600);",
+  "resultData.publicCaseDescription",
+  "return REDACTED_PUBLIC_ORIGINAL;"
 ]) assert.ok(backend.includes(required), `접수 원문 공개 데이터 검증 누락: ${required}`);
 
+assert.ok(!backend.includes("if (!isOwner) {\n    const safety = inspectContent(caseDescription);"), '공개 이용자에게 실제 caseDescription을 검사 후 반환하는 구형 경로가 남아 있으면 안 됩니다.');
 assert.ok(functionsMain.includes("require('./public-original')"), '접수 원문 함수가 Functions 엔트리에서 export되어야 합니다.');
 assert.ok(workflow.includes('functions:getPublicCaseOriginal'), 'Firebase 배포 대상에 접수 원문 함수가 포함되어야 합니다.');
 
@@ -99,4 +104,4 @@ assert.ok(serviceWorker.includes(`'${publicGuardAsset}'`), '서비스워커가 �
 assert.ok(index.includes(detailGuardAsset), 'index.html이 판결 상세 원문 헤더 보호 스크립트를 현재 버전으로 불러와야 합니다.');
 assert.ok(serviceWorker.includes(`'${detailGuardAsset}'`), '서비스워커가 판결 상세 원문 헤더 보호 스크립트를 현재 버전으로 캐시해야 합니다.');
 
-console.log('Original submission validation passed: public records and owner verdicts keep the same original-view control across SPA route replacement with server authorization intact.');
+console.log('Original submission validation passed: raw submissions remain owner-only while public records and owner verdicts keep the same original-view control across SPA route replacement.');
