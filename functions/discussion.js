@@ -23,13 +23,30 @@ function isSanitizedPublicResult(data = {}) {
     && !Object.prototype.hasOwnProperty.call(data, 'nickname');
 }
 
+function isDeletionLocked(data = {}) {
+  const deletionStatus = String(data.deletionStatus || '').toLowerCase();
+  const status = String(data.status || '').toLowerCase();
+  const courtStage = String(data.courtStage || '').toLowerCase();
+  return deletionStatus === 'processing'
+    || deletionStatus === 'deleting'
+    || status === 'deleting'
+    || courtStage === 'deleting';
+}
+
+function assertDiscussionWritable(data = {}) {
+  if (isDeletionLocked(data)) {
+    throw new HttpsError('failed-precondition', '삭제 중인 판결문에는 토론 의견을 남길 수 없습니다.');
+  }
+  if (!isSanitizedPublicResult(data)) {
+    throw new HttpsError('permission-denied', '공개 판결기록에서만 토론할 수 있습니다.');
+  }
+}
+
 async function assertPublicResult(caseId) {
   const resultRef = db.doc(`results/${caseId}`);
   const snap = await resultRef.get();
   if (!snap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
-  if (!isSanitizedPublicResult(snap.data())) {
-    throw new HttpsError('permission-denied', '공개 판결기록에서만 토론할 수 있습니다.');
-  }
+  assertDiscussionWritable(snap.data());
   return resultRef;
 }
 
@@ -52,7 +69,9 @@ exports.addDiscussionComment = onCall({
   const stance = cleanText(request.data?.stance, 20);
   const text = cleanText(request.data?.text, 600);
 
-  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+  if (!caseId || !/^[A-Za-z0-9_-]{1,180}$/.test(caseId)) {
+    throw new HttpsError('invalid-argument', 'caseId required');
+  }
   if (!DISCUSSION_STANCES.includes(stance)) {
     throw new HttpsError('invalid-argument', '원고측, 피고측, 쌍방 중 하나를 선택해주세요.');
   }
@@ -65,6 +84,8 @@ exports.addDiscussionComment = onCall({
     throw new HttpsError('failed-precondition', '부적절한 표현이 포함되어 있습니다.');
   }
 
+  // 빠른 사전 검사는 사용자에게 즉시 오류를 돌려주기 위한 것이고,
+  // 실제 쓰기 직전 트랜잭션에서 같은 조건을 다시 검사해 삭제/비공개 전환 경쟁조건을 막는다.
   const resultRef = await assertPublicResult(caseId);
   await enforceActionRateLimit(uid, 'court-discussion-comment', {
     cooldownSeconds: 15,
@@ -75,32 +96,45 @@ exports.addDiscussionComment = onCall({
   const commentRef = db.collection(`court_comments/${caseId}/items`).doc();
   const authorRef = db.doc(`court_comment_authors/${caseId}/items/${commentRef.id}`);
   const statsRef = db.doc(`court_comment_stats/${caseId}`);
-  const batch = db.batch();
 
-  batch.set(commentRef, {
-    nickname,
-    text,
-    stance,
-    kind: 'discussion',
-    discussionVersion: 1,
-    status: 'visible',
-    createdAt: FieldValue.serverTimestamp()
-  });
-  batch.set(authorRef, {
-    uid,
-    caseId,
-    commentId: commentRef.id,
-    createdAt: FieldValue.serverTimestamp()
-  });
-  batch.set(statsRef, {
-    count: FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
-  batch.set(resultRef, {
-    commentCount: FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+  await db.runTransaction(async tx => {
+    const latestResultSnap = await tx.get(resultRef);
+    if (!latestResultSnap.exists) {
+      throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
+    }
+    assertDiscussionWritable(latestResultSnap.data());
 
-  await batch.commit();
+    tx.set(commentRef, {
+      nickname,
+      text,
+      stance,
+      kind: 'discussion',
+      discussionVersion: 1,
+      status: 'visible',
+      createdAt: FieldValue.serverTimestamp()
+    });
+    tx.set(authorRef, {
+      uid,
+      caseId,
+      commentId: commentRef.id,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    tx.set(statsRef, {
+      count: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    // update()를 사용해 삭제가 먼저 완료된 문서를 부분 문서로 되살리는 일을 막는다.
+    tx.update(resultRef, {
+      commentCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+  });
+
   return { success: true, stance };
+});
+
+Object.defineProperties(module.exports, {
+  assertDiscussionWritable: { value: assertDiscussionWritable, enumerable: false },
+  isDeletionLocked: { value: isDeletionLocked, enumerable: false },
+  isSanitizedPublicResult: { value: isSanitizedPublicResult, enumerable: false }
 });
