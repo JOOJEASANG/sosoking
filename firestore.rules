@@ -39,10 +39,6 @@ service cloud.firestore {
         && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
     }
 
-    function isPublicResultListData(data) {
-      return data.isPublic == true && data.publicDataVersion == 1;
-    }
-
     function isResultPublic(caseId) {
       return isSafePublicResultData(resultDoc(caseId).data);
     }
@@ -88,7 +84,9 @@ service cloud.firestore {
       allow get: if isSafePublicResultData(resource.data)
         || isCaseOwner(caseId)
         || isAdmin();
-      allow list: if isAdmin() || isPublicResultListData(resource.data);
+      // 목록 조회도 get과 동일한 공개 스키마 검사를 적용한다.
+      // publicDataVersion만 맞는 문서에 민감 필드가 실수로 섞여 들어가도 공개 쿼리가 실패하도록 fail-closed 한다.
+      allow list: if isAdmin() || isSafePublicResultData(resource.data);
       allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();
