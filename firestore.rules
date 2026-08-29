@@ -1,348 +1,179 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function signedIn() {
       return request.auth != null;
     }
 
-    function gameRoomExists(roomId) {
-      return exists(/databases/$(database)/documents/game_rooms/$(roomId));
-    }
-
-    function gameRoomDoc(roomId) {
-      return get(/databases/$(database)/documents/game_rooms/$(roomId));
-    }
-
-    function gamePlayerExists(roomId, uid) {
-      return exists(/databases/$(database)/documents/game_rooms/$(roomId)/players/$(uid));
-    }
-
-    function isGameHost(roomId) {
+    function adminEmail() {
       return signedIn()
-        && gameRoomExists(roomId)
-        && gameRoomDoc(roomId).data.hostUid == request.auth.uid;
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        ? request.auth.token.email
+        : '';
     }
 
-    function isGamePlayer(roomId) {
-      return signedIn() && gamePlayerExists(roomId, request.auth.uid);
-    }
-
-    function isValidGameRoom(data) {
-      return (
-        data.type == 'naming-survival'
-        && data.maxPlayers == 0
-        && data.maxRounds == 0
-      ) || (
-        data.maxPlayers == 8 && (
-          (data.type == 'grid-rush' && data.maxRounds == 24) ||
-          (data.type == 'chosung-bomb' && data.maxRounds == 7) ||
-          (data.type == 'mind-reader' && data.maxRounds >= 3 && data.maxRounds <= 8) ||
-          (data.type == 'vault-run' && data.maxRounds == 9)
-        )
+    function isAdmin() {
+      return signedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (adminEmail() != '' && exists(/databases/$(database)/documents/admins/$(adminEmail())))
       );
     }
 
-    function hasValidNewPlayerBase(uid, data) {
-      return data.keys().hasAll(['uid', 'nickname', 'score', 'joinOrder', 'joinedAt', 'updatedAt'])
-        && data.uid == uid
-        && data.score == 0
-        && data.nickname is string
-        && data.nickname.size() > 0
-        && data.nickname.size() <= 12
-        && data.joinOrder is int
-        && data.joinedAt is timestamp
-        && data.updatedAt is timestamp;
+    function caseDoc(caseId) {
+      return get(/databases/$(database)/documents/cases/$(caseId));
     }
 
-    function isValidNewPlayer(uid, roomId, data) {
-      return hasValidNewPlayerBase(uid, data) && (
-        (
-          gameRoomDoc(roomId).data.type == 'grid-rush'
-          && data.keys().hasOnly([
-            'uid', 'nickname', 'score', 'position', 'shield', 'scrap', 'banked',
-            'jammed', 'barrierDent', 'finishPower', 'lastDelta', 'joinOrder',
-            'joinedAt', 'updatedAt'
-          ])
-          && data.position == 0
-          && data.shield == 0
-          && data.scrap == 0
-          && data.banked == 0
-          && data.jammed == false
-          && data.barrierDent == false
-          && data.finishPower == 0
-          && data.lastDelta == 0
-        )
-        || (
-          gameRoomDoc(roomId).data.type == 'vault-run'
-          && data.keys().hasOnly([
-            'uid', 'nickname', 'score', 'combo', 'joinOrder', 'joinedAt', 'updatedAt'
-          ])
-          && data.combo == 0
-        )
-        || (
-          gameRoomDoc(roomId).data.type in ['chosung-bomb', 'mind-reader']
-          && data.keys().hasOnly([
-            'uid', 'nickname', 'score', 'joinOrder', 'joinedAt', 'updatedAt'
-          ])
-        )
-        || (
-          gameRoomDoc(roomId).data.type == 'naming-survival'
-          && data.keys().hasOnly([
-            'uid', 'nickname', 'score', 'eliminated', 'joinOrder', 'joinedAt', 'updatedAt'
-          ])
-          && data.eliminated == false
-        )
+    function resultDoc(caseId) {
+      return get(/databases/$(database)/documents/results/$(caseId));
+    }
+
+    function isCaseOwner(caseId) {
+      return signedIn() && caseDoc(caseId).data.userId == request.auth.uid;
+    }
+
+    function isSafePublicResultData(data) {
+      return data.isPublic == true
+        && data.publicDataVersion == 1
+        && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
+    }
+
+    function isPublicResultListData(data) {
+      return data.isPublic == true && data.publicDataVersion == 1;
+    }
+
+    function isResultPublic(caseId) {
+      return isSafePublicResultData(resultDoc(caseId).data);
+    }
+
+    function canReadPublicCourt(caseId) {
+      return signedIn() && (
+        isResultPublic(caseId) ||
+        isCaseOwner(caseId) ||
+        isAdmin()
       );
     }
 
-    function hasValidAnswerBase(roomId, data) {
-      return signedIn()
-        && gameRoomExists(roomId)
-        && isGamePlayer(roomId)
-        && data.keys().hasAll(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
-        && data.uid == request.auth.uid
-        && data.nickname is string
-        && data.nickname.size() > 0
-        && data.nickname.size() <= 12
-        && data.round is int
-        && data.round == gameRoomDoc(roomId).data.round
-        && data.text is string
-        && data.text.size() > 0
-        && data.text.size() <= 120
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp
-        && gameRoomDoc(roomId).data.status == 'playing'
-        && gameRoomDoc(roomId).data.roundState == 'open'
-        && gameRoomDoc(roomId).data.roundEndsAt is timestamp
-        && request.time <= gameRoomDoc(roomId).data.roundEndsAt;
-    }
-
-    function isValidGridAnswer(answerId, roomId, data) {
-      return gameRoomDoc(roomId).data.type == 'grid-rush'
-        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
-        && answerId == 'choice-' + request.auth.uid
-        && data.kind == 'grid-action'
-        && data.text in ['rush', 'guard', 'recycle'];
-    }
-
-    function isValidVaultAnswer(answerId, roomId, data) {
-      return gameRoomDoc(roomId).data.type == 'vault-run'
-        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
-        && answerId == 'choice-' + request.auth.uid
-        && data.kind == 'vault'
-        && data.text in ['v1', 'v2', 'v3', 'v4', 'v5'];
-    }
-
-    function isValidChosungAnswer(answerId, roomId, data) {
-      return gameRoomDoc(roomId).data.type == 'chosung-bomb'
-        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
-        && answerId == 'choice-' + request.auth.uid
-        && data.kind == 'chosung'
-        && data.text.size() <= 24;
-    }
-
-    function isValidMindChoice(answerId, roomId, data) {
-      return gameRoomDoc(roomId).data.type == 'mind-reader'
-        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'text', 'createdAt', 'updatedAt'])
-        && answerId == 'choice-' + request.auth.uid
-        && request.auth.uid != gameRoomDoc(roomId).data.targetUid
-        && data.kind == 'choice'
-        && data.text in ['A', 'B', 'C', 'D'];
-    }
-
-    function isValidMindGuess(answerId, roomId, data) {
-      return gameRoomDoc(roomId).data.type == 'mind-reader'
-        && data.keys().hasOnly(['uid', 'nickname', 'round', 'kind', 'subjectUid', 'text', 'createdAt', 'updatedAt'])
-        && data.subjectUid is string
-        && answerId == 'guess-' + data.subjectUid
-        && request.auth.uid == gameRoomDoc(roomId).data.targetUid
-        && data.subjectUid != request.auth.uid
-        && gamePlayerExists(roomId, data.subjectUid)
-        && data.kind == 'guess'
-        && data.text in ['A', 'B', 'C', 'D'];
-    }
-
-    function isValidGameAnswer(answerId, roomId, data) {
-      return hasValidAnswerBase(roomId, data) && (
-        isValidGridAnswer(answerId, roomId, data) ||
-        isValidVaultAnswer(answerId, roomId, data) ||
-        isValidChosungAnswer(answerId, roomId, data) ||
-        isValidMindChoice(answerId, roomId, data) ||
-        isValidMindGuess(answerId, roomId, data)
+    match /admins/{adminId} {
+      allow read: if signedIn() && (
+        request.auth.uid == adminId ||
+        adminEmail() == adminId ||
+        isAdmin()
       );
-    }
-
-    function hasValidNamingEntryBase(entryId, sessionId, roomId, data) {
-      return signedIn()
-        && gameRoomExists(roomId)
-        && isGamePlayer(roomId)
-        && gameRoomDoc(roomId).data.type == 'naming-survival'
-        && gameRoomDoc(roomId).data.status == 'playing'
-        && gameRoomDoc(roomId).data.roundState == 'open'
-        && gameRoomDoc(roomId).data.phase == 'turn'
-        && gameRoomDoc(roomId).data.sessionId == sessionId
-        && entryId == gameRoomDoc(roomId).data.turnToken
-        && data.keys().hasOnly([
-          'sessionId', 'topic', 'turn', 'cycle', 'uid', 'nickname',
-          'kind', 'text', 'normalized', 'createdAt'
-        ])
-        && data.sessionId == sessionId
-        && data.topic == gameRoomDoc(roomId).data.topic
-        && data.topic is string
-        && data.topic.size() > 0
-        && data.topic.size() <= 40
-        && data.turn is int
-        && data.turn == gameRoomDoc(roomId).data.turnNumber
-        && data.cycle is int
-        && data.cycle == gameRoomDoc(roomId).data.cycle
-        && data.uid is string
-        && data.nickname is string
-        && data.nickname.size() > 0
-        && data.nickname.size() <= 12
-        && data.text is string
-        && data.normalized is string
-        && data.createdAt is timestamp;
-    }
-
-    function isValidNamingPlayerEntry(entryId, sessionId, roomId, data) {
-      return hasValidNamingEntryBase(entryId, sessionId, roomId, data)
-        && gameRoomDoc(roomId).data.roundEndsAt is timestamp
-        && request.time <= gameRoomDoc(roomId).data.roundEndsAt
-        && request.auth.uid == gameRoomDoc(roomId).data.currentTurnUid
-        && data.uid == request.auth.uid
-        && (
-          (
-            data.kind == 'name'
-            && data.text.size() > 0
-            && data.text.size() <= 24
-            && data.normalized.size() > 0
-            && data.normalized.size() <= 24
-          )
-          || (
-            data.kind == 'forfeit'
-            && data.text == ''
-            && data.normalized == ''
-          )
-        );
-    }
-
-    function isValidNamingTimeout(entryId, sessionId, roomId, data) {
-      return hasValidNamingEntryBase(entryId, sessionId, roomId, data)
-        && isGameHost(roomId)
-        && gameRoomDoc(roomId).data.roundEndsAt is timestamp
-        && request.time >= gameRoomDoc(roomId).data.roundEndsAt
-        && data.uid == gameRoomDoc(roomId).data.currentTurnUid
-        && data.kind == 'timeout'
-        && data.text == ''
-        && data.normalized == '';
-    }
-
-    // 기존 회원 프로필은 게임방 참가자 표시용으로만 본인이 읽을 수 있다.
-    match /users/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;
     }
 
-    match /game_rooms/{roomId} {
-      allow get: if signedIn() && (
-        resource.data.status == 'lobby' || isGamePlayer(roomId)
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /user_names/{key} {
+      allow read, write: if false;
+    }
+
+    match /cases/{caseId} {
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
       );
-      allow list: if false;
-      allow create: if signedIn()
-        && request.resource.data.hostUid == request.auth.uid
-        && request.resource.data.status == 'lobby'
-        && isValidGameRoom(request.resource.data);
-      allow update: if isGameHost(roomId)
-        && request.resource.data.hostUid == resource.data.hostUid
-        && isValidGameRoom(request.resource.data);
-      allow delete: if isGameHost(roomId);
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
 
-      match /players/{uid} {
-        allow read: if signedIn() && gameRoomExists(roomId) && (
-          gameRoomDoc(roomId).data.status == 'lobby' || isGamePlayer(roomId)
-        );
-        allow create: if signedIn()
-          && gameRoomExists(roomId)
-          && gameRoomDoc(roomId).data.status == 'lobby'
-          && uid == request.auth.uid
-          && isValidNewPlayer(uid, roomId, request.resource.data);
-        allow update: if signedIn() && gameRoomExists(roomId) && (
-          isGameHost(roomId)
-          || (
-            uid == request.auth.uid
-            && gameRoomDoc(roomId).data.status == 'lobby'
-            && request.resource.data.uid == resource.data.uid
-            && request.resource.data.score == resource.data.score
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'updatedAt'])
-            && request.resource.data.nickname is string
-            && request.resource.data.nickname.size() > 0
-            && request.resource.data.nickname.size() <= 12
-          )
-        );
-        allow delete: if signedIn() && gameRoomExists(roomId) && (
-          isGameHost(roomId)
-          || (uid == request.auth.uid && gameRoomDoc(roomId).data.status == 'lobby')
-        );
-      }
+    match /results/{caseId} {
+      allow get: if isSafePublicResultData(resource.data)
+        || isCaseOwner(caseId)
+        || isAdmin();
+      allow list: if isAdmin() || isPublicResultListData(resource.data);
+      allow update: if isAdmin();
+      allow create: if false;
+      allow delete: if isAdmin();
+    }
 
-      match /answers/{answerId} {
-        // 진행 중에는 방장과 작성자만 원문을 읽는다. 공개 단계가 되면 참가자 전체가 읽는다.
-        allow read: if isGamePlayer(roomId) && (
-          isGameHost(roomId)
-          || resource.data.uid == request.auth.uid
-          || gameRoomDoc(roomId).data.roundState != 'open'
-        );
-        allow create, update: if isValidGameAnswer(answerId, roomId, request.resource.data);
-        allow delete: if isGameHost(roomId);
-      }
+    match /result_reactions/{caseId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
 
-      match /naming_sessions/{sessionId} {
-        allow read: if isGamePlayer(roomId);
-        allow create: if isGameHost(roomId)
-          && gameRoomDoc(roomId).data.type == 'naming-survival'
-          && gameRoomDoc(roomId).data.status == 'lobby'
-          && request.resource.data.keys().hasOnly([
-            'sessionId', 'roomId', 'topic', 'hostUid', 'participantCount',
-            'status', 'winnerUid', 'winnerNickname', 'totalTurns',
-            'startedAt', 'updatedAt'
-          ])
-          && request.resource.data.sessionId == sessionId
-          && request.resource.data.roomId == roomId
-          && request.resource.data.hostUid == request.auth.uid
-          && request.resource.data.topic is string
-          && request.resource.data.topic.size() > 0
-          && request.resource.data.topic.size() <= 40
-          && request.resource.data.participantCount is int
-          && request.resource.data.participantCount >= 2
-          && request.resource.data.status == 'playing'
-          && request.resource.data.winnerUid == ''
-          && request.resource.data.winnerNickname == ''
-          && request.resource.data.totalTurns == 0
-          && request.resource.data.startedAt is timestamp
-          && request.resource.data.updatedAt is timestamp;
-        allow update: if isGameHost(roomId)
-          && request.resource.data.sessionId == resource.data.sessionId
-          && request.resource.data.roomId == resource.data.roomId
-          && request.resource.data.topic == resource.data.topic
-          && request.resource.data.hostUid == resource.data.hostUid
-          && request.resource.data.participantCount == resource.data.participantCount
-          && request.resource.data.startedAt == resource.data.startedAt
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'status', 'winnerUid', 'winnerNickname', 'totalTurns', 'finishedAt', 'updatedAt'
-          ]);
-        allow delete: if false;
-
-        match /entries/{entryId} {
-          allow read: if isGamePlayer(roomId);
-          allow create: if isValidNamingPlayerEntry(entryId, sessionId, roomId, request.resource.data)
-            || isValidNamingTimeout(entryId, sessionId, roomId, request.resource.data);
-          allow update, delete: if false;
-        }
+      match /votes/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow write: if false;
       }
     }
 
-    match /{document=**} {
+    match /court_comments/{caseId}/items/{commentId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
+    }
+
+    match /court_comment_stats/{caseId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
+    }
+
+    match /court_comment_authors/{caseId}/items/{commentId} {
       allow read, write: if false;
+    }
+
+    // 게임소: 초대 코드를 아는 로그인 세션만 방을 읽고, 진행 상태는 방장이 관리한다.
+    match /case_id_aliases/{aliasId} {
+      allow read, write: if false;
+    }
+
+    match /usage_stats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /rate_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    match /action_limits/{limitId} {
+      allow read, write: if false;
+    }
+
+    match /ai_limits/{dailyId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /users/{userId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if false;
+      }
+    }
+
+    match /reports/{reportId} {
+      allow create: if false;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /report_keys/{keyId} {
+      allow read, write: if false;
+    }
+
+    match /site_settings/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /site_public/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /policy_docs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }

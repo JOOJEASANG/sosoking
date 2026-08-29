@@ -1,4 +1,5 @@
-name: Deploy Sosoking Play
+# Deployment retrigger: 2026-08-10T12:34:00+09:00
+name: Deploy Firebase
 
 on:
   push:
@@ -22,9 +23,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
-          cache: npm
 
-      - name: Setup Java for Firestore emulator
+      - name: Setup Java for Firebase emulators
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
@@ -33,24 +33,17 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@15.24.0
 
-      - name: Install dependencies
-        run: |
-          npm ci --no-audit --no-fund
-          npm ci --prefix functions --no-audit --no-fund
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions --no-audit --no-fund
 
-      - name: Validate game site and rules
+      - name: Install validation dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Prepare exact uploaded logo icons
+        run: npm run prepare:icons
+
+      - name: Validate repository
         run: npm test
-
-      - name: Configure Functions App Check
-        env:
-          APP_CHECK_ENFORCEMENT: ${{ vars.ENFORCE_APP_CHECK }}
-        run: |
-          value="${APP_CHECK_ENFORCEMENT:-false}"
-          if [ "$value" != "true" ] && [ "$value" != "false" ]; then
-            echo "Repository variable ENFORCE_APP_CHECK must be true or false."
-            exit 1
-          fi
-          printf 'ENFORCE_APP_CHECK=%s\n' "$value" > functions/.env.sosoking-481e6
 
       - name: Prepare service account
         env:
@@ -62,40 +55,87 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy game Functions
+      - name: Prepare Functions environment
+        env:
+          ENFORCE_APP_CHECK: ${{ vars.ENFORCE_APP_CHECK || 'false' }}
+        run: |
+          case "$ENFORCE_APP_CHECK" in
+            true|false) ;;
+            *)
+              echo "ENFORCE_APP_CHECK must be either true or false."
+              exit 1
+              ;;
+          esac
+          if [ "$ENFORCE_APP_CHECK" = "true" ] && grep -Eq 'appCheckSiteKey:[[:space:]]*""' public/js/firebase-config.js; then
+            echo "App Check enforcement cannot be enabled while appCheckSiteKey is empty."
+            exit 1
+          fi
+          printf 'ENFORCE_APP_CHECK=%s\n' "$ENFORCE_APP_CHECK" > functions/.env.sosoking-481e6
+
+      - name: Deploy current Functions first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:getGamePlayerProfiles,functions:checkNickname,functions:saveMemberProfile --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:setResultVisibility,functions:getPublicCaseOriginal,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
 
-      - name: Remove retired legacy Functions
+      - name: Remove known obsolete Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: |
           firebase functions:list --project sosoking-481e6 --json > "$RUNNER_TEMP/functions-before-cleanup.json"
-          node tools/list-obsolete-deployed-functions.mjs "$RUNNER_TEMP/functions-before-cleanup.json" > "$RUNNER_TEMP/retired-functions.txt"
+          node tools/list-obsolete-deployed-functions.mjs "$RUNNER_TEMP/functions-before-cleanup.json" > "$RUNNER_TEMP/obsolete-functions.txt"
 
-          if [ ! -s "$RUNNER_TEMP/retired-functions.txt" ]; then
-            echo "No retired Functions remain."
+          if [ ! -s "$RUNNER_TEMP/obsolete-functions.txt" ]; then
+            echo "No known obsolete Functions remain."
             exit 0
           fi
 
-          mapfile -t retired_functions < "$RUNNER_TEMP/retired-functions.txt"
-          echo "Removing ${#retired_functions[@]} retired Functions."
-          for ((i=0; i<${#retired_functions[@]}; i+=10)); do
-            firebase functions:delete "${retired_functions[@]:i:10}" --force --project sosoking-481e6 --non-interactive
+          mapfile -t obsolete_functions < "$RUNNER_TEMP/obsolete-functions.txt"
+          echo "Removing ${#obsolete_functions[@]} known obsolete Functions."
+          for ((i=0; i<${#obsolete_functions[@]}; i+=10)); do
+            firebase functions:delete "${obsolete_functions[@]:i:10}" --force --project sosoking-481e6 --non-interactive
           done
 
-      - name: Verify deployed Functions
+      - name: Verify deployed Functions match source
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: |
           firebase functions:list --project sosoking-481e6 --json > "$RUNNER_TEMP/functions-list.json"
           node tools/check-deployed-functions.mjs "$RUNNER_TEMP/functions-list.json"
 
-      - name: Deploy Firestore rules and indexes
+      - name: Sanitize existing public results
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node functions/sanitize-public-results-cli.js
+
+      - name: Reformat existing verdict number lines
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node functions/migrate-verdict-number-lines-cli.js
+
+      - name: Deploy Firestore configuration and Hosting prerequisites
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:indexes,firestore:rules --project sosoking-481e6 --non-interactive
+
+      - name: Initialize public statistics
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node functions/sync-public-stats-cli.js
+
+      - name: Sync safe public configuration
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node tools/sync-public-config.mjs
+
+      - name: Remove curated creative cases
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node tools/remove-official-seed.mjs
 
       - name: Deploy Hosting
         env:
@@ -104,4 +144,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Sosoking Play hosting, current auth/profile Functions, game-only rules, and retired Function cleanup finished for $GITHUB_SHA"
+        run: echo "Firebase Hosting, current Functions, known legacy cleanup, deployed-function drift validation, Firestore configuration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"

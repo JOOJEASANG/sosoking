@@ -1,0 +1,200 @@
+/* 민심소 — 판결 전에 사람들이 먼저 판단하는 화면 */
+
+.jury-intro {
+  margin-bottom: 18px;
+}
+
+.jury-intro-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.jury-intro-copy {
+  font-size: 13px;
+  color: var(--cream-dim);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.jury-card {
+  padding: 20px;
+}
+
+.jury-case-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--cream);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.jury-side {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.jury-side p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--cream);
+}
+
+.jury-side-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.jury-side-plaintiff {
+  background: rgba(231, 76, 60, 0.14);
+  color: var(--red);
+}
+
+.jury-side-defendant {
+  background: rgba(39, 174, 96, 0.14);
+  color: var(--green);
+}
+
+.jury-vote-prompt {
+  margin: 20px 0 12px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.jury-vote-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.jury-vote-btn {
+  padding: 14px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--navy-light);
+  color: var(--cream);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.jury-vote-btn:hover:not(:disabled),
+.jury-vote-btn:focus-visible {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.jury-vote-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.jury-note {
+  margin: 12px 0 0;
+  min-height: 18px;
+  font-size: 12px;
+  color: var(--cream-dim);
+  text-align: center;
+}
+
+.jury-verdict-badge {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: rgba(231, 76, 60, 0.14);
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.jury-verdict-agree {
+  background: rgba(39, 174, 96, 0.14);
+  color: var(--green);
+}
+
+.jury-reveal-line {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--cream);
+}
+
+.jury-reveal-line strong {
+  color: var(--gold);
+}
+
+.jury-tally {
+  margin: 16px 0 4px;
+  display: grid;
+  gap: 8px;
+}
+
+.jury-tally-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 38px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--cream-dim);
+}
+
+.jury-tally-track {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--navy-light);
+  overflow: hidden;
+}
+
+.jury-tally-track i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--gold);
+}
+
+.jury-tally-value {
+  text-align: right;
+  font-weight: 700;
+  color: var(--cream);
+}
+
+.jury-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.jury-actions .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.jury-empty {
+  padding: 32px 20px;
+  text-align: center;
+}
+
+.jury-empty p {
+  margin: 0 0 16px;
+  color: var(--cream-dim);
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jury-vote-btn {
+    transition: none;
+  }
+}

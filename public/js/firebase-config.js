@@ -8,6 +8,6 @@ export const firebaseConfig = {
   appId: "1:1059034248031:web:5523a10bedec157f03bcea",
   measurementId: "G-3P61GYPNDG",
   // Firebase Console에서 웹 App Check 등록 후 reCAPTCHA v3 사이트 키를 입력한다.
-  // 키 입력 전에는 Functions의 ENFORCE_APP_CHECK 환경 변수를 true로 배포하지 않는다.
+  // 키 입력 전에는 서버의 ENFORCE_APP_CHECK 배포 파라미터를 true로 바꾸지 않는다.
   appCheckSiteKey: ""
 };
