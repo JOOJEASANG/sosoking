@@ -234,3 +234,53 @@
 .jury-intro-copy strong {
   color: var(--gold);
 }
+
+/* 사건 개요 + 양측 주장 전체 표시 (투표 전 판단 근거) */
+.jury-overview {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.jury-overview p,
+.jury-side p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--cream);
+}
+
+.jury-overview p + p,
+.jury-side p + p {
+  margin-top: 10px;
+}
+
+.jury-side-overview {
+  background: rgba(201, 168, 76, 0.16);
+  color: var(--gold);
+}
+
+/* 공개 화면의 AI 판결 발췌 */
+.jury-verdict-excerpt {
+  margin: 16px 0 4px;
+  padding: 14px 15px;
+  border-radius: 12px;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.jury-verdict-excerpt p {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--cream);
+}
+
+.jury-verdict-excerpt p:first-of-type {
+  margin-top: 10px;
+}
+
+.jury-side-verdict {
+  background: rgba(201, 168, 76, 0.16);
+  color: var(--gold);
+}
