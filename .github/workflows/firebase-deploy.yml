@@ -59,6 +59,7 @@ jobs:
           APP_CHECK_SITE_KEY: ${{ vars.APP_CHECK_SITE_KEY || '' }}
           ENFORCE_APP_CHECK: ${{ vars.ENFORCE_APP_CHECK || 'false' }}
         run: |
+          # Regression guard: App Check enforcement cannot be enabled while appCheckSiteKey is empty.
           node tools/configure-app-check.mjs
           printf 'ENFORCE_APP_CHECK=%s\n' "$ENFORCE_APP_CHECK" > functions/.env.sosoking-481e6
 
