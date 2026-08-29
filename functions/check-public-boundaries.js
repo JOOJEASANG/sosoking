@@ -10,6 +10,7 @@ const {
   selectCaseDescription
 } = require('./public-original');
 const { assertDiscussionWritable } = require('./discussion');
+const { publicProjection } = require('./public-results-list');
 const { inspectContent } = require('./content-safety');
 
 function expectCode(fn, expectedCode) {
@@ -56,6 +57,25 @@ assert.equal(inspectContent('성명: 김철수').code, 'person-name-labeled');
 assert.equal(inspectContent('김철수 씨가 리모컨을 가져갔다.').code, 'person-name-honorific');
 assert.equal(inspectContent('친구가 리모컨을 가져갔다.').safe, true);
 
+const projected = publicProjection({
+  isPublic: true,
+  publicDataVersion: 1,
+  userId: 'private-uid',
+  caseDescription: '내부 접수 원문',
+  nickname: '내부 닉네임',
+  internalSecret: 'should-not-leak',
+  caseTitle: '공개 테스트 사건',
+  publicCaseDescription: '익명 공개 요약',
+  publicNickname: '익명 원고',
+  verdict: '주문\n\n1. 테스트를 완료한다.\n\n판단이유\n공개 projection 검증을 위함이다.'
+});
+assert.equal(projected.caseTitle, '공개 테스트 사건');
+assert.equal(projected.publicCaseDescription, '익명 공개 요약');
+assert.match(projected.verdict, /\n\n/);
+for (const forbidden of ['userId', 'caseDescription', 'nickname', 'internalSecret']) {
+  assert.equal(Object.prototype.hasOwnProperty.call(projected, forbidden), false, `public projection leaked ${forbidden}`);
+}
+
 const safePublic = {
   isPublic: true,
   publicDataVersion: 1,
@@ -77,4 +97,4 @@ expectCode(
   'permission-denied'
 );
 
-console.log('Public boundary validation passed: raw originals stay private and discussion writes fail closed during lifecycle changes.');
+console.log('Public boundary validation passed: raw originals stay private, public lists use an explicit projection, and discussion writes fail closed during lifecycle changes.');
