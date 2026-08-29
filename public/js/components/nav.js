@@ -1,7 +1,7 @@
 import { auth, db } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { avatarImg } from '../utils/avatar.js?v=20260630-3';
+import { avatarImg } from '../utils/avatar.js?v=20260829-avatar-1';
 
 let navRenderVersion = 0;
 let navAuthSyncStarted = false;
