@@ -250,6 +250,8 @@ function buildLocalFallback(description, judge, grievanceIndex, errorCode = 'UNK
   const penalty = localPenalty(detail, judge);
 
   return {
+    // AI 호출이 모두 실패한 대체 판결도 민심소에서 비교할 수 있어야 한다.
+    winner: 'both',
     caseTitle: title,
     reception: `접수취지\n원고는 아래 생활상 분쟁으로 평온한 일상에 균열이 발생하였다며 정식 접수를 요청하였다.\n\n사건개요\n${detail}\n\n접수의견\n사건 규모는 소소하나 억울지수 ${grievanceIndex}/10이 부여될 정도로 당사자의 체감 무게가 확인된다. ${judge.type} 재판부는 이 사안을 그냥 넘길 경우 식탁·단체채팅방·거실 등에서 장기 미제사건으로 남을 가능성이 있다고 보아 접수한다.`,
     investigation: `확인 정황\n원고의 진술에서 사건의 대상과 문제 행동이 비교적 구체적으로 특정된다. 별도의 감식반을 부를 정도는 아니지만 당사자 사이에서는 이미 결정적 장면으로 반복 재생되고 있다.\n\n주요 증거\n${evidence}\n\n진술 검토\n원고의 설명은 '${detail}'로 요약된다. 피고의 직접 진술이 확보되지 않은 부분은 확정 사실이 아닌 항변 가능 정황으로 남겨두되, 설명을 미룬 행위 자체가 사건을 키웠을 가능성은 높다.\n\n조사관 의견\n${judge.style} 이에 따라 '${subject}'를 중심으로 말의 앞뒤와 생활상 후속조치를 함께 심리할 필요가 있다.`,
