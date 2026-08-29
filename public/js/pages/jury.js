@@ -7,6 +7,7 @@
 import { db, auth, functions } from '../firebase.js?v=20260630-3';
 import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
 import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-public-records-2';
+import { jurySeenSet, markJurySeen } from '../utils/jury-seen.js?v=20260829-jury-content-1';
 import {
   doc,
   getDoc
@@ -28,14 +29,7 @@ function hashString(value) {
   return hash >>> 0;
 }
 
-// 이미 판단한 사건을 또 보여주지 않기 위해 이 브라우저에서 본 사건을 기억한다.
-function seenCases() {
-  try {
-    return new Set(JSON.parse(localStorage.getItem('sosoking-jury-seen') || '[]'));
-  } catch {
-    return new Set();
-  }
-}
+
 
 // 판정 기록은 이 브라우저에만 남긴다. 서버에 쌓을 만큼 중요한 값이 아니고,
 // 로그인 없이 한 번 들렀다 가는 사람도 기록이 보여야 재미가 붙는다.
@@ -93,27 +87,43 @@ function renderScoreboard() {
     <span class="jury-score-item">연속 <b>${streak}</b>${best > streak ? ` (최고 ${best})` : ''}</span>`;
 }
 
-function markSeen(caseId) {
-  try {
-    const seen = [...seenCases(), caseId].slice(-200);
-    localStorage.setItem('sosoking-jury-seen', JSON.stringify(seen));
-  } catch {
-    /* 저장이 막힌 브라우저에서도 투표 자체는 동작해야 한다. */
-  }
-}
+
 
 function pickCase(rows) {
-  const seen = seenCases();
+  const seen = jurySeenSet();
   const fresh = rows.filter(([id, data]) => !seen.has(id) && (data?.plaintiffArg || data?.publicCaseDescription));
   const pool = fresh.length ? fresh : rows;
   if (!pool.length) return null;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-function firstParagraph(text, maxLen = 320) {
-  const clean = String(text || '').split(/\n{2,}/).map(part => part.trim()).filter(Boolean);
-  const body = clean.find(part => part.length > 20) || clean[0] || '';
-  return compactText(body, maxLen);
+// 소제목(접수취지 등)은 걷어내고 본문 문단만 이어 붙인다. 투표 판단에 필요한
+// 정보는 충분히 보여주되, 지나치게 길면 상한에서 자른다.
+const JURY_SUBHEADINGS = /^(접수취지|사건개요|접수의견|확인 정황|주요 증거|진술 검토|조사관 의견|청구취지|주장요지|피해 및 요구사항|답변취지|항변요지|피고측 최종의견|주문|판단이유|재판부 의견)\s*$/;
+
+function readableBody(text, maxLen = 1400) {
+  const paras = String(text || '')
+    .split(/\n{2,}|\n/)
+    .map(part => part.trim())
+    .filter(part => part && !JURY_SUBHEADINGS.test(part));
+  const joined = paras.join('\n\n');
+  return joined.length > maxLen ? `${joined.slice(0, maxLen).trim()}…` : joined;
+}
+
+// 문단을 <p>로 감싸 escape 후 렌더링한다.
+function paragraphsHtml(text, maxLen) {
+  const body = readableBody(text, maxLen);
+  if (!body) return '';
+  return body.split(/\n{2,}/).map(part => `<p>${escapeHtml(part)}</p>`).join('');
+}
+
+// 공개 화면에서 AI가 왜 그렇게 판결했는지 판단이유·주문 발췌를 보여준다.
+// 승패만 알려주면 '왜'가 빠져 재미가 반감된다. 전문은 링크로 이어간다.
+function verdictExcerptHtml(data) {
+  const body = readableBody(data?.verdict, 700);
+  if (!body) return '';
+  const paras = body.split(/\n{2,}/).map(part => `<p>${escapeHtml(part)}</p>`).join('');
+  return `<div class="jury-verdict-excerpt"><span class="jury-side-tag jury-side-verdict">AI 재판부 판결</span>${paras}</div>`;
 }
 
 function verdictWinner(data) {
@@ -144,7 +154,7 @@ export async function renderJury(container) {
           <div class="jury-intro-title">판결문을 가리고 먼저 맞혀보세요</div>
           <p class="jury-intro-copy">
             판결기록은 이미 나온 판결을 읽는 곳이고, 민심소는 <strong>가려진 판결을 맞히는 곳</strong>입니다.
-            양측 주장만 보고 한쪽을 고르면 AI 판사의 판결이 열립니다.
+            사건 개요와 양측 주장을 읽고 한쪽을 고르면, 가려졌던 AI 판사의 판결과 판단이유가 열립니다.
           </p>
           <div class="jury-scoreboard" id="jury-scoreboard"></div>
         </div>
@@ -189,21 +199,25 @@ async function loadJuryCase(container) {
 
 function renderCaseCard(container, slot, [caseId, data]) {
   const title = escapeHtml(data?.caseTitle || '생활분쟁 사건');
-  const plaintiff = escapeHtml(firstParagraph(data?.plaintiffArg || data?.publicCaseDescription));
-  const defendant = escapeHtml(firstParagraph(data?.defendantArg));
+  // 사건 개요는 접수 문서(없으면 원본 접수 내용)에서, 양측 주장은 전체를 보여준다.
+  // 판결·판단이유·주문은 투표 뒤에만 공개한다.
+  const overview = paragraphsHtml(data?.reception || data?.publicCaseDescription, 900);
+  const plaintiff = paragraphsHtml(data?.plaintiffArg, 1400);
+  const defendant = paragraphsHtml(data?.defendantArg, 1400);
 
   slot.innerHTML = `
     <article class="card jury-card">
       <div class="jury-case-title">${title}</div>
+      ${overview ? `<div class="jury-overview"><span class="jury-side-tag jury-side-overview">사건 개요</span>${overview}</div>` : ''}
       <div class="jury-side">
         <span class="jury-side-tag jury-side-plaintiff">원고측 주장</span>
-        <p>${plaintiff || '주장이 기록되지 않았습니다.'}</p>
+        ${plaintiff || '<p>주장이 기록되지 않았습니다.</p>'}
       </div>
       <div class="jury-side">
         <span class="jury-side-tag jury-side-defendant">피고측 항변</span>
-        <p>${defendant || '항변이 기록되지 않았습니다.'}</p>
+        ${defendant || '<p>항변이 기록되지 않았습니다.</p>'}
       </div>
-      <div class="jury-vote-prompt">누구 손을 들어주시겠습니까?</div>
+      <div class="jury-vote-prompt">판결문은 아직 가려져 있습니다. 누구 손을 들어주시겠습니까?</div>
       <div class="jury-vote-buttons">
         <button type="button" class="btn jury-vote-btn" data-side="plaintiff">원고 승</button>
         <button type="button" class="btn jury-vote-btn" data-side="defendant">피고 승</button>
@@ -242,7 +256,7 @@ async function castVote(container, slot, caseId, data, side) {
     return;
   }
 
-  markSeen(caseId);
+  markJurySeen(caseId);
   await revealVerdict(container, slot, caseId, data, side);
 }
 
@@ -291,6 +305,7 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
             ? `${score.streak}연속 적중 중입니다.`
             : '연속 기록이 끊겼습니다.'} 지금까지 ${score.total}건 중 ${Math.round((score.hit / score.total) * 100)}% 일치.</p>`
         : ''}
+      ${verdictExcerptHtml(data)}
       <div class="jury-actions">
         <a class="btn" href="#/result/${encodeURIComponent(caseId)}">판결문 전문 보기</a>
         <button type="button" class="btn btn-primary" id="jury-next">다음 사건 판정하기</button>

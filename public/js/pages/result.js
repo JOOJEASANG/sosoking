@@ -3,6 +3,7 @@ import { doc, getDoc, collection, getDocs, query, orderBy, limit } from 'https:/
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
+import { markJurySeen } from '../utils/jury-seen.js?v=20260829-jury-content-1';
 
 const REACTIONS = [
   ['plaintiff', '⚖️ 원고 편'],
@@ -284,6 +285,7 @@ export async function renderResult(container, caseId) {
       </div>
     </div>`;
 
+  if (isPublic) markJurySeen(caseId);
   bindResultActions(container, caseId, c, r, isOwner, isPublic);
 }
 
