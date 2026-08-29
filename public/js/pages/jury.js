@@ -37,6 +37,62 @@ function seenCases() {
   }
 }
 
+// 판정 기록은 이 브라우저에만 남긴다. 서버에 쌓을 만큼 중요한 값이 아니고,
+// 로그인 없이 한 번 들렀다 가는 사람도 기록이 보여야 재미가 붙는다.
+function readScore() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('sosoking-jury-score') || '{}');
+    return {
+      total: Number(raw.total) || 0,
+      hit: Number(raw.hit) || 0,
+      streak: Number(raw.streak) || 0,
+      best: Number(raw.best) || 0
+    };
+  } catch {
+    return { total: 0, hit: 0, streak: 0, best: 0 };
+  }
+}
+
+function writeScore(score) {
+  try {
+    localStorage.setItem('sosoking-jury-score', JSON.stringify(score));
+  } catch {
+    /* 저장이 막혀 있어도 판정 자체는 계속 되어야 한다. */
+  }
+}
+
+// AI 판결과 일치했는지에 따라 기록을 갱신한다.
+// 승패가 기록되지 않은 옛 사건은 적중 판정에서 제외한다.
+function updateScore(agreed, comparable) {
+  const score = readScore();
+  if (!comparable) return score;
+  score.total += 1;
+  if (agreed) {
+    score.hit += 1;
+    score.streak += 1;
+    score.best = Math.max(score.best, score.streak);
+  } else {
+    score.streak = 0;
+  }
+  writeScore(score);
+  return score;
+}
+
+function renderScoreboard() {
+  const slot = document.getElementById('jury-scoreboard');
+  if (!slot) return;
+  const { total, hit, streak, best } = readScore();
+  if (!total) {
+    slot.innerHTML = '<span class="jury-score-empty">아직 판정 기록이 없습니다. 첫 판정을 내려보세요.</span>';
+    return;
+  }
+  const rate = Math.round((hit / total) * 100);
+  slot.innerHTML = `
+    <span class="jury-score-item"><b>${total}</b>건 판정</span>
+    <span class="jury-score-item">AI와 일치 <b>${rate}%</b></span>
+    <span class="jury-score-item">연속 <b>${streak}</b>${best > streak ? ` (최고 ${best})` : ''}</span>`;
+}
+
 function markSeen(caseId) {
   try {
     const seen = [...seenCases(), caseId].slice(-200);
@@ -85,16 +141,18 @@ export async function renderJury(container) {
       <div class="page-header"><a href="#/" class="back-btn">‹</a><span class="logo">민심소</span></div>
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div class="jury-intro">
-          <div class="jury-intro-title">당신이 판사라면?</div>
+          <div class="jury-intro-title">판결문을 가리고 먼저 맞혀보세요</div>
           <p class="jury-intro-copy">
-            다른 사람이 접수한 사건입니다. 판결문은 아직 가려져 있습니다.
-            양측 주장을 읽고 한쪽을 고르면 AI 판사의 판결이 열립니다.
+            판결기록은 이미 나온 판결을 읽는 곳이고, 민심소는 <strong>가려진 판결을 맞히는 곳</strong>입니다.
+            양측 주장만 보고 한쪽을 고르면 AI 판사의 판결이 열립니다.
           </p>
+          <div class="jury-scoreboard" id="jury-scoreboard"></div>
         </div>
         <div id="jury-slot"><div class="loading-dots"><span></span><span></span><span></span></div></div>
       </div>
     </div>`;
 
+  renderScoreboard();
   await loadJuryCase(container);
 }
 
@@ -204,7 +262,8 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
   }
 
   const aiSide = verdictWinner(data);
-  const agreed = aiSide && aiSide === mySide;
+  const agreed = Boolean(aiSide) && aiSide === mySide;
+  const score = updateScore(agreed, Boolean(aiSide));
 
   const headline = aiSide
     ? (agreed
@@ -227,14 +286,20 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
       ${total > 0
         ? `<p class="jury-reveal-line">배심원 ${total}명 중 <strong>${majorityPercent}%</strong>가 ${SIDE_LABEL[majority]}을 택했습니다.</p>${tallyBar(counts, total)}`
         : '<p class="jury-reveal-line">이 사건의 첫 배심원입니다.</p>'}
+      ${aiSide && score.total
+        ? `<p class="jury-score-line">${agreed
+            ? `${score.streak}연속 적중 중입니다.`
+            : '연속 기록이 끊겼습니다.'} 지금까지 ${score.total}건 중 ${Math.round((score.hit / score.total) * 100)}% 일치.</p>`
+        : ''}
       <div class="jury-actions">
-        <a class="btn btn-primary" href="#/result/${encodeURIComponent(caseId)}">판결문 전문 보기</a>
-        <button type="button" class="btn" id="jury-next">다음 사건</button>
+        <a class="btn" href="#/result/${encodeURIComponent(caseId)}">판결문 전문 보기</a>
+        <button type="button" class="btn btn-primary" id="jury-next">다음 사건 판정하기</button>
       </div>
     </article>`;
 
   slot.querySelector('#jury-next')?.addEventListener('click', () => {
     slot.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+    renderScoreboard();
     loadJuryCase(container);
   });
 }

@@ -79,11 +79,11 @@ function normalizeResult(parsed, description) {
   return {
     caseTitle: normalizeCaseTitle(parsed?.caseTitle, description),
     winner: normalizeWinner(parsed?.winner),
-    reception: cleanDocument(parsed?.reception, 800),
-    investigation: cleanDocument(parsed?.investigation, 900),
-    plaintiffArg: cleanDocument(parsed?.plaintiffArg, 700),
-    defendantArg: cleanDocument(parsed?.defendantArg, 700),
-    verdict: cleanDocument(parsed?.verdict, 1200)
+    reception: cleanDocument(parsed?.reception, 1500),
+    investigation: cleanDocument(parsed?.investigation, 2200),
+    plaintiffArg: cleanDocument(parsed?.plaintiffArg, 1500),
+    defendantArg: cleanDocument(parsed?.defendantArg, 1500),
+    verdict: cleanDocument(parsed?.verdict, 2300)
   };
 }
 
@@ -166,7 +166,9 @@ async function callGemini(apiKey, modelName, prompt) {
         generationConfig: {
           temperature: 0.9,
           topP: 0.95,
-          maxOutputTokens: 4096,
+          // 한국어는 글자당 토큰 소모가 커서, 문서 5개 합계 9,000자를 담으려면
+          // 4096으로는 문장 중간에서 잘린다. 넉넉히 잡아 잘림을 막는다.
+          maxOutputTokens: 16384,
           responseMimeType: 'application/json',
           responseSchema: RESPONSE_SCHEMA
         }

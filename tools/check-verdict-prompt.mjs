@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 const { buildPrompt, JUDGES, HARD_LIMITS } = require('../functions/verdict-prompt.js');
 
 const errors = [];
-const MAX_PROMPT_CHARS = 3000;
+const MAX_PROMPT_CHARS = 3500;
 const MAX_HARD_LIMITS = 6;
 
 const prompt = buildPrompt('친구가 카톡 답장을 3일 동안 안 했어요', JUDGES[0], 7);
@@ -39,7 +39,12 @@ if (!prompt.includes('적극적으로 지어내라')) {
   errors.push('정황을 지어내라는 허가가 사라졌습니다. 이 허가가 없으면 결과물이 안전하고 밋밋해집니다.');
 }
 
-// 5. 민심소가 AI 판결과 민심을 비교하려면 승패가 구조화되어 있어야 한다.
+// 5. 길이를 반복으로 채우지 말라는 지시가 유지되어야 한다.
+if (!prompt.includes('새로운 장면')) {
+  errors.push('분량을 새 장면으로만 늘리라는 지시가 사라졌습니다. 이게 없으면 장문이 지루해집니다.');
+}
+
+// 6. 민심소가 AI 판결과 민심을 비교하려면 승패가 구조화되어 있어야 한다.
 const generator = fs.readFileSync('functions/generate-trial-lite.js', 'utf8');
 if (!generator.includes('normalizeWinner') || !generator.includes("winner: { type: 'string' }")) {
   errors.push('generate-trial-lite.js에 winner 필드가 없습니다. 민심소의 판결 비교가 동작하지 않습니다.');
@@ -54,8 +59,10 @@ if (/require\('\.\/(humor-prompt|comedy-topic-context|five-stage-topic-comedy|ju
 // 7. 문서 분량 상한이 다시 늘어나지 않아야 한다. 웃음은 밀도에서 나온다.
 const caps = [...generator.matchAll(/cleanDocument\(parsed\?\.\w+, (\d+)\)/g)].map(match => Number(match[1]));
 const capTotal = caps.reduce((sum, value) => sum + value, 0);
-if (capTotal > 5000) {
-  errors.push(`문서 분량 상한 합계가 ${capTotal}자입니다. 5,000자를 넘기지 마세요.`);
+// 읽는 맛을 위해 분량을 늘렸다. 다만 상한을 풀어주면 예전처럼 반복으로
+// 채운 장문으로 되돌아가므로, 새 목표치에서 다시 묶어둔다.
+if (capTotal > 9500) {
+  errors.push(`문서 분량 상한 합계가 ${capTotal}자입니다. 9,500자를 넘기지 마세요.`);
 }
 
 if (errors.length > 0) {
