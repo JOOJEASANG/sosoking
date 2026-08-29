@@ -46,12 +46,12 @@ for (const required of [
   'data.publicDataVersion == 1',
   "!data.keys().hasAny(['userId', 'caseDescription', 'nickname'])",
   'allow get: if isSafePublicResultData(resource.data)',
-  'allow list: if isAdmin() || isSafePublicResultData(resource.data)'
+  'allow list: if isAdmin();'
 ]) {
   if (!rules.includes(required)) errors.push(`firestore.rules: missing ${required}`);
 }
 if (rules.includes('isPublicResultListData')) {
-  errors.push('firestore.rules: weaker public list helper remains after fail-closed schema hardening');
+  errors.push('firestore.rules: legacy browser-list helper remains after server projection hardening');
 }
 
 const sanitizer = read('functions/public-result-sanitizer.js');
@@ -95,6 +95,21 @@ if (discussion.includes('batch.set(resultRef')) {
   errors.push('functions/discussion.js: batch.set(resultRef) can recreate a deleted result document');
 }
 
+const publicListFunction = read('functions/public-results-list.js');
+for (const required of [
+  'exports.listPublicResults = onCall',
+  'function publicProjection(raw = {})',
+  "!Object.prototype.hasOwnProperty.call(data, 'caseDescription')",
+  "where('publicDataVersion', '==', 1)",
+  'requireAppCheck(request)',
+  '.map(document => ({ id: document.id, data: publicProjection(document.data() || {}) }))'
+]) {
+  if (!publicListFunction.includes(required)) errors.push(`functions/public-results-list.js: missing ${required}`);
+}
+for (const forbidden of ['userId:', 'caseDescription:', 'nickname:']) {
+  if (publicListFunction.includes(forbidden)) errors.push(`functions/public-results-list.js: public projection contains forbidden field ${forbidden}`);
+}
+
 const safeSeo = read('functions/public-seo-safe.js');
 for (const required of ['isSanitizedPublicResult', 'exports.publicResultPage', 'exports.publicSitemap', "where('publicDataVersion', '==', 1)"]) {
   if (!safeSeo.includes(required)) errors.push(`functions/public-seo-safe.js: missing ${required}`);
@@ -113,8 +128,8 @@ for (const required of [
 }
 
 const main = read('functions/main.js');
-if (!main.includes("require('./public-seo-safe')")) {
-  errors.push('functions/main.js: sanitized public SEO functions are not exported');
+for (const required of ["require('./public-seo-safe')", "require('./public-results-list')"]) {
+  if (!main.includes(required)) errors.push(`functions/main.js: missing ${required}`);
 }
 if (main.includes("require('./public-result-sanitizer')")) {
   errors.push('functions/main.js: deploy-time sanitizer utility must not be exported as a Cloud Function');
@@ -125,12 +140,14 @@ if (main.includes("Object.assign(exports, require('./public-seo'))")) {
 
 const publicLoader = read('public/js/utils/public-results.js');
 for (const required of [
-  "where('isPublic', '==', true)",
-  "where('publicDataVersion', '==', 1)",
-  "orderBy('createdAt', 'desc')",
-  "code.includes('failed-precondition')"
+  "import { functions } from '../firebase.js",
+  "httpsCallable(functions, 'listPublicResults')",
+  'response?.data?.rows'
 ]) {
   if (!publicLoader.includes(required)) errors.push(`public/js/utils/public-results.js: missing ${required}`);
+}
+if (publicLoader.includes("collection(db, 'results')") || publicLoader.includes("collection(_db, 'results')")) {
+  errors.push('public/js/utils/public-results.js: browser still lists the internal results collection');
 }
 
 const board = read('public/js/pages/board.js');
@@ -176,6 +193,7 @@ if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
   errors.push('.github/workflows/firebase-deploy.yml: existing public records are not sanitized');
 }
 for (const required of [
+  'functions:listPublicResults',
   'id-token: write',
   'uses: ./.github/actions/firebase-auth',
   'vars.GCP_WORKLOAD_IDENTITY_PROVIDER',
@@ -199,4 +217,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, public privacy, lifecycle-safe writes, fail-closed public records, keyless deploy readiness, CSP, safe SEO and deployment ordering are intact.');
+console.log('Security hardening validation passed: App Check, public privacy, lifecycle-safe writes, server-projected public lists, keyless deploy readiness, CSP, safe SEO and deployment ordering are intact.');
