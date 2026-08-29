@@ -8,7 +8,8 @@ import { renderHome } from './pages/home-seven-judges.js?v=20260730-home-layout-
 import { renderSubmit } from './pages/submit-guard.js?v=20260731-private-first-publication-1';
 // Cache lineage marker: './pages/submit-guard.js?v=20260730-configurable-limit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260729-dark-record-participation-1';
-import { renderResult } from './pages/result-comments.js?v=20260829-jury-content-1';
+import { renderResult } from './pages/result-comments.js?v=20260829-arena-1';
+// Cache lineage marker: './pages/result-comments.js?v=20260829-jury-content-1';
 // Cache lineage marker: './pages/result-comments.js?v=20260801-public-original-modal-1';
 // Cache lineage marker: './pages/result-comments.js?v=20260730-discussion-court-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260730-discussion-court-1';
@@ -18,8 +19,9 @@ import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-
 // Cache lineage marker: './pages/my-cases-game.js?v=20260729-dark-record-participation-1';
 import { renderGuide } from './pages/guide.js?v=20260802-remove-daily-court-1';
 import { renderAuth } from './pages/auth2.js?v=20260829-avatar-1';
-import { renderBoard } from './pages/board-full-content-search.js?v=20260829-jury-longform-1';
-import { renderJury } from './pages/jury.js?v=20260829-jury-content-1';
+import { renderHall } from './pages/hall.js?v=20260829-arena-1';
+import { renderJury } from './pages/jury.js?v=20260829-arena-1';
+// Cache lineage marker for retired board list: './pages/board-full-content-search.js?v=20260829-jury-longform-1';
 // Cache lineage marker for full search: './pages/board-full-content-search.js?v=20260730-search-scope-1';
 // Cache lineage marker for pagination: './pages/board-search-pagination.js?v=20260730-judge-board-search-1';
 // Cache lineage marker for discussion: './pages/board-court.js?v=20260730-discussion-court-1';
@@ -28,9 +30,11 @@ import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the compact-spacing regression check: ./components/footer.js?v=20260729-compact-spacing-1
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
-import { initNavAuthSync, renderNav } from './components/nav.js?v=20260829-avatar-1';
+import { initNavAuthSync, renderNav } from './components/nav.js?v=20260829-arena-1';
+// Cache lineage marker: './components/nav.js?v=20260829-avatar-1';
 // Cache lineage marker: './components/nav.js?v=20260802-remove-daily-court-2';
-import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260806-unified-service-nav-1';
+import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260829-arena-1';
+// Cache lineage marker: './components/header-icons.js?v=20260806-unified-service-nav-1';
 // Cache lineage marker: './components/header-icons.js?v=20260730-header-icon-single-1';
 
 let routeSequence = 0;
@@ -139,12 +143,12 @@ async function route() {
       renderTask = caseId ? renderResult(content, caseId) : renderHome(content);
     } else if (hash.startsWith('#/discussion/')) {
       const caseId = decodeRouteValue(hash.replace('#/discussion/', ''));
-      renderTask = caseId ? renderDiscussion(content, caseId) : renderBoard(content);
+      renderTask = caseId ? renderDiscussion(content, caseId) : renderHall(content);
     } else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
     else if (hash === '#/auth') renderTask = renderAuth(content);
-    else if (hash === '#/board') renderTask = renderBoard(content);
+    else if (hash === '#/board') renderTask = renderHall(content);
     else if (hash === '#/jury') renderTask = renderJury(content);
     else renderTask = renderHome(content);
 

@@ -8,9 +8,15 @@ import { db, auth, functions } from '../firebase.js?v=20260630-3';
 import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
 import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-public-records-2';
 import { jurySeenSet, markJurySeen } from '../utils/jury-seen.js?v=20260829-jury-content-1';
+import { showToast } from '../components/toast.js?v=20260630-3';
 import {
   doc,
-  getDoc
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
@@ -19,6 +25,14 @@ const SIDE_LABEL = {
   defendant: '피고 승',
   both: '쌍방 과실'
 };
+
+// 댓글논쟁에서 내 입장을 표시할 때 쓰는 짧은 이름. 투표한 쪽이 곧 내 입장이 된다.
+const STANCE_LABEL = {
+  plaintiff: '원고측',
+  defendant: '피고측',
+  both: '쌍방'
+};
+const COMMENT_LIMIT = 60;
 
 function hashString(value) {
   let hash = 2166136261;
@@ -153,8 +167,9 @@ export async function renderJury(container) {
         <div class="jury-intro">
           <div class="jury-intro-title">판결문을 가리고 먼저 맞혀보세요</div>
           <p class="jury-intro-copy">
-            판결기록은 이미 나온 판결을 읽는 곳이고, 민심소는 <strong>가려진 판결을 맞히는 곳</strong>입니다.
-            사건 개요와 양측 주장을 읽고 한쪽을 고르면, 가려졌던 AI 판사의 판결과 판단이유가 열립니다.
+            민심소는 <strong>가려진 판결을 맞히고, 그 자리에서 논쟁하는 곳</strong>입니다.
+            사건 개요와 양측 주장을 읽고 한쪽을 고르면 AI 판사의 판결이 열리고,
+            같은 화면에서 다른 배심원들과 댓글로 논쟁할 수 있습니다.
           </p>
           <div class="jury-scoreboard" id="jury-scoreboard"></div>
         </div>
@@ -306,6 +321,24 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
             : '연속 기록이 끊겼습니다.'} 지금까지 ${score.total}건 중 ${Math.round((score.hit / score.total) * 100)}% 일치.</p>`
         : ''}
       ${verdictExcerptHtml(data)}
+      <div class="jury-debate" id="jury-debate">
+        <div class="jury-debate-head">
+          <span class="jury-debate-title">이 판결, 어떻게 보세요?</span>
+          <span class="jury-debate-mystance">내 입장 · <strong>${STANCE_LABEL[mySide]}</strong></span>
+        </div>
+        <div class="jury-debate-form">
+          <textarea id="jury-comment-input" class="form-textarea" maxlength="600" rows="3"
+            placeholder="${escapeHtml(STANCE_LABEL[mySide])} 입장에서 왜 그렇게 판단했는지 적어보세요."></textarea>
+          <div class="jury-debate-form-foot">
+            <span class="jury-debate-hint">개인정보·욕설·실명 언급은 제한됩니다.</span>
+            <span id="jury-comment-count">0/600</span>
+          </div>
+          <button type="button" class="btn btn-primary" id="jury-comment-submit">논쟁에 참여</button>
+        </div>
+        <div class="jury-debate-list" id="jury-debate-list">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
       <div class="jury-actions">
         <a class="btn" href="#/result/${encodeURIComponent(caseId)}">판결문 전문 보기</a>
         <button type="button" class="btn btn-primary" id="jury-next">다음 사건 판정하기</button>
@@ -316,5 +349,104 @@ async function revealVerdict(container, slot, caseId, data, mySide) {
     slot.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
     renderScoreboard();
     loadJuryCase(container);
+  });
+
+  wireDebate(container, slot, caseId, mySide);
+}
+
+// 투표 뒤 같은 화면에서 바로 댓글논쟁을 벌인다. 입장(stance)은 방금 투표한 쪽으로
+// 고정한다. 판결기록 시절 흩어져 있던 토론을 민심소 한 곳으로 합친 것이다.
+function fmtCommentDate(value) {
+  if (!value) return '';
+  const date = value.toDate ? value.toDate() : new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function commentsHtml(comments) {
+  if (!comments.length) {
+    return '<div class="jury-debate-empty">아직 논쟁이 없습니다. 첫 의견을 남겨보세요.</div>';
+  }
+  return comments.map(comment => {
+    const stance = STANCE_LABEL[String(comment.stance || '')];
+    const badge = stance
+      ? `<span class="jury-comment-stance">${escapeHtml(stance)}</span>`
+      : '';
+    return `<article class="jury-comment">
+      <div class="jury-comment-head">
+        <span class="jury-comment-author">${escapeHtml(comment.nickname || '익명 배심원')}</span>
+        ${badge}
+        <time class="jury-comment-date">${escapeHtml(fmtCommentDate(comment.createdAt))}</time>
+      </div>
+      <div class="jury-comment-text">${escapeHtml(comment.text || '')}</div>
+    </article>`;
+  }).join('');
+}
+
+async function loadComments(caseId, listEl) {
+  if (!listEl) return;
+  try {
+    const snapshot = await getDocs(query(
+      collection(db, `court_comments/${caseId}/items`),
+      orderBy('createdAt', 'desc'),
+      limit(COMMENT_LIMIT)
+    ));
+    const comments = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+    listEl.innerHTML = commentsHtml(comments);
+  } catch (error) {
+    console.warn('jury comments load failed:', error?.code || error);
+    listEl.innerHTML = '<div class="jury-debate-empty">논쟁을 불러오지 못했습니다.</div>';
+  }
+}
+
+function wireDebate(container, slot, caseId, mySide) {
+  const input = slot.querySelector('#jury-comment-input');
+  const counter = slot.querySelector('#jury-comment-count');
+  const submit = slot.querySelector('#jury-comment-submit');
+  const listEl = slot.querySelector('#jury-debate-list');
+
+  loadComments(caseId, listEl);
+
+  input?.addEventListener('input', () => {
+    if (counter) counter.textContent = `${input.value.length}/600`;
+  });
+
+  submit?.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) {
+      showToast('로그인한 회원만 논쟁에 참여할 수 있습니다.', 'error');
+      location.hash = '#/auth';
+      return;
+    }
+    const text = input?.value.trim() || '';
+    if (text.length < 2) {
+      showToast('의견을 2자 이상 입력해주세요.', 'error');
+      input?.focus();
+      return;
+    }
+    const oldLabel = submit.textContent;
+    submit.disabled = true;
+    submit.textContent = '등록 중…';
+    try {
+      await httpsCallable(functions, 'addDiscussionComment')({ caseId, stance: mySide, text });
+      if (input) {
+        input.value = '';
+        if (counter) counter.textContent = '0/600';
+      }
+      showToast('논쟁에 참여했습니다.', 'success');
+      await loadComments(caseId, listEl);
+    } catch (error) {
+      console.error('jury comment submit failed:', error);
+      showToast(String(error?.message || '등록에 실패했습니다.').replace(/^FirebaseError:\s*/, '').slice(0, 200), 'error');
+    } finally {
+      submit.disabled = false;
+      submit.textContent = oldLabel;
+    }
   });
 }

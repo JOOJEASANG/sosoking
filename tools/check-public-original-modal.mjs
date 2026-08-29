@@ -51,7 +51,7 @@ assert.ok(myCases.includes("? `#/verdict/${encodeURIComponent(id)}`"), '내 사�
 assert.ok(app.includes("hash.startsWith('#/verdict/')"), '소유자 판결 경로가 누락되었습니다.');
 assert.ok(app.includes("hash.startsWith('#/result/')"), '공개 판결 경로가 누락되었습니다.');
 assert.ok((app.match(/renderResult\(content, caseId\)/g) || []).length >= 2, '공개/소유자 판결은 같은 렌더러를 사용해야 합니다.');
-assert.ok(app.includes("./pages/result-comments.js?v=20260829-jury-content-1"), '원문보기 결과 모듈 캐시 버전이 갱신되어야 합니다.');
+assert.ok(app.includes("./pages/result-comments.js?v=20260829-arena-1"), '원문보기 결과 모듈 캐시 버전이 갱신되어야 합니다.');
 
 for (const required of [
   "createOriginalControl(cover, judgeSummary, caseId)",

@@ -50,9 +50,9 @@ export function renderNav(activeRoute = '') {
       <span class="nav-icon" aria-hidden="true">🏠</span>
       <span class="nav-label">홈</span>
     </a>
-    <a href="#/board" class="nav-item${isBoard ? ' active' : ''}"${isBoard ? ' aria-current="page"' : ''}>
-      <span class="nav-icon" aria-hidden="true">📜</span>
-      <span class="nav-label">판결기록</span>
+    <a href="#/board" class="nav-item${isBoard ? ' active' : ''}"${isBoard ? ' aria-current="page"' : ''} aria-label="명예의 전당으로 이동">
+      <span class="nav-icon" aria-hidden="true">🏆</span>
+      <span class="nav-label">명예의 전당</span>
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}"${isSubmit ? ' aria-current="page"' : ''}>
       <span class="nav-icon"><img class="nav-brand-icon" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="" width="25" height="25"></span>
