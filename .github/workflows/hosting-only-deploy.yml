@@ -9,6 +9,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+      id-token: write
     concurrency:
       group: firebase-deploy-live
       cancel-in-progress: false
@@ -34,26 +35,23 @@ jobs:
       - name: Validate Hosting assets
         run: npm run check
 
+      - name: Authenticate to Google Cloud
+        id: google-auth
+        uses: ./.github/actions/firebase-auth
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER || '' }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT || '' }}
+          service_account_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 || '' }}
+
       - name: Configure App Check client
         env:
           APP_CHECK_SITE_KEY: ${{ vars.APP_CHECK_SITE_KEY || '' }}
           ENFORCE_APP_CHECK: ${{ vars.ENFORCE_APP_CHECK || 'false' }}
         run: node tools/configure-app-check.mjs
 
-      - name: Prepare service account
-        env:
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
-        run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6"
-            exit 1
-          fi
-          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
-          chmod 600 "$RUNNER_TEMP/firebase-service-account.json"
-
       - name: Deploy live Hosting
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
 
       - name: Hosting summary
