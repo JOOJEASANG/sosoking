@@ -34,6 +34,12 @@ jobs:
       - name: Validate Hosting assets
         run: npm run check
 
+      - name: Configure App Check client
+        env:
+          APP_CHECK_SITE_KEY: ${{ vars.APP_CHECK_SITE_KEY || '' }}
+          ENFORCE_APP_CHECK: ${{ vars.ENFORCE_APP_CHECK || 'false' }}
+        run: node tools/configure-app-check.mjs
+
       - name: Prepare service account
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
