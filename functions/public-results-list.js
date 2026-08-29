@@ -1,8 +1,8 @@
 'use strict';
 
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore } = require('firebase-admin/firestore');
-const { requireAppCheck } = require('./security');
+const { enforceActionRateLimit, requireAppCheck } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -34,6 +34,17 @@ function timestampMillis(value) {
 function cleanText(value, maxLen) {
   return String(value || '')
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLen);
+}
+
+function cleanDocument(value, maxLen) {
+  return String(value || '')
+    .replace(/\r/g, '')
+    .replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
     .slice(0, maxLen);
 }
@@ -47,7 +58,7 @@ function safeTags(value) {
 
 function safeAppeal(value = {}) {
   if (!value || typeof value !== 'object') return null;
-  const verdict = cleanText(value.verdict, 1800);
+  const verdict = cleanDocument(value.verdict, 1800);
   const reason = cleanText(value.reason, 160);
   if (!verdict && !reason) return null;
   return {
@@ -79,12 +90,12 @@ function publicProjection(raw = {}) {
     judgeIcon: cleanText(raw.judgeIcon, 16),
     judgeStyle: cleanText(raw.judgeStyle, 400),
     winner: ['plaintiff', 'defendant', 'both'].includes(String(raw.winner || '')) ? raw.winner : '',
-    reception: cleanText(raw.reception, 5000),
-    investigation: cleanText(raw.investigation, 6000),
-    plaintiffArg: cleanText(raw.plaintiffArg, 5000),
-    defendantArg: cleanText(raw.defendantArg, 5000),
-    verdict: cleanText(raw.verdict, 7000),
-    sentence: cleanText(raw.sentence, 1000),
+    reception: cleanDocument(raw.reception, 5000),
+    investigation: cleanDocument(raw.investigation, 6000),
+    plaintiffArg: cleanDocument(raw.plaintiffArg, 5000),
+    defendantArg: cleanDocument(raw.defendantArg, 5000),
+    verdict: cleanDocument(raw.verdict, 7000),
+    sentence: cleanDocument(raw.sentence, 1000),
     aiSource: cleanText(raw.aiSource, 60),
     aiModel: cleanText(raw.aiModel, 80),
     contentSafetyStatus: cleanText(raw.contentSafetyStatus, 30),
@@ -135,6 +146,15 @@ exports.listPublicResults = onCall({
   maxInstances: 20
 }, async request => {
   requireAppCheck(request);
+  const requesterUid = String(request.auth?.uid || '');
+  if (!requesterUid) {
+    throw new HttpsError('unauthenticated', '앱에서 다시 접속해 주세요.');
+  }
+  await enforceActionRateLimit(requesterUid, 'public-list', {
+    cooldownSeconds: 1,
+    dailyLimit: 500
+  });
+
   const maxRows = clampLimit(request.data?.maxRows);
   return { rows: await loadRows(maxRows) };
 });
