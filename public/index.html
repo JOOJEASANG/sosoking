@@ -1,25 +1,67 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>새 프로젝트</title>
-    <meta name="description" content="Firebase Hosting 위에서 새로 시작하는 프로젝트입니다." />
-    <meta name="robots" content="noindex" />
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <main class="shell">
-      <h1>새 프로젝트 준비 중</h1>
-      <p>
-        기존 앱 코드를 모두 비우고 Firebase Hosting · Firestore · Functions 배포 설정만
-        남긴 상태입니다. 여기부터 새 앱을 만들어 갑니다.
-      </p>
-      <ul class="checklist">
-        <li>Hosting: <code>public/</code></li>
-        <li>Functions: <code>functions/</code> (아직 배포 대상 없음)</li>
-        <li>Firestore 규칙: <code>firestore.rules</code> (기본 차단)</li>
-      </ul>
-    </main>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>소소킹 판결소 - 소소한 일상을 판결하는 생활법정 놀이터</title>
+  <meta name="description" content="AI 생활판결을 받고 공개 판결의 투표와 토론에 참여하며, 사건접수부터 판결까지 재치와 유머로 즐기는 오락형 생활법정 놀이터입니다. 모든 판결은 법적 효력이 없습니다.">
+  <meta name="sosoking-deploy-version" content="sosoking-jury-20260829-1">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sosoking.co.kr">
+  <meta property="og:title" content="소소킹 판결소 ⚖️ 진지한 척 웃기는 생활법정">
+  <meta property="og:description" content="소소한 일상을 판결하는 생활법정 놀이터. AI 생활판결과 공개 판결의 투표·토론을 유머로 즐겨보세요.">
+  <meta property="og:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:site_name" content="소소킹 판결소">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="소소킹 판결소 ⚖️">
+  <meta name="twitter:description" content="AI 생활판결과 공개 판결의 투표·토론을 웃기게 즐기는 오락형 생활법정 놀이터입니다.">
+  <meta name="twitter:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
+
+  <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
+
+  <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png" sizes="32x32">
+  <link rel="icon" href="/icons/favicon-48.png?v=20260729-brand-unified-1" type="image/png" sizes="48x48">
+  <link rel="shortcut icon" href="/icons/favicon-48.png?v=20260729-brand-unified-1" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/sosoking-192.png?v=20260729-pwa-icon-center-1" sizes="192x192">
+  <link rel="manifest" href="/site.webmanifest?v=20260729-pwa-icon-center-1">
+  <meta name="theme-color" content="#0b0f16">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css?v=20260728-ui-audit-2">
+  <link rel="stylesheet" href="/css/brand-logo.css?v=20260802-remove-daily-court-2">
+  <link rel="stylesheet" href="/css/game-entry.css?v=20260811-game-hub-1">
+  <link id="home-light-theme-css" rel="stylesheet" href="/css/home-light.css?v=20260729-light-home-1">
+  <link rel="stylesheet" href="/css/layout-spacing.css?v=20260729-spacing-flow-2">
+  <link rel="stylesheet" href="/css/sans-font.css?v=20260729-sans-font-1">
+  <link rel="stylesheet" href="/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1">
+  <link rel="stylesheet" href="/css/jury.css?v=20260829-jury-1">
+</head>
+<body>
+  <div id="app">
+    <div id="page-content"></div>
+    <footer id="site-footer"></footer>
+  </div>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1"></script>
+  <script type="module" src="/js/document-display-guard.js?v=20260802-original-button-layout-1"></script>
+  <script type="module" src="/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2"></script>
+  <script type="module" src="/js/app.js?v=20260829-jury-1"></script>
+  <!-- Cache lineage: /js/app.js?v=20260810-mycase-original-fix-1 -->
+  <script type="module" src="/js/result-link-share.js?v=20260811-result-share-1"></script>
+  <script type="module" src="/js/submit-draft-guard.js?v=20260807-submit-draft-1"></script>
+  <script type="module" src="/js/home-copy-guard.js?v=20260802-no-real-cases-1"></script>
+  <script type="module" src="/js/original-inline-accordion-guard.js?v=20260810-owner-original-route-2"></script>
+  <script type="module" src="/js/original-detail-header-guard.js?v=20260810-owner-original-route-2"></script>
+  <script type="module" src="/js/service-hub-guard.js?v=20260829-jury-1"></script>
+  <script type="module" src="/js/judge-final-guard.js"></script>
+  <script type="module" src="/js/judge-runtime-guard.js?v=20260810-judge-runtime-2"></script>
+  <!-- Cache lineage: /js/app.js?v=20260730-discussion-court-1 -->
+</body>
 </html>

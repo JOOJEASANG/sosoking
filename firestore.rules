@@ -1,11 +1,179 @@
 rules_version = '2';
-
-// 새 앱을 만들기 전의 기본 상태입니다.
-// 모든 읽기/쓰기를 막아 두고, 컬렉션이 정해질 때마다 규칙을 명시적으로 추가합니다.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function adminEmail() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        ? request.auth.token.email
+        : '';
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (adminEmail() != '' && exists(/databases/$(database)/documents/admins/$(adminEmail())))
+      );
+    }
+
+    function caseDoc(caseId) {
+      return get(/databases/$(database)/documents/cases/$(caseId));
+    }
+
+    function resultDoc(caseId) {
+      return get(/databases/$(database)/documents/results/$(caseId));
+    }
+
+    function isCaseOwner(caseId) {
+      return signedIn() && caseDoc(caseId).data.userId == request.auth.uid;
+    }
+
+    function isSafePublicResultData(data) {
+      return data.isPublic == true
+        && data.publicDataVersion == 1
+        && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
+    }
+
+    function isPublicResultListData(data) {
+      return data.isPublic == true && data.publicDataVersion == 1;
+    }
+
+    function isResultPublic(caseId) {
+      return isSafePublicResultData(resultDoc(caseId).data);
+    }
+
+    function canReadPublicCourt(caseId) {
+      return signedIn() && (
+        isResultPublic(caseId) ||
+        isCaseOwner(caseId) ||
+        isAdmin()
+      );
+    }
+
+    match /admins/{adminId} {
+      allow read: if signedIn() && (
+        request.auth.uid == adminId ||
+        adminEmail() == adminId ||
+        isAdmin()
+      );
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /user_names/{key} {
       allow read, write: if false;
+    }
+
+    match /cases/{caseId} {
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /results/{caseId} {
+      allow get: if isSafePublicResultData(resource.data)
+        || isCaseOwner(caseId)
+        || isAdmin();
+      allow list: if isAdmin() || isPublicResultListData(resource.data);
+      allow update: if isAdmin();
+      allow create: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /result_reactions/{caseId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
+
+      match /votes/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow write: if false;
+      }
+    }
+
+    match /court_comments/{caseId}/items/{commentId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
+    }
+
+    match /court_comment_stats/{caseId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
+    }
+
+    match /court_comment_authors/{caseId}/items/{commentId} {
+      allow read, write: if false;
+    }
+
+    // 게임소: 초대 코드를 아는 로그인 세션만 방을 읽고, 진행 상태는 방장이 관리한다.
+    match /case_id_aliases/{aliasId} {
+      allow read, write: if false;
+    }
+
+    match /usage_stats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /rate_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    match /action_limits/{limitId} {
+      allow read, write: if false;
+    }
+
+    match /ai_limits/{dailyId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /users/{userId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if false;
+      }
+    }
+
+    match /reports/{reportId} {
+      allow create: if false;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /report_keys/{keyId} {
+      allow read, write: if false;
+    }
+
+    match /site_settings/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /site_public/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /policy_docs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }

@@ -2,7 +2,7 @@ name: Verify Live Hosting
 
 on:
   workflow_run:
-    workflows: ["Deploy Sosoking"]
+    workflows: ["Deploy Firebase"]
     types: [completed]
 
 jobs:
@@ -13,21 +13,21 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Require deployment success
+      - name: Require Firebase deployment success
         env:
           DEPLOY_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           if [ "$DEPLOY_CONCLUSION" != "success" ]; then
-            echo "Deployment did not succeed: $DEPLOY_CONCLUSION"
+            echo "Deploy Firebase did not succeed: $DEPLOY_CONCLUSION"
             exit 1
           fi
 
-      - name: Verify production hosts
+      - name: Verify all production hosts serve the same release
         env:
+          EXPECTED_VERSION: sosoking-jury-20260829-1
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-
           hosts=(
             "https://sosoking-481e6.web.app"
             "https://sosoking.co.kr"
@@ -35,10 +35,24 @@ jobs:
           )
 
           for host in "${hosts[@]}"; do
-            html="$(curl --fail --silent --show-error --location --retry 4 --retry-delay 3 -H 'Cache-Control: no-cache' "$host/?sha=$HEAD_SHA")"
-            if ! grep -Fq '<html lang="ko"' <<< "$html"; then
-              echo "Unexpected document served by $host"
+            echo "Checking $host"
+            marker="$(curl --fail --silent --show-error --location \
+              --retry 4 --retry-delay 3 --connect-timeout 10 --max-time 30 \
+              -H 'Cache-Control: no-cache' \
+              "$host/deploy-version.txt?sha=$HEAD_SHA")"
+            if [ "$marker" != "$EXPECTED_VERSION" ]; then
+              echo "Release mismatch on $host: expected '$EXPECTED_VERSION', got '$marker'"
               exit 1
             fi
-            echo "$host is live"
+
+            html="$(curl --fail --silent --show-error --location \
+              --retry 4 --retry-delay 3 --connect-timeout 10 --max-time 30 \
+              -H 'Cache-Control: no-cache' \
+              "$host/?sha=$HEAD_SHA")"
+            if ! grep -Fq "<meta name=\"sosoking-deploy-version\" content=\"$EXPECTED_VERSION\">" <<< "$html"; then
+              echo "HTML deployment marker missing on $host"
+              exit 1
+            fi
           done
+
+          echo "All production hosts serve $EXPECTED_VERSION"

@@ -29,6 +29,88 @@
           {
             "key": "Permissions-Policy",
             "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+          },
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          }
+        ]
+      },
+      {
+        "source": "/",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          },
+          {
+            "key": "Content-Security-Policy-Report-Only",
+            "value": "frame-ancestors 'none'"
+          }
+        ]
+      },
+      {
+        "source": "/index.html",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          },
+          {
+            "key": "Content-Security-Policy-Report-Only",
+            "value": "frame-ancestors 'none'"
+          }
+        ]
+      },
+      {
+        "source": "/admin",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          },
+          {
+            "key": "Content-Security-Policy-Report-Only",
+            "value": "frame-ancestors 'none'"
+          }
+        ]
+      },
+      {
+        "source": "/admin/**",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          },
+          {
+            "key": "Content-Security-Policy-Report-Only",
+            "value": "frame-ancestors 'none'"
+          }
+        ]
+      },
+      {
+        "source": "/@(board|submit|guide|auth|my-cases)",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          },
+          {
+            "key": "Content-Security-Policy-Report-Only",
+            "value": "frame-ancestors 'none'"
+          }
+        ]
+      },
+      {
+        "source": "/@(result|trial|discussion)/**",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          },
+          {
+            "key": "Content-Security-Policy-Report-Only",
+            "value": "frame-ancestors 'none'"
           }
         ]
       },
@@ -53,6 +135,67 @@
             "value": "public, max-age=86400, stale-while-revalidate=604800"
           }
         ]
+      },
+      {
+        "source": "/site.webmanifest",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, stale-while-revalidate=86400"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/sitemap.xml",
+        "function": {
+          "functionId": "publicSitemap",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/result/**",
+        "function": {
+          "functionId": "publicResultPage",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/admin",
+        "destination": "/admin/index.html"
+      },
+      {
+        "source": "/admin/",
+        "destination": "/admin/index.html"
+      },
+      {
+        "source": "/board",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/submit",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/guide",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/auth",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/my-cases",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/discussion/**",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/trial/**",
+        "destination": "/index.html"
       }
     ]
   },

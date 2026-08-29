@@ -1,4 +1,19 @@
-// 배포할 Cloud Function이 아직 없습니다.
-// 새 함수를 추가할 때 여기에서 export 하고,
-// .github/workflows/firebase-deploy.yml 의 Functions 배포 단계를 다시 켜세요.
-export {};
+'use strict';
+
+const { getApps, initializeApp } = require('firebase-admin/app');
+
+if (!getApps().length) initializeApp();
+
+Object.assign(exports, require('./daily'));
+Object.assign(exports, require('./profile'));
+Object.assign(exports, require('./social'));
+Object.assign(exports, require('./discussion'));
+Object.assign(exports, require('./reports'));
+Object.assign(exports, require('./public-stats'));
+Object.assign(exports, require('./public-seo-safe'));
+Object.assign(exports, require('./public-original'));
+Object.assign(exports, require('./case-aliases'));
+Object.assign(exports, require('./submit-secure'));
+Object.assign(exports, require('./generate-trial-lite'));
+Object.assign(exports, require('./admin-actions'));
+Object.assign(exports, require('./admin-visibility'));
