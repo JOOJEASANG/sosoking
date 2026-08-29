@@ -72,7 +72,7 @@ try {
         caseTitle: '목록 공개 사건',
         createdAt: now
       }),
-      setDoc(doc(db, 'results/list-unsafe-public'), {
+      setDoc(doc(db, 'results/list-legacy-unsafe-public'), {
         isPublic: true,
         userId: 'owner-uid',
         caseDescription: '공개 전 정리가 필요한 원문',
@@ -95,21 +95,44 @@ try {
   ]) {
     const snapshot = await assertSucceeds(getDocs(safeQuery(db)));
     const ids = snapshot.docs.map(document => document.id);
-    if (!ids.includes('list-safe-public') || ids.includes('list-unsafe-public') || ids.includes('list-private')) {
+    if (!ids.includes('list-safe-public') || ids.includes('list-legacy-unsafe-public') || ids.includes('list-private')) {
       throw new Error(`${label} sanitized public list returned unexpected documents: ${ids.join(', ')}`);
     }
     await assertFails(getDocs(broadQuery(db)));
   }
 
+  // 가장 위험한 회귀: publicDataVersion까지 맞지만 민감 필드가 남은 문서가 생기면
+  // 목록 쿼리 전체를 fail-closed로 막아 한 건도 외부로 새지 않게 한다.
+  await testEnv.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'results/list-malformed-public'), {
+      isPublic: true,
+      publicDataVersion: 1,
+      userId: 'should-never-leak',
+      caseDescription: '민감 원문',
+      nickname: '민감 닉네임',
+      caseTitle: '잘못 생성된 공개 문서',
+      createdAt: now
+    });
+  });
+
+  await assertFails(getDocs(safeQuery(authenticatedReader)));
+  await assertFails(getDocs(safeQuery(publicReader)));
+
   const adminSnapshot = await assertSucceeds(getDocs(adminAllResultsQuery(adminReader)));
   const adminIds = adminSnapshot.docs.map(document => document.id);
-  for (const requiredId of ['list-safe-public', 'list-unsafe-public', 'list-private']) {
+  for (const requiredId of [
+    'list-safe-public',
+    'list-legacy-unsafe-public',
+    'list-private',
+    'list-malformed-public'
+  ]) {
     if (!adminIds.includes(requiredId)) {
       throw new Error(`administrator result list is missing ${requiredId}: ${adminIds.join(', ')}`);
     }
   }
 
-  console.log('Public result list rules passed: sanitized public queries stay restricted while administrators can load the complete verdict dashboard.');
+  console.log('Public result list rules passed: sanitized queries work normally and malformed public documents fail closed while administrators retain full access.');
 } finally {
   await testEnv.cleanup();
 }
