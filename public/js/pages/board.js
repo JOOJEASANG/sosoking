@@ -75,7 +75,7 @@ export async function renderBoard(container) {
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);margin-bottom:6px;">공개 판결기록</div>
-          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">공개된 생활판결을 읽고 원고측·피고측·쌍방 중 하나를 선택해 사건별 토론에 참여할 수 있습니다.</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">이미 판결이 난 사건들의 기록입니다. 판결문을 바로 읽고 원고측·피고측·쌍방 중 하나를 골라 사건별 토론에 참여하세요. 판결을 가린 채 맞혀보고 싶다면 민심소로 가시면 됩니다.</div>
         </div>
         <div id="today-pick"></div>
         <div id="board-list"><div class="loading-dots"><span></span><span></span><span></span></div></div>

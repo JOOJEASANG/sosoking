@@ -198,3 +198,39 @@
     transition: none;
   }
 }
+
+/* 연속 판정 기록 — 민심소를 '읽는 곳'이 아니라 '맞히는 곳'으로 만든다 */
+.jury-scoreboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--cream-dim);
+}
+
+.jury-score-item b {
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.jury-score-empty {
+  font-size: 12px;
+  color: var(--cream-dim);
+}
+
+.jury-score-line {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--navy-light);
+  font-size: 13px;
+  color: var(--cream);
+  text-align: center;
+}
+
+.jury-intro-copy strong {
+  color: var(--gold);
+}
