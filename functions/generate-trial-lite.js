@@ -70,6 +70,39 @@ function safeJson(text) {
 }
 
 // 민심소에서 'AI 판결 vs 사람들의 표'를 비교하려면 승패가 구조화되어 있어야 한다.
+// 태그는 검색 유입용 키워드다. AI 출력이 지저분해도 목록 페이지·URL로 쓰이므로
+// 길이·개수·문자 종류를 엄격히 정리하고, 뻔한 말은 걸러낸다.
+const TAG_STOPWORDS = new Set(['사건', '판결', '판결문', '소소킹', '재판', '법원', '분쟁', '생활', '기타']);
+
+function normalizeTags(value, fallbackSource = '') {
+  const rawList = Array.isArray(value)
+    ? value
+    : String(value || '').split(/[,\n]/);
+  const seen = new Set();
+  const tags = [];
+  for (const item of rawList) {
+    const tag = String(item || '')
+      .replace(/[#\s]+/g, '')
+      .replace(/[^가-힣a-zA-Z0-9]/g, '')
+      .slice(0, 10);
+    if (tag.length < 2 || TAG_STOPWORDS.has(tag)) continue;
+    const key = tag.toLocaleLowerCase('ko-KR');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    tags.push(tag);
+    if (tags.length >= 5) break;
+  }
+  // AI가 태그를 못 주면 사건 설명에서 키워드를 뽑아 최소 하나는 채운다.
+  if (!tags.length && fallbackSource) {
+    for (const word of extractKeywords(fallbackSource)) {
+      const tag = word.slice(0, 10);
+      if (tag.length >= 2 && !TAG_STOPWORDS.has(tag)) tags.push(tag);
+      if (tags.length >= 4) break;
+    }
+  }
+  return tags;
+}
+
 function normalizeWinner(value) {
   const raw = String(value || '').trim().toLowerCase();
   return ['plaintiff', 'defendant', 'both'].includes(raw) ? raw : 'both';
@@ -79,6 +112,7 @@ function normalizeResult(parsed, description) {
   return {
     caseTitle: normalizeCaseTitle(parsed?.caseTitle, description),
     winner: normalizeWinner(parsed?.winner),
+    tags: normalizeTags(parsed?.tags, description),
     reception: cleanDocument(parsed?.reception, 1500),
     investigation: cleanDocument(parsed?.investigation, 2200),
     plaintiffArg: cleanDocument(parsed?.plaintiffArg, 1500),
@@ -125,6 +159,7 @@ const RESPONSE_SCHEMA = {
   properties: {
     caseTitle: { type: 'string' },
     winner: { type: 'string' },
+    tags: { type: 'array', items: { type: 'string' } },
     reception: { type: 'string' },
     investigation: { type: 'string' },
     plaintiffArg: { type: 'string' },
@@ -254,6 +289,7 @@ function buildLocalFallback(description, judge, grievanceIndex, errorCode = 'UNK
   return {
     // AI 호출이 모두 실패한 대체 판결도 민심소에서 비교할 수 있어야 한다.
     winner: 'both',
+    tags: normalizeTags(keywords, detail),
     caseTitle: title,
     reception: `접수취지\n원고는 아래 생활상 분쟁으로 평온한 일상에 균열이 발생하였다며 정식 접수를 요청하였다.\n\n사건개요\n${detail}\n\n접수의견\n사건 규모는 소소하나 억울지수 ${grievanceIndex}/10이 부여될 정도로 당사자의 체감 무게가 확인된다. ${judge.type} 재판부는 이 사안을 그냥 넘길 경우 식탁·단체채팅방·거실 등에서 장기 미제사건으로 남을 가능성이 있다고 보아 접수한다.`,
     investigation: `확인 정황\n원고의 진술에서 사건의 대상과 문제 행동이 비교적 구체적으로 특정된다. 별도의 감식반을 부를 정도는 아니지만 당사자 사이에서는 이미 결정적 장면으로 반복 재생되고 있다.\n\n주요 증거\n${evidence}\n\n진술 검토\n원고의 설명은 '${detail}'로 요약된다. 피고의 직접 진술이 확보되지 않은 부분은 확정 사실이 아닌 항변 가능 정황으로 남겨두되, 설명을 미룬 행위 자체가 사건을 키웠을 가능성은 높다.\n\n조사관 의견\n${judge.style} 이에 따라 '${subject}'를 중심으로 말의 앞뒤와 생활상 후속조치를 함께 심리할 필요가 있다.`,
@@ -465,6 +501,7 @@ exports.generateTrial = onCall({
       grievanceIndex,
       // 민심소가 'AI 판결 vs 민심'을 비교하려면 승패가 문서에 남아야 한다.
       winner: data.winner,
+      tags: Array.isArray(data.tags) ? data.tags : [],
       reception: data.reception,
       investigation: data.investigation,
       plaintiffArg: data.plaintiffArg,

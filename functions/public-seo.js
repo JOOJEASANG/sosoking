@@ -81,6 +81,36 @@ function publicResultUrl(caseId) {
   return `${SITE_ORIGIN}/result/${encodeURIComponent(caseId)}`;
 }
 
+const TAG_PATTERN = /^[가-힣a-zA-Z0-9]{2,10}$/;
+
+function timestampMillis(value) {
+  if (!value) return 0;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeTags(value) {
+  const list = Array.isArray(value) ? value : [];
+  const seen = new Set();
+  const tags = [];
+  for (const item of list) {
+    const tag = String(item || '').trim();
+    if (!TAG_PATTERN.test(tag)) continue;
+    const key = tag.toLocaleLowerCase('ko-KR');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    tags.push(tag);
+    if (tags.length >= 5) break;
+  }
+  return tags;
+}
+
+function tagPageUrl(tag) {
+  return `${SITE_ORIGIN}/tag/${encodeURIComponent(tag)}`;
+}
+
 function extractCaseId(request) {
   const rawUrl = String(request?.originalUrl || request?.url || request?.path || '');
   let pathname = '';
@@ -204,6 +234,7 @@ function normalizePublicResult(caseId, raw = {}) {
     judgeType: cleanText(raw.judgeType, 80) || '소소킹 AI 재판부',
     judgeIcon: cleanText(raw.judgeIcon, 12) || '⚖️',
     grievanceIndex: Math.max(1, Math.min(10, Number(raw.grievanceIndex) || 5)),
+    tags: normalizeTags(raw.tags),
     reception: cleanText(raw.reception),
     investigation: cleanText(raw.investigation),
     plaintiffArg: cleanText(raw.plaintiffArg),
@@ -239,6 +270,7 @@ function renderPublicResultHtml(result) {
     mainEntityOfPage: canonical,
     inLanguage: 'ko-KR',
     genre: 'AI 오락 생활판결문',
+    keywords: result.tags.length ? result.tags.join(', ') : undefined,
     isAccessibleForFree: true,
     datePublished: published || undefined,
     dateModified: modified || undefined,
@@ -258,6 +290,7 @@ function renderPublicResultHtml(result) {
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>${htmlEscape(pageTitle)}</title>
   <meta name="description" content="${htmlEscape(result.description)}">
+  ${result.tags.length ? `<meta name="keywords" content="${htmlEscape(result.tags.join(', '))}">` : ''}
   <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
   <link rel="canonical" href="${htmlEscape(canonical)}">
   <link rel="icon" href="/icons/favicon-48.png" type="image/png">
@@ -279,7 +312,7 @@ function renderPublicResultHtml(result) {
     a{color:inherit}.site-header{border-bottom:1px solid var(--line);background:rgba(255,253,248,.94);position:sticky;top:0;z-index:2}.site-header-inner{max-width:760px;margin:auto;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-weight:900;color:#745315}.brand img{width:38px;height:38px;object-fit:contain}.header-link{font-size:13px;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:#fffaf0}
     main{max-width:760px;margin:0 auto;padding:26px 16px 48px}.cover,.document-section{background:var(--paper);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 28px rgba(91,66,29,.08)}.cover{padding:30px 24px;text-align:center}.court-name{font-size:11px;letter-spacing:.14em;font-weight:900;color:var(--gold)}h1{font-family:'Noto Sans KR',Arial,sans-serif;font-size:30px;line-height:1.4;margin:12px 0 8px;word-break:keep-all}.summary{color:var(--muted);font-size:14px;margin:0 auto;max-width:620px}.meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:18px}.chip{border:1px solid var(--line);background:var(--cream);border-radius:999px;padding:7px 11px;font-size:12px;color:#654b24;font-weight:800}
     .case-description{margin-top:16px;padding:18px 20px;text-align:left;background:#fffaf0;border:1px solid var(--line);border-radius:16px;white-space:pre-wrap;word-break:keep-all}.documents{display:flex;flex-direction:column;gap:14px;margin-top:18px}.document-section{padding:24px}.document-section h2{font-family:'Noto Sans KR',Arial,sans-serif;margin:0 0 17px;padding-bottom:11px;border-bottom:1px solid var(--line);font-size:21px;color:#4a3518}.document-body{overflow-wrap:anywhere;word-break:keep-all;font-family:'Noto Sans KR',Arial,sans-serif;font-size:15px;color:#352f29}.document-subheading{display:flex;align-items:center;gap:9px;margin:27px 0 12px;padding:8px 12px;border:1px solid #e2d1aa;border-left:4px solid var(--gold);border-radius:10px;background:linear-gradient(90deg,#fbf2dc,rgba(251,242,220,.35));font-family:Arial,'Noto Sans KR',sans-serif;font-size:16px;font-weight:900;line-height:1.45;color:#5c4219}.document-subheading::before{content:'';width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#b98628;box-shadow:0 0 0 4px rgba(185,134,40,.14)}.document-subheading:first-child{margin-top:0}.document-subheading.meta{display:inline-flex;margin:7px 8px 8px 0;padding:5px 9px;border-left:1px solid #e2d1aa;border-radius:999px;background:#fbf7ee;font-size:12px;color:#6b5128}.document-subheading.meta::before{display:none}.document-paragraph{margin:0 0 15px;line-height:1.95;text-align:justify}.document-order{display:grid;grid-template-columns:28px minmax(0,1fr);gap:7px;margin:0 0 11px;padding:11px 13px;border-left:3px solid #b98628;border-radius:0 9px 9px 0;background:#faf3e5;line-height:1.8}.document-order strong{color:#7a571d}.notice{margin:18px 0;padding:14px 16px;border:1px solid #e0c9a3;border-radius:14px;background:#fff8e9;color:#6e5938;font-size:12px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.button{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:14px;text-decoration:none;font-weight:900;border:1px solid var(--line);background:#fffaf0}.button.primary{background:linear-gradient(135deg,#d7aa3d,#f0cf70);color:#231c13;border-color:#c6972f}
-    footer{padding:24px 16px 110px;text-align:center;color:var(--muted);font-size:12px}@media(max-width:560px){h1{font-size:25px}.cover{padding:25px 18px}.document-section{padding:21px 18px}.document-subheading{font-size:15px;margin-top:24px;padding:8px 10px}.document-paragraph{text-align:left}.actions{grid-template-columns:1fr}.site-header-inner{padding:10px 14px}}
+    footer{padding:24px 16px 110px;text-align:center;color:var(--muted);font-size:12px}.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:20px 2px 4px}.tag-chip{text-decoration:none;border:1px solid var(--line);background:#fffaf0;border-radius:999px;padding:7px 13px;font-size:13px;color:#745315;font-weight:800}.tag-chip:hover{border-color:var(--gold);background:#fff4dd}@media(max-width:560px){h1{font-size:25px}.cover{padding:25px 18px}.document-section{padding:21px 18px}.document-subheading{font-size:15px;margin-top:24px;padding:8px 10px}.document-paragraph{text-align:left}.actions{grid-template-columns:1fr}.site-header-inner{padding:10px 14px}}
   </style>
 </head>
 <body>
@@ -304,6 +337,7 @@ function renderPublicResultHtml(result) {
         ${sectionMarkup('피고측 변론', result.defendantArg, 'defendantArg')}
         ${sectionMarkup('재판부 판결', result.verdict, 'verdict')}
       </div>
+      ${result.tags.length ? `<nav class="tag-row" aria-label="관련 태그">${result.tags.map(tag => `<a class="tag-chip" href="${htmlEscape(tagPageUrl(tag))}">#${htmlEscape(tag)}</a>`).join('')}</nav>` : ''}
       <div class="notice">이 판결문은 AI가 실제 문서 형식을 흉내 내어 만든 오락 콘텐츠이며 법적 효력이 없습니다.</div>
       <div class="actions"><a class="button primary" href="${htmlEscape(appUrl)}">투표·댓글 참여하기</a><a class="button" href="${SITE_ORIGIN}/submit">새 사건 접수하기</a></div>
     </article>
@@ -315,6 +349,137 @@ function renderPublicResultHtml(result) {
 
 function renderNotFoundHtml() {
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>공개 판결문을 찾을 수 없습니다 | 소소킹 판결소</title></head><body style="margin:0;background:#f6efe2;color:#2d241a;font-family:Arial,sans-serif;text-align:center;padding:80px 20px"><h1>공개 판결문을 찾을 수 없습니다</h1><p>비공개로 전환되었거나 삭제된 사건일 수 있습니다.</p><p><a href="/board">공개 판결기록으로 이동</a></p></body></html>`;
+}
+
+const TAG_PARAM_PATTERN = /^[가-힣a-zA-Z0-9]{2,10}$/;
+const TAG_RESULT_LIMIT = 60;
+
+// URL의 태그 파라미터를 정리한다. 목록·URL·검색에 그대로 쓰이므로 엄격히 검증한다.
+function normalizeTagParam(raw) {
+  const decoded = (() => { try { return decodeURIComponent(String(raw || '')); } catch { return ''; } })();
+  const tag = decoded.replace(/[#\s]+/g, '').replace(/[^가-힣a-zA-Z0-9]/g, '').slice(0, 10);
+  return TAG_PATTERN.test(tag) ? tag : '';
+}
+
+async function loadTaggedResults(tag) {
+  if (!TAG_PARAM_PATTERN.test(tag)) return [];
+  let snapshot;
+  try {
+    snapshot = await db.collection('results')
+      .where('isPublic', '==', true)
+      .where('tags', 'array-contains', tag)
+      .limit(TAG_RESULT_LIMIT)
+      .get();
+  } catch (error) {
+    console.warn('tag query failed:', error?.code || error);
+    return [];
+  }
+  return snapshot.docs
+    .filter(document => RESULT_ID_PATTERN.test(document.id))
+    .map(document => {
+      const data = document.data() || {};
+      return {
+        caseId: document.id,
+        caseTitle: cleanText(data.caseTitle, 140) || '생활분쟁 사건',
+        description: compactText(data.sentence || data.verdict || data.publicCaseDescription || data.reception || '', 110),
+        judgeIcon: cleanText(data.judgeIcon, 12) || '⚖️',
+        judgeType: cleanText(data.judgeType, 80) || '소소킹 AI 재판부',
+        createdAtMillis: timestampMillis(data.updatedAt || data.createdAt)
+      };
+    })
+    .sort((a, b) => b.createdAtMillis - a.createdAtMillis);
+}
+
+// 사이트맵에 넣을 태그 목록을 공개 결과에서 모은다.
+async function listPublicTagEntries() {
+  let snapshot;
+  try {
+    snapshot = await db.collection('results')
+      .where('isPublic', '==', true)
+      .orderBy('createdAt', 'desc')
+      .limit(SITEMAP_RESULT_LIMIT)
+      .get();
+  } catch {
+    snapshot = await db.collection('results').where('isPublic', '==', true).limit(SITEMAP_RESULT_LIMIT).get();
+  }
+  const seen = new Map();
+  for (const document of snapshot.docs) {
+    const data = document.data() || {};
+    const lastmod = isoDay(data.updatedAt || data.createdAt);
+    for (const tag of normalizeTags(data.tags)) {
+      // 태그당 가장 최근 갱신일을 lastmod로 쓴다.
+      if (!seen.has(tag) || lastmod > seen.get(tag)) seen.set(tag, lastmod);
+    }
+  }
+  return [...seen.entries()].map(([tag, lastmod]) => ({ tag, lastmod }));
+}
+
+function renderTagPageHtml(tag, items) {
+  const canonical = tagPageUrl(tag);
+  const pageTitle = `#${tag} 판결 모음 | 소소킹 판결소`;
+  const description = items.length
+    ? `'${tag}' 관련 생활분쟁 판결 ${items.length}건. 사소한 다툼을 과하게 진지하게 심리한 소소킹 AI 판결 모음입니다.`
+    : `'${tag}' 관련 판결을 모으는 중입니다.`;
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: pageTitle,
+    description,
+    url: canonical,
+    inLanguage: 'ko-KR',
+    isPartOf: { '@type': 'WebSite', name: '소소킹 판결소', url: SITE_ORIGIN },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: items.length,
+      itemListElement: items.slice(0, 30).map((item, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: publicResultUrl(item.caseId),
+        name: item.caseTitle
+      }))
+    }
+  };
+  const cards = items.length
+    ? items.map(item => `<a class="tag-item" href="${htmlEscape(publicResultUrl(item.caseId))}"><span class="tag-item-judge">${htmlEscape(item.judgeIcon)} ${htmlEscape(item.judgeType)}</span><strong>${htmlEscape(item.caseTitle)}</strong>${item.description ? `<span class="tag-item-desc">${htmlEscape(item.description)}</span>` : ''}</a>`).join('')
+    : '<p class="tag-empty">아직 이 태그로 공개된 판결이 없습니다. 첫 사건을 접수해 보세요.</p>';
+
+  return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>${htmlEscape(pageTitle)}</title>
+  <meta name="description" content="${htmlEscape(description)}">
+  <meta name="keywords" content="${htmlEscape(tag)}, 생활판결, 소소킹 판결소">
+  <meta name="robots" content="${items.length ? 'index,follow' : 'noindex,follow'},max-snippet:-1,max-image-preview:large">
+  <link rel="canonical" href="${htmlEscape(canonical)}">
+  <link rel="icon" href="/icons/favicon-48.png" type="image/png">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="소소킹 판결소">
+  <meta property="og:title" content="${htmlEscape(pageTitle)}">
+  <meta property="og:description" content="${htmlEscape(description)}">
+  <meta property="og:url" content="${htmlEscape(canonical)}">
+  <meta property="og:image" content="${SITE_ORIGIN}/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">${jsonLdScript(structuredData)}</script>
+  <style>
+    :root{color-scheme:light;--ink:#2d241a;--muted:#6e6255;--gold:#9a6a13;--line:#dfd1b6;--paper:#fffdf8;--cream:#f6efe2}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#fbf7ef,#f1e7d5);color:var(--ink);font-family:Arial,'Noto Sans KR',sans-serif;line-height:1.7}
+    a{color:inherit}.site-header{border-bottom:1px solid var(--line);background:rgba(255,253,248,.94)}.site-header-inner{max-width:760px;margin:auto;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-weight:900;color:#745315}.brand img{width:38px;height:38px;object-fit:contain}.header-link{font-size:13px;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:#fffaf0}
+    main{max-width:760px;margin:0 auto;padding:26px 16px 60px}h1{font-size:26px;margin:0 0 6px;word-break:keep-all}.lead{color:var(--muted);font-size:14px;margin:0 0 22px}.tag-list{display:grid;gap:12px}.tag-item{display:block;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 18px;text-decoration:none;box-shadow:0 8px 20px rgba(91,66,29,.06)}.tag-item:hover{border-color:var(--gold)}.tag-item-judge{font-size:12px;color:var(--gold);font-weight:800}.tag-item strong{display:block;font-size:17px;margin:5px 0 4px;word-break:keep-all}.tag-item-desc{display:block;font-size:13px;color:var(--muted)}.tag-empty{color:var(--muted);text-align:center;padding:40px 0}footer{padding:24px 16px 80px;text-align:center;color:var(--muted);font-size:12px}
+  </style>
+</head>
+<body>
+  <header class="site-header"><div class="site-header-inner"><a class="brand" href="${SITE_ORIGIN}/"><img src="/logo.png" alt=""><span>소소킹 판결소</span></a><a class="header-link" href="${SITE_ORIGIN}/board">공개 판결기록</a></div></header>
+  <main>
+    <h1>#${htmlEscape(tag)} 판결 모음</h1>
+    <p class="lead">${htmlEscape(description)}</p>
+    <div class="tag-list">${cards}</div>
+  </main>
+  <footer>© 소소킹 판결소 · 사소한 생활분쟁을 과하게 진지하게 심리합니다.</footer>
+</body>
+</html>`;
 }
 
 async function listPublicResultEntries() {
@@ -341,7 +506,7 @@ async function listPublicResultEntries() {
     }));
 }
 
-function renderSitemapXml(entries) {
+function renderSitemapXml(entries, tagEntries = []) {
   const staticUrls = [
     { loc: `${SITE_ORIGIN}/` },
     { loc: `${SITE_ORIGIN}/board` },
@@ -352,7 +517,11 @@ function renderSitemapXml(entries) {
     loc: publicResultUrl(entry.caseId),
     lastmod: entry.lastmod || ''
   }));
-  const rows = [...staticUrls, ...resultUrls]
+  const tagUrls = tagEntries.map(entry => ({
+    loc: tagPageUrl(entry.tag),
+    lastmod: entry.lastmod || ''
+  }));
+  const rows = [...staticUrls, ...tagUrls, ...resultUrls]
     .map(entry => `  <url>\n    <loc>${xmlEscape(entry.loc)}</loc>${entry.lastmod ? `\n    <lastmod>${xmlEscape(entry.lastmod)}</lastmod>` : ''}\n  </url>`)
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${rows}\n</urlset>\n`;
@@ -439,5 +608,10 @@ Object.defineProperties(module.exports, {
   renderSitemapXml: { value: renderSitemapXml, enumerable: false },
   loadPublicResult: { value: loadPublicResult, enumerable: false },
   listPublicResultEntries: { value: listPublicResultEntries, enumerable: false },
-  publicResultUrl: { value: publicResultUrl, enumerable: false }
+  publicResultUrl: { value: publicResultUrl, enumerable: false },
+  normalizeTagParam: { value: normalizeTagParam, enumerable: false },
+  loadTaggedResults: { value: loadTaggedResults, enumerable: false },
+  renderTagPageHtml: { value: renderTagPageHtml, enumerable: false },
+  listPublicTagEntries: { value: listPublicTagEntries, enumerable: false },
+  tagPageUrl: { value: tagPageUrl, enumerable: false }
 });

@@ -215,6 +215,10 @@ export async function renderResult(container, caseId) {
   const judgeType = r.judgeType || c.judgeType || legacyJudge(caseId);
   const judge = JUDGE_INFO[judgeType] || { icon: r.judgeIcon || '⚖️', desc: r.judgeStyle || JUDGE_INFO['소소킹 AI 재판부'].desc };
   const grievanceIndex = safeGrievance(r.grievanceIndex ?? c.grievanceIndex, caseId);
+  const tags = (Array.isArray(r.tags) ? r.tags : [])
+    .map(tag => String(tag || '').trim())
+    .filter(tag => /^[가-힣a-zA-Z0-9]{2,10}$/.test(tag))
+    .slice(0, 5);
 
   const sections = [
     ['01', '사건접수', '사건접수보고서', 'reception', r.reception],
@@ -259,6 +263,8 @@ export async function renderResult(container, caseId) {
             documentSection(number, sectionTitle, subtitle, key, content, index === 4)
           ).join('')}
         </main>
+
+        ${tags.length ? `<nav class="result-tag-row" aria-label="관련 태그">${tags.map(tag => `<a class="result-tag-chip" href="/tag/${encodeURIComponent(tag)}">#${escapeHtml(tag)}</a>`).join('')}</nav>` : ''}
 
         <div class="result-disclaimer">
           본 문서는 AI가 실제 문서 형식을 흉내 내어 만든 오락 콘텐츠이며 법적 효력이 없습니다.
