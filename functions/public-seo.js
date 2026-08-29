@@ -343,6 +343,7 @@ function renderPublicResultHtml(result) {
     </article>
   </main>
   <footer>© 소소킹 판결소 · 사소한 생활분쟁을 과하게 진지하게 심리합니다.</footer>
+  <script src="/js/public-result-seen.js?v=20260829-jury-content-2" defer></script>
 </body>
 </html>`;
 }

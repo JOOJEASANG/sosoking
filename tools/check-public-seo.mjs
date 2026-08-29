@@ -22,6 +22,18 @@ for (const required of [
 if (renderer.includes("collection('cases')")) {
   errors.push('functions/public-seo.js: public SEO rendering must not read private case documents');
 }
+// 서버 렌더링 판결문을 읽은 사건도 민심소 '본 사건'으로 기록해야 중복 노출이 막힌다.
+if (!renderer.includes('/js/public-result-seen.js')) {
+  errors.push('functions/public-seo.js: server-rendered verdict page must mark the case seen for 민심소');
+}
+if (fs.existsSync('public/js/public-result-seen.js')) {
+  const seenMarker = read('public/js/public-result-seen.js');
+  if (!seenMarker.includes("'sosoking-jury-seen'")) {
+    errors.push('public/js/public-result-seen.js: shared 민심소 seen key is missing');
+  }
+} else {
+  errors.push('public/js/public-result-seen.js: cross-surface seen marker script is missing');
+}
 
 const gate = read('functions/public-seo-safe.js');
 for (const required of [
