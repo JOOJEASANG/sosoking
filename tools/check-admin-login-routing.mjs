@@ -36,7 +36,7 @@ for (const required of [
   'request.auth.uid == adminId',
   'adminEmail() == adminId',
   'allow read: if signedIn()',
-  'allow list: if isAdmin() || isSafePublicResultData(resource.data);'
+  'allow list: if isAdmin();'
 ]) {
   if (!rules.includes(required)) errors.push(`firestore.rules: administrator access requirement missing ${required}`);
 }
