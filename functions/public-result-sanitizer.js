@@ -1,6 +1,7 @@
 'use strict';
 
 const { FieldValue } = require('firebase-admin/firestore');
+const { inspectContent } = require('./content-safety');
 
 const SENSITIVE_FIELDS = ['userId', 'caseDescription', 'nickname'];
 
@@ -21,14 +22,18 @@ function publicSanitizationPatch(data = {}) {
     }
   }
 
-  if (!hasOwn(data, 'publicCaseDescription')) {
+  const publicCaseDescription = String(data.publicCaseDescription || '').trim();
+  if (!hasOwn(data, 'publicCaseDescription') || (publicCaseDescription && !inspectContent(publicCaseDescription).safe)) {
     patch.publicCaseDescription = '';
     changed = true;
   }
-  if (!hasOwn(data, 'publicNickname')) {
+
+  const publicNickname = String(data.publicNickname || '').trim();
+  if (!hasOwn(data, 'publicNickname') || (publicNickname && !inspectContent(publicNickname).safe)) {
     patch.publicNickname = '익명 원고';
     changed = true;
   }
+
   if (Number(data.publicDataVersion || 0) !== 1) {
     patch.publicDataVersion = 1;
     changed = true;
