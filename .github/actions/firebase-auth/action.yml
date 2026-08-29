@@ -1,0 +1,65 @@
+name: Firebase Google Auth
+description: Prefer Workload Identity Federation and fall back to the existing service account JSON secret.
+inputs:
+  workload_identity_provider:
+    description: Google Workload Identity Provider resource name
+    required: false
+    default: ''
+  service_account:
+    description: Google service account email used for WIF
+    required: false
+    default: ''
+  service_account_json:
+    description: Legacy service account JSON fallback
+    required: false
+    default: ''
+outputs:
+  credentials_file_path:
+    description: Path to the generated Google credentials file
+    value: ${{ steps.resolve.outputs.path }}
+runs:
+  using: composite
+  steps:
+    - name: Authenticate with Workload Identity Federation
+      id: wif
+      if: ${{ inputs.workload_identity_provider != '' && inputs.service_account != '' }}
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+      with:
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+        create_credentials_file: true
+        cleanup_credentials: true
+
+    - name: Prepare service account fallback
+      id: fallback
+      if: ${{ inputs.workload_identity_provider == '' || inputs.service_account == '' }}
+      shell: bash
+      env:
+        FIREBASE_SERVICE_ACCOUNT_JSON: ${{ inputs.service_account_json }}
+      run: |
+        set -euo pipefail
+        if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+          echo "Neither Workload Identity Federation nor the legacy Firebase service account JSON is configured."
+          exit 1
+        fi
+        target="$RUNNER_TEMP/firebase-service-account.json"
+        printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$target"
+        chmod 600 "$target"
+        echo "path=$target" >> "$GITHUB_OUTPUT"
+
+    - name: Resolve credentials path
+      id: resolve
+      shell: bash
+      env:
+        WIF_PATH: ${{ steps.wif.outputs.credentials_file_path }}
+        FALLBACK_PATH: ${{ steps.fallback.outputs.path }}
+      run: |
+        set -euo pipefail
+        if [ -n "$WIF_PATH" ]; then
+          echo "path=$WIF_PATH" >> "$GITHUB_OUTPUT"
+        elif [ -n "$FALLBACK_PATH" ]; then
+          echo "path=$FALLBACK_PATH" >> "$GITHUB_OUTPUT"
+        else
+          echo "Google credentials path could not be resolved."
+          exit 1
+        fi
