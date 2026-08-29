@@ -1,6 +1,7 @@
 import { db } from '../firebase.js?v=20260630-3';
-import { collection, query, where, orderBy, limit, getDocs, getCountFromServer } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { collection, query, where, getCountFromServer } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
+import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-public-records-2';
 
 const EXAMPLES = [
   {
@@ -213,7 +214,7 @@ function _caseCard(id, r) {
         <div class="case-title" style="flex:1;">${escapeHtml(r.caseTitle || r.title || '제목 없음')}</div>
         ${dateStr ? `<div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(dateStr)}</div>` : ''}
       </div>
-      <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.6;">${escapeHtml(compactText(r.sentence || r.caseDescription || r.verdict || r.desc || '', 72))}</div>
+      <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.6;">${escapeHtml(compactText(r.sentence || r.publicCaseDescription || r.verdict || r.desc || '', 72))}</div>
       <div class="case-meta" style="margin-top:10px;justify-content:space-between;">
         <span>${icon} ${escapeHtml(r.judgeType || '?')} 판사</span>
         <span style="color:var(--gold);font-size:12px;">${linkLabel}</span>
@@ -278,9 +279,8 @@ function _animateCount() {
 
 async function _loadPublicFeed() {
   try {
-    const snap = await getDocs(query(collection(db, 'results'), where('isPublic', '==', true), orderBy('createdAt', 'desc'), limit(20)));
-    if (snap.empty) return;
-    _feedAll = snap.docs.map(d => [d.id, d.data()]);
+    _feedAll = await loadSafePublicResults(db, { maxRows: 20 });
+    if (!_feedAll.length) return;
     const feedEl = document.getElementById('feed-container');
     if (!feedEl) return;
     feedEl.innerHTML = _feedAll.map(([id, r]) => _caseCard(id, r)).join('');
