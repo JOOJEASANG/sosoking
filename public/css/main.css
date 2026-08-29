@@ -366,3 +366,20 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 .cta-section { background: linear-gradient(135deg, #161b2e 0%, #0d1117 100%); border-top: 1px solid rgba(201,168,76,0.15); padding: 52px 20px; text-align: center; }
 .cta-section h2 { font-family: var(--font-serif); font-size: 24px; margin-bottom: 10px; color: var(--cream); }
 .cta-section p { font-size: 14px; color: var(--cream-dim); margin-bottom: 24px; line-height: 1.7; }
+
+/* 프로필 사진 변경 버튼 묶음 */
+.auth-photo-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.auth-photo-actions .btn {
+  margin-top: 0;
+}
+
+.auth-photo-actions .btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

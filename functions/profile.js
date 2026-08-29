@@ -18,6 +18,19 @@ function cleanUrl(value) {
   return /^https:\/\//.test(url) ? url.slice(0, 500) : '';
 }
 
+// 프로필 사진은 Storage 없이 Firestore 문서에 직접 담는다.
+// 클라이언트가 256x256으로 줄여 보내므로 보통 20~40KB 수준이고,
+// 문서 1MB 한도에 여유가 크다. 그래도 상한을 둬서 남용을 막는다.
+const MAX_PHOTO_CHARS = 200 * 1024;
+const PHOTO_DATA_URI = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
+function photoDataError(value) {
+  if (!value) return '';
+  if (!PHOTO_DATA_URI.test(value)) return '지원하지 않는 이미지 형식입니다.';
+  if (value.length > MAX_PHOTO_CHARS) return '이미지 용량이 너무 큽니다.';
+  return '';
+}
+
 function cleanRoomId(value) {
   return String(value || '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 }
@@ -108,3 +121,38 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
   return { success: true, nickname, photoURL };
 });
 
+exports.setProfilePhoto = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
+  requireVerifiedUser(request);
+
+  const uid = request.auth.uid;
+  await enforceActionRateLimit(uid, 'profile-photo', {
+    cooldownSeconds: 3,
+    dailyLimit: 40
+  });
+
+  // 빈 문자열은 '직접 올린 사진을 지우고 원래 아이콘으로 되돌린다'는 뜻이다.
+  const photo = String(request.data?.photo || '').trim();
+  const err = photoDataError(photo);
+  if (err) throw new HttpsError('invalid-argument', err);
+
+  const userRef = db.doc(`users/${uid}`);
+
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists) {
+      throw new HttpsError('failed-precondition', '닉네임을 먼저 설정해주세요.');
+    }
+
+    const profile = snap.data() || {};
+    // 사진을 지우면 구글 사진이 있는 계정은 구글 사진으로, 없으면 자동 생성 아이콘으로 돌아간다.
+    const nextType = photo ? 'custom' : (profile.photoURL ? 'google' : 'generated');
+
+    tx.set(userRef, {
+      photoData: photo || FieldValue.delete(),
+      avatarType: nextType,
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+  });
+
+  return { success: true, hasPhoto: Boolean(photo) };
+});

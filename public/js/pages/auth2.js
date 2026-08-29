@@ -4,12 +4,14 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/fireba
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut, updateProfile, onAuthStateChanged, signInAnonymously, sendEmailVerification, reload } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { showToast } from '../components/toast.js?v=20260728-ui-audit-2';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
-import { avatarImg, avatarSourceLabel } from '../utils/avatar.js?v=20260630-3';
+import { avatarImg, avatarSourceLabel } from '../utils/avatar.js?v=20260829-avatar-1';
+import { ACCEPTED_TYPES, fileToProfilePhoto } from '../utils/photo-upload.js?v=20260829-avatar-1';
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 const checkNickname = httpsCallable(functions, 'checkNickname');
 const setNickname = httpsCallable(functions, 'setNickname');
+const setProfilePhoto = httpsCallable(functions, 'setProfilePhoto');
 const REDIRECT_FLAG = 'sosoking:google-login-redirect';
 const NOTICE_FLAG = 'sosoking:last-auth-notice';
 
@@ -217,10 +219,68 @@ function drawNick(box, user, profile = {}){
   document.getElementById('logout').onclick = logout;
 }
 
+function wirePhotoControls(box, user, profile){
+  const input = document.getElementById('photo-input');
+  const status = document.getElementById('photo-status');
+  const changeButton = document.getElementById('change-photo');
+  const resetButton = document.getElementById('reset-photo');
+  if (!input || !changeButton || !resetButton) return;
+
+  const say = (text, tone = '') => {
+    if (!status) return;
+    status.textContent = text;
+    status.style.color = tone === 'error' ? 'var(--red)' : tone === 'success' ? 'var(--green)' : '';
+  };
+
+  const busy = value => {
+    changeButton.disabled = value;
+    resetButton.disabled = value;
+  };
+
+  const refresh = async () => drawProfile(box, user, await profileOf(user));
+
+  changeButton.onclick = () => input.click();
+
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    busy(true);
+    say('사진을 준비하는 중입니다…');
+    try {
+      const photo = await fileToProfilePhoto(file);
+      await setProfilePhoto({ photo });
+      showToast('프로필 사진을 변경했습니다.');
+      await refresh();
+    } catch (error) {
+      console.warn('profile photo save failed', error?.code || error);
+      say(error?.message || '사진을 저장하지 못했습니다.', 'error');
+      busy(false);
+    }
+  };
+
+  resetButton.onclick = async () => {
+    if (!profile.photoData) return say('이미 기본 아이콘을 쓰고 있습니다.');
+    busy(true);
+    say('되돌리는 중입니다…');
+    try {
+      await setProfilePhoto({ photo: '' });
+      showToast('기본 아이콘으로 되돌렸습니다.');
+      await refresh();
+    } catch (error) {
+      console.warn('profile photo reset failed', error?.code || error);
+      say('되돌리지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+      busy(false);
+    }
+  };
+}
+
 function drawProfile(box, user, profile = {}){
   const nick = cleanNick(profile.nickname || user.displayName || '닉네임미설정');
-  box.innerHTML = `<div style="text-align:center;margin-bottom:20px;"><div style="margin-bottom:10px;">${avatarImg(user, profile, 88)}</div><div class="auth-status">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:23px;font-weight:800;color:var(--gold);">${escapeHtml(nick)}</div><div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.7;">${escapeHtml(user.email || profile.email || '이메일 정보 없음')}<br>${escapeHtml(providerName(user, profile))}</div></div><div class="card auth-profile-state"><div style="font-weight:900;color:var(--gold);margin-bottom:8px;">내 프로필 상태</div><div class="auth-profile-grid"><div>로그인 상태</div><div class="auth-online">접속 중</div><div>프로필 아이콘</div><div>${escapeHtml(avatarSourceLabel(user, profile))}</div><div>닉네임</div><div>${escapeHtml(nick)}</div></div></div><button class="btn btn-secondary" id="change-nick">닉네임 변경</button><a href="#/my-cases" class="btn btn-primary" style="margin-top:10px;">내 사건 보기</a><a href="#/submit" class="btn btn-ghost" style="margin-top:10px;">새 사건 접수하기</a><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
+  box.innerHTML = `<div style="text-align:center;margin-bottom:20px;"><div style="margin-bottom:10px;">${avatarImg(user, profile, 88)}</div><div class="auth-status">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:23px;font-weight:800;color:var(--gold);">${escapeHtml(nick)}</div><div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.7;">${escapeHtml(user.email || profile.email || '이메일 정보 없음')}<br>${escapeHtml(providerName(user, profile))}</div></div><div class="card auth-profile-state"><div style="font-weight:900;color:var(--gold);margin-bottom:8px;">내 프로필 상태</div><div class="auth-profile-grid"><div>로그인 상태</div><div class="auth-online">접속 중</div><div>프로필 아이콘</div><div>${escapeHtml(avatarSourceLabel(user, profile))}</div><div>닉네임</div><div>${escapeHtml(nick)}</div></div></div><div class="auth-photo-actions"><input type="file" id="photo-input" accept="${ACCEPTED_TYPES}" hidden><button class="btn btn-secondary" id="change-photo">프로필 사진 변경</button><button class="btn btn-ghost" id="reset-photo">기본 아이콘으로</button></div><div id="photo-status" class="auth-help" style="text-align:center;margin-bottom:10px;"></div><button class="btn btn-secondary" id="change-nick">닉네임 변경</button><a href="#/my-cases" class="btn btn-primary" style="margin-top:10px;">내 사건 보기</a><a href="#/submit" class="btn btn-ghost" style="margin-top:10px;">새 사건 접수하기</a><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
   document.getElementById('change-nick').onclick = () => drawNick(box, user, profile);
+  wirePhotoControls(box, user, profile);
   document.getElementById('logout').onclick = logout;
 }
 
