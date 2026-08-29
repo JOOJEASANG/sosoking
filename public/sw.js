@@ -1,6 +1,6 @@
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-world-v3-loop-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260829-jury-1';
-const CACHE_NAME = 'sosoking-app-v20260829-jury-longform-1';
+const CACHE_NAME = 'sosoking-app-v20260829-tags-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-auto-gm-world-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-surface-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-guide-polish-1';
@@ -56,7 +56,7 @@ const APP_SHELL = [
   '/',
   '/index.html',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
-  '/css/main.css?v=20260829-avatar-1',
+  '/css/main.css?v=20260829-tags-1',
   '/css/brand-logo.css?v=20260802-remove-daily-court-2',
   '/css/game-entry.css?v=20260811-game-hub-1',
   '/css/home-light.css?v=20260729-light-home-1',
@@ -70,7 +70,7 @@ const APP_SHELL = [
   '/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2',
 // Cache lineage: /js/app.js?v=20260810-mycase-original-fix-1
 // Cache lineage: /js/app.js?v=20260829-jury-1
-  '/js/app.js?v=20260829-jury-longform-1',
+  '/js/app.js?v=20260829-tags-1',
   '/js/result-link-share.js?v=20260811-result-share-1',
   '/js/submit-draft-guard.js?v=20260807-submit-draft-1',
   '/js/home-copy-guard.js?v=20260802-no-real-cases-1',
@@ -100,8 +100,9 @@ const APP_SHELL = [
   '/js/pages/board-court.js?v=20260731-compact-record-card-1',
   '/js/pages/board.js?v=20260731-compact-record-card-1',
   '/js/utils/public-results.js?v=20260730-public-records-2',
-  '/js/pages/result-comments.js?v=20260810-owner-original-route-2',
-  '/js/pages/result-court.js?v=20260729-dark-record-participation-1',
+  '/js/pages/result-comments.js?v=20260829-tags-1',
+  '/js/pages/result-court.js?v=20260829-tags-1',
+  '/js/pages/result.js?v=20260829-tags-1',
   '/js/pages/discussion.js?v=20260730-discussion-court-1',
   '/js/pages/trial-game.js?v=20260729-dark-record-participation-1',
   '/js/pages/my-cases-game.js?v=20260810-mycase-light-1',

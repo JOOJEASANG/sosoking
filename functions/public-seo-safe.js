@@ -7,7 +7,12 @@ const {
   normalizePublicResult,
   renderPublicResultHtml,
   renderSitemapXml,
-  publicResultUrl
+  publicResultUrl,
+  normalizeTagParam,
+  loadTaggedResults,
+  renderTagPageHtml,
+  listPublicTagEntries,
+  tagPageUrl
 } = require('./public-seo');
 
 const db = getFirestore();
@@ -128,6 +133,47 @@ exports.publicResultPage = onRequest({
   }
 });
 
+function extractTagParam(request) {
+  const path = String(request.path || request.url || '');
+  const match = path.match(/\/tag\/([^/?#]+)/);
+  return normalizeTagParam(match ? match[1] : '');
+}
+
+exports.publicTagPage = onRequest({
+  region: REGION,
+  timeoutSeconds: 30,
+  memory: '256MiB',
+  maxInstances: 10
+}, async (request, response) => {
+  if (!allowReadMethod(request, response)) return;
+  const tag = extractTagParam(request);
+  if (!tag) {
+    response.set('X-Robots-Tag', 'noindex, nofollow').status(404).send(renderNotFoundHtml());
+    return;
+  }
+  try {
+    const items = await loadTaggedResults(tag);
+    const canonical = tagPageUrl(tag);
+    response
+      .set('Content-Type', 'text/html; charset=utf-8')
+      .set('Cache-Control', 'public, max-age=0, s-maxage=600, stale-while-revalidate=86400')
+      // 결과가 있을 때만 색인. 빈 태그 페이지가 검색에 뜨는 것을 막는다.
+      .set('X-Robots-Tag', items.length ? 'index, follow, max-snippet:-1' : 'noindex, follow')
+      .set('Link', `<${canonical}>; rel="canonical"`)
+      .set('Vary', 'Accept-Encoding')
+      .status(items.length ? 200 : 404)
+      .send(renderTagPageHtml(tag, items));
+  } catch (error) {
+    console.error('public tag page failed:', { tag, code: error?.code || '', message: error?.message || '' });
+    response
+      .set('Content-Type', 'text/html; charset=utf-8')
+      .set('Cache-Control', 'no-store')
+      .set('X-Robots-Tag', 'noindex, nofollow')
+      .status(500)
+      .send(renderNotFoundHtml());
+  }
+});
+
 exports.publicSitemap = onRequest({
   region: REGION,
   timeoutSeconds: 30,
@@ -136,14 +182,17 @@ exports.publicSitemap = onRequest({
 }, async (request, response) => {
   if (!allowReadMethod(request, response)) return;
   try {
-    const entries = await listSafePublicResultEntries();
+    const [entries, tagEntries] = await Promise.all([
+      listSafePublicResultEntries(),
+      listPublicTagEntries().catch(() => [])
+    ]);
     response
       .set('Content-Type', 'application/xml; charset=utf-8')
       .set('Cache-Control', 'public, max-age=0, s-maxage=900, stale-while-revalidate=86400')
       .set('X-Robots-Tag', 'noindex')
       .set('Vary', 'Accept-Encoding')
       .status(200)
-      .send(renderSitemapXml(entries));
+      .send(renderSitemapXml(entries, tagEntries));
   } catch (error) {
     console.error('safe public sitemap failed:', { code: error?.code || '', message: error?.message || '' });
     response.status(503).set('Retry-After', '300').send('Sitemap temporarily unavailable');

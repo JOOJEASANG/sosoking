@@ -49,6 +49,23 @@ const JUDGES = [
   }
 ];
 
+// 오늘의 사건도 태그 페이지에 함께 노출되도록 제목·설명에서 검색어를 뽑는다.
+const DAILY_TAG_STOP = new Set(['사건', '판결', '판결문', '소소킹', '재판', '법원', '분쟁', '생활', '기타', '오늘', '어제', '그리고', '그런데', '제가', '저는', '너무', '진짜']);
+
+function deriveDailyTags(...sources) {
+  const words = String(sources.filter(Boolean).join(' ')).match(/[가-힣A-Za-z0-9]{2,}/g) || [];
+  const counts = new Map();
+  for (const word of words) {
+    const key = word.replace(/(하다|했다|합니다|인데|에게|에서|으로|하고|하며|때문)$/g, '').slice(0, 10);
+    if (key.length < 2 || DAILY_TAG_STOP.has(key)) continue;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
+    .slice(0, 4)
+    .map(([word]) => word);
+}
+
 const RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
@@ -461,6 +478,7 @@ async function createDailyAiCase(force = false) {
         nickname: data.nickname
       }),
     grievanceIndex: data.grievanceIndex,
+    tags: deriveDailyTags(data.caseTitle, data.caseDescription),
     judgeType: data.judgeType,
     judgeIcon: data.judgeIcon,
     judgeStyle: data.judgeStyle,
