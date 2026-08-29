@@ -171,10 +171,13 @@ function patchShareButton(container, caseId) {
       if (newPublic) {
         const url = `${location.origin}/result/${encodeURIComponent(caseId)}`;
         await navigator.clipboard?.writeText(url).catch(() => {});
-        showToast('판결기록을 공개했습니다. 검색 가능한 공개 링크도 복사했습니다.', 'success');
-      } else {
-        showToast('판결기록을 비공개로 전환했습니다.', 'success');
+        showToast('공개했습니다. 민심소에서 다른 사람들이 판정·논쟁합니다. 공개 링크도 복사했습니다.', 'success');
+        // 공개된 사건은 민심소로 넘어가 투표·댓글논쟁의 대상이 된다. 작성자를 그 참여
+        // 아레나로 바로 안내한다.
+        location.hash = '#/jury';
+        return;
       }
+      showToast('공개 판결을 비공개로 전환했습니다.', 'success');
 
       await renderResult(container, caseId);
     } catch (err) {

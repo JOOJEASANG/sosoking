@@ -98,7 +98,7 @@ if (board.includes('return `/result/${encodeURIComponent(id)}`')) {
 }
 
 const resultComments = read('public/js/pages/result-comments.js');
-if (!resultComments.includes("./result-court.js?v=20260829-jury-content-1")) {
+if (!resultComments.includes("./result-court.js?v=20260829-arena-1")) {
   errors.push('public/js/pages/result-comments.js: styled full verdict renderer is missing');
 }
 
