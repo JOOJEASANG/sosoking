@@ -461,6 +461,8 @@ exports.generateTrial = onCall({
       judgeIcon: judge.icon,
       judgeStyle: judge.style,
       grievanceIndex,
+      // 민심소가 'AI 판결 vs 민심'을 비교하려면 승패가 문서에 남아야 한다.
+      winner: data.winner,
       reception: data.reception,
       investigation: data.investigation,
       plaintiffArg: data.plaintiffArg,

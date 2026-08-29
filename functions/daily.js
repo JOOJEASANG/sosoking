@@ -447,9 +447,20 @@ async function createDailyAiCase(force = false) {
     division: '제3생활부',
     isPublic: moderation.publish,
     caseTitle: data.caseTitle,
-    caseDescription: data.caseDescription,
+    // 공개 문서는 공개 스키마(publicDataVersion 1 + 민감 필드 제외)를 지켜야
+    // 판결기록·사이트맵·민심소·공개 상세에 실제로 나타난다.
+    // 그렇지 않으면 isPublic이 true인데도 어디에도 보이지 않는 문서가 된다.
+    ...(moderation.publish === true
+      ? {
+        publicDataVersion: 1,
+        publicCaseDescription: data.caseDescription || '',
+        publicNickname: data.nickname || '오늘의 원고'
+      }
+      : {
+        caseDescription: data.caseDescription,
+        nickname: data.nickname
+      }),
     grievanceIndex: data.grievanceIndex,
-    nickname: data.nickname,
     judgeType: data.judgeType,
     judgeIcon: data.judgeIcon,
     judgeStyle: data.judgeStyle,

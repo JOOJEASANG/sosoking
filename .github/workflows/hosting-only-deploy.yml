@@ -31,13 +31,8 @@ jobs:
       - name: Prepare brand assets
         run: npm run prepare:icons
 
-      - name: Validate Hosting and Dripso
-        run: |
-          node tools/check-hosting-hardening.mjs
-          node tools/check-script-csp.mjs
-          node tools/check-dripso-site.mjs
-          node tools/check-dripso-moderation.mjs
-          node tools/check-project.mjs
+      - name: Validate Hosting assets
+        run: npm run check
 
       - name: Prepare service account
         env:
