@@ -27,14 +27,23 @@ if (!homeCourt.includes('await Promise.all([')
 
 const loader = read('public/js/utils/public-results.js');
 for (const required of [
-  "where('isPublic', '==', true)",
-  "where('publicDataVersion', '==', 1)",
-  "orderBy('createdAt', 'desc')",
-  "code.includes('failed-precondition')",
-  'using client-side ordering',
-  '.sort((a, b) => timestampMillis'
+  "import { functions } from '../firebase.js",
+  "httpsCallable(functions, 'listPublicResults')",
+  'const maxRows = Math.max(1, Math.min(100',
+  'response?.data?.rows'
 ]) {
   if (!loader.includes(required)) errors.push(`public/js/utils/public-results.js: missing ${required}`);
+}
+if (loader.includes("collection(db, 'results')") || loader.includes("collection(_db, 'results')")) {
+  errors.push('public/js/utils/public-results.js: browser still lists the internal results collection');
+}
+
+const home = read('public/js/pages/home.js');
+if (!home.includes('loadSafePublicResults') || !home.includes('_feedAll = await loadSafePublicResults(db, { maxRows: 20 });')) {
+  errors.push('public/js/pages/home.js: legacy home renderer is not using the sanitized public result loader');
+}
+if (home.includes("collection(db, 'results')")) {
+  errors.push('public/js/pages/home.js: legacy home renderer still lists internal results directly');
 }
 
 const board = read('public/js/pages/board.js');
@@ -88,4 +97,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Home public feed validation passed: sanitized records link to verdict content and case-specific discussions.');
+console.log('Home public feed validation passed: public records come from the server projection and link to verdict content and case-specific discussions.');
