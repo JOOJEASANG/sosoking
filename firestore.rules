@@ -84,9 +84,9 @@ service cloud.firestore {
       allow get: if isSafePublicResultData(resource.data)
         || isCaseOwner(caseId)
         || isAdmin();
-      // 목록 조회도 get과 동일한 공개 스키마 검사를 적용한다.
-      // publicDataVersion만 맞는 문서에 민감 필드가 실수로 섞여 들어가도 공개 쿼리가 실패하도록 fail-closed 한다.
-      allow list: if isAdmin() || isSafePublicResultData(resource.data);
+      // 공개 목록은 listPublicResults Callable이 Admin SDK로 읽고 명시적 허용 필드만 반환한다.
+      // 브라우저가 results 컬렉션을 직접 list하지 못하게 해 내부 필드 추가가 곧 공개로 이어지는 일을 막는다.
+      allow list: if isAdmin();
       allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();
