@@ -52,6 +52,7 @@ const KNOWN_OBSOLETE_FUNCTIONS = new Set([
   'runAdminAutomationNow',
   'sanitizePublicResult',
   'saveAiCharacterSettings',
+  'saveMemberProfile',
   'saveAiConfig',
   'seoPost',
   'sitemapXml',
