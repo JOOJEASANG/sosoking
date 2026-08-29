@@ -46,20 +46,53 @@ for (const required of [
   'data.publicDataVersion == 1',
   "!data.keys().hasAny(['userId', 'caseDescription', 'nickname'])",
   'allow get: if isSafePublicResultData(resource.data)',
-  'allow list: if isAdmin() || isPublicResultListData(resource.data)'
+  'allow list: if isAdmin() || isSafePublicResultData(resource.data)'
 ]) {
   if (!rules.includes(required)) errors.push(`firestore.rules: missing ${required}`);
 }
-if (rules.includes('allow list: if signedIn() && isPublicResultListData(resource.data)')) {
-  errors.push('firestore.rules: sanitized public result lists must not depend on anonymous sign-in timing');
+if (rules.includes('isPublicResultListData')) {
+  errors.push('firestore.rules: weaker public list helper remains after fail-closed schema hardening');
 }
 
 const sanitizer = read('functions/public-result-sanitizer.js');
-for (const required of ["SENSITIVE_FIELDS = ['userId', 'caseDescription', 'nickname']", 'patch.publicDataVersion = 1', 'publicSanitizationPatch']) {
+for (const required of [
+  "SENSITIVE_FIELDS = ['userId', 'caseDescription', 'nickname']",
+  'inspectContent(publicCaseDescription)',
+  'patch.publicDataVersion = 1',
+  'publicSanitizationPatch'
+]) {
   if (!sanitizer.includes(required)) errors.push(`functions/public-result-sanitizer.js: missing ${required}`);
 }
 if (sanitizer.includes('onDocumentWritten') || sanitizer.includes('exports.sanitizePublicResult')) {
   errors.push('functions/public-result-sanitizer.js: Eventarc trigger must remain disabled until deploy IAM is configured');
+}
+
+const publicOriginal = read('functions/public-original.js');
+for (const required of [
+  'const REDACTED_PUBLIC_ORIGINAL',
+  'if (isOwner)',
+  'resultData.publicCaseDescription',
+  'if (!requesterUid)',
+  'originalVisible: isOwner'
+]) {
+  if (!publicOriginal.includes(required)) errors.push(`functions/public-original.js: missing privacy boundary ${required}`);
+}
+if (publicOriginal.includes('const caseDescription = cleanText(caseData.caseDescription, 600);')) {
+  errors.push('functions/public-original.js: public path can still directly return the private caseDescription');
+}
+
+const discussion = read('functions/discussion.js');
+for (const required of [
+  'function assertDiscussionWritable',
+  'await db.runTransaction(async tx =>',
+  'const latestResultSnap = await tx.get(resultRef)',
+  'assertDiscussionWritable(latestResultSnap.data())',
+  'tx.update(resultRef'
+]) {
+  if (!discussion.includes(required)) errors.push(`functions/discussion.js: missing lifecycle-safe write guard ${required}`);
+}
+if (discussion.includes('batch.set(resultRef')) {
+  errors.push('functions/discussion.js: batch.set(resultRef) can recreate a deleted result document');
 }
 
 const safeSeo = read('functions/public-seo-safe.js');
@@ -116,6 +149,21 @@ if (social.includes('GoogleGenerativeAI')) {
   errors.push('functions/social.js: deprecated Gemini SDK is still used for appeals');
 }
 
+const appCheckConfigurator = read('tools/configure-app-check.mjs');
+for (const required of ['APP_CHECK_SITE_KEY', 'ENFORCE_APP_CHECK', 'firebase-config.js', 'ENFORCE_APP_CHECK=true requires APP_CHECK_SITE_KEY']) {
+  if (!appCheckConfigurator.includes(required)) errors.push(`tools/configure-app-check.mjs: missing ${required}`);
+}
+
+const deployAuth = read('.github/actions/firebase-auth/action.yml');
+for (const required of [
+  'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093',
+  'workload_identity_provider',
+  'service_account_json',
+  'credentials_file_path'
+]) {
+  if (!deployAuth.includes(required)) errors.push(`.github/actions/firebase-auth/action.yml: missing ${required}`);
+}
+
 const deploy = read('.github/workflows/firebase-deploy.yml');
 const functionsStep = deploy.indexOf('Deploy current Functions first');
 const sanitizeStep = deploy.indexOf('Sanitize existing public results');
@@ -126,6 +174,16 @@ if (deploy.includes('functions:sanitizePublicResult')) {
 }
 if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
   errors.push('.github/workflows/firebase-deploy.yml: existing public records are not sanitized');
+}
+for (const required of [
+  'id-token: write',
+  'uses: ./.github/actions/firebase-auth',
+  'vars.GCP_WORKLOAD_IDENTITY_PROVIDER',
+  'vars.GCP_DEPLOY_SERVICE_ACCOUNT',
+  'vars.APP_CHECK_SITE_KEY',
+  'node tools/configure-app-check.mjs'
+]) {
+  if (!deploy.includes(required)) errors.push(`.github/workflows/firebase-deploy.yml: missing ${required}`);
 }
 if (functionsStep < 0 || sanitizeStep <= functionsStep || rulesStep <= sanitizeStep || statisticsStep <= rulesStep) {
   errors.push('.github/workflows/firebase-deploy.yml: required order is Functions, sanitation, Firestore/Hosting, then index-dependent statistics');
@@ -141,4 +199,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, public record access, deploy-safe sanitation and index handling, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
+console.log('Security hardening validation passed: App Check, public privacy, lifecycle-safe writes, fail-closed public records, keyless deploy readiness, CSP, safe SEO and deployment ordering are intact.');
