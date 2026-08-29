@@ -93,7 +93,7 @@ exports.getPublicCaseOriginal = onCall({
   }
 
   const ownerUid = String(caseData.userId || '');
-  const isOwner = Boolean(ownerUid && requesterUid === ownerUid);
+  const isOwner = Boolean(requesterUid && ownerUid && requesterUid === ownerUid);
   const isPublic = Boolean(resultSnap.exists && isSanitizedPublicResult(resultData));
 
   if (!isOwner && !isPublic) {
