@@ -256,9 +256,5 @@ export async function renderHall(container) {
   slot.innerHTML = `
     ${buzzSection(rows)}
     ${controversy}
-    ${grievanceSection(rows)}
-    <div class="hall-cta">
-      <p>구경만 하기 아쉽다면, 직접 판정하고 논쟁해보세요.</p>
-      <a class="btn btn-primary" href="#/jury">민심소에서 판정하기</a>
-    </div>`;
+    ${grievanceSection(rows)}`;
 }
