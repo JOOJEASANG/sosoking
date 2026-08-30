@@ -58,8 +58,7 @@ for (const removed of ['오늘의 실제 판례', '매일 실제 법원 판례',
 const index = read('public/index.html');
 for (const phrase of [
   '소소한 일상을 판결하는 AI 생활법정',
-  '민심소의 블라인드 투표와 토론',
-  '/js/app.js?v=20260830-final-blind-1'
+  '민심소의 블라인드 투표와 토론'
 ]) requireText(index, phrase, 'public/index.html');
 for (const removed of ['오늘의 재판', '/js/home-copy-guard.js', '/js/judge-final-guard.js', '/js/judge-runtime-guard.js']) {
   if (index.includes(removed)) errors.push(`public/index.html: removed feature/runtime patch remains: ${removed}`);

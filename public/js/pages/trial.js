@@ -23,19 +23,35 @@ const JUDGES = [
 ];
 
 const STAGE_LOADING = {
-  filed: '도장 찍는 소리가 복도에 울려 퍼지고 있습니다.\n사건번호 부여 중 · 담당 판사 긴급 호출 중',
-  investigation: '현장 보존 완료. CCTV 영상 되감는 중...\n국과수에 감정 의뢰서 발송 완료. 잠복 보고서 취합 중.',
-  plaintiff: '원고 측이 억울함을 조목조목 정리하고 있습니다.\n청구취지에 커피 잔 수 또는 저녁 메뉴가 포함될 예정입니다.',
-  defendant: '피고 측 변명을 수신 중입니다.\n앞선 진술과 조용히 충돌하는 부분을 포착 중.',
-  sentenced: '재판부가 망치를 들었습니다.\n이 사건에만 맞는 생활형 처분 최종 확정 임박.'
+  filed: '접수계가 사건 서류를 낚아챘습니다.\n사건번호 부여 중 · 담당 판사 긴급 호출 중',
+  investigation: '수사기록을 펼치고 정황을 맞추는 중입니다.\n증거판에 빨간 줄이 하나씩 늘어나고 있습니다.',
+  plaintiff: '원고석 마이크가 켜졌습니다.\n억울함을 청구취지와 주장요지로 정리하고 있습니다.',
+  defendant: '피고석에서 반론이 들어오고 있습니다.\n앞선 진술과 충돌하는 부분을 조용히 체크하는 중입니다.',
+  sentenced: '재판부가 마지막 숙의에 들어갔습니다.\n법봉을 들고 이 사건만의 생활형 처분을 확정하는 중입니다.'
 };
 
 const STAGE_EMOJI = {
   filed: '📋',
   investigation: '🔍',
-  plaintiff: '💬',
+  plaintiff: '🗣️',
   defendant: '🛡️',
-  sentenced: '⚖️'
+  sentenced: '🔨'
+};
+
+const STAGE_SCENE = {
+  filed: ['접수 완료 대기', '서류가 재판부로 이동 중'],
+  investigation: ['수사기록 분석', '사건의 앞뒤를 맞추는 중'],
+  plaintiff: ['원고측 변론', '억울함을 조목조목 정리 중'],
+  defendant: ['피고측 변론', '반론과 사정을 검토 중'],
+  sentenced: ['재판부 숙의', 'AI 판사가 주문을 작성 중']
+};
+
+const STAGE_PROGRESS = {
+  filed: 12,
+  investigation: 34,
+  plaintiff: 56,
+  defendant: 78,
+  sentenced: 94
 };
 
 const JUDGE_PROGRESS = {
@@ -92,6 +108,87 @@ const JUDGE_PROGRESS = {
 
 let caseData = null;
 
+function ensureTrialAnimationStyle() {
+  if (document.getElementById('trial-stage-animation-style')) return;
+  const style = document.createElement('style');
+  style.id = 'trial-stage-animation-style';
+  style.textContent = `
+    .trial-stage-page{--trial-gold:var(--gold);--trial-line:rgba(201,168,76,.24);}
+    .trial-stage-page .trial-live{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border:1px solid rgba(201,168,76,.34);border-radius:999px;background:rgba(201,168,76,.08);font-size:10px;font-weight:900;letter-spacing:.08em;color:var(--gold);}
+    .trial-stage-page .trial-live-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 0 rgba(201,168,76,.55);animation:trial-live-pulse 1.4s ease-out infinite;}
+    .trial-stage-page .trial-progress-shell{height:7px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);}
+    .trial-stage-page .trial-progress-bar{height:100%;width:12%;border-radius:999px;background:linear-gradient(90deg,rgba(201,168,76,.56),var(--gold));box-shadow:0 0 16px rgba(201,168,76,.34);transition:width .65s cubic-bezier(.2,.8,.2,1);position:relative;overflow:hidden;}
+    .trial-stage-page .trial-progress-bar::after{content:'';position:absolute;inset:0;width:42%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-130%);animation:trial-progress-shine 1.7s linear infinite;}
+    .trial-stage-page .trial-timeline{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:18px 0 16px;position:relative;}
+    .trial-stage-page .trial-timeline::before{content:'';position:absolute;left:9%;right:9%;top:21px;height:2px;background:var(--trial-line);z-index:0;}
+    .trial-stage-page .trial-step{position:relative;z-index:1;text-align:center;min-width:0;color:var(--cream-dim);}
+    .trial-stage-page .trial-step-orb{width:42px;height:42px;margin:0 auto 7px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--border);background:var(--surface);font-size:17px;transition:all .35s ease;}
+    .trial-stage-page .trial-step-title{font-size:10px;font-weight:900;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .trial-stage-page .trial-step-sub{font-size:9px;line-height:1.35;margin-top:3px;opacity:.68;display:none;}
+    .trial-stage-page .trial-step.is-done .trial-step-orb{border-color:rgba(201,168,76,.52);background:rgba(201,168,76,.09);color:var(--gold);}
+    .trial-stage-page .trial-step.is-done .trial-step-title{color:var(--gold);}
+    .trial-stage-page .trial-step.is-active .trial-step-orb{border-color:var(--gold);background:rgba(201,168,76,.18);box-shadow:0 0 0 5px rgba(201,168,76,.08),0 0 24px rgba(201,168,76,.2);transform:translateY(-2px);animation:trial-orb-float 1.25s ease-in-out infinite;}
+    .trial-stage-page .trial-step.is-active .trial-step-title{color:var(--gold);}
+    .trial-stage-page .trial-step.is-active .trial-step-sub{display:block;color:var(--cream-dim);}
+    .trial-stage-page .trial-court-scene{position:relative;overflow:hidden;border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:18px 14px 15px;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.12),transparent 42%),linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.04));min-height:238px;}
+    .trial-stage-page .trial-court-scene::before{content:'SOSOKING AI COURT';position:absolute;top:9px;left:0;right:0;text-align:center;font-size:9px;font-weight:900;letter-spacing:.22em;color:rgba(201,168,76,.38);}
+    .trial-stage-page .trial-court-light{position:absolute;width:180px;height:180px;left:50%;top:-88px;transform:translateX(-50%);border-radius:50%;background:rgba(201,168,76,.1);filter:blur(12px);animation:trial-light-breathe 2.4s ease-in-out infinite;pointer-events:none;}
+    .trial-stage-page .trial-bench{position:relative;display:flex;align-items:flex-end;justify-content:center;min-height:104px;padding-top:18px;}
+    .trial-stage-page .trial-judge{position:relative;z-index:3;width:84px;text-align:center;transition:transform .4s ease;}
+    .trial-stage-page .trial-judge-avatar{width:58px;height:58px;margin:0 auto;display:grid;place-items:center;border-radius:50%;font-size:32px;background:var(--surface);border:1px solid rgba(201,168,76,.52);box-shadow:0 8px 24px rgba(0,0,0,.16);}
+    .trial-stage-page .trial-judge-name{font-size:10px;font-weight:900;color:var(--gold);margin-top:5px;white-space:nowrap;}
+    .trial-stage-page .trial-desk{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);width:142px;height:27px;border:1px solid rgba(201,168,76,.3);border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,rgba(201,168,76,.16),rgba(201,168,76,.06));z-index:2;}
+    .trial-stage-page .trial-gavel{position:absolute;z-index:5;left:calc(50% + 34px);bottom:12px;font-size:24px;transform-origin:70% 80%;opacity:.3;transition:opacity .3s ease;}
+    .trial-stage-page .trial-document{position:absolute;z-index:4;left:calc(50% - 50px);bottom:8px;width:34px;height:43px;border-radius:3px;background:#f4ead8;border:1px solid rgba(92,64,22,.28);box-shadow:0 5px 12px rgba(0,0,0,.14);transform:rotate(-4deg);}
+    .trial-stage-page .trial-document::before,.trial-stage-page .trial-document::after{content:'';position:absolute;left:6px;right:6px;height:2px;background:rgba(88,66,37,.25);}
+    .trial-stage-page .trial-document::before{top:12px;box-shadow:0 7px 0 rgba(88,66,37,.2),0 14px 0 rgba(88,66,37,.18);}
+    .trial-stage-page .trial-document::after{display:none;}
+    .trial-stage-page .trial-magnifier{position:absolute;z-index:6;left:calc(50% - 6px);bottom:8px;font-size:29px;opacity:0;}
+    .trial-stage-page .trial-parties{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+    .trial-stage-page .trial-party{position:relative;border:1px solid var(--border);border-radius:14px;padding:11px 10px;background:rgba(255,255,255,.02);text-align:center;transition:all .35s ease;}
+    .trial-stage-page .trial-party-icon{font-size:24px;display:block;margin-bottom:3px;}
+    .trial-stage-page .trial-party-label{font-size:11px;font-weight:900;}
+    .trial-stage-page .trial-bubble{position:absolute;top:-18px;left:50%;transform:translateX(-50%) scale(.7);padding:5px 8px;border-radius:9px;background:var(--gold);color:#251a08;font-size:9px;font-weight:900;white-space:nowrap;opacity:0;transition:all .3s ease;box-shadow:0 6px 18px rgba(0,0,0,.12);}
+    .trial-stage-page .trial-scene-caption{text-align:center;margin-top:12px;}
+    .trial-stage-page .trial-scene-title{font-family:var(--font-serif);font-size:17px;font-weight:900;color:var(--gold);}
+    .trial-stage-page .trial-scene-sub{font-size:11px;color:var(--cream-dim);margin-top:3px;}
+    .trial-stage-page .trial-status-copy{margin-top:14px;padding:13px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.025);font-size:12px;color:var(--cream-dim);white-space:pre-line;line-height:1.7;text-align:left;min-height:82px;display:flex;align-items:center;}
+    .trial-stage-page .trial-wait-note{text-align:center;margin-top:9px;font-size:10px;color:var(--cream-dim);opacity:.72;}
+    .trial-stage-page .trial-court-scene[data-stage='filed'] .trial-document{animation:trial-document-file 1.35s ease-in-out infinite;}
+    .trial-stage-page .trial-court-scene[data-stage='investigation'] .trial-magnifier{opacity:1;animation:trial-magnify 1.7s ease-in-out infinite;}
+    .trial-stage-page .trial-court-scene[data-stage='investigation'] .trial-document{animation:trial-paper-twitch 1.7s ease-in-out infinite;}
+    .trial-stage-page .trial-court-scene[data-stage='plaintiff'] .trial-party[data-side='plaintiff']{border-color:rgba(201,168,76,.72);background:rgba(201,168,76,.1);box-shadow:0 0 20px rgba(201,168,76,.08);transform:translateY(-2px);}
+    .trial-stage-page .trial-court-scene[data-stage='plaintiff'] .trial-party[data-side='plaintiff'] .trial-bubble{opacity:1;transform:translateX(-50%) scale(1);animation:trial-bubble 1.25s ease-in-out infinite;}
+    .trial-stage-page .trial-court-scene[data-stage='defendant'] .trial-party[data-side='defendant']{border-color:rgba(201,168,76,.72);background:rgba(201,168,76,.1);box-shadow:0 0 20px rgba(201,168,76,.08);transform:translateY(-2px);}
+    .trial-stage-page .trial-court-scene[data-stage='defendant'] .trial-party[data-side='defendant'] .trial-bubble{opacity:1;transform:translateX(-50%) scale(1);animation:trial-bubble 1.25s ease-in-out infinite;}
+    .trial-stage-page .trial-court-scene[data-stage='sentenced'] .trial-gavel{opacity:1;animation:trial-gavel 1.25s cubic-bezier(.5,.1,.3,1) infinite;}
+    .trial-stage-page .trial-court-scene[data-stage='sentenced'] .trial-judge{animation:trial-judge-focus 1.8s ease-in-out infinite;}
+    .trial-stage-page .trial-complete{position:relative;overflow:hidden;border-color:rgba(201,168,76,.7)!important;background:radial-gradient(circle at 50% 20%,rgba(201,168,76,.18),transparent 48%),var(--surface);animation:trial-complete-pop .5s ease both;}
+    .trial-stage-page .trial-complete-seal{width:70px;height:70px;border:3px double var(--gold);border-radius:50%;display:grid;place-items:center;margin:0 auto 9px;font-family:var(--font-serif);font-size:18px;font-weight:900;color:var(--gold);transform:rotate(-8deg);animation:trial-seal .55s cubic-bezier(.2,1.4,.4,1) both;}
+    .trial-stage-page .step-card.visible{animation:trial-document-reveal .45s ease both;}
+    @keyframes trial-live-pulse{0%{box-shadow:0 0 0 0 rgba(201,168,76,.5)}70%{box-shadow:0 0 0 7px rgba(201,168,76,0)}100%{box-shadow:0 0 0 0 rgba(201,168,76,0)}}
+    @keyframes trial-progress-shine{to{transform:translateX(340%)}}
+    @keyframes trial-orb-float{0%,100%{transform:translateY(-2px)}50%{transform:translateY(-5px)}}
+    @keyframes trial-light-breathe{0%,100%{opacity:.5;transform:translateX(-50%) scale(.9)}50%{opacity:1;transform:translateX(-50%) scale(1.08)}}
+    @keyframes trial-document-file{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+    @keyframes trial-paper-twitch{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(2deg)}}
+    @keyframes trial-magnify{0%,100%{transform:translate(-28px,-7px) rotate(-8deg)}50%{transform:translate(27px,-14px) rotate(9deg)}}
+    @keyframes trial-bubble{0%,100%{margin-top:0}50%{margin-top:-4px}}
+    @keyframes trial-gavel{0%,35%,100%{transform:rotate(-28deg)}55%{transform:rotate(18deg)}62%{transform:rotate(12deg)}}
+    @keyframes trial-judge-focus{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+    @keyframes trial-complete-pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+    @keyframes trial-seal{from{opacity:0;transform:scale(1.65) rotate(-20deg)}to{opacity:1;transform:scale(1) rotate(-8deg)}}
+    @keyframes trial-document-reveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @media(min-width:620px){.trial-stage-page .trial-step-sub{display:block}.trial-stage-page .trial-court-scene{padding-left:32px;padding-right:32px}.trial-stage-page .trial-parties{gap:22px}}
+    @media(max-width:390px){.trial-stage-page .trial-step-orb{width:36px;height:36px;font-size:15px}.trial-stage-page .trial-timeline::before{top:18px}.trial-stage-page .trial-step-title{font-size:9px}.trial-stage-page .trial-court-scene{min-height:226px}}
+    @media(prefers-reduced-motion:reduce){.trial-stage-page *,.trial-stage-page *::before,.trial-stage-page *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}.trial-stage-page .trial-progress-bar{transition:none}}
+    [data-theme='light'] .trial-stage-page .trial-progress-shell{background:rgba(72,48,12,.09)}
+    [data-theme='light'] .trial-stage-page .trial-court-scene{background:radial-gradient(circle at 50% 0%,rgba(169,126,32,.14),transparent 42%),linear-gradient(180deg,#fffaf1,#f8f0df)}
+    [data-theme='light'] .trial-stage-page .trial-party,[data-theme='light'] .trial-stage-page .trial-status-copy{background:rgba(255,255,255,.62)}
+  `;
+  document.head.appendChild(style);
+}
+
 function hashString(value) {
   let hash = 2166136261;
   for (const character of String(value || '')) {
@@ -114,37 +211,70 @@ function progressMessage(stage, judge) {
   return [STAGE_LOADING[stage] || STAGE_LOADING.filed, judgeLine].filter(Boolean).join('\n');
 }
 
+function courtSceneHtml() {
+  return `
+    <div id="trial-court-scene" class="trial-court-scene" data-stage="filed" aria-live="polite">
+      <div class="trial-court-light" aria-hidden="true"></div>
+      <div class="trial-bench" aria-hidden="true">
+        <div class="trial-judge">
+          <div id="scene-judge-avatar" class="trial-judge-avatar">⚖️</div>
+          <div id="scene-judge-name" class="trial-judge-name">담당 판사 입장 중</div>
+        </div>
+        <div class="trial-desk"></div>
+        <div class="trial-document"></div>
+        <div class="trial-magnifier">🔎</div>
+        <div class="trial-gavel">🔨</div>
+      </div>
+      <div class="trial-parties" aria-hidden="true">
+        <div class="trial-party" data-side="plaintiff"><div class="trial-bubble">진술 중</div><span class="trial-party-icon">🙋</span><span class="trial-party-label">원고석</span></div>
+        <div class="trial-party" data-side="defendant"><div class="trial-bubble">반론 중</div><span class="trial-party-icon">🙅</span><span class="trial-party-label">피고석</span></div>
+      </div>
+      <div class="trial-scene-caption">
+        <div id="trial-scene-title" class="trial-scene-title">접수 완료 대기</div>
+        <div id="trial-scene-sub" class="trial-scene-sub">서류가 재판부로 이동 중</div>
+      </div>
+    </div>`;
+}
+
 export async function renderTrial(container, caseId) {
   caseData = null;
+  ensureTrialAnimationStyle();
   container.innerHTML = `
-    <div>
-      <div class="page-header"><span class="logo">🏛️ 사건 처리 중</span></div>
+    <div class="trial-stage-page">
+      <div class="page-header"><span class="logo">🏛️ AI 재판 진행 중</span></div>
       <div class="container" style="padding-top:20px;padding-bottom:70px;">
-        <div id="docket-card" class="card court-document" style="padding:20px;margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-            <div>
-              <div style="font-size:11px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:5px;">소소킹 판결소 사건기록</div>
-              <div id="docket-title" style="font-family:var(--font-serif);font-size:20px;font-weight:900;line-height:1.45;">사건명 분석 중</div>
-              <div id="docket-meta" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:6px;">사건번호 부여 중 · 제3생활부</div>
+        <div id="docket-card" class="card court-document" style="padding:18px 18px 16px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+            <div style="min-width:0;flex:1;">
+              <div class="trial-live"><span class="trial-live-dot" aria-hidden="true"></span>AI 재판부 심리중</div>
+              <div id="docket-title" style="font-family:var(--font-serif);font-size:20px;font-weight:900;line-height:1.45;margin-top:9px;">사건명 분석 중</div>
+              <div id="docket-meta" style="font-size:11px;color:var(--cream-dim);line-height:1.7;margin-top:6px;">사건번호 부여 중 · 제3생활부</div>
             </div>
             <div style="text-align:right;min-width:72px;">
-              <div id="docket-judge-icon" style="font-size:28px;">⚖️</div>
-              <div id="docket-status" style="font-size:11px;color:var(--gold);font-weight:800;">접수중</div>
+              <div id="docket-judge-icon" style="font-size:30px;line-height:1;">⚖️</div>
+              <div id="docket-status" style="font-size:10px;color:var(--gold);font-weight:900;margin-top:5px;">사건접수</div>
             </div>
+          </div>
+          <div class="trial-progress-shell" role="progressbar" aria-label="AI 재판 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="12">
+            <div id="trial-progress-bar" class="trial-progress-bar"></div>
           </div>
         </div>
 
-        <div id="docket-timeline" style="display:flex;overflow-x:auto;gap:8px;margin-bottom:16px;padding-bottom:4px;"></div>
-        <div id="steps-container"></div>
+        <div id="docket-timeline" class="trial-timeline" aria-label="AI 재판 5단계"></div>
+        ${courtSceneHtml()}
 
-        <div id="loading-area" style="text-align:center;padding:34px 0;">
-          <div id="stage-emoji" style="font-size:46px;display:inline-block;animation:stage-bounce 1s ease-in-out infinite;">📋</div>
-          <div id="loading-text" style="font-size:13px;color:var(--cream-dim);white-space:pre-line;line-height:1.75;margin-top:12px;"></div>
+        <div id="loading-area">
+          <div id="loading-text" class="trial-status-copy"></div>
+          <div class="trial-wait-note">AI가 실제 문서를 작성 중입니다. 단계 연출은 기다리는 시간을 재미있게 보여주는 진행 화면입니다.</div>
         </div>
+
+        <div id="steps-container" style="margin-top:16px;"></div>
       </div>
     </div>`;
 
   let visualStepIndex = 0;
+  let unsubscribeCase = null;
+  let unsubscribeResult = null;
 
   const showVisualStage = (stage = 'filed', reset = false) => {
     const requestedIndex = Math.max(0, PROGRESS_STAGES.indexOf(stage));
@@ -156,14 +286,28 @@ export async function renderTrial(container, caseId) {
     const loadingText = document.getElementById('loading-text');
     if (loadingText) loadingText.textContent = progressMessage(visualStage, judge);
 
-    const stageEmojiEl = document.getElementById('stage-emoji');
-    if (stageEmojiEl) stageEmojiEl.textContent = STAGE_EMOJI[visualStage] || '⚖️';
-
     const status = document.getElementById('docket-status');
     if (status) status.textContent = stageLabel(visualStage);
 
     const icon = document.getElementById('docket-judge-icon');
     if (icon) icon.textContent = judge.icon;
+
+    const scene = document.getElementById('trial-court-scene');
+    if (scene) scene.dataset.stage = visualStage;
+    const sceneTitle = document.getElementById('trial-scene-title');
+    const sceneSub = document.getElementById('trial-scene-sub');
+    if (sceneTitle) sceneTitle.textContent = STAGE_SCENE[visualStage]?.[0] || stageLabel(visualStage);
+    if (sceneSub) sceneSub.textContent = STAGE_SCENE[visualStage]?.[1] || '';
+    const sceneJudge = document.getElementById('scene-judge-avatar');
+    const sceneJudgeName = document.getElementById('scene-judge-name');
+    if (sceneJudge) sceneJudge.textContent = judge.icon;
+    if (sceneJudgeName) sceneJudgeName.textContent = `${judge.type} 판사`;
+
+    const progress = STAGE_PROGRESS[visualStage] || 12;
+    const progressBar = document.getElementById('trial-progress-bar');
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    const progressShell = progressBar?.parentElement;
+    if (progressShell) progressShell.setAttribute('aria-valuenow', String(progress));
   };
 
   showVisualStage('filed', true);
@@ -203,10 +347,10 @@ export async function renderTrial(container, caseId) {
     visualStepIndex = PROGRESS_STAGES.length - 1;
     showVisualStage('sentenced');
     const el = document.getElementById('loading-text');
-    if (el) el.textContent += '\n문서 작성 시간이 길어지고 있지만 완료되면 자동으로 판결문으로 이동합니다.';
+    if (el) el.textContent += '\n\n재판부 숙의가 길어지고 있습니다. 완료되면 자동으로 판결문으로 이동합니다.';
   };
 
-  const unsubscribeCase = onSnapshot(doc(db, 'cases', caseId), snap => {
+  unsubscribeCase = onSnapshot(doc(db, 'cases', caseId), snap => {
     if (!snap.exists()) return;
     caseData = snap.data();
     const actualStage = stageFor(caseData.courtStage || caseData.status);
@@ -226,7 +370,7 @@ export async function renderTrial(container, caseId) {
     }
   }, err => showError(err.message));
 
-  const unsubscribeResult = onSnapshot(doc(db, 'results', caseId), snap => {
+  unsubscribeResult = onSnapshot(doc(db, 'results', caseId), snap => {
     if (!snap.exists()) return;
     const data = snap.data();
     renderSteps(data);
@@ -235,14 +379,18 @@ export async function renderTrial(container, caseId) {
 
     if (data.verdict) {
       stop();
+      const progressBar = document.getElementById('trial-progress-bar');
+      if (progressBar) progressBar.style.width = '100%';
+      const progressShell = progressBar?.parentElement;
+      if (progressShell) progressShell.setAttribute('aria-valuenow', '100');
       const la = document.getElementById('loading-area');
       if (la) la.innerHTML = `
-        <div class="card" style="padding:18px;text-align:center;border-color:rgba(201,168,76,.55);">
-          <div style="font-size:30px;margin-bottom:6px;">🔨</div>
-          <div style="font-weight:900;color:var(--gold);">판결문 작성 완료</div>
-          <div style="font-size:12px;color:var(--cream-dim);margin-top:4px;">접수 장면부터 판결 콜백까지 완성된 기록으로 이동합니다.</div>
+        <div class="card trial-complete" style="padding:20px;text-align:center;">
+          <div class="trial-complete-seal">판결</div>
+          <div style="font-family:var(--font-serif);font-size:19px;font-weight:900;color:var(--gold);">탕! 판결문 작성 완료</div>
+          <div style="font-size:12px;color:var(--cream-dim);line-height:1.65;margin-top:6px;">재판부가 서명과 도장을 마쳤습니다.<br>이제 내 예상 판정을 먼저 남기러 이동합니다.</div>
         </div>`;
-      setTimeout(() => { location.hash = `#/verdict/${encodeURIComponent(caseId)}`; }, 1200);
+      setTimeout(() => { location.hash = `#/verdict/${encodeURIComponent(caseId)}`; }, 1450);
     }
   }, err => showError(err.message));
 
@@ -296,23 +444,15 @@ function renderTimeline(activeStage) {
   if (!el) return;
 
   const activeIndex = Math.max(0, DOCKET_STEPS.findIndex(([id]) => id === activeStage));
-  el.innerHTML = DOCKET_STEPS.map(([id, title, sub], i) => {
-    const isActive = i === activeIndex;
-    const isDone = i < activeIndex;
-    const emoji = isActive ? (STAGE_EMOJI[id] || '⚖️') : (isDone ? '✅' : '▫️');
-    const emojiStyle = isActive ? `font-size:18px;display:inline-block;animation:stage-bounce 0.9s ease-in-out infinite;` : `font-size:15px;`;
-    const cardBorder = isActive
-      ? 'rgba(201,168,76,.9)'
-      : isDone ? 'rgba(201,168,76,.5)' : 'var(--border)';
-    const cardBg = isActive
-      ? 'rgba(201,168,76,.18)'
-      : isDone ? 'rgba(201,168,76,.08)' : 'rgba(255,255,255,.025)';
-    const cardAnim = isActive ? 'animation:step-glow 1.5s ease-in-out infinite;' : '';
-    const titleColor = (isActive || isDone) ? 'var(--gold)' : 'var(--cream-dim)';
-    return `<div style="min-width:116px;padding:10px 9px;border-radius:12px;border:1px solid ${cardBorder};background:${cardBg};${cardAnim}">
-      <div style="${emojiStyle}margin-bottom:3px;">${emoji}</div>
-      <div style="font-size:12px;font-weight:900;color:${titleColor};">${escapeHtml(title)}</div>
-      <div style="font-size:10px;color:var(--cream-dim);margin-top:2px;">${escapeHtml(sub)}</div>
+  el.innerHTML = DOCKET_STEPS.map(([id, title, sub], index) => {
+    const isActive = index === activeIndex;
+    const isDone = index < activeIndex;
+    const stateClass = isActive ? ' is-active' : isDone ? ' is-done' : '';
+    const symbol = isDone ? '✓' : (STAGE_EMOJI[id] || '⚖️');
+    return `<div class="trial-step${stateClass}" aria-current="${isActive ? 'step' : 'false'}">
+      <div class="trial-step-orb">${symbol}</div>
+      <div class="trial-step-title">${escapeHtml(title)}</div>
+      <div class="trial-step-sub">${escapeHtml(sub)}</div>
     </div>`;
   }).join('');
 }
