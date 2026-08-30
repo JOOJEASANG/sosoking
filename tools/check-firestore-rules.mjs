@@ -79,6 +79,14 @@ try {
         caseTitle: '공개 사건',
         updatedAt: now
       }),
+      setDoc(doc(db, 'public_results/public-case'), {
+        isPublic: true,
+        publicDataVersion: 1,
+        publicCaseDescription: '',
+        publicNickname: '익명 원고',
+        caseTitle: '공개 사건',
+        updatedAt: now
+      }),
       setDoc(doc(db, 'cases/unsafe-public-case'), {
         userId: 'owner-uid',
         isPublic: true,
@@ -152,12 +160,14 @@ try {
   await assertFails(updateDoc(doc(owner, 'cases/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'cases/private-case'), { isPublic: true }));
 
-  // 결과는 소유자가 모두 읽고, 정리 완료된 공개 결과는 로그인 전후 모두 읽는다.
+  // 내부 results 문서는 공개 여부와 관계없이 소유자와 관리자만 읽는다.
   await assertSucceeds(getDoc(doc(owner, 'results/private-case')));
   await assertFails(getDoc(doc(other, 'results/private-case')));
-  await assertSucceeds(getDoc(doc(other, 'results/public-case')));
-  await assertSucceeds(getDoc(doc(firebaseAnonymous, 'results/public-case')));
-  await assertSucceeds(getDoc(doc(unauthenticated, 'results/public-case')));
+  await assertSucceeds(getDoc(doc(owner, 'results/public-case')));
+  await assertSucceeds(getDoc(doc(admin, 'results/public-case')));
+  await assertFails(getDoc(doc(other, 'results/public-case')));
+  await assertFails(getDoc(doc(firebaseAnonymous, 'results/public-case')));
+  await assertFails(getDoc(doc(unauthenticated, 'results/public-case')));
   await assertSucceeds(getDoc(doc(owner, 'results/unsafe-public-case')));
   await assertSucceeds(getDoc(doc(admin, 'results/unsafe-public-case')));
   await assertFails(getDoc(doc(other, 'results/unsafe-public-case')));
@@ -165,6 +175,16 @@ try {
   await assertFails(getDoc(doc(unauthenticated, 'results/unsafe-public-case')));
   await assertFails(updateDoc(doc(owner, 'results/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'results/private-case'), { isPublic: true }));
+
+  // 공개 소비자는 별도 public_results 단건만 읽는다.
+  await assertSucceeds(getDoc(doc(other, 'public_results/public-case')));
+  await assertSucceeds(getDoc(doc(firebaseAnonymous, 'public_results/public-case')));
+  await assertSucceeds(getDoc(doc(unauthenticated, 'public_results/public-case')));
+  await assertFails(setDoc(doc(owner, 'public_results/direct-write'), {
+    isPublic: true,
+    publicDataVersion: 1,
+    caseTitle: '직접 공개 쓰기'
+  }));
 
   // 과거 부트스트랩 이메일은 admins 문서가 없으면 관리자 권한을 얻지 못한다.
   await assertFails(getDoc(doc(formerBootstrap, 'site_settings/config')));
@@ -227,7 +247,7 @@ try {
   await assertFails(deleteDoc(doc(owner, 'users/owner-uid')));
   await assertSucceeds(deleteDoc(doc(admin, 'users/owner-uid')));
 
-  console.log('Firestore rules integration passed: server-only mutations, public sanitized result access, and Firestore-backed admin authorization.');
+  console.log('Firestore rules integration passed: internal results are owner/admin-only, public mirrors are isolated, and server-only mutations remain enforced.');
 } finally {
   await testEnv.cleanup();
 }
