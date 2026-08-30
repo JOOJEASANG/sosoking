@@ -1,4 +1,4 @@
-import { renderPolicy } from '../js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';
+import { renderPolicy } from '../js/pages/policy.js?v=20260830-final-audit-1';
 
 const DEFAULT_CACHE = new Map();
 let loadSequence = 0;
@@ -28,7 +28,7 @@ function updatePolicyNotice(root) {
   const card = form.previousElementSibling?.previousElementSibling;
   if (!(card instanceof HTMLElement) || card.dataset.policyEditorNotice === 'true') return;
   card.dataset.policyEditorNotice = 'true';
-  card.textContent = '현재 사이트에 표시되는 정책 원문이 편집창에 자동으로 채워집니다. 수정 후 저장하면 공개 정책 페이지에 바로 적용됩니다.';
+  card.textContent = '현재 공개 사이트에 표시되는 최신 정책 문구를 편집창에 불러옵니다. 저장한 사용자 정의 정책은 즉시 공개 정책 페이지에 적용되므로 시행일·서비스 흐름·개인정보 공개 범위를 함께 확인하세요.';
 }
 
 async function hydratePolicyEditor(root) {
@@ -66,7 +66,7 @@ function inspectAdminPolicyEditor() {
   void hydratePolicyEditor(root);
 }
 
-const observer = new MutationObserver(() => inspectAdminPolicyEditor());
+const observer = new MutationObserver(inspectAdminPolicyEditor);
 const start = () => {
   const root = document.getElementById('admin-content');
   if (!root) return;
