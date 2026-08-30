@@ -60,16 +60,18 @@ try {
     });
   });
 
-  // Dedicated public mirror allows only safe single-document reads.
-  await assertSucceeds(getDoc(doc(signedIn, 'public_results/safe-public')));
-  await assertSucceeds(getDoc(doc(unauthenticated, 'public_results/safe-public')));
+  // The mirror is a server/admin-only cache. Public pages must use projected callables instead.
+  await assertFails(getDoc(doc(signedIn, 'public_results/safe-public')));
+  await assertFails(getDoc(doc(unauthenticated, 'public_results/safe-public')));
   await assertFails(getDoc(doc(signedIn, 'public_results/unsafe-public')));
   await assertFails(getDoc(doc(unauthenticated, 'public_results/unsafe-public')));
 
-  // Public collection listing remains callable/Admin-SDK only. Administrators can inspect it.
+  // Administrators may inspect mirror state for operations and cleanup.
+  await assertSucceeds(getDoc(doc(admin, 'public_results/safe-public')));
+  await assertSucceeds(getDoc(doc(admin, 'public_results/unsafe-public')));
+  await assertSucceeds(getDocs(collection(admin, 'public_results')));
   await assertFails(getDocs(collection(signedIn, 'public_results')));
   await assertFails(getDocs(collection(unauthenticated, 'public_results')));
-  await assertSucceeds(getDocs(collection(admin, 'public_results')));
 
   // No browser client, including administrators, may mutate the mirror directly.
   await assertFails(setDoc(doc(signedIn, 'public_results/forged'), {
@@ -83,7 +85,7 @@ try {
     caseTitle: '관리자 직접 쓰기'
   }));
 
-  console.log('Public mirror rules passed: safe single reads only, server-only listing for public users, and no client writes.');
+  console.log('Public mirror rules passed: mirror reads are admin-only, public pages use server projections, and all client writes remain blocked.');
 } finally {
   await testEnv.cleanup();
 }
