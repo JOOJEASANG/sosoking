@@ -66,7 +66,7 @@ jobs:
       - name: Deploy current Functions first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:setProfilePhoto,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:setResultVisibility,functions:listPublicResults,functions:getPublicCaseOriginal,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:publicTagPage,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:setProfilePhoto,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:setResultVisibility,functions:listPublicResults,functions:getPublicResult,functions:syncPublicResultMirror,functions:getPublicCaseOriginal,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:publicTagPage,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
 
       - name: Remove known obsolete Functions
         env:
@@ -98,6 +98,12 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node functions/sanitize-public-results-cli.js
+
+      - name: Synchronize isolated public result mirror
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node functions/sync-public-results-cli.js
 
       - name: Reformat existing verdict number lines
         env:
@@ -135,4 +141,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, current Functions, known legacy cleanup, deployed-function drift validation, Firestore configuration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, current Functions, isolated public result mirror, known legacy cleanup, deployed-function drift validation, Firestore configuration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
