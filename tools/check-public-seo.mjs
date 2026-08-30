@@ -37,6 +37,7 @@ if (fs.existsSync('public/js/public-result-seen.js')) {
 const gate = read('functions/public-seo-safe.js');
 for (const required of [
   'exports.publicResultPage',
+  'exports.publicTagPage',
   'exports.publicSitemap',
   'isSanitizedPublicResult',
   'publicDataVersion',
@@ -45,17 +46,24 @@ for (const required of [
   "hasOwnProperty.call(raw, 'nickname')",
   'loadSafePublicResult',
   'listSafePublicResultEntries',
+  'loadSafeTaggedResults',
+  'listSafePublicTagEntries',
   'renderPublicResultHtml',
+  'renderTagPageHtml',
   'renderSitemapXml',
   'X-Robots-Tag',
   'noindex, nofollow',
   "where('isPublic', '==', true)",
+  "where('publicDataVersion', '==', 1)",
   'SITEMAP_RESULT_LIMIT'
 ]) {
   if (!gate.includes(required)) errors.push(`functions/public-seo-safe.js: missing ${required}`);
 }
 if (gate.includes("collection('cases')")) {
   errors.push('functions/public-seo-safe.js: safe SEO gate must not read private case documents');
+}
+if (gate.includes('loadTaggedResults(tag)') || gate.includes('listPublicTagEntries().catch')) {
+  errors.push('functions/public-seo-safe.js: unsafe legacy tag loaders remain active');
 }
 
 const main = read('functions/main.js');
@@ -73,11 +81,15 @@ const firebase = JSON.parse(read('firebase.json'));
 const rewrites = firebase.hosting?.rewrites || [];
 const sitemapRewrite = rewrites.find(item => item.source === '/sitemap.xml');
 const resultRewrite = rewrites.find(item => item.source === '/result/**');
+const tagRewrite = rewrites.find(item => item.source === '/tag/**');
 if (sitemapRewrite?.function?.functionId !== 'publicSitemap' || sitemapRewrite.function.region !== 'asia-northeast3') {
   errors.push('firebase.json: /sitemap.xml is not routed to publicSitemap in asia-northeast3');
 }
 if (resultRewrite?.function?.functionId !== 'publicResultPage' || resultRewrite.function.region !== 'asia-northeast3') {
   errors.push('firebase.json: /result/** is not routed to publicResultPage in asia-northeast3');
+}
+if (tagRewrite?.function?.functionId !== 'publicTagPage' || tagRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /tag/** is not routed to publicTagPage in asia-northeast3');
 }
 if (fs.existsSync('public/sitemap.xml')) {
   errors.push('public/sitemap.xml: static file would override the dynamic sitemap rewrite');
@@ -89,12 +101,14 @@ if (!robots.includes('Sitemap: https://sosoking.co.kr/sitemap.xml')) {
 }
 
 const home = read('public/js/pages/home.js');
-if (!home.includes('href="#/result/${encodeURIComponent(caseId)}"')
-  || !home.includes('data-public-result-link="true"')) {
-  errors.push('public/js/pages/home.js: recent public cards do not open the full verdict app route');
+if (!home.includes('href="#/jury"')
+  || !home.includes('data-public-jury-case-id=')
+  || !home.includes('sessionStorage.setItem(JURY_TARGET_KEY, caseId)')) {
+  errors.push('public/js/pages/home.js: recent public cards do not enter the blind jury route');
 }
-if (home.includes('href="/result/${encodeURIComponent(caseId)}"')) {
-  errors.push('public/js/pages/home.js: app cards must not leave the SPA before opening the full verdict record');
+const homeSummary = home.split('function publicSummary(record = {}) {')[1]?.split('\n}')[0] || '';
+if (homeSummary.includes('record.verdict') || homeSummary.includes('record.sentence')) {
+  errors.push('public/js/pages/home.js: home summary leaks verdict content before voting');
 }
 
 const resultComments = read('public/js/pages/result-comments.js');
@@ -120,7 +134,7 @@ if (serviceWorker.includes('/js/pages/board.js')) {
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
-for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap']) {
+for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap', 'functions:publicTagPage']) {
   if (!deploy.includes(functionName)) errors.push(`firebase-deploy.yml: ${functionName} is not deployed`);
 }
 if (deploy.includes('functions:sanitizePublicResult')) {
@@ -144,4 +158,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public SEO validation passed: sanitized public verdicts remain indexable, canonical home links reach the full verdict, and no retired board dependency remains.');
+console.log('Public SEO validation passed: result and tag SEO use the sanitized public contract while the normal home entry remains blind.');
