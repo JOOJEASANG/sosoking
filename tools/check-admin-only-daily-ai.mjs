@@ -88,13 +88,18 @@ for (const required of [
   "root.querySelector('#dailyOn')",
   'dailyToggle.checked = false;',
   'dailyToggle.disabled = true;',
-  '관리자 수동 AI 사건 생성',
+  '관리자 수동 AI 샘플 사건 생성',
+  'AI 샘플 사건 수동 생성',
+  '자동 예약 없음',
   '자동 예약 없음 · 관리자 버튼으로만 생성',
-  '관리자가 생성 버튼을 누른 경우에만 AI 사건이 생성됩니다.'
+  '관리자가 버튼을 누른 경우에만 AI 샘플 사건을 생성'
 ]) {
   if (!adminMode.includes(required)) {
     errors.push(`public/admin/admin-manual-ai-mode.js: manual generation interface missing: ${required}`);
   }
+}
+if (!adminMode.includes("dailyToggle.closest('label')?.remove()")) {
+  errors.push('public/admin/admin-manual-ai-mode.js: obsolete scheduled-generation toggle is still visible');
 }
 
 const admin = read('public/admin/admin.js');
@@ -114,4 +119,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only daily AI validation passed: scheduled generation stays removed, current seven-judge generation is enforced, reviewed obsolete cleanup covers the old trigger, and the result contract remains intact.');
+console.log('Administrator-only AI validation passed: scheduled generation stays removed, manual sample generation is explicit, seven-judge output is enforced, and the deployed callable remains administrator-only.');
