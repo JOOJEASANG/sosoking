@@ -24,15 +24,15 @@ for (const removed of ['실제 판례는 직접 판결해보세요.', 'AI 생활
 
 const guide = read('public/js/pages/guide.js');
 for (const phrase of [
-  '접수 횟수와 대기시간은 운영 설정에 따라 달라질 수 있으며',
-  '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다.',
+  '접수 횟수와 재접수 대기시간은 현재 운영 설정에 따라 달라질 수 있으며',
+  '현재 적용 중인 횟수와 재접수 대기시간은 사건 접수 화면에 표시됩니다.',
   '꼰대형·냉혈형·회피형·추궁형·오버형·드립형·빙의형',
-  '내 예상 판정 먼저 선택',
-  '판결기록 참여',
-  '선택형 투표 참여',
-  '토론에서 의견 나누기',
+  '내 예상 판정 후 판결 봉인 해제',
+  '원하면 판결기록에 공개',
+  '원고·피고·쌍방 중 먼저 판정',
+  '판결과 내 판단 비교·토론',
   '검색엔진에 노출될 수 있으며',
-  '개별 회원의 선택은 공개하지 않고'
+  '개별 회원이 어느 선택을 했는지는 공개 목록에 표시하지 않고'
 ]) requireText(guide, phrase, 'public/js/pages/guide.js');
 for (const removed of ['오늘의 실제 판례', '매일 실제 법원 판례', '일간·주간·누적 랭킹']) {
   if (guide.includes(removed)) errors.push(`public/js/pages/guide.js: removed feature copy remains: ${removed}`);
@@ -44,16 +44,21 @@ for (const phrase of [
   '작성자가 처음 입력한 접수 원문은 작성자 본인에게만',
   '공개용 사건 정보, 공개용 닉네임',
   '원고 승·피고 승·쌍방 과실 중 최초 1회 예상 판정',
-  "getDoc(doc(db, 'policy_docs', safeType))"
+  "getDoc(doc(db, 'policy_docs', safeType))",
+  'const OBSOLETE_SIGNATURES = {'
 ]) requireText(policy, phrase, 'public/js/pages/policy.js');
-for (const removed of ['NEW_DAILY_COPY', 'OLD_DAILY_COPY', 'NEW_DAILY_STATS_COPY', '오늘의 실제 판례']) {
-  if (policy.includes(removed)) errors.push(`public/js/pages/policy.js: obsolete policy replacement remains: ${removed}`);
+for (const removed of ['NEW_DAILY_COPY', 'OLD_DAILY_COPY', 'NEW_DAILY_STATS_COPY']) {
+  if (policy.includes(removed)) errors.push(`public/js/pages/policy.js: obsolete replacement helper remains: ${removed}`);
+}
+const defaultPolicyBlock = policy.split('export const DEFAULT_POLICIES = {')[1]?.split('\n};\n\nconst OBSOLETE_SIGNATURES')[0] || '';
+for (const removed of ['오늘의 실제 판례', '매일 실제 법원 판례', '실제 판례 맞히기', '오늘의 재판 판결 제출']) {
+  if (defaultPolicyBlock.includes(removed)) errors.push(`public/js/pages/policy.js: obsolete feature appears in current default policy: ${removed}`);
 }
 
 const index = read('public/index.html');
 for (const phrase of [
-  '소소한 일상을 판결하는 생활법정 놀이터',
-  '공개 판결의 투표와 토론',
+  '소소한 일상을 판결하는 AI 생활법정',
+  '민심소의 블라인드 투표와 토론',
   '/js/app.js?v=20260830-final-audit-1'
 ]) requireText(index, phrase, 'public/index.html');
 for (const removed of ['오늘의 재판', '/js/home-copy-guard.js', '/js/judge-final-guard.js', '/js/judge-runtime-guard.js']) {
@@ -115,4 +120,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: current seven-judge flow, owner prediction, configurable limits, private-original disclosure, public participation, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: current seven-judge flow, owner prediction, configurable limits, private-original disclosure, public participation, legacy-policy detection, and synchronized cache versions.');
