@@ -75,7 +75,7 @@ jobs:
       - name: Deploy current Functions first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:setProfilePhoto,functions:voteResult,functions:addCourtComment,functions:addDiscussionComment,functions:setResultVisibility,functions:getPublicCaseOriginal,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:publicTagPage,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:setProfilePhoto,functions:voteResult,functions:voteOwnVerdict,functions:addCourtComment,functions:addDiscussionComment,functions:setResultVisibility,functions:getPublicCaseOriginal,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:publicTagPage,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
 
       - name: Remove known obsolete Functions
         env:

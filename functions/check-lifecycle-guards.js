@@ -11,6 +11,7 @@ const {
   assertParticipablePublicResult,
   assertVisibilityChangeAllowed
 } = require('./social');
+const { assertOwnerVerdictVoteAllowed } = require('./owner-verdict');
 
 function expectCode(fn, expectedCode) {
   assert.throws(fn, error => error?.code === expectedCode);
@@ -57,4 +58,26 @@ expectCode(
   'failed-precondition'
 );
 
-console.log('Lifecycle guard validation passed: deletion locks and moderation hides are enforced consistently.');
+assert.doesNotThrow(() => assertOwnerVerdictVoteAllowed(
+  { userId: 'owner-1' },
+  { verdict: '주문\n원고 승' },
+  'owner-1'
+));
+expectCode(
+  () => assertOwnerVerdictVoteAllowed({ userId: 'owner-1' }, { verdict: '판결' }, 'other-user'),
+  'permission-denied'
+);
+expectCode(
+  () => assertOwnerVerdictVoteAllowed(
+    { userId: 'owner-1', deletionStatus: 'processing' },
+    { verdict: '판결' },
+    'owner-1'
+  ),
+  'failed-precondition'
+);
+expectCode(
+  () => assertOwnerVerdictVoteAllowed({ userId: 'owner-1' }, {}, 'owner-1'),
+  'failed-precondition'
+);
+
+console.log('Lifecycle guard validation passed: deletion locks, moderation hides, and owner blind-verdict voting are enforced consistently.');
