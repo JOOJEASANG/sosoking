@@ -39,10 +39,6 @@ service cloud.firestore {
         && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
     }
 
-    function isPublicResultListData(data) {
-      return data.isPublic == true && data.publicDataVersion == 1;
-    }
-
     function isResultPublic(caseId) {
       return isSafePublicResultData(resultDoc(caseId).data);
     }
@@ -85,10 +81,12 @@ service cloud.firestore {
     }
 
     match /results/{caseId} {
+      // 공개 목록도 문서 자체가 완전히 정제된 경우에만 읽을 수 있다.
+      // 실수로 isPublic/publicDataVersion만 설정된 민감 문서는 list/get 모두 실패한다.
       allow get: if isSafePublicResultData(resource.data)
         || isCaseOwner(caseId)
         || isAdmin();
-      allow list: if isAdmin() || isPublicResultListData(resource.data);
+      allow list: if isAdmin() || isSafePublicResultData(resource.data);
       allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();
@@ -118,7 +116,6 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // 게임소: 초대 코드를 아는 로그인 세션만 방을 읽고, 진행 상태는 방장이 관리한다.
     match /case_id_aliases/{aliasId} {
       allow read, write: if false;
     }
