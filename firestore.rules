@@ -44,12 +44,16 @@ service cloud.firestore {
     }
 
     function isResultPublic(caseId) {
-      return resultDoc(caseId).data.isPublic == true
-        && isSafePublicResultData(publicResultDoc(caseId).data);
+      return isSafePublicResultData(resultDoc(caseId).data);
+    }
+
+    function isPublicMirror(caseId) {
+      return isSafePublicResultData(publicResultDoc(caseId).data);
     }
 
     function canReadPublicCourt(caseId) {
       return signedIn() && (
+        isPublicMirror(caseId) ||
         isResultPublic(caseId) ||
         isCaseOwner(caseId) ||
         isAdmin()
@@ -85,23 +89,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Internal result records are never public-readable. They can gain new internal fields
-    // without changing the public data contract because public surfaces use public_results/API projections.
     match /results/{caseId} {
-      allow get: if isCaseOwner(caseId) || isAdmin();
+      allow get: if isSafePublicResultData(resource.data)
+        || isCaseOwner(caseId)
+        || isAdmin();
+      // 공개 목록은 listPublicResults Callable이 public_results를 읽어 명시적 허용 필드만 반환한다.
+      // 브라우저가 내부 results 컬렉션을 직접 list하지 못하게 해 내부 필드 추가가 곧 공개로 이어지는 일을 막는다.
       allow list: if isAdmin();
       allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();
     }
 
-    // Isolated public mirror. Browser list access remains disabled; listPublicResults provides a
-    // bounded server projection. A direct get is allowed only while the internal record is still public.
     match /public_results/{caseId} {
-      allow get: if isSafePublicResultData(resource.data)
-        && resultDoc(caseId).data.isPublic == true;
-      allow list: if false;
-      allow write: if false;
+      // 서버 트리거/백필 작업만 쓰고, 클라이언트에는 명시적으로 정제된 공개 스키마만 읽게 한다.
+      allow get, list: if isSafePublicResultData(resource.data);
+      allow create, update, delete: if false;
     }
 
     match /result_reactions/{caseId} {
