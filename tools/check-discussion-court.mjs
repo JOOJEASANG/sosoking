@@ -36,7 +36,10 @@ for (const value of [
   'court_comments/${caseId}/items',
   "kind: 'discussion'",
   'discussionVersion: 1',
-  'isSanitizedPublicResult'
+  'isSanitizedPublicResult',
+  'assertDiscussionWritable',
+  'db.runTransaction',
+  'tx.update(resultRef'
 ]) need(server, value, 'discussion server');
 
 const result = read('public/js/pages/result-comments.js');
@@ -44,14 +47,17 @@ for (const value of ['addDiscussionLink', '#/discussion/', '이 판결로 토론
   need(result, value, 'result discussion link');
 }
 
-const board = read('public/js/pages/board.js');
-for (const value of ['discussionPath', '#/discussion/', 'data-discussion-record-link', '원고측·피고측·쌍방']) {
-  need(board, value, 'board discussion link');
+const jury = read('public/js/pages/jury.js');
+for (const value of ['jury-debate', 'addDiscussionComment', 'court_comments']) {
+  need(jury, value, 'jury inline debate');
 }
 
 const app = read('public/js/app.js');
 for (const value of ['renderDiscussion', "path.startsWith('/discussion/')", "hash.startsWith('#/discussion/')"]) {
   need(app, value, 'discussion route');
+}
+if (app.includes("from './pages/board")) {
+  errors.push('discussion route: retired board module remains imported');
 }
 
 const main = read('functions/main.js');
@@ -79,9 +85,12 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
 }
 for (const value of [
   '/js/pages/discussion.js?v=20260730-discussion-court-1',
-  '/js/pages/result-comments.js?v=20260730-discussion-court-1',
-  '/js/pages/board.js?v=20260730-discussion-court-1'
+  '/js/pages/result-comments.js?v=20260830-final-audit-1',
+  '/js/pages/jury.js?v=20260829-arena-2'
 ]) need(worker, value, 'discussion cache');
+if (worker.includes('/js/pages/board.js')) {
+  errors.push('discussion cache: retired board page is still cached');
+}
 
 if (errors.length) {
   console.error(`Discussion court validation failed (${errors.length})`);
@@ -89,4 +98,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Discussion court validation passed: three choices, legacy data compatibility, protected participation, routes, deployment, and cache wiring.');
+console.log('Discussion court validation passed: three choices, transactional deletion safety, inline jury debate, routes, deployment, and canonical cache wiring.');
