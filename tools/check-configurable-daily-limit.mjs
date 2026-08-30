@@ -36,8 +36,8 @@ for (const required of [
   'dailyLimitEnabled: data.dailyLimitEnabled === true',
   "return { dailyLimitEnabled: false, dailyLimit: DEFAULT_DAILY_LIMIT, cooldownSec: 45 }",
   'function submissionLimitText(settings)',
-  '제한 없음',
-  '테스트 운영 중'
+  '현재 제한 없음',
+  '재접수 대기:'
 ]) {
   if (!submitPage.includes(required)) errors.push(`public/js/pages/submit.js: public limit display missing ${required}`);
 }
@@ -60,14 +60,14 @@ if (!adminIndex.includes('/admin/admin-daily-limit.js?v=20260730-configurable-li
   errors.push('public/admin/index.html: configurable limit helper is not loaded');
 }
 
-const homeCourt = read('public/js/pages/home-court.js');
+const home = read('public/js/pages/home.js');
 for (const required of [
-  'async function applySubmissionLimit(container)',
+  'async function loadPublicSettings(container)',
   'settings.dailyLimitEnabled === true',
   '현재 사건 접수 제한 없음',
-  'applySubmissionLimit(container)'
+  'loadPublicSettings(container)'
 ]) {
-  if (!homeCourt.includes(required)) errors.push(`public/js/pages/home-court.js: active limit status missing ${required}`);
+  if (!home.includes(required)) errors.push(`public/js/pages/home.js: active limit status missing ${required}`);
 }
 
 const guide = read('public/js/pages/guide.js');
@@ -78,31 +78,35 @@ if (guide.includes('회원당 하루 1회입니다.')) {
   errors.push('public/js/pages/guide.js: fixed one-per-day claim remains');
 }
 
-const policyLimit = read('public/js/pages/policy-configurable-limit.js');
-if (!policyLimit.includes('제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.')) {
-  errors.push('public/js/pages/policy-configurable-limit.js: configurable terms copy is missing');
+const policy = read('public/js/pages/policy.js');
+if (!policy.includes('접수 횟수와 재접수 대기시간은 서비스 화면에 표시된 현재 운영 설정을 따르며')) {
+  errors.push('public/js/pages/policy.js: configurable terms copy is missing');
 }
 
 const app = read('public/js/app.js');
+for (const required of [
+  "import { renderHome } from './pages/home.js?v=20260830-final-audit-1';",
+  "import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';",
+  "import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';",
+  "import { renderGuide } from './pages/guide.js?v=20260830-final-audit-1';"
+]) {
+  if (!app.includes(required)) errors.push(`public/js/app.js: canonical configurable-limit module missing ${required}`);
+}
+
 const index = read('public/index.html');
 const worker = read('public/sw.js');
 for (const required of [
-  './pages/home-court.js?v=20260730-configurable-limit-1',
-  './pages/submit-guard.js?v=20260730-configurable-limit-1',
-  './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',
-  './pages/guide.js?v=20260802-remove-daily-court-1'
+  '/js/pages/home.js?v=20260830-final-audit-1',
+  '/js/pages/submit.js?v=20260830-final-audit-1',
+  '/js/pages/policy.js?v=20260830-final-audit-1',
+  '/js/pages/guide.js?v=20260830-final-audit-1'
 ]) {
-  if (!app.includes(required)) errors.push(`public/js/app.js: configurable limit module missing ${required}`);
+  if (!worker.includes(required)) errors.push(`public/sw.js: canonical configurable-limit cache entry missing ${required}`);
 }
-for (const required of [
-  '/js/pages/home-court.js?v=20260730-configurable-limit-1',
-  '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
-  '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
-  '/js/pages/submit.js?v=20260730-configurable-limit-1',
-  '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',
-  '/js/pages/guide.js?v=20260802-remove-daily-court-1'
-]) {
-  if (!worker.includes(required)) errors.push(`public/sw.js: configurable limit cache entry missing ${required}`);
+for (const retired of ['home-court.js', 'submit-guard.js', 'policy-configurable-limit.js']) {
+  if (app.includes(retired) || worker.includes(retired)) {
+    errors.push(`active app/cache graph still references retired ${retired}`);
+  }
 }
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
@@ -118,4 +122,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Configurable daily limit validation passed: default-unlimited migration, administrator controls, public copy, backend enforcement, and active cache graph are connected.');
+console.log('Configurable daily limit validation passed: backend enforcement, administrator controls, canonical public copy, and active cache graph are connected.');
