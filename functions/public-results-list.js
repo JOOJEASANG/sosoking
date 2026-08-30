@@ -3,6 +3,12 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore } = require('firebase-admin/firestore');
 const { enforceActionRateLimit, requireAppCheck } = require('./security');
+const {
+  isSanitizedPublicResult,
+  publicClientProjection,
+  publicStorageProjection,
+  timestampMillis
+} = require('./public-result-data');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -15,97 +21,9 @@ function clampLimit(value) {
   return Math.max(1, Math.min(MAX_LIMIT, Math.floor(parsed)));
 }
 
-function isSanitizedPublicResult(data = {}) {
-  return data.isPublic === true
-    && Number(data.publicDataVersion || 0) === 1
-    && !Object.prototype.hasOwnProperty.call(data, 'userId')
-    && !Object.prototype.hasOwnProperty.call(data, 'caseDescription')
-    && !Object.prototype.hasOwnProperty.call(data, 'nickname');
-}
-
-function timestampMillis(value) {
-  if (!value) return 0;
-  if (typeof value.toMillis === 'function') return value.toMillis();
-  if (typeof value.toDate === 'function') return value.toDate().getTime();
-  const parsed = new Date(value).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function cleanText(value, maxLen) {
-  return String(value || '')
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, maxLen);
-}
-
-function cleanDocument(value, maxLen) {
-  return String(value || '')
-    .replace(/\r/g, '')
-    .replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
-    .replace(/[^\S\n]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-    .slice(0, maxLen);
-}
-
-function safeTags(value) {
-  return (Array.isArray(value) ? value : [])
-    .map(tag => cleanText(tag, 10))
-    .filter(tag => /^[가-힣a-zA-Z0-9]{2,10}$/.test(tag))
-    .slice(0, 5);
-}
-
-function safeAppeal(value = {}) {
-  if (!value || typeof value !== 'object') return null;
-  const verdict = cleanDocument(value.verdict, 1800);
-  const reason = cleanText(value.reason, 160);
-  if (!verdict && !reason) return null;
-  return {
-    status: cleanText(value.status, 30),
-    reason,
-    verdict,
-    createdAt: timestampMillis(value.createdAt)
-  };
-}
-
-// 공개 화면에서 실제 사용하는 필드만 명시적으로 복사한다.
-// 새 내부 필드가 results 문서에 추가되더라도 이 함수에 허용하지 않는 한 외부로 나가지 않는다.
-function publicProjection(raw = {}) {
-  return {
-    source: cleanText(raw.source, 30),
-    dailyDate: cleanText(raw.dailyDate, 20),
-    docketNumber: cleanText(raw.docketNumber, 100),
-    courtName: cleanText(raw.courtName, 80),
-    courtroom: cleanText(raw.courtroom, 80),
-    division: cleanText(raw.division, 80),
-    isPublic: true,
-    publicDataVersion: 1,
-    publicCaseDescription: cleanText(raw.publicCaseDescription, 600),
-    publicNickname: cleanText(raw.publicNickname, 30) || '익명 원고',
-    caseTitle: cleanText(raw.caseTitle, 80) || '생활분쟁 사건',
-    grievanceIndex: Math.max(1, Math.min(10, Number(raw.grievanceIndex) || 5)),
-    tags: safeTags(raw.tags),
-    judgeType: cleanText(raw.judgeType, 40),
-    judgeIcon: cleanText(raw.judgeIcon, 16),
-    judgeStyle: cleanText(raw.judgeStyle, 400),
-    winner: ['plaintiff', 'defendant', 'both'].includes(String(raw.winner || '')) ? raw.winner : '',
-    reception: cleanDocument(raw.reception, 5000),
-    investigation: cleanDocument(raw.investigation, 6000),
-    plaintiffArg: cleanDocument(raw.plaintiffArg, 5000),
-    defendantArg: cleanDocument(raw.defendantArg, 5000),
-    verdict: cleanDocument(raw.verdict, 7000),
-    sentence: cleanDocument(raw.sentence, 1000),
-    aiSource: cleanText(raw.aiSource, 60),
-    aiModel: cleanText(raw.aiModel, 80),
-    contentSafetyStatus: cleanText(raw.contentSafetyStatus, 30),
-    reactionTotal: Math.max(0, Number(raw.reactionTotal) || 0),
-    commentCount: Math.max(0, Number(raw.commentCount) || 0),
-    courtStage: cleanText(raw.courtStage, 30),
-    appeal: safeAppeal(raw.appeal),
-    createdAt: timestampMillis(raw.createdAt),
-    updatedAt: timestampMillis(raw.updatedAt || raw.createdAt)
-  };
+function cleanCaseId(value) {
+  const caseId = String(value || '').trim().slice(0, 180);
+  return /^[A-Za-z0-9_-]{1,180}$/.test(caseId) ? caseId : '';
 }
 
 function isMissingIndexError(error) {
@@ -117,7 +35,14 @@ function isMissingIndexError(error) {
     || message.includes('index is currently building');
 }
 
+async function persistPublicCopy(caseId, raw) {
+  const data = publicStorageProjection(raw);
+  await db.doc(`public_results/${caseId}`).set(data);
+  return data;
+}
+
 async function loadRows(maxRows) {
+  // Internal results are read only by Admin SDK here. Browser clients never list this collection.
   const base = db.collection('results')
     .where('isPublic', '==', true)
     .where('publicDataVersion', '==', 1);
@@ -134,9 +59,15 @@ async function loadRows(maxRows) {
       .slice(0, maxRows);
   }
 
-  return documents
-    .filter(document => isSanitizedPublicResult(document.data() || {}))
-    .map(document => ({ id: document.id, data: publicProjection(document.data() || {}) }));
+  const safeDocuments = documents.filter(document => isSanitizedPublicResult(document.data() || {}));
+  // The mirror is intentionally refreshed before the response so reactions/comments that follow
+  // this list request can use public_results as the public-access marker without a race.
+  await Promise.all(safeDocuments.map(document => persistPublicCopy(document.id, document.data() || {})));
+
+  return safeDocuments.map(document => ({
+    id: document.id,
+    data: publicClientProjection(document.data() || {})
+  }));
 }
 
 exports.listPublicResults = onCall({
@@ -159,7 +90,39 @@ exports.listPublicResults = onCall({
   return { rows: await loadRows(maxRows) };
 });
 
+exports.getPublicResult = onCall({
+  region: REGION,
+  timeoutSeconds: 20,
+  memory: '256MiB',
+  maxInstances: 20
+}, async request => {
+  requireAppCheck(request);
+  const requesterUid = String(request.auth?.uid || '');
+  if (!requesterUid) {
+    throw new HttpsError('unauthenticated', '앱에서 다시 접속해 주세요.');
+  }
+
+  const caseId = cleanCaseId(request.data?.caseId);
+  if (!caseId) throw new HttpsError('invalid-argument', '판결 식별자가 올바르지 않습니다.');
+
+  await enforceActionRateLimit(requesterUid, 'public-result-get', {
+    cooldownSeconds: 0,
+    dailyLimit: 500
+  });
+
+  const snapshot = await db.doc(`results/${caseId}`).get();
+  if (!snapshot.exists || !isSanitizedPublicResult(snapshot.data() || {})) {
+    // Remove a stale mirror if the internal record has since been hidden or deleted.
+    await db.doc(`public_results/${caseId}`).delete().catch(() => null);
+    throw new HttpsError('not-found', '공개 판결문을 찾을 수 없습니다.');
+  }
+
+  const raw = snapshot.data() || {};
+  await persistPublicCopy(caseId, raw);
+  return { caseId, result: publicClientProjection(raw) };
+});
+
 Object.defineProperties(module.exports, {
-  isSanitizedPublicResult: { value: isSanitizedPublicResult, enumerable: false },
-  publicProjection: { value: publicProjection, enumerable: false }
+  loadRows: { value: loadRows, enumerable: false },
+  persistPublicCopy: { value: persistPublicCopy, enumerable: false }
 });
