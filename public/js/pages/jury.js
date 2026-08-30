@@ -168,18 +168,6 @@ async function loadJuryList(container, requestedCaseId = '') {
     return;
   }
 
-  if (requestedCaseId) {
-    try {
-      const snap = await getDoc(doc(db, 'results', requestedCaseId));
-      if (snap.exists() && snap.data()?.verdict) {
-        await openCase(container, requestedCaseId, snap.data());
-        return;
-      }
-    } catch (err) {
-      console.warn('jury private case fetch failed:', err?.code || err);
-    }
-  }
-
   const seen = jurySeenSet();
   slot.innerHTML = `<div class="jury-list-head">공개 사건 ${rows.length}건 · 판결은 투표 전까지 가려집니다</div><div class="jury-list">${rows.map(([caseId, data]) => juryListCard(caseId, data, seen.has(caseId))).join('')}</div>`;
   slot.querySelectorAll('.jury-list-card').forEach(button => {
@@ -197,7 +185,17 @@ async function priorVoteFor(caseId) {
   try {
     const snapshot = await getDoc(doc(db, `result_reactions/${caseId}/votes/${user.uid}`));
     const reaction = snapshot.exists() ? String(snapshot.data().reaction || '') : '';
-    return Object.prototype.hasOwnProperty.call(SIDE_LABEL, reaction) ? reaction : '';
+    if (Object.prototype.hasOwnProperty.call(SIDE_LABEL, reaction)) return reaction;
+
+    // Owner may have predicted via voteOwnVerdict before making the case public
+    try {
+      const caseSnap = await getDoc(doc(db, 'cases', caseId));
+      if (caseSnap.exists() && caseSnap.data().userId === user.uid) {
+        const ownerVote = String(caseSnap.data().ownerVerdictVote || '');
+        if (Object.prototype.hasOwnProperty.call(SIDE_LABEL, ownerVote)) return ownerVote;
+      }
+    } catch {}
+    return '';
   } catch (error) {
     console.warn('jury prior vote load failed:', error?.code || error);
     return '';
