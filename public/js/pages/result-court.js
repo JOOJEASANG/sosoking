@@ -158,7 +158,7 @@ function patchShareButton(container, caseId) {
 
   button.addEventListener('click', async () => {
     const newPublic = button.textContent.includes('공개하기');
-    if (newPublic && !window.confirm('닉네임, 사건 내용과 AI 판결문이 공개 판결기록에 표시됩니다. 개인정보가 없는지 확인했으며 공개에 동의하시겠습니까?')) {
+    if (newPublic && !window.confirm('공개용 사건 정보, 공개 닉네임과 AI 판결문이 판결기록에 표시됩니다. 처음 입력한 접수 원문은 작성자 본인에게만 보입니다. 공개할 내용에 개인정보가 없는지 확인하셨습니까?')) {
       return;
     }
     const oldText = button.textContent;
@@ -172,13 +172,10 @@ function patchShareButton(container, caseId) {
         const url = `${location.origin}/result/${encodeURIComponent(caseId)}`;
         await navigator.clipboard?.writeText(url).catch(() => {});
         showToast('공개했습니다. 민심소에서 다른 사람들이 판정·논쟁합니다. 공개 링크도 복사했습니다.', 'success');
-        // 공개된 사건은 민심소로 넘어가 투표·댓글논쟁의 대상이 된다. 작성자를 그 참여
-        // 아레나로 바로 안내한다.
         location.hash = '#/jury';
         return;
       }
       showToast('공개 판결을 비공개로 전환했습니다.', 'success');
-
       await renderResult(container, caseId);
     } catch (err) {
       console.error('result visibility update failed:', err);
