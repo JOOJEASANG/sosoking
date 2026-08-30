@@ -18,36 +18,25 @@ for (const required of [
 
 const submitPage = read('public/js/pages/submit.js');
 for (const required of [
-  'id="is-public"',
-  "const isPublic = document.getElementById('is-public').checked;",
-  'await submitCase({ caseDescription: desc, isPublic });'
+  '새 사건은 항상 비공개로 시작합니다.',
+  '비공개 생성 → 내 예상 판정 → AI 판결 공개',
+  'await submitCase({ caseDescription: desc, isPublic: false });',
+  '그 후 원하는 경우에만 공개 판결기록으로 전환할 수 있습니다.'
 ]) {
   if (!submitPage.includes(required)) {
-    errors.push(`public/js/pages/submit.js: existing submission contract changed unexpectedly ${required}`);
+    errors.push(`public/js/pages/submit.js: canonical private-first interface missing ${required}`);
   }
 }
-
-const submitCourt = read('public/js/pages/submit-court.js');
-for (const required of [
-  'function enforcePrivateFirstSubmission(container)',
-  '<input type="checkbox" id="is-public" hidden disabled aria-hidden="true">',
-  '판결문은 먼저 비공개로 생성됩니다',
-  '이미 생성된 AI 판결문은 다시 작성하거나 손상시키지 않습니다.',
-  'enforcePrivateFirstSubmission(container);'
-]) {
-  if (!submitCourt.includes(required)) {
-    errors.push(`public/js/pages/submit-court.js: private-first interface missing ${required}`);
-  }
-}
-
-const submitGuard = read('public/js/pages/submit-guard.js');
-if (!submitGuard.includes("./submit-court.js?v=20260731-private-first-publication-1")) {
-  errors.push('public/js/pages/submit-guard.js: private-first submit wrapper is not active');
+if (submitPage.includes('id="is-public"') || submitPage.includes("document.getElementById('is-public')")) {
+  errors.push('public/js/pages/submit.js: submission-time public toggle must not return');
 }
 
 const app = read('public/js/app.js');
-if (!app.includes("./pages/submit-guard.js?v=20260731-private-first-publication-1")) {
-  errors.push('public/js/app.js: private-first submit guard is not active');
+if (!app.includes("import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';")) {
+  errors.push('public/js/app.js: canonical private-first submit page is not active');
+}
+for (const retired of ['submit-guard.js', 'submit-court.js']) {
+  if (app.includes(retired)) errors.push(`public/js/app.js: retired ${retired} remains active`);
 }
 
 const index = read('public/index.html');
@@ -59,15 +48,39 @@ if (!appVersion) {
 const worker = read('public/sw.js');
 for (const required of [
   `/js/app.js?v=${appVersion}`,
-  '/js/pages/submit-guard.js?v=20260731-private-first-publication-1',
-  '/js/pages/submit-court.js?v=20260731-private-first-publication-1'
+  '/js/pages/submit.js?v=20260830-final-audit-1'
 ]) {
   if (!worker.includes(required)) {
-    errors.push(`public/sw.js: private-first cache graph missing ${required}`);
+    errors.push(`public/sw.js: private-first canonical cache graph missing ${required}`);
   }
+}
+for (const retired of ['submit-guard.js', 'submit-court.js']) {
+  if (worker.includes(retired)) errors.push(`public/sw.js: retired ${retired} remains cached`);
 }
 if (!appVersion || !worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
   errors.push('public/index.html and public/sw.js: active application cache versions differ');
+}
+
+const ownerVerdict = read('functions/owner-verdict.js');
+for (const required of [
+  'exports.voteOwnVerdict',
+  'ownerVerdictVote',
+  "['plaintiff', 'defendant', 'both']"
+]) {
+  if (!ownerVerdict.includes(required)) {
+    errors.push(`functions/owner-verdict.js: pre-verdict owner selection missing ${required}`);
+  }
+}
+
+const resultPage = read('public/js/pages/result-comments.js');
+for (const required of [
+  'addOwnerBlindGate',
+  "httpsCallable(functions, 'voteOwnVerdict')",
+  '첫 선택이 기록되며, AI 판결을 본 뒤에는 바꿀 수 없습니다.'
+]) {
+  if (!resultPage.includes(required)) {
+    errors.push(`public/js/pages/result-comments.js: owner verdict seal missing ${required}`);
+  }
 }
 
 const trialGenerator = read('functions/generate-trial-lite.js') + read('functions/verdict-prompt.js');
@@ -91,4 +104,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Private-first publication validation passed: cases stay private through AI generation and can be published only after result review.');
+console.log('Private-first publication validation passed: canonical submit stays private, owner predicts before reveal, and publication remains post-verdict only.');
