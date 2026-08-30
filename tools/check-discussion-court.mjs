@@ -25,6 +25,11 @@ if ((page.match(/\{ id: '(plaintiff|defendant|both)', label:/g) || []).length !=
   errors.push('discussion page: stance definition count is not exactly three');
 }
 
+const social = read('functions/social.js');
+need(social, "const REACTIONS = ['plaintiff','defendant','both']", 'jury vote server');
+need(social, 'if (REACTIONS.includes(previousRaw))', 'jury vote server');
+need(social, 'alreadyVoted = true', 'jury vote server');
+
 const server = read('functions/discussion.js');
 for (const value of [
   "const DISCUSSION_STANCES = ['plaintiff', 'defendant', 'both']",
@@ -86,7 +91,7 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
 for (const value of [
   '/js/pages/discussion.js?v=20260730-discussion-court-1',
   '/js/pages/result-comments.js?v=20260830-final-audit-1',
-  '/js/pages/jury.js?v=20260830-jury-vote-fix-1'
+  '/js/pages/jury.js?v=20260830-final-blind-1'
 ]) need(worker, value, 'discussion cache');
 if (worker.includes('/js/pages/board.js')) {
   errors.push('discussion cache: retired board page is still cached');
@@ -98,4 +103,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Discussion court validation passed: three choices, transactional deletion safety, inline jury debate, routes, deployment, and canonical cache wiring.');
+console.log('Discussion court validation passed: immutable three-way choices, transactional deletion safety, inline jury debate, routes, deployment, and canonical cache wiring.');
