@@ -12,6 +12,7 @@ Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));
 Object.assign(exports, require('./public-seo-safe'));
 Object.assign(exports, require('./public-results-list'));
+Object.assign(exports, require('./public-result-mirror'));
 Object.assign(exports, require('./public-original'));
 Object.assign(exports, require('./case-aliases'));
 Object.assign(exports, require('./submit-secure'));
