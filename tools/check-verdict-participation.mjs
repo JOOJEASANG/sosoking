@@ -85,7 +85,7 @@ expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
 expect(sw.includes('/js/pages/result-court.js?v=20260829-arena-1')
   && sw.includes('/js/pages/discussion.js?v=20260730-discussion-court-1')
-  && sw.includes('/js/pages/jury.js?v=20260829-arena-2')
+  && sw.includes('/js/pages/jury.js?v=20260830-jury-vote-fix-1')
   && !sw.includes('/js/pages/participation.js')
   && !sw.includes('/js/pages/board.js'),
   'public/sw.js: canonical full verdict/jury/discussion modules or retired-board cleanup are inconsistent');

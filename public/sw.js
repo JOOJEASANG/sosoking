@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260830-final-audit-1';
+const CACHE_NAME = 'sosoking-app-v20260830-jury-vote-fix-1';
 
 const APP_SHELL = [
   '/',
@@ -37,7 +37,7 @@ const APP_SHELL = [
   '/js/pages/guide.js?v=20260830-final-audit-1',
   '/js/pages/auth2.js?v=20260829-avatar-1',
   '/js/pages/hall.js?v=20260829-arena-2',
-  '/js/pages/jury.js?v=20260829-arena-2',
+  '/js/pages/jury.js?v=20260830-jury-vote-fix-1',
   '/js/utils/sanitize.js?v=20260630-3',
   '/js/utils/public-results.js?v=20260730-public-records-2',
   '/js/utils/jury-seen.js?v=20260829-jury-content-1',
