@@ -41,8 +41,7 @@ async function persistPublicCopy(caseId, raw) {
   return data;
 }
 
-async function loadRows(maxRows) {
-  // Internal results are read only by Admin SDK here. Browser clients never list this collection.
+async function loadInternalFallback(maxRows) {
   const base = db.collection('results')
     .where('isPublic', '==', true)
     .where('publicDataVersion', '==', 1);
@@ -60,9 +59,30 @@ async function loadRows(maxRows) {
   }
 
   const safeDocuments = documents.filter(document => isSanitizedPublicResult(document.data() || {}));
-  // The mirror is intentionally refreshed before the response so reactions/comments that follow
-  // this list request can use public_results as the public-access marker without a race.
   await Promise.all(safeDocuments.map(document => persistPublicCopy(document.id, document.data() || {})));
+  return safeDocuments.map(document => ({ id: document.id, data: publicClientProjection(document.data() || {}) }));
+}
+
+async function loadRows(maxRows) {
+  // Public consumers use only the isolated mirror. Internal results are touched solely as a
+  // server-side recovery path for a missing mirror during migration or transient trigger delay.
+  let documents;
+  try {
+    const snapshot = await db.collection('public_results')
+      .orderBy('createdAt', 'desc')
+      .limit(maxRows)
+      .get();
+    documents = snapshot.docs;
+  } catch (error) {
+    if (!isMissingIndexError(error)) throw error;
+    const snapshot = await db.collection('public_results').limit(Math.min(MAX_LIMIT * 2, Math.max(maxRows, 100))).get();
+    documents = snapshot.docs
+      .sort((left, right) => timestampMillis(right.data()?.createdAt) - timestampMillis(left.data()?.createdAt))
+      .slice(0, maxRows);
+  }
+
+  const safeDocuments = documents.filter(document => isSanitizedPublicResult(document.data() || {}));
+  if (!safeDocuments.length) return loadInternalFallback(maxRows);
 
   return safeDocuments.map(document => ({
     id: document.id,
@@ -110,16 +130,21 @@ exports.getPublicResult = onCall({
     dailyLimit: 500
   });
 
-  const snapshot = await db.doc(`results/${caseId}`).get();
-  if (!snapshot.exists || !isSanitizedPublicResult(snapshot.data() || {})) {
-    // Remove a stale mirror if the internal record has since been hidden or deleted.
+  const publicSnapshot = await db.doc(`public_results/${caseId}`).get();
+  if (publicSnapshot.exists && isSanitizedPublicResult(publicSnapshot.data() || {})) {
+    return { caseId, result: publicClientProjection(publicSnapshot.data() || {}) };
+  }
+
+  // Migration/trigger-lag recovery only. The internal document is never returned directly.
+  const internalSnapshot = await db.doc(`results/${caseId}`).get();
+  if (!internalSnapshot.exists || !isSanitizedPublicResult(internalSnapshot.data() || {})) {
     await db.doc(`public_results/${caseId}`).delete().catch(() => null);
     throw new HttpsError('not-found', '공개 판결문을 찾을 수 없습니다.');
   }
 
-  const raw = snapshot.data() || {};
-  await persistPublicCopy(caseId, raw);
-  return { caseId, result: publicClientProjection(raw) };
+  const raw = internalSnapshot.data() || {};
+  const stored = await persistPublicCopy(caseId, raw);
+  return { caseId, result: publicClientProjection(stored) };
 });
 
 Object.defineProperties(module.exports, {
