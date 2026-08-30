@@ -71,7 +71,7 @@ for (const required of [
 }
 
 const guide = read('public/js/pages/guide.js');
-if (!guide.includes('운영자는 테스트·비용·안전 상황에 따라 제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.')) {
+if (!guide.includes('운영자는 비용·안전·운영 상황에 따라 제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.')) {
   errors.push('public/js/pages/guide.js: configurable limit guidance is missing');
 }
 if (guide.includes('회원당 하루 1회입니다.')) {
