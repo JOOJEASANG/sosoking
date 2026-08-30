@@ -19,10 +19,12 @@ for (const required of [
   'requireVerifiedUser(request)',
   'isAdminAuth(request.auth)',
   'return await createDailyAiCase(true);',
-  '관리자 화면의 버튼이 호출하는 이 함수로만 실행한다.'
+  '관리자 화면의 버튼이 호출하는 이 함수로만 실행한다.',
+  'const configuredModel = cleanText(settings.geminiModel, 60);',
+  'const modelNames = [...new Set([configuredModel, ...DEFAULT_MODELS].filter(Boolean))];'
 ]) {
   if (!daily.includes(required)) {
-    errors.push(`functions/daily.js: administrator-only generation guard missing: ${required}`);
+    errors.push(`functions/daily.js: administrator-only generation/model guard missing: ${required}`);
   }
 }
 
@@ -79,8 +81,8 @@ for (const required of [
 }
 
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-loop-fix-1')) {
-  errors.push('public/admin/index.html: fixed administrator-only AI interface guard is not loaded');
+if (!adminIndex.includes('/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-model-selector-1')) {
+  errors.push('public/admin/index.html: current administrator AI interface is not loaded');
 }
 
 const adminMode = read('public/admin/admin-manual-ai-mode.js');
@@ -97,10 +99,20 @@ for (const required of [
   'function setTextIfChanged(element, text)',
   "const aiCard = dailyToggle.closest('.card');",
   'if (scheduled) return;',
-  'const observer = new MutationObserver(scheduleApply);'
+  'const observer = new MutationObserver(scheduleApply);',
+  'const MODEL_OPTIONS = [',
+  "value: 'gemini-2.5-flash'",
+  "value: 'gemini-2.5-flash-lite'",
+  "value: 'gemini-2.5-pro'",
+  'function normalizeModelSelector(root)',
+  "setTextIfChanged(group?.querySelector('.form-label'), 'AI 모델 선택');",
+  "select.dataset.aiModelSelector = 'true';",
+  'modelControl.replaceWith(select);',
+  '현재 저장된 모델',
+  '선택 모델 호출이 실패하면 서버의 기본 모델 순서로 자동 재시도합니다.'
 ]) {
   if (!adminMode.includes(required)) {
-    errors.push(`public/admin/admin-manual-ai-mode.js: manual generation interface or loop guard missing: ${required}`);
+    errors.push(`public/admin/admin-manual-ai-mode.js: manual generation/model selector or loop guard missing: ${required}`);
   }
 }
 if (!adminMode.includes('toggleLabel?.remove()')) {
@@ -114,10 +126,11 @@ const admin = read('public/admin/admin.js');
 for (const required of [
   "generateDaily: httpsCallable(functions, 'generateDailyAiNow')",
   "target.querySelector('#generate-daily-now')",
-  "await callables.generateDaily({})"
+  "await callables.generateDaily({})",
+  "target.querySelector('#model').value.trim() || 'gemini-2.5-flash'"
 ]) {
   if (!admin.includes(required)) {
-    errors.push(`public/admin/admin.js: administrator generation button path missing: ${required}`);
+    errors.push(`public/admin/admin.js: administrator generation/model save path missing: ${required}`);
   }
 }
 
@@ -127,4 +140,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only AI validation passed: scheduled generation stays removed, the AI tab mutation guard is idempotent, seven-judge output is enforced, and the deployed callable remains administrator-only.');
+console.log('Administrator-only AI validation passed: scheduled generation stays removed, the AI tab mutation guard is idempotent, selectable stable Gemini models persist through the existing setting, and the deployed callable remains administrator-only.');
