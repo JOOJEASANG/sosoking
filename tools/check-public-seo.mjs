@@ -22,7 +22,6 @@ for (const required of [
 if (renderer.includes("collection('cases')")) {
   errors.push('functions/public-seo.js: public SEO rendering must not read private case documents');
 }
-// 서버 렌더링 판결문을 읽은 사건도 민심소 '본 사건'으로 기록해야 중복 노출이 막힌다.
 if (!renderer.includes('/js/public-result-seen.js')) {
   errors.push('functions/public-seo.js: server-rendered verdict page must mark the case seen for 민심소');
 }
@@ -89,12 +88,13 @@ if (!robots.includes('Sitemap: https://sosoking.co.kr/sitemap.xml')) {
   errors.push('public/robots.txt: dynamic sitemap URL is missing');
 }
 
-const board = read('public/js/pages/board.js');
-if (!board.includes('function resultPath(id)') || !board.includes('`#/result/${encodeURIComponent(id)}`')) {
-  errors.push('public/js/pages/board.js: public cards do not open the full verdict app route');
+const home = read('public/js/pages/home.js');
+if (!home.includes('href="#/result/${encodeURIComponent(caseId)}"')
+  || !home.includes('data-public-result-link="true"')) {
+  errors.push('public/js/pages/home.js: recent public cards do not open the full verdict app route');
 }
-if (board.includes('return `/result/${encodeURIComponent(id)}`')) {
-  errors.push('public/js/pages/board.js: board cards must not leave the app before opening the full verdict record');
+if (home.includes('href="/result/${encodeURIComponent(caseId)}"')) {
+  errors.push('public/js/pages/home.js: app cards must not leave the SPA before opening the full verdict record');
 }
 
 const resultComments = read('public/js/pages/result-comments.js');
@@ -114,6 +114,9 @@ if (!serviceWorker.includes("url.pathname.startsWith('/result/')")
 }
 if (!/await\s+putCache\(request,\s*response\)/.test(serviceWorker)) {
   errors.push('public/sw.js: network navigation responses can overwrite the index fallback cache');
+}
+if (serviceWorker.includes('/js/pages/board.js')) {
+  errors.push('public/sw.js: retired board module remains in the public SEO cache graph');
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
@@ -141,4 +144,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public SEO validation passed: sanitized public verdicts remain indexable without requiring an Eventarc deployment dependency.');
+console.log('Public SEO validation passed: sanitized public verdicts remain indexable, canonical home links reach the full verdict, and no retired board dependency remains.');
