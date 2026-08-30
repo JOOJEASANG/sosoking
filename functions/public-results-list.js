@@ -41,7 +41,9 @@ async function persistPublicCopy(caseId, raw) {
   return data;
 }
 
-async function loadInternalFallback(maxRows) {
+async function loadRows(maxRows) {
+  // Internal results remain the authoritative publication state. This server-only query prevents
+  // stale public mirror documents from keeping a hidden/private result visible.
   const base = db.collection('results')
     .where('isPublic', '==', true)
     .where('publicDataVersion', '==', 1);
@@ -60,29 +62,6 @@ async function loadInternalFallback(maxRows) {
 
   const safeDocuments = documents.filter(document => isSanitizedPublicResult(document.data() || {}));
   await Promise.all(safeDocuments.map(document => persistPublicCopy(document.id, document.data() || {})));
-  return safeDocuments.map(document => ({ id: document.id, data: publicClientProjection(document.data() || {}) }));
-}
-
-async function loadRows(maxRows) {
-  // Public consumers use only the isolated mirror. Internal results are touched solely as a
-  // server-side recovery path for a missing mirror during migration or transient trigger delay.
-  let documents;
-  try {
-    const snapshot = await db.collection('public_results')
-      .orderBy('createdAt', 'desc')
-      .limit(maxRows)
-      .get();
-    documents = snapshot.docs;
-  } catch (error) {
-    if (!isMissingIndexError(error)) throw error;
-    const snapshot = await db.collection('public_results').limit(Math.min(MAX_LIMIT * 2, Math.max(maxRows, 100))).get();
-    documents = snapshot.docs
-      .sort((left, right) => timestampMillis(right.data()?.createdAt) - timestampMillis(left.data()?.createdAt))
-      .slice(0, maxRows);
-  }
-
-  const safeDocuments = documents.filter(document => isSanitizedPublicResult(document.data() || {}));
-  if (!safeDocuments.length) return loadInternalFallback(maxRows);
 
   return safeDocuments.map(document => ({
     id: document.id,
@@ -130,12 +109,7 @@ exports.getPublicResult = onCall({
     dailyLimit: 500
   });
 
-  const publicSnapshot = await db.doc(`public_results/${caseId}`).get();
-  if (publicSnapshot.exists && isSanitizedPublicResult(publicSnapshot.data() || {})) {
-    return { caseId, result: publicClientProjection(publicSnapshot.data() || {}) };
-  }
-
-  // Migration/trigger-lag recovery only. The internal document is never returned directly.
+  // Always re-check the authoritative internal result before serving a public detail.
   const internalSnapshot = await db.doc(`results/${caseId}`).get();
   if (!internalSnapshot.exists || !isSanitizedPublicResult(internalSnapshot.data() || {})) {
     await db.doc(`public_results/${caseId}`).delete().catch(() => null);
