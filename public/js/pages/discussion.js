@@ -93,7 +93,6 @@ function errorMessage(error, fallback) {
 
 async function loadDiscussion(caseId) {
   const user = auth.currentUser;
-  const resultRef = doc(db, 'results', caseId);
   const reactionRef = doc(db, 'result_reactions', caseId);
   const commentsQuery = query(
     collection(db, `court_comments/${caseId}/items`),
@@ -101,8 +100,11 @@ async function loadDiscussion(caseId) {
     limit(COMMENT_LIMIT)
   );
 
-  const [resultSnap, reactionSnap, commentSnap, myVoteSnap] = await Promise.all([
-    getDoc(resultRef),
+  const publicResultPromise = httpsCallable(functions, 'getPublicResult')({ caseId })
+    .then(response => response?.data?.result || null);
+
+  const [result, reactionSnap, commentSnap, myVoteSnap] = await Promise.all([
+    publicResultPromise,
     getDoc(reactionRef).catch(() => null),
     getDocs(commentsQuery).catch(() => null),
     user
@@ -111,7 +113,7 @@ async function loadDiscussion(caseId) {
   ]);
 
   return {
-    result: resultSnap.exists() ? resultSnap.data() : null,
+    result: result && typeof result === 'object' ? result : null,
     reactions: reactionSnap?.exists() ? reactionSnap.data() : { counts: {} },
     comments: commentSnap?.docs?.map(item => ({ id: item.id, ...item.data() })) || [],
     myStance: myVoteSnap?.exists() ? String(myVoteSnap.data().reaction || '') : ''
