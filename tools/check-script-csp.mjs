@@ -82,12 +82,12 @@ if (!themeInit.includes("localStorage.getItem('theme')") || !/try\s*\{[\s\S]*cat
 
 const app = fs.readFileSync('public/js/app.js', 'utf8');
 for (const specifier of [
-  "./pages/home.js?v=20260830-final-audit-1",
+  "./pages/home.js?v=20260830-final-blind-1",
   "./pages/submit.js?v=20260830-final-audit-1",
   "./pages/result-comments.js?v=20260830-final-audit-1",
   "./pages/policy.js?v=20260830-final-audit-1",
-  "./pages/hall.js?v=20260829-arena-2",
-  "./pages/jury.js?v=20260830-jury-vote-fix-1"
+  "./pages/hall.js?v=20260830-final-blind-1",
+  "./pages/jury.js?v=20260830-final-blind-1"
 ]) {
   if (!app.includes(specifier)) errors.push(`public/js/app.js: canonical module import is missing ${specifier}`);
 }
