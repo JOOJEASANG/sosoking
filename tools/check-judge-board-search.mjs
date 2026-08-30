@@ -77,7 +77,7 @@ for (const value of [
   "const CACHE_NAME = 'sosoking-app-v20260830-final-audit-1';",
   '/js/pages/home.js?v=20260830-final-audit-1',
   '/js/pages/hall.js?v=20260829-arena-2',
-  '/js/pages/jury.js?v=20260829-arena-2'
+  '/js/pages/jury.js?v=20260830-jury-vote-fix-1'
 ]) need(worker, value, 'active cache');
 for (const retired of [
   'home-judge-assignment.js',
