@@ -125,11 +125,11 @@ function hasRequiredSections(data) {
   return Boolean(
     data
     && data.caseTitle.length >= 4
-    && data.reception.length >= 20
-    && data.investigation.length >= 20
-    && data.plaintiffArg.length >= 20
-    && data.defendantArg.length >= 20
-    && data.verdict.length >= 40
+    && data.reception.length >= 60
+    && data.investigation.length >= 120
+    && data.plaintiffArg.length >= 60
+    && data.defendantArg.length >= 60
+    && data.verdict.length >= 80
   );
 }
 
@@ -281,9 +281,14 @@ function buildLocalFallback(description, judge, grievanceIndex, errorCode = 'UNK
   const keywords = extractKeywords(detail);
   const subject = keywords.slice(0, 2).join('·') || cleanText(detail, 18) || '생활분쟁';
   const title = normalizeCaseTitle(`${subject} 분쟁 사건`, detail);
-  const evidence = keywords.length
-    ? keywords.map((word, index) => `제${index + 1}호 정황자료: '${word}' 관련 진술`).join('\n')
-    : '제1호 정황자료: 원고의 구체적 진술';
+  const kw0 = keywords[0] || '해당 사물';
+  const kw1 = keywords[1] || '현장';
+  const evidence = [
+    `1. 현장 CCTV 영상 정밀 분석 결과: '${kw0}' 관련 행위가 사건 당일 이전 동일 시간대에도 최소 3회 반복된 패턴으로 확인됨. 총 14시간 37분 분량 영상 검토 완료.`,
+    `2. '${kw1}' 현장 보존 및 동선 재구성: 원고 진술과 물리적 정황의 일치율 87.3%. 피고가 주장하는 동선과 3군데에서 충돌.`,
+    `3. 국과수 정밀 감정 의뢰 회신: 현장 물적 증거에서 피고 관여 흔적 추정 가능한 정황 포착. 감정 보고서 총 4페이지, 결론은 1페이지.`,
+    `4. 정황 목격자 진술 (인근 거주 김○○): "저는 직접 보지는 못했습니다만, 그날 분위기가 심상치 않았다는 것은 확실합니다. 제가 창문을 닫으려던 참이었거든요."`
+  ].join('\n');
   const penalty = localPenalty(detail, judge);
 
   return {
@@ -292,7 +297,7 @@ function buildLocalFallback(description, judge, grievanceIndex, errorCode = 'UNK
     tags: normalizeTags(keywords, detail),
     caseTitle: title,
     reception: `접수취지\n원고는 아래 생활상 분쟁으로 평온한 일상에 균열이 발생하였다며 정식 접수를 요청하였다.\n\n사건개요\n${detail}\n\n접수의견\n사건 규모는 소소하나 억울지수 ${grievanceIndex}/10이 부여될 정도로 당사자의 체감 무게가 확인된다. ${judge.type} 재판부는 이 사안을 그냥 넘길 경우 식탁·단체채팅방·거실 등에서 장기 미제사건으로 남을 가능성이 있다고 보아 접수한다.`,
-    investigation: `확인 정황\n원고의 진술에서 사건의 대상과 문제 행동이 비교적 구체적으로 특정된다. 별도의 감식반을 부를 정도는 아니지만 당사자 사이에서는 이미 결정적 장면으로 반복 재생되고 있다.\n\n주요 증거\n${evidence}\n\n진술 검토\n원고의 설명은 '${detail}'로 요약된다. 피고의 직접 진술이 확보되지 않은 부분은 확정 사실이 아닌 항변 가능 정황으로 남겨두되, 설명을 미룬 행위 자체가 사건을 키웠을 가능성은 높다.\n\n조사관 의견\n${judge.style} 이에 따라 '${subject}'를 중심으로 말의 앞뒤와 생활상 후속조치를 함께 심리할 필요가 있다.`,
+    investigation: `확인 정황\n수사팀은 사건 접수 3시간 만에 현장에 도착해 봉인 테이프를 설치하였다. '${kw0}' 관련 물적 증거 확보에 총 11시간 19분이 소요되었으며, 잠복 조사 결과 피고의 행동이 단발성이 아닌 반복 패턴임이 확인되었다. 원고가 억울지수 ${grievanceIndex}/10을 주장한 것은 단순한 감정 표현이 아니라 수치로 뒷받침된 피해 호소로 판단된다.\n\n주요 증거\n${evidence}\n\n진술 검토\n원고는 '${kw0}' 상황이 발생한 정확한 시각과 경위를 일관되게 진술하였다. 피고의 직접 진술은 현재까지 확보되지 않았으나, 제시된 항변 내용이 앞선 CCTV 분석 결과와 23분의 시간 오차를 보인다는 점이 이미 발견되었다. 이 간극이 단순 착오인지 의도적 왜곡인지는 변론 단계에서 추가 확인할 예정이다.\n\n조사관 의견\n${judge.style} 따라서 '${subject}' 관련 행위가 생활질서를 침해하는 반복 패턴에 해당할 가능성이 높으며, 국과수 회신 결과를 종합하면 원고의 주장은 상당 부분 사실에 부합하는 것으로 잠정 결론 내린다.`,
     plaintiffArg: `청구취지\n원고는 피고가 사건의 핵심 행동을 인정하고, 같은 상황이 반복되지 않도록 구체적인 생활상 조치를 이행할 것을 구한다.\n\n주장요지\n원고는 ${detail}\n라는 사정으로 인해 당연히 지켜질 것이라 믿었던 생활상 신뢰가 침해되었다고 주장한다.\n\n피해 및 요구사항\n원고가 구하는 핵심은 거창한 배상보다도 '왜 억울했는지를 정확히 이해받는 것'과 재발 방지다.`,
     defendantArg: `답변취지\n피고는 고의가 아니었고 상황이 우연히 그렇게 보였으며, 원고가 사건을 확대 해석했다는 취지로 항변할 가능성이 있다.\n\n항변요지\n다만 '${subject}'에 관한 구체적인 설명 없이 '그럴 수도 있지'라는 문장만 제출한다면 이는 답변서라기보다 책임 회피용 포스트잇에 가깝다.\n\n피고측 최종의견\n피고에게는 원고의 기억이 일부 과장되었음을 주장할 여지가 있으나, 사소한 일일수록 즉시 설명하고 정리했어야 한다는 점에서 완전한 면책은 어렵다.`,
     verdict: `주문\n1. 피고는 원고에게 본 사건의 핵심 경위를 인정하는 취지의 사건 맞춤형 사과를 한다.\n2. ${penalty}\n3. 나머지 과도한 감정 소모는 양 당사자가 각자 부담한다.\n\n판단이유\n이 사건은 ${detail}\n라는 생활상 분쟁에서 비롯되었다. 사건의 금액이나 규모가 작다는 이유만으로 억울함까지 자동으로 소액이 되는 것은 아니다.\n\n재판부는 '${subject}'에 관한 원고의 설명이 구체적이고, 피고가 납득할 만한 반대 설명을 제시하지 못한 상태에서는 문제 제기에 상당한 이유가 있다고 판단한다. 다만 피고의 직접 진술이 없는 만큼 형사드라마식 단정은 피하고 실행 가능한 생활형 처분으로 균형을 맞춘다.\n\n재판부 의견\n${judgeClosing(judge, subject)} 이상과 같이 판결한다.`,
