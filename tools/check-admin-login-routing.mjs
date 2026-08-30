@@ -59,7 +59,7 @@ for (const required of [
 
 const adminPolicy = read('public/admin/admin-policy-defaults.js');
 for (const required of [
-  "import { renderPolicy } from '../js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1'",
+  "import { renderPolicy } from '../js/pages/policy.js?v=20260830-final-audit-1'",
   'async function currentSitePolicy(type)',
   "root.querySelector('#policy-content')",
   'textarea.value = content',
@@ -84,6 +84,16 @@ for (const required of [
   if (!adminLimit.includes(required)) errors.push(`public/admin/admin-daily-limit.js: configurable case limit control missing ${required}`);
 }
 
+const manualAi = read('public/admin/admin-manual-ai-mode.js');
+for (const required of [
+  '자동 예약 없음',
+  'AI 샘플 사건 수동 생성',
+  'dailyToggle.checked = false',
+  'dailyToggle.disabled = true'
+]) {
+  if (!manualAi.includes(required)) errors.push(`public/admin/admin-manual-ai-mode.js: manual-only AI control missing ${required}`);
+}
+
 const adminDashboard = read('public/admin/admin.js');
 for (const required of [
   "setDoc(doc(db, 'policy_docs', active)",
@@ -102,24 +112,23 @@ const adminIndex = read('public/admin/index.html');
 for (const required of [
   '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
   '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1',
-  '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1'
+  '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1',
+  '/admin/admin-manual-ai-mode.js?v=20260731-admin-only-ai-1'
 ]) {
   if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);
 }
 
 const index = read('public/index.html');
 const worker = read('public/sw.js');
-for (const required of [
-  '/js/app.js?v=20260730-discussion-court-1',
-  '/js/admin-access.js?v=20260730-admin-redirect-1'
-]) {
-  if (!worker.includes(required)) errors.push(`public/sw.js: missing ${required}`);
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html/public/sw.js: active application version is not synchronized');
 }
-if (!index.includes('/js/app.js?v=20260730-discussion-court-1')) {
-  errors.push('public/index.html: discussion court app cache version is stale');
+if (!worker.includes('/js/admin-access.js?v=20260730-admin-redirect-1')) {
+  errors.push('public/sw.js: administrator access module is missing');
 }
-if (!worker.includes("sosoking-app-v20260730-discussion-court-1")) {
-  errors.push('public/sw.js: discussion court cache name is stale');
+if (!worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
+  errors.push('public/sw.js: cache name is not synchronized with the active app version');
 }
 
 if (errors.length) {
@@ -128,4 +137,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator validation passed: login/logout routing, configurable case limits, discussion routing, verdict access, and managed policy editing remain connected and cache-safe.');
+console.log('Administrator validation passed: login/logout routing, canonical policy editing, configurable case limits, manual AI generation, and synchronized app cache remain connected.');
