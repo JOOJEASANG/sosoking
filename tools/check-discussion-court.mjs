@@ -74,7 +74,10 @@ need(firebaseText, '/@(result|trial|discussion)/**', 'discussion CSP');
 
 const rules = read('firestore.rules');
 need(rules, 'match /court_comments/{caseId}/items/{commentId}', 'legacy comment compatibility');
-need(rules, 'function isPublicMirror(caseId)', 'public mirror participation guard');
+need(rules, 'function isResultPublic(caseId)', 'authoritative public participation guard');
+if (rules.includes('function isPublicMirror(caseId)')) {
+  errors.push('discussion rules: stale public mirror must not decide participation visibility');
+}
 
 const index = read('public/index.html');
 const worker = read('public/sw.js');
@@ -94,4 +97,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Discussion court validation passed: three choices, isolated public result loading, protected participation, routes, deployment, and cache wiring.');
+console.log('Discussion court validation passed: three choices, projected public loading, authoritative visibility checks, protected participation, routes and deployment are intact.');
