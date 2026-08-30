@@ -511,7 +511,7 @@ exports.generateTrial = onCall({
       aiSource,
       aiModel: usedModel || '',
       aiFallbackReason: fallbackCode || '',
-      promptVersion: 'verdict-v3-escalation-quirk',
+      promptVersion: 'verdict-v2-permissive-comedy',
       contentSafetyStatus: 'passed',
       contentSafetyCheckedAt: FieldValue.serverTimestamp(),
       reactionTotal: 0,
