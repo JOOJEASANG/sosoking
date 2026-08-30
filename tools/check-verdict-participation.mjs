@@ -8,6 +8,7 @@ const app = read('public/js/app.js');
 const home = read('public/js/pages/home.js');
 const hall = read('public/js/pages/hall.js');
 const jury = read('public/js/pages/jury.js');
+const discussion = read('public/js/pages/discussion.js');
 const result = read('public/js/pages/result.js');
 const resultComments = read('public/js/pages/result-comments.js');
 const resultCourt = read('public/js/pages/result-court.js');
@@ -53,6 +54,10 @@ expect(jury.includes('원고 승') && jury.includes('피고 승') && jury.includ
   && !jury.includes('jury-list-grievance')
   && !jury.includes('억울지수'),
   'public/js/pages/jury.js: blind unbiased three-way verdict participation is missing');
+expect(discussion.includes('최초 선택은 기록 후 변경할 수 없습니다.')
+  && discussion.includes('response.data?.alreadyVoted === true')
+  && !discussion.includes('선택은 다시 변경할 수 있습니다.'),
+  'public/js/pages/discussion.js: discussion stance UI must match immutable public voting');
 
 expect(social.includes("const REACTIONS = ['plaintiff','defendant','both']")
   && social.includes('if (REACTIONS.includes(previousRaw))')
@@ -102,6 +107,7 @@ expect(myCases.includes('`#/verdict/${encodeURIComponent(id)}`'),
 
 for (const moduleUrl of [
   "./pages/home.js?v=20260830-final-blind-1",
+  "./pages/discussion.js?v=20260830-final-blind-1",
   "./pages/hall.js?v=20260830-final-blind-1",
   "./pages/jury.js?v=20260830-final-blind-1"
 ]) {
@@ -114,7 +120,7 @@ const resultModuleVersion = app.match(/\.\/pages\/result-comments\.js\?v=([^"']+
 expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js?v=${resultModuleVersion}`),
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
 expect(sw.includes('/js/pages/result-court.js?v=20260829-arena-1')
-  && sw.includes('/js/pages/discussion.js?v=20260730-discussion-court-1')
+  && sw.includes('/js/pages/discussion.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/home.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/hall.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/jury.js?v=20260830-final-blind-1')
