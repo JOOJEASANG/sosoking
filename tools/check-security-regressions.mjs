@@ -57,6 +57,20 @@ if (!social.includes('appeal.contentSafetyStatus')) {
   errors.push('functions/social.js: generated appeal safety status is missing');
 }
 
+const discussion = read('functions/discussion.js');
+if (!discussion.includes('db.runTransaction')
+  || !discussion.includes('assertDiscussionWritable')
+  || !discussion.includes('tx.update(resultRef')) {
+  errors.push('functions/discussion.js: deletion-safe transactional comment write is missing');
+}
+
+const publicOriginal = read('functions/public-original.js');
+if (!publicOriginal.includes('originalVisible: true')
+  || !publicOriginal.includes('originalVisible: false')
+  || !publicOriginal.includes('safePublicDescription(resultData)')) {
+  errors.push('functions/public-original.js: owner-only original/public-safe description boundary is missing');
+}
+
 const daily = read('functions/daily.js');
 if (!daily.includes('moderateDailyContent')) {
   errors.push('functions/daily.js: post-generation daily content moderation is missing');
@@ -82,8 +96,6 @@ if (!trial.includes('totals.attempts += 1') || !trial.includes('geminiRequests: 
 if (!trial.includes('caseCount: FieldValue.increment(saved ? 1 : 0)')) {
   errors.push('functions/generate-trial-lite.js: case statistics include failed saves');
 }
-// promptVersion 값 자체는 고정하지 않는다. 프롬프트는 계속 손봐야 하는 대상이고,
-// 여기서 지켜야 할 것은 안전 검사와 버전 기록이 남아 있다는 사실뿐이다.
 if (!trial.includes('generatedSafety = inspectContent') || !/promptVersion: '[^']+'/.test(trial)) {
   errors.push('functions/generate-trial-lite.js: generated trial safety validation is missing');
 }
@@ -189,18 +201,28 @@ for (const privatePath of ['court_comment_authors', 'action_limits', 'report_key
     errors.push(`firestore.rules: explicit private rule is missing for ${privatePath}`);
   }
 }
-
-const homeCourt = read('public/js/pages/home-court.js');
-if (!homeCourt.includes("doc(db, 'site_public', 'statistics')")) {
-  errors.push('public/js/pages/home-court.js: authoritative public statistics document is not used');
+if (!rules.includes('function isPublicResultListData(data)')
+  || !rules.includes('allow list: if isAdmin() || isPublicResultListData(resource.data);')) {
+  errors.push('firestore.rules: public result direct-query compatibility guard is missing');
 }
-if (!homeCourt.includes("countElement.id = 'public-stat-count'")) {
-  errors.push('public/js/pages/home-court.js: legacy unauthorized count and fake animation are not disabled');
+
+const home = read('public/js/pages/home.js');
+if (!home.includes("doc(db, 'site_public', 'statistics')")) {
+  errors.push('public/js/pages/home.js: authoritative public statistics document is not used');
+}
+if (!home.includes('id=\"stat-count\">—') || home.includes('847+')) {
+  errors.push('public/js/pages/home.js: public count must start unknown instead of showing a fake statistic');
+}
+if (!home.includes('loadSafePublicResults')) {
+  errors.push('public/js/pages/home.js: canonical safe public result loader is missing');
 }
 
 const resultCourt = read('public/js/pages/result-court.js');
 if (!resultCourt.includes("httpsCallable(functions, 'resolveCaseAlias')") || !resultCourt.includes('location.replace')) {
   errors.push('public/js/pages/result-court.js: migrated legacy URLs are not redirected');
+}
+if (!resultCourt.includes('처음 입력한 접수 원문은 작성자 본인에게만 보입니다.')) {
+  errors.push('public/js/pages/result-court.js: public disclosure copy does not distinguish the private original');
 }
 
 const policy = read('public/js/pages/policy.js');
@@ -229,7 +251,7 @@ const adminIndex = read('public/admin/index.html');
 if (!adminIndex.includes('/admin/admin-bootstrap.js')) {
   errors.push('public/admin/index.html: strict admin bootstrap is not loaded');
 }
-if (adminIndex.includes('src="/admin/admin.js')) {
+if (adminIndex.includes('src=\"/admin/admin.js')) {
   errors.push('public/admin/index.html: legacy admin module bypasses the strict bootstrap');
 }
 
@@ -295,4 +317,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security regression validation passed: privacy, legacy ID migration, abuse limits, AI accounting, and publication moderation.');
+console.log('Security regression validation passed: privacy, public-query compatibility, deletion races, legacy IDs, abuse limits, AI accounting, and publication moderation.');
