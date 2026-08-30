@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260830-jury-vote-fix-1';
+const CACHE_NAME = 'sosoking-app-v20260830-final-audit-1';
 
 const APP_SHELL = [
   '/',
