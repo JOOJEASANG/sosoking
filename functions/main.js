@@ -7,6 +7,7 @@ if (!getApps().length) initializeApp();
 Object.assign(exports, require('./daily'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
+Object.assign(exports, require('./owner-verdict'));
 Object.assign(exports, require('./discussion'));
 Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));
