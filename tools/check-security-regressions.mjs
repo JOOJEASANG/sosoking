@@ -226,8 +226,9 @@ if (!resultCourt.includes('처음 입력한 접수 원문은 작성자 본인에
 }
 
 const policy = read('public/js/pages/policy.js');
-if (!policy.includes('신규 사건의 공개 주소 식별자에는 인증 UID를 포함하지 않습니다.')) {
-  errors.push('public/js/pages/policy.js: opaque public address policy disclosure is missing');
+if (!policy.includes('작성자가 처음 입력한 접수 원문은 작성자 본인에게만')
+  || !policy.includes('공개용 사건 정보, 공개용 닉네임')) {
+  errors.push('public/js/pages/policy.js: current private-original/public-safe disclosure is missing');
 }
 const obsoleteAiUseClaims = policy.match(/입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며/g) || [];
 if (obsoleteAiUseClaims.length > 1) {
