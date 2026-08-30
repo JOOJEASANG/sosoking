@@ -41,8 +41,8 @@ for (const required of [
 
 const ownerBranch = backend.split('if (isOwner) {')[1]?.split('\n  return {')[0] || '';
 assert.ok(ownerBranch.includes('caseData.caseDescription'), '실제 접수 원문은 소유자 분기에서만 읽어야 합니다.');
-const nonOwnerReturn = backend.split('if (isOwner) {')[1]?.split('  return {')[2] || '';
-assert.ok(!nonOwnerReturn.includes('caseData.caseDescription'), '공개 이용자 응답에 실제 caseDescription을 사용하면 안 됩니다.');
+const publicResponse = backend.split('caseDescription: safePublicDescription(resultData)')[1] || '';
+assert.ok(!publicResponse.includes('caseData.caseDescription'), '공개 이용자 응답에 실제 caseDescription을 사용하면 안 됩니다.');
 
 assert.ok(functionsMain.includes("require('./public-original')"), '접수 원문 함수가 Functions 엔트리에서 export되어야 합니다.');
 assert.ok(workflow.includes('functions:getPublicCaseOriginal'), 'Firebase 배포 대상에 접수 원문 함수가 포함되어야 합니다.');
@@ -50,16 +50,15 @@ assert.ok(workflow.includes('functions:getPublicCaseOriginal'), 'Firebase 배포
 for (const required of [
   'function addOriginalAccordion(container, caseId)',
   "judgeSummary.insertAdjacentElement('beforebegin', accordion)",
-  'data-original-accordion-trigger="true"',
-  '📄 접수 내용 펼쳐보기',
+  '📄 접수 기록 확인하기',
   "httpsCallable(functions, 'getPublicCaseOriginal')",
-  'data.originalVisible',
-  '작성자가 처음 접수한 원문입니다.',
-  '공개용 사건 내용입니다. 작성자가 처음 입력한 원문은 공개하지 않습니다.',
-  "body.textContent = data.caseDescription || '기록된 접수 내용이 없습니다.'"
-]) assert.ok(resultPage.includes(required), `판결 공통 접수내용 펼침 기능 누락: ${required}`);
+  'originalVisible = data.originalVisible === true',
+  '이 내용은 내가 사건 접수 때 직접 입력한 원문이며 작성자 본인에게만 표시됩니다.',
+  '실제 접수 원문은 작성자에게만 공개됩니다. 아래에는 공개용으로 안전하게 정리된 사건 정보만 표시됩니다.',
+  "body.textContent = data.caseDescription || (originalVisible ? '기록된 접수 원문이 없습니다.' : '공개 가능한 사건 정보가 없습니다.')"
+]) assert.ok(resultPage.includes(required), `판결 공통 접수기록 펼침 기능 누락: ${required}`);
 
-assert.ok(!resultPage.includes("if (!container.querySelector('#court-comment-input')) return;"), '접수내용 UI가 공개 방청석 여부에 종속되면 안 됩니다.');
+assert.ok(!resultPage.includes("if (!container.querySelector('#court-comment-input')) return;"), '접수기록 UI가 공개 방청석 여부에 종속되면 안 됩니다.');
 assert.ok(myCases.includes("? `#/verdict/${encodeURIComponent(id)}`"), '내 사건 완료 항목의 판결 경로가 유지되어야 합니다.');
 assert.ok(app.includes("hash.startsWith('#/verdict/')"), '소유자 판결 경로가 누락되었습니다.');
 assert.ok(app.includes("hash.startsWith('#/result/')"), '공개 판결 경로가 누락되었습니다.');
