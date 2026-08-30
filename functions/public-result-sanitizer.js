@@ -1,11 +1,24 @@
 'use strict';
 
 const { FieldValue } = require('firebase-admin/firestore');
+const { inspectContent } = require('./content-safety');
 
 const SENSITIVE_FIELDS = ['userId', 'caseDescription', 'nickname'];
 
 function hasOwn(data, key) {
   return Object.prototype.hasOwnProperty.call(data || {}, key);
+}
+
+function safePublicCaseDescription(value) {
+  const text = String(value || '').trim().slice(0, 600);
+  if (!text) return '';
+  return inspectContent(text).safe ? text : '';
+}
+
+function safePublicNickname(value) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+  if (!text) return '익명 원고';
+  return inspectContent(text, { allowHighRisk: true }).safe ? text : '익명 원고';
 }
 
 function publicSanitizationPatch(data = {}) {
@@ -21,14 +34,18 @@ function publicSanitizationPatch(data = {}) {
     }
   }
 
-  if (!hasOwn(data, 'publicCaseDescription')) {
-    patch.publicCaseDescription = '';
+  const nextDescription = safePublicCaseDescription(data.publicCaseDescription);
+  if (!hasOwn(data, 'publicCaseDescription') || data.publicCaseDescription !== nextDescription) {
+    patch.publicCaseDescription = nextDescription;
     changed = true;
   }
-  if (!hasOwn(data, 'publicNickname')) {
-    patch.publicNickname = '익명 원고';
+
+  const nextNickname = safePublicNickname(data.publicNickname);
+  if (!hasOwn(data, 'publicNickname') || data.publicNickname !== nextNickname) {
+    patch.publicNickname = nextNickname;
     changed = true;
   }
+
   if (Number(data.publicDataVersion || 0) !== 1) {
     patch.publicDataVersion = 1;
     changed = true;
@@ -38,5 +55,7 @@ function publicSanitizationPatch(data = {}) {
 }
 
 module.exports = {
-  publicSanitizationPatch
+  publicSanitizationPatch,
+  safePublicCaseDescription,
+  safePublicNickname
 };
