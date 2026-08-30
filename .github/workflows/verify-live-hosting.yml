@@ -22,12 +22,23 @@ jobs:
             exit 1
           fi
 
+      - name: Checkout deployed revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
       - name: Verify all production hosts serve the same release
         env:
-          EXPECTED_VERSION: sosoking-jury-content-20260829-1
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
+          EXPECTED_VERSION="$(tr -d '\r\n' < public/deploy-version.txt)"
+          if [ -z "$EXPECTED_VERSION" ]; then
+            echo "public/deploy-version.txt is empty"
+            exit 1
+          fi
+
           hosts=(
             "https://sosoking-481e6.web.app"
             "https://sosoking.co.kr"

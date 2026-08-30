@@ -80,6 +80,22 @@ if (!themeVersion || !serviceWorker.includes(`/js/theme-init.js?v=${themeVersion
   errors.push('public/index.html and public/sw.js: theme bootstrap cache versions are inconsistent');
 }
 
+const deployVersion = read('public/deploy-version.txt').trim();
+const htmlDeployVersion = index.match(/<meta name="sosoking-deploy-version" content="([^"]+)">/)?.[1] || '';
+if (!deployVersion || !htmlDeployVersion || deployVersion !== htmlDeployVersion) {
+  errors.push(`public deployment markers are inconsistent: file='${deployVersion}' html='${htmlDeployVersion}'`);
+}
+const liveVerify = read('.github/workflows/verify-live-hosting.yml');
+if (!liveVerify.includes("EXPECTED_VERSION=\"$(tr -d '\\r\\n' < public/deploy-version.txt)\"")) {
+  errors.push('.github/workflows/verify-live-hosting.yml: live verification must derive the release marker from deploy-version.txt');
+}
+if (!liveVerify.includes('ref: ${{ github.event.workflow_run.head_sha }}')) {
+  errors.push('.github/workflows/verify-live-hosting.yml: live verification must checkout the exact deployed revision');
+}
+if (/EXPECTED_VERSION:\s*sosoking-/m.test(liveVerify)) {
+  errors.push('.github/workflows/verify-live-hosting.yml: hard-coded release marker remains');
+}
+
 for (const [pagePath, html] of [
   ['public/index.html', index],
 ]) {
@@ -98,4 +114,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Hosting hardening validation passed: security headers, offline fallbacks, guarded theme storage, and all active versioned page assets are synchronized.');
+console.log('Hosting hardening validation passed: security headers, offline fallbacks, synchronized release markers, guarded theme storage, and all active versioned page assets are synchronized.');
