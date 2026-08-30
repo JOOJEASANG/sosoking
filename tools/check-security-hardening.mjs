@@ -64,7 +64,7 @@ for (const required of [
   if (!sanitizer.includes(required)) errors.push(`functions/public-result-sanitizer.js: missing ${required}`);
 }
 if (sanitizer.includes('onDocumentWritten') || sanitizer.includes('exports.sanitizePublicResult')) {
-  errors.push('functions/public-result-sanitizer.js: Eventarc trigger must remain disabled until deploy IAM is configured');
+  errors.push('functions/public-result-sanitizer.js: Eventarc sanitizer trigger must remain disabled until deploy IAM is configured');
 }
 
 const publicOriginal = read('functions/public-original.js');
@@ -95,19 +95,54 @@ if (discussion.includes('batch.set(resultRef')) {
   errors.push('functions/discussion.js: batch.set(resultRef) can recreate a deleted result document');
 }
 
+const publicResultData = read('functions/public-result-data.js');
+for (const required of [
+  'function isSanitizedPublicResult(data = {})',
+  "!Object.prototype.hasOwnProperty.call(data, 'caseDescription')",
+  'function publicStorageProjection(raw = {})',
+  'function publicClientProjection(raw = {})'
+]) {
+  if (!publicResultData.includes(required)) errors.push(`functions/public-result-data.js: missing ${required}`);
+}
+for (const forbidden of ['userId:', 'caseDescription:', 'nickname:']) {
+  if (publicResultData.includes(forbidden)) errors.push(`functions/public-result-data.js: public projection contains forbidden field ${forbidden}`);
+}
+
 const publicListFunction = read('functions/public-results-list.js');
 for (const required of [
   'exports.listPublicResults = onCall',
-  'function publicProjection(raw = {})',
-  "!Object.prototype.hasOwnProperty.call(data, 'caseDescription')",
-  "where('publicDataVersion', '==', 1)",
+  'exports.getPublicResult = onCall',
+  "db.collection('public_results')",
+  'publicClientProjection',
+  'publicStorageProjection',
   'requireAppCheck(request)',
-  '.map(document => ({ id: document.id, data: publicProjection(document.data() || {}) }))'
+  "db.doc(`results/${caseId}`).get()"
 ]) {
   if (!publicListFunction.includes(required)) errors.push(`functions/public-results-list.js: missing ${required}`);
 }
-for (const forbidden of ['userId:', 'caseDescription:', 'nickname:']) {
-  if (publicListFunction.includes(forbidden)) errors.push(`functions/public-results-list.js: public projection contains forbidden field ${forbidden}`);
+if (publicListFunction.includes('return { caseId, result: raw }')) {
+  errors.push('functions/public-results-list.js: internal result is returned without projection');
+}
+
+const mirror = read('functions/public-result-mirror.js');
+for (const required of [
+  'onDocumentWritten',
+  "document: 'results/{caseId}'",
+  'isSanitizedPublicResult(raw)',
+  'publicStorageProjection(raw)',
+  'publicRef.delete()'
+]) {
+  if (!mirror.includes(required)) errors.push(`functions/public-result-mirror.js: missing ${required}`);
+}
+
+const syncPublicResults = read('functions/sync-public-results-cli.js');
+for (const required of [
+  "db.collection('results')",
+  "db.doc(`public_results/${row.id}`)",
+  'publicStorageProjection(row.data)',
+  "db.collection('public_results').get()"
+]) {
+  if (!syncPublicResults.includes(required)) errors.push(`functions/sync-public-results-cli.js: missing ${required}`);
 }
 
 const safeSeo = read('functions/public-seo-safe.js');
@@ -128,7 +163,7 @@ for (const required of [
 }
 
 const main = read('functions/main.js');
-for (const required of ["require('./public-seo-safe')", "require('./public-results-list')"]) {
+for (const required of ["require('./public-seo-safe')", "require('./public-results-list')", "require('./public-result-mirror')"]) {
   if (!main.includes(required)) errors.push(`functions/main.js: missing ${required}`);
 }
 if (main.includes("require('./public-result-sanitizer')")) {
@@ -184,6 +219,7 @@ for (const required of [
 const deploy = read('.github/workflows/firebase-deploy.yml');
 const functionsStep = deploy.indexOf('Deploy current Functions first');
 const sanitizeStep = deploy.indexOf('Sanitize existing public results');
+const mirrorStep = deploy.indexOf('Synchronize isolated public result mirror');
 const rulesStep = deploy.indexOf('Deploy Firestore configuration and Hosting');
 const statisticsStep = deploy.indexOf('Initialize public statistics');
 if (deploy.includes('functions:sanitizePublicResult')) {
@@ -194,6 +230,9 @@ if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
 }
 for (const required of [
   'functions:listPublicResults',
+  'functions:getPublicResult',
+  'functions:syncPublicResultMirror',
+  'node functions/sync-public-results-cli.js',
   'id-token: write',
   'uses: ./.github/actions/firebase-auth',
   'vars.GCP_WORKLOAD_IDENTITY_PROVIDER',
@@ -203,8 +242,14 @@ for (const required of [
 ]) {
   if (!deploy.includes(required)) errors.push(`.github/workflows/firebase-deploy.yml: missing ${required}`);
 }
-if (functionsStep < 0 || sanitizeStep <= functionsStep || rulesStep <= sanitizeStep || statisticsStep <= rulesStep) {
-  errors.push('.github/workflows/firebase-deploy.yml: required order is Functions, sanitation, Firestore/Hosting, then index-dependent statistics');
+if (
+  functionsStep < 0 ||
+  sanitizeStep <= functionsStep ||
+  mirrorStep <= sanitizeStep ||
+  rulesStep <= mirrorStep ||
+  statisticsStep <= rulesStep
+) {
+  errors.push('.github/workflows/firebase-deploy.yml: required order is Functions, sanitation, public mirror sync, Firestore/Hosting, then index-dependent statistics');
 }
 
 if (fs.existsSync('.github/workflows/validate.yml')) {
@@ -217,4 +262,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, public privacy, lifecycle-safe writes, server-projected public lists, keyless deploy readiness, CSP, safe SEO and deployment ordering are intact.');
+console.log('Security hardening validation passed: App Check, public privacy, lifecycle-safe writes, isolated public result projections, keyless deploy readiness, CSP, safe SEO and deployment ordering are intact.');
