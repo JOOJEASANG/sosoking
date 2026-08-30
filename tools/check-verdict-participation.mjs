@@ -32,11 +32,13 @@ expect(home.includes('href="#/result/${encodeURIComponent(caseId)}"')
   && home.includes('data-public-result-link="true"')
   && home.includes('판결문 보기 →'),
   'public/js/pages/home.js: recent public records must retain the full verdict route');
-expect(hall.includes('#/jury')
-  && hall.includes('민심소에서 판결을 보지 않고 먼저 판정하기'),
+expect(hall.includes("location.hash = '#/jury'")
+  && hall.includes('판결을 가린 채 사건부터 읽고 직접 한 표를 정해보세요.')
+  && hall.includes('판결 내용과 어느 쪽이 우세한지는 여기서 미리 공개하지 않습니다.'),
   'public/js/pages/hall.js: ranking cards must lead to blind jury participation rather than reveal results early');
 expect(jury.includes('원고 승') && jury.includes('피고 승') && jury.includes('쌍방 과실')
-  && jury.includes('가려졌던 AI 판사의 판결과 민심 집계가 열리고'),
+  && jury.includes('가려졌던 AI 판결과 전체 민심 집계가 열립니다.')
+  && jury.includes('투표 전에는 AI 판결과 다른 이용자의 민심 비율을 보여주지 않습니다.'),
   'public/js/pages/jury.js: blind three-way public verdict participation is missing');
 
 expect(result.includes('💬 방청석 한마디') && result.includes("httpsCallable(functions, 'addCourtComment')"),
