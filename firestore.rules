@@ -25,10 +25,6 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/cases/$(caseId));
     }
 
-    function resultDoc(caseId) {
-      return get(/databases/$(database)/documents/results/$(caseId));
-    }
-
     function publicResultDoc(caseId) {
       return get(/databases/$(database)/documents/public_results/$(caseId));
     }
@@ -43,10 +39,6 @@ service cloud.firestore {
         && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
     }
 
-    function isResultPublic(caseId) {
-      return isSafePublicResultData(resultDoc(caseId).data);
-    }
-
     function isPublicMirror(caseId) {
       return isSafePublicResultData(publicResultDoc(caseId).data);
     }
@@ -54,7 +46,6 @@ service cloud.firestore {
     function canReadPublicCourt(caseId) {
       return signedIn() && (
         isPublicMirror(caseId) ||
-        isResultPublic(caseId) ||
         isCaseOwner(caseId) ||
         isAdmin()
       );
@@ -90,11 +81,9 @@ service cloud.firestore {
     }
 
     match /results/{caseId} {
-      allow get: if isSafePublicResultData(resource.data)
-        || isCaseOwner(caseId)
-        || isAdmin();
-      // 공개 목록은 listPublicResults Callable이 public_results를 읽어 명시적 허용 필드만 반환한다.
-      // 브라우저가 내부 results 컬렉션을 직접 list하지 못하게 해 내부 필드 추가가 곧 공개로 이어지는 일을 막는다.
+      // Internal results are never public Firestore documents. Public consumers use
+      // public_results/getPublicResult; owners and administrators keep direct access.
+      allow get: if isCaseOwner(caseId) || isAdmin();
       allow list: if isAdmin();
       allow update: if isAdmin();
       allow create: if false;
