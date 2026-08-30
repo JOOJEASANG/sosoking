@@ -79,8 +79,8 @@ for (const required of [
 }
 
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-manual-ai-mode.js?v=20260731-admin-only-ai-1')) {
-  errors.push('public/admin/index.html: administrator-only AI interface guard is not loaded');
+if (!adminIndex.includes('/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-loop-fix-1')) {
+  errors.push('public/admin/index.html: fixed administrator-only AI interface guard is not loaded');
 }
 
 const adminMode = read('public/admin/admin-manual-ai-mode.js');
@@ -92,14 +92,22 @@ for (const required of [
   'AI 샘플 사건 수동 생성',
   '자동 예약 없음',
   '자동 예약 없음 · 관리자 버튼으로만 생성',
-  '관리자가 버튼을 누른 경우에만 AI 샘플 사건을 생성'
+  '관리자가 버튼을 누른 경우에만 AI 샘플 사건을 생성',
+  'const MANUAL_GENERATE_LABEL',
+  'function setTextIfChanged(element, text)',
+  "const aiCard = dailyToggle.closest('.card');",
+  'if (scheduled) return;',
+  'const observer = new MutationObserver(scheduleApply);'
 ]) {
   if (!adminMode.includes(required)) {
-    errors.push(`public/admin/admin-manual-ai-mode.js: manual generation interface missing: ${required}`);
+    errors.push(`public/admin/admin-manual-ai-mode.js: manual generation interface or loop guard missing: ${required}`);
   }
 }
-if (!adminMode.includes("dailyToggle.closest('label')?.remove()")) {
+if (!adminMode.includes('toggleLabel?.remove()')) {
   errors.push('public/admin/admin-manual-ai-mode.js: obsolete scheduled-generation toggle is still visible');
+}
+if (adminMode.includes("generateButton.textContent = 'AI 샘플 사건 수동 생성';")) {
+  errors.push('public/admin/admin-manual-ai-mode.js: generate button text is rewritten unconditionally and can retrigger MutationObserver');
 }
 
 const admin = read('public/admin/admin.js');
@@ -119,4 +127,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only AI validation passed: scheduled generation stays removed, manual sample generation is explicit, seven-judge output is enforced, and the deployed callable remains administrator-only.');
+console.log('Administrator-only AI validation passed: scheduled generation stays removed, the AI tab mutation guard is idempotent, seven-judge output is enforced, and the deployed callable remains administrator-only.');

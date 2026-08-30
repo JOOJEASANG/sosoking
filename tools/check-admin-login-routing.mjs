@@ -113,7 +113,7 @@ for (const required of [
   '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
   '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1',
   '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1',
-  '/admin/admin-manual-ai-mode.js?v=20260731-admin-only-ai-1'
+  '/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-loop-fix-1'
 ]) {
   if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);
 }
