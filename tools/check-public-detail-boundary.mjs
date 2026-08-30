@@ -32,30 +32,51 @@ if (!resultRules.includes('allow get: if isCaseOwner(caseId) || isAdmin();')) {
   errors.push('firestore.rules: internal results get must be owner/admin-only');
 }
 if (resultRules.includes('isSafePublicResultData(resource.data)')) {
-  errors.push('firestore.rules: internal results still expose a public read path');
+  errors.push('firestore.rules: internal results still expose a public direct-read path');
+}
+if (!rules.includes('function isResultPublic(caseId)')) {
+  errors.push('firestore.rules: public court participation must re-check authoritative internal publication state');
 }
 
 const publicRules = rules.match(/match \/public_results\/\{caseId\}[\s\S]*?(?=\n    match \/result_reactions\/)/)?.[0] || '';
 for (const required of [
-  'allow get: if isSafePublicResultData(resource.data);',
-  'allow list: if isAdmin();',
+  'allow get, list: if isAdmin();',
   'allow create, update, delete: if false;'
 ]) {
   if (!publicRules.includes(required)) errors.push(`firestore.rules public_results: missing ${required}`);
 }
 
 const main = read('functions/main.js');
-if (!main.includes("require('./public-result-mirror')")) {
-  errors.push('functions/main.js: public result mirror trigger is not exported');
+if (main.includes("require('./public-result-mirror')")) {
+  errors.push('functions/main.js: Eventarc public mirror trigger must stay removed');
+}
+
+const publicList = read('functions/public-results-list.js');
+for (const required of [
+  "const internalSnapshot = await db.doc(`results/${caseId}`).get()",
+  'isSanitizedPublicResult(internalSnapshot.data() || {})',
+  'persistPublicCopy(caseId, raw)',
+  'publicClientProjection(stored)'
+]) {
+  if (!publicList.includes(required)) errors.push(`functions/public-results-list.js: missing ${required}`);
+}
+if (publicList.includes("const publicSnapshot = await db.doc(`public_results/${caseId}`).get()")) {
+  errors.push('functions/public-results-list.js: stale public mirror can be trusted before internal publication state');
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
 for (const required of [
   'functions:getPublicResult',
-  'functions:syncPublicResultMirror',
   'node functions/sync-public-results-cli.js'
 ]) {
   if (!deploy.includes(required)) errors.push(`firebase-deploy.yml: missing ${required}`);
+}
+if (deploy.includes('functions:syncPublicResultMirror')) {
+  errors.push('firebase-deploy.yml: Eventarc public mirror trigger must stay removed');
+}
+
+if (fs.existsSync('functions/public-result-mirror.js')) {
+  errors.push('functions/public-result-mirror.js: Eventarc trigger file must stay removed');
 }
 
 if (errors.length) {
@@ -64,4 +85,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public detail boundary validation passed: internal results stay owner/admin-only and public pages use isolated projections.');
+console.log('Public detail boundary validation passed: internal results stay owner/admin-only, public pages use projections, and server calls re-check authoritative publication state.');
