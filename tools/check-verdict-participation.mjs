@@ -11,6 +11,9 @@ const resultComments = read('public/js/pages/result-comments.js');
 const resultCourt = read('public/js/pages/result-court.js');
 const trial = read('public/js/pages/trial.js');
 const myCases = read('public/js/pages/my-cases.js');
+const ownerVerdict = read('functions/owner-verdict.js');
+const functionsMain = read('functions/main.js');
+const deployWorkflow = read('.github/workflows/firebase-deploy.yml');
 const index = read('public/index.html');
 const sw = read('public/sw.js');
 
@@ -36,6 +39,20 @@ expect(resultComments.includes("reactionButton?.closest('.card')?.remove()")
   && resultComments.includes("container.querySelector('.result-audience-title')?.remove()")
   && resultComments.includes('이 판결로 토론하기'),
   'public/js/pages/result-comments.js: old jury card must stay hidden while comments and discussion access remain');
+expect(resultComments.includes("httpsCallable(functions, 'voteOwnVerdict')")
+  && resultComments.includes("container.querySelector('.verdict-card')")
+  && resultComments.includes('AI 판결 봉인 중')
+  && resultComments.includes('첫 선택이 기록되며')
+  && resultComments.includes('ownerVerdictVote'),
+  'public/js/pages/result-comments.js: owners must predict once before their AI verdict is revealed');
+expect(ownerVerdict.includes("const OWNER_VERDICT_REACTIONS = ['plaintiff', 'defendant', 'both']")
+  && ownerVerdict.includes('caseData.userId !== uid')
+  && ownerVerdict.includes('ownerVerdictVote: reaction')
+  && ownerVerdict.includes('alreadyVoted'),
+  'functions/owner-verdict.js: owner prediction must be owner-only, three-way, persistent, and idempotent');
+expect(functionsMain.includes("require('./owner-verdict')")
+  && deployWorkflow.includes('functions:voteOwnVerdict'),
+  'owner blind-verdict callable must be exported and included in production deployment');
 expect(resultCourt.includes("[data-theme='dark'] .result-document-page")
   && resultCourt.includes('background:linear-gradient(145deg,#1a2130,#10151f)'),
   'public/js/pages/result-court.js: dark full-verdict styling is missing');
@@ -63,4 +80,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: records separate full verdicts and three-way discussions, old jury voting is hidden, legacy comments remain, and cache versions stay synchronized.');
+console.log('Verdict record validation passed: owner verdicts stay sealed until a one-time prediction, public records keep separate discussion access, and cache versions stay synchronized.');
