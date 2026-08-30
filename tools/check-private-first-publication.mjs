@@ -76,7 +76,8 @@ const resultPage = read('public/js/pages/result-comments.js');
 for (const required of [
   'addOwnerBlindGate',
   "httpsCallable(functions, 'voteOwnVerdict')",
-  '첫 선택이 기록되며, AI 판결을 본 뒤에는 바꿀 수 없습니다.'
+  '최초 선택만 기록되며 AI 판결을 본 뒤에는 바꿀 수 없습니다.',
+  '이 선택은 공개 민심 집계와 별개입니다.'
 ]) {
   if (!resultPage.includes(required)) {
     errors.push(`public/js/pages/result-comments.js: owner verdict seal missing ${required}`);
