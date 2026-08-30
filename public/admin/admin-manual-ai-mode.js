@@ -88,7 +88,8 @@ function applyManualAiMode() {
         </div>`);
     }
 
-    toggleLabel?.remove();
+    // 기존 저장 핸들러가 #dailyOn.checked를 읽으므로 DOM에서는 유지하되 화면에서만 숨긴다.
+    if (toggleLabel && toggleLabel.style.display !== 'none') toggleLabel.style.display = 'none';
   }
 
   const generateButton = root.querySelector('#generate-daily-now');
