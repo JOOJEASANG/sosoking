@@ -10,7 +10,7 @@ const {
   selectCaseDescription
 } = require('./public-original');
 const { assertDiscussionWritable } = require('./discussion');
-const { publicProjection } = require('./public-results-list');
+const { publicClientProjection } = require('./public-result-data');
 const { inspectContent } = require('./content-safety');
 
 function expectCode(fn, expectedCode) {
@@ -57,7 +57,7 @@ assert.equal(inspectContent('성명: 김철수').code, 'person-name-labeled');
 assert.equal(inspectContent('김철수 씨가 리모컨을 가져갔다.').code, 'person-name-honorific');
 assert.equal(inspectContent('친구가 리모컨을 가져갔다.').safe, true);
 
-const projected = publicProjection({
+const projected = publicClientProjection({
   isPublic: true,
   publicDataVersion: 1,
   userId: 'private-uid',
@@ -97,4 +97,4 @@ expectCode(
   'permission-denied'
 );
 
-console.log('Public boundary validation passed: raw originals stay private, public lists use an explicit projection, and discussion writes fail closed during lifecycle changes.');
+console.log('Public boundary validation passed: raw originals stay private, public data uses an explicit isolated projection, and discussion writes fail closed during lifecycle changes.');
