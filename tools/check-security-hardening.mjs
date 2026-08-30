@@ -45,8 +45,10 @@ for (const required of [
   'function isSafePublicResultData(data)',
   'data.publicDataVersion == 1',
   "!data.keys().hasAny(['userId', 'caseDescription', 'nickname'])",
-  'allow get: if isSafePublicResultData(resource.data)',
-  'allow list: if isAdmin();'
+  'function isResultPublic(caseId)',
+  'allow get: if isCaseOwner(caseId) || isAdmin();',
+  'match /public_results/{caseId}',
+  'allow get, list: if isAdmin();'
 ]) {
   if (!rules.includes(required)) errors.push(`firestore.rules: missing ${required}`);
 }
@@ -112,27 +114,27 @@ const publicListFunction = read('functions/public-results-list.js');
 for (const required of [
   'exports.listPublicResults = onCall',
   'exports.getPublicResult = onCall',
-  "db.collection('public_results')",
+  "db.collection('results')",
+  "where('isPublic', '==', true)",
+  "where('publicDataVersion', '==', 1)",
   'publicClientProjection',
   'publicStorageProjection',
+  'persistPublicCopy',
   'requireAppCheck(request)',
-  "db.doc(`results/${caseId}`).get()"
+  "const internalSnapshot = await db.doc(`results/${caseId}`).get()",
+  "db.doc(`public_results/${caseId}`).delete()"
 ]) {
   if (!publicListFunction.includes(required)) errors.push(`functions/public-results-list.js: missing ${required}`);
 }
 if (publicListFunction.includes('return { caseId, result: raw }')) {
   errors.push('functions/public-results-list.js: internal result is returned without projection');
 }
+if (publicListFunction.includes("const publicSnapshot = await db.doc(`public_results/${caseId}`).get()")) {
+  errors.push('functions/public-results-list.js: public mirror is trusted before authoritative internal publication state');
+}
 
-const mirror = read('functions/public-result-mirror.js');
-for (const required of [
-  'onDocumentWritten',
-  "document: 'results/{caseId}'",
-  'isSanitizedPublicResult(raw)',
-  'publicStorageProjection(raw)',
-  'publicRef.delete()'
-]) {
-  if (!mirror.includes(required)) errors.push(`functions/public-result-mirror.js: missing ${required}`);
+if (fs.existsSync('functions/public-result-mirror.js')) {
+  errors.push('functions/public-result-mirror.js: Eventarc mirror trigger must remain removed');
 }
 
 const syncPublicResults = read('functions/sync-public-results-cli.js');
@@ -163,8 +165,11 @@ for (const required of [
 }
 
 const main = read('functions/main.js');
-for (const required of ["require('./public-seo-safe')", "require('./public-results-list')", "require('./public-result-mirror')"]) {
+for (const required of ["require('./public-seo-safe')", "require('./public-results-list')"]) {
   if (!main.includes(required)) errors.push(`functions/main.js: missing ${required}`);
+}
+if (main.includes("require('./public-result-mirror')")) {
+  errors.push('functions/main.js: Eventarc public mirror trigger must not be exported');
 }
 if (main.includes("require('./public-result-sanitizer')")) {
   errors.push('functions/main.js: deploy-time sanitizer utility must not be exported as a Cloud Function');
@@ -225,13 +230,15 @@ const statisticsStep = deploy.indexOf('Initialize public statistics');
 if (deploy.includes('functions:sanitizePublicResult')) {
   errors.push('.github/workflows/firebase-deploy.yml: Eventarc sanitizer trigger must not block production deployment');
 }
+if (deploy.includes('functions:syncPublicResultMirror')) {
+  errors.push('.github/workflows/firebase-deploy.yml: Eventarc public mirror trigger must not be deployed');
+}
 if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
   errors.push('.github/workflows/firebase-deploy.yml: existing public records are not sanitized');
 }
 for (const required of [
   'functions:listPublicResults',
   'functions:getPublicResult',
-  'functions:syncPublicResultMirror',
   'node functions/sync-public-results-cli.js',
   'id-token: write',
   'uses: ./.github/actions/firebase-auth',
@@ -249,7 +256,7 @@ if (
   rulesStep <= mirrorStep ||
   statisticsStep <= rulesStep
 ) {
-  errors.push('.github/workflows/firebase-deploy.yml: required order is Functions, sanitation, public mirror sync, Firestore/Hosting, then index-dependent statistics');
+  errors.push('.github/workflows/firebase-deploy.yml: required order is Functions, sanitation, public mirror backfill, Firestore/Hosting, then index-dependent statistics');
 }
 
 if (fs.existsSync('.github/workflows/validate.yml')) {
@@ -262,4 +269,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, public privacy, lifecycle-safe writes, isolated public result projections, keyless deploy readiness, CSP, safe SEO and deployment ordering are intact.');
+console.log('Security hardening validation passed: App Check, authoritative public-state checks, lifecycle-safe writes, isolated server projections, keyless deploy readiness, CSP and deployment ordering are intact.');
