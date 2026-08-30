@@ -13,6 +13,7 @@ const resultComments = read('public/js/pages/result-comments.js');
 const resultCourt = read('public/js/pages/result-court.js');
 const trial = read('public/js/pages/trial.js');
 const myCases = read('public/js/pages/my-cases.js');
+const social = read('functions/social.js');
 const ownerVerdict = read('functions/owner-verdict.js');
 const functionsMain = read('functions/main.js');
 const deployWorkflow = read('.github/workflows/firebase-deploy.yml');
@@ -28,18 +29,40 @@ expect(!app.includes('renderParticipation') && !app.includes('./pages/participat
 expect(!app.includes("from './pages/board") && app.includes("else if (hash === '#/board') renderTask = renderHall(content);"),
   'public/js/app.js: retired board must map to the canonical hall instead of loading a legacy module');
 
-expect(home.includes('href="#/result/${encodeURIComponent(caseId)}"')
-  && home.includes('data-public-result-link="true"')
-  && home.includes('판결문 보기 →'),
-  'public/js/pages/home.js: recent public records must retain the full verdict route');
+expect(home.includes('href="#/jury"')
+  && home.includes('data-public-jury-case-id=')
+  && home.includes('sessionStorage.setItem(JURY_TARGET_KEY, caseId)')
+  && home.includes('사건 읽고 판정하기 →')
+  && home.includes('최근 공개 사건 5건'),
+  'public/js/pages/home.js: recent public cases must enter the blind jury flow');
+const homeSummary = home.split('function publicSummary(record = {}) {')[1]?.split('\n}')[0] || '';
+expect(!homeSummary.includes('record.verdict') && !homeSummary.includes('record.sentence'),
+  'public/js/pages/home.js: home preview must not reveal verdict/sentence before voting');
+
 expect(hall.includes("location.hash = '#/jury'")
   && hall.includes('판결을 가린 채 사건부터 읽고 직접 한 표를 정해보세요.')
-  && hall.includes('판결 내용과 어느 쪽이 우세한지는 여기서 미리 공개하지 않습니다.'),
-  'public/js/pages/hall.js: ranking cards must lead to blind jury participation rather than reveal results early');
+  && hall.includes('판결 내용·승패·우세 방향은 여기서 미리 공개하지 않습니다.')
+  && hall.includes('discussionSection(rows)')
+  && !hall.includes('grievanceSection')
+  && !hall.includes('억울지수 TOP'),
+  'public/js/pages/hall.js: rankings must remain non-directional and lead to blind jury participation');
 expect(jury.includes('원고 승') && jury.includes('피고 승') && jury.includes('쌍방 과실')
   && jury.includes('가려졌던 AI 판결과 전체 민심 집계가 열립니다.')
-  && jury.includes('투표 전에는 AI 판결과 다른 이용자의 민심 비율을 보여주지 않습니다.'),
-  'public/js/pages/jury.js: blind three-way public verdict participation is missing');
+  && jury.includes('투표 전에는 AI 판결, 민심 비율, 결과성 지표를 보여주지 않습니다.')
+  && jury.includes('response.data?.reaction')
+  && !jury.includes('jury-list-grievance')
+  && !jury.includes('억울지수'),
+  'public/js/pages/jury.js: blind unbiased three-way verdict participation is missing');
+
+expect(social.includes("const REACTIONS = ['plaintiff','defendant','both']")
+  && social.includes('if (REACTIONS.includes(previousRaw))')
+  && social.includes('savedReaction = previousRaw')
+  && social.includes('alreadyVoted = true')
+  && social.includes('return { success: true, reaction: savedReaction, alreadyVoted }'),
+  'functions/social.js: public jury choice must be three-way and permanently locked to the first valid vote');
+expect(!social.includes("'tooMuch','funny'")
+  && !social.includes('if (prev && prev !== reaction) updates[`counts.${prev}`]'),
+  'functions/social.js: mutable or legacy five-way jury voting remains active');
 
 expect(result.includes('💬 방청석 한마디') && result.includes("httpsCallable(functions, 'addCourtComment')"),
   'public/js/pages/result.js: legacy audience comments must remain available');
@@ -77,6 +100,13 @@ expect(trial.includes('location.hash = `#/verdict/${encodeURIComponent(caseId)}`
 expect(myCases.includes('`#/verdict/${encodeURIComponent(id)}`'),
   'public/js/pages/my-cases.js: owned completed cases must open the owned verdict route');
 
+for (const moduleUrl of [
+  "./pages/home.js?v=20260830-final-blind-1",
+  "./pages/hall.js?v=20260830-final-blind-1",
+  "./pages/jury.js?v=20260830-final-blind-1"
+]) {
+  expect(app.includes(moduleUrl), `public/js/app.js: final blind module cache is missing ${moduleUrl}`);
+}
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 expect(Boolean(appVersion) && sw.includes(`/js/app.js?v=${appVersion}`),
   'public/index.html and public/sw.js: active app cache versions are inconsistent');
@@ -85,10 +115,12 @@ expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
 expect(sw.includes('/js/pages/result-court.js?v=20260829-arena-1')
   && sw.includes('/js/pages/discussion.js?v=20260730-discussion-court-1')
-  && sw.includes('/js/pages/jury.js?v=20260830-jury-vote-fix-1')
+  && sw.includes('/js/pages/home.js?v=20260830-final-blind-1')
+  && sw.includes('/js/pages/hall.js?v=20260830-final-blind-1')
+  && sw.includes('/js/pages/jury.js?v=20260830-final-blind-1')
   && !sw.includes('/js/pages/participation.js')
   && !sw.includes('/js/pages/board.js'),
-  'public/sw.js: canonical full verdict/jury/discussion modules or retired-board cleanup are inconsistent');
+  'public/sw.js: canonical verdict/blind jury/discussion modules or retired-board cleanup are inconsistent');
 expect(/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(sw),
   'public/sw.js: versioned application cache name is missing');
 
@@ -98,4 +130,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: owner verdicts stay sealed until one-time prediction, public rankings remain blind, original text stays private, and canonical participation/cache routes are synchronized.');
+console.log('Verdict record validation passed: all normal entry surfaces remain blind, public and owner predictions are first-choice locked, and cache routes are synchronized.');
