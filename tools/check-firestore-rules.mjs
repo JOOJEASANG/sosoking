@@ -176,10 +176,11 @@ try {
   await assertFails(updateDoc(doc(owner, 'results/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'results/private-case'), { isPublic: true }));
 
-  // 공개 소비자는 별도 public_results 단건만 읽는다.
-  await assertSucceeds(getDoc(doc(other, 'public_results/public-case')));
-  await assertSucceeds(getDoc(doc(firebaseAnonymous, 'public_results/public-case')));
-  await assertSucceeds(getDoc(doc(unauthenticated, 'public_results/public-case')));
+  // public_results는 서버/관리자 전용 미러다. 공개 화면은 Callable projection을 사용한다.
+  await assertFails(getDoc(doc(other, 'public_results/public-case')));
+  await assertFails(getDoc(doc(firebaseAnonymous, 'public_results/public-case')));
+  await assertFails(getDoc(doc(unauthenticated, 'public_results/public-case')));
+  await assertSucceeds(getDoc(doc(admin, 'public_results/public-case')));
   await assertFails(setDoc(doc(owner, 'public_results/direct-write'), {
     isPublic: true,
     publicDataVersion: 1,
@@ -190,7 +191,7 @@ try {
   await assertFails(getDoc(doc(formerBootstrap, 'site_settings/config')));
   await assertFails(updateDoc(doc(formerBootstrap, 'cases/private-case'), { isPublic: false }));
 
-  // 공개 방청 데이터는 앱의 익명 세션도 읽을 수 있지만 모든 클라이언트 쓰기를 막는다.
+  // 공개 방청 데이터는 현재 authoritative results가 안전한 공개 상태일 때 앱 세션이 읽을 수 있다.
   await assertSucceeds(getDoc(doc(other, 'court_comments/public-case/items/comment-1')));
   await assertSucceeds(getDoc(doc(firebaseAnonymous, 'court_comments/public-case/items/comment-1')));
   await assertFails(getDoc(doc(unauthenticated, 'court_comments/public-case/items/comment-1')));
@@ -247,7 +248,7 @@ try {
   await assertFails(deleteDoc(doc(owner, 'users/owner-uid')));
   await assertSucceeds(deleteDoc(doc(admin, 'users/owner-uid')));
 
-  console.log('Firestore rules integration passed: internal results are owner/admin-only, public mirrors are isolated, and server-only mutations remain enforced.');
+  console.log('Firestore rules integration passed: internal results and mirrors are private, public court reads re-check authoritative publication state, and server-only mutations remain enforced.');
 } finally {
   await testEnv.cleanup();
 }
