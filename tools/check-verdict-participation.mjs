@@ -48,13 +48,13 @@ expect(resultComments.includes("reactionButton?.closest('.card')?.remove()")
 expect(resultComments.includes("httpsCallable(functions, 'voteOwnVerdict')")
   && resultComments.includes("container.querySelector('.verdict-card')")
   && resultComments.includes('AI 판결 봉인 중')
-  && resultComments.includes('첫 선택이 기록되며')
+  && resultComments.includes('최초 선택만 기록되며 AI 판결을 본 뒤에는 바꿀 수 없습니다.')
   && resultComments.includes('ownerVerdictVote'),
   'public/js/pages/result-comments.js: owners must predict once before their AI verdict is revealed');
 expect(resultComments.includes('originalVisible')
-  && resultComments.includes('작성자가 처음 접수한 원문입니다.')
-  && resultComments.includes('공개용 사건 내용입니다. 작성자가 처음 입력한 원문은 공개하지 않습니다.'),
-  'public/js/pages/result-comments.js: original/public-safe disclosure state is not rendered clearly');
+  && resultComments.includes('이 내용은 내가 사건 접수 때 직접 입력한 원문이며 작성자 본인에게만 표시됩니다.')
+  && resultComments.includes('실제 접수 원문은 작성자에게만 공개됩니다. 아래에는 공개용으로 안전하게 정리된 사건 정보만 표시됩니다.'),
+  'public/js/pages/result-comments.js: owner-original/public-safe disclosure state is not rendered clearly');
 
 expect(ownerVerdict.includes("const OWNER_VERDICT_REACTIONS = ['plaintiff', 'defendant', 'both']")
   && ownerVerdict.includes('caseData.userId !== uid')
