@@ -1,18 +1,37 @@
 # Security hardening — 2026-08-30
 
-This change set closes the remaining privacy, lifecycle, public-list, App Check and deployment-auth gaps found during the repository-wide audit.
+This change set closes the privacy, lifecycle, public-data, App Check and deployment-auth gaps found during the repository-wide audit.
 
 ## Code-side changes
 
 - Public visitors can no longer receive `cases/{caseId}.caseDescription` through `getPublicCaseOriginal`. The real submission text is owner-only; public visitors receive only the dedicated sanitized public summary or a fixed privacy notice.
-- Explicit Korean real-name patterns are added to the content safety layer, and deploy-time public-result sanitation clears unsafe public summaries.
+- Explicit Korean real-name patterns are added to the content safety layer, including honorifics followed by Korean particles, and deploy-time public-result sanitation clears unsafe public summaries.
 - Discussion comments re-check the latest result state inside the same Firestore transaction that writes the comment. Deleted or hidden results cannot be recreated by a stale `set(..., { merge: true })` write.
-- Browser clients no longer list the internal `results` collection. `listPublicResults` reads with Admin SDK, verifies the sanitized public schema, and returns an explicit allow-list projection only.
-- Firestore `results` list access is administrator-only. Public single-document reads remain guarded by the sanitized schema.
-- The public list callable requires a Firebase Auth session, supports App Check enforcement, and has a per-session action limit.
+- Internal `results/{caseId}` documents are owner/admin-only in Firestore rules, even when a result is public.
+- Public home/board lists use the `listPublicResults` callable. Public verdict details and discussions use `getPublicResult`. Neither public path reads internal `results` directly from the browser.
+- Both public callables re-check the authoritative internal `results` publication state with Admin SDK and return only an explicit allow-list projection. A hidden, private, malformed or deleted result fails closed.
+- `public_results` is a separate sanitized server/admin-only mirror. It is backfilled during deployment and refreshed by public server calls, but it is never trusted as the authority for current visibility and is never read directly by normal browser clients.
+- The design intentionally avoids a Firestore Eventarc mirror trigger, so deployment does not acquire a new Eventarc/IAM dependency. Current publication state is always checked synchronously before serving public data.
+- Public reactions/comments remain readable only to signed-in Firebase sessions when the authoritative result is still a safe public result. A stale mirror cannot keep participation data visible after moderation or privacy changes.
+- Public callables require a Firebase Auth session, support App Check enforcement, and have server-side action limits.
 - GitHub Actions are pinned to immutable SHAs where applicable.
 - Firebase deployment authentication prefers GitHub OIDC + Google Workload Identity Federation. The existing service-account JSON remains only as a temporary fallback so current production deployment is not broken during migration.
 - App Check's browser key is injected only at deployment time from a GitHub Actions variable, so the repository does not need an environment-specific key committed into source.
+
+## Deployment order
+
+The normal Firebase workflow now preserves this order:
+
+1. Validate the repository and Firestore emulator tests.
+2. Deploy current callable/scheduled/HTTP Functions.
+3. Sanitize existing public internal results.
+4. Backfill and clean the isolated `public_results` mirror with `functions/sync-public-results-cli.js`.
+5. Run existing data-format migrations.
+6. Deploy Firestore indexes and rules.
+7. Initialize public statistics and safe public configuration.
+8. Deploy Hosting.
+
+The mirror backfill is operational hygiene only; public visibility is still decided from the authoritative internal result at request time.
 
 ## One-time external activation
 
@@ -40,6 +59,7 @@ Until both WIF variables exist, the workflow deliberately falls back to the curr
 
 ## Regression coverage
 
-- Firestore emulator confirms public clients cannot list `results` directly while administrators retain dashboard access.
-- Public-boundary tests verify raw originals stay owner-only, the public list projection drops sensitive/internal fields, explicit real-name patterns are rejected, and discussion writes fail closed during deletion.
-- Static hardening checks verify the new public-list callable, transaction guard, App Check injection, WIF-ready authentication and deployment ordering remain in place.
+- Firestore emulator verifies internal `results` are owner/admin-only, `public_results` is server/admin-only, and public comments/reactions re-check authoritative publication state.
+- Public-boundary tests verify raw originals stay owner-only, public projections drop sensitive/internal fields, explicit real-name patterns are rejected, and discussion writes fail closed during deletion.
+- Public-detail tests prevent public verdict/discussion pages from returning to direct internal `results` reads.
+- Static hardening checks ensure no Eventarc mirror trigger is reintroduced, public callables always verify authoritative state, App Check injection and WIF-ready authentication stay configured, and deployment ordering remains safe.
