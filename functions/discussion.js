@@ -15,6 +15,20 @@ function cleanText(value, maxLen) {
     .slice(0, maxLen);
 }
 
+function isDeletionLocked(data = {}) {
+  const deletionStatus = String(data.deletionStatus || '').toLowerCase();
+  const status = String(data.status || '').toLowerCase();
+  const courtStage = String(data.courtStage || '').toLowerCase();
+  return deletionStatus === 'processing'
+    || deletionStatus === 'deleting'
+    || status === 'deleting'
+    || courtStage === 'deleting';
+}
+
+function isModerationHidden(data = {}) {
+  return String(data.moderationStatus || '').toLowerCase().startsWith('hidden');
+}
+
 function isSanitizedPublicResult(data = {}) {
   return data.isPublic === true
     && Number(data.publicDataVersion || 0) === 1
@@ -23,13 +37,23 @@ function isSanitizedPublicResult(data = {}) {
     && !Object.prototype.hasOwnProperty.call(data, 'nickname');
 }
 
+function assertDiscussionWritable(data = {}) {
+  if (isDeletionLocked(data)) {
+    throw new HttpsError('failed-precondition', '삭제 중인 판결문에는 토론을 작성할 수 없습니다.');
+  }
+  if (isModerationHidden(data)) {
+    throw new HttpsError('failed-precondition', '현재 숨김 처리된 판결문에는 토론을 작성할 수 없습니다.');
+  }
+  if (!isSanitizedPublicResult(data)) {
+    throw new HttpsError('permission-denied', '공개 판결기록에서만 토론할 수 있습니다.');
+  }
+}
+
 async function assertPublicResult(caseId) {
   const resultRef = db.doc(`results/${caseId}`);
   const snap = await resultRef.get();
   if (!snap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
-  if (!isSanitizedPublicResult(snap.data())) {
-    throw new HttpsError('permission-denied', '공개 판결기록에서만 토론할 수 있습니다.');
-  }
+  assertDiscussionWritable(snap.data());
   return resultRef;
 }
 
@@ -75,32 +99,42 @@ exports.addDiscussionComment = onCall({
   const commentRef = db.collection(`court_comments/${caseId}/items`).doc();
   const authorRef = db.doc(`court_comment_authors/${caseId}/items/${commentRef.id}`);
   const statsRef = db.doc(`court_comment_stats/${caseId}`);
-  const batch = db.batch();
 
-  batch.set(commentRef, {
-    nickname,
-    text,
-    stance,
-    kind: 'discussion',
-    discussionVersion: 1,
-    status: 'visible',
-    createdAt: FieldValue.serverTimestamp()
-  });
-  batch.set(authorRef, {
-    uid,
-    caseId,
-    commentId: commentRef.id,
-    createdAt: FieldValue.serverTimestamp()
-  });
-  batch.set(statsRef, {
-    count: FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
-  batch.set(resultRef, {
-    commentCount: FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+  await db.runTransaction(async tx => {
+    const latestResultSnap = await tx.get(resultRef);
+    if (!latestResultSnap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
+    assertDiscussionWritable(latestResultSnap.data());
 
-  await batch.commit();
+    tx.set(commentRef, {
+      nickname,
+      text,
+      stance,
+      kind: 'discussion',
+      discussionVersion: 1,
+      status: 'visible',
+      createdAt: FieldValue.serverTimestamp()
+    });
+    tx.set(authorRef, {
+      uid,
+      caseId,
+      commentId: commentRef.id,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    tx.set(statsRef, {
+      count: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    tx.update(resultRef, {
+      commentCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+  });
+
   return { success: true, stance };
+});
+
+Object.defineProperties(module.exports, {
+  isDeletionLocked: { value: isDeletionLocked, enumerable: false },
+  isModerationHidden: { value: isModerationHidden, enumerable: false },
+  assertDiscussionWritable: { value: assertDiscussionWritable, enumerable: false }
 });
