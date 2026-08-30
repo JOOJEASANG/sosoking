@@ -170,6 +170,29 @@ async function loadSocial(caseId) {
   };
 }
 
+async function loadResultRecord(caseId) {
+  const caseSnap = await getDoc(doc(db, 'cases', caseId)).catch(() => null);
+  const caseData = caseSnap?.exists() ? caseSnap.data() : {};
+  const isOwner = Boolean(caseSnap?.exists() && caseData.userId === auth.currentUser?.uid);
+
+  if (isOwner) {
+    const resultSnap = await getDoc(doc(db, 'results', caseId));
+    return {
+      caseSnap,
+      result: resultSnap.exists() ? resultSnap.data() : null,
+      isOwner
+    };
+  }
+
+  const response = await httpsCallable(functions, 'getPublicResult')({ caseId });
+  const result = response?.data?.result;
+  return {
+    caseSnap,
+    result: result && typeof result === 'object' ? result : null,
+    isOwner: false
+  };
+}
+
 export async function renderResult(container, caseId) {
   container.innerHTML = `
     <div class="page-header"><span class="logo">⚖️ 판결문</span></div>
@@ -178,15 +201,16 @@ export async function renderResult(container, caseId) {
     </div>`;
 
   let caseSnap;
-  let resultSnap;
+  let r;
   let social;
+  let isOwner = false;
 
   try {
-    [resultSnap, social] = await Promise.all([
-      getDoc(doc(db, 'results', caseId)),
-      loadSocial(caseId)
-    ]);
-    caseSnap = await getDoc(doc(db, 'cases', caseId)).catch(() => null);
+    const loaded = await loadResultRecord(caseId);
+    caseSnap = loaded.caseSnap;
+    r = loaded.result;
+    isOwner = loaded.isOwner;
+    social = await loadSocial(caseId);
   } catch (err) {
     console.error(err);
     container.innerHTML = `
@@ -197,7 +221,7 @@ export async function renderResult(container, caseId) {
     return;
   }
 
-  if (!resultSnap.exists()) {
+  if (!r) {
     container.innerHTML = `
       <div class="container" style="padding:60px 20px;text-align:center;color:var(--cream-dim);">
         결과를 찾을 수 없습니다.<br>
@@ -207,8 +231,6 @@ export async function renderResult(container, caseId) {
   }
 
   const c = caseSnap?.exists() ? caseSnap.data() : {};
-  const r = resultSnap.data();
-  const isOwner = Boolean(caseSnap?.exists() && c.userId === auth.currentUser?.uid);
   const isPublic = r.isPublic === true;
   const title = c.caseTitle || r.caseTitle || '생활분쟁 사건';
   const docket = r.docketNumber || c.docketNumber || '사건번호 미상';
@@ -220,6 +242,9 @@ export async function renderResult(container, caseId) {
     .map(tag => String(tag || '').trim())
     .filter(tag => /^[가-힣a-zA-Z0-9]{2,10}$/.test(tag))
     .slice(0, 5);
+  const displayNickname = isOwner
+    ? (c.nickname || r.nickname || r.publicNickname || '익명')
+    : (r.publicNickname || '익명');
 
   const sections = [
     ['01', '사건접수', '사건접수보고서', 'reception', r.reception],
@@ -240,7 +265,7 @@ export async function renderResult(container, caseId) {
           <h2>${escapeHtml(title)}</h2>
           <div class="result-case-meta">
             사건번호 ${escapeHtml(docket)}${date ? ` · ${escapeHtml(date)}` : ''}<br>
-            원고 ${escapeHtml(c.nickname || r.nickname || '익명')}
+            원고 ${escapeHtml(displayNickname)}
           </div>
           <div class="judge-summary">
             <div class="judge-character" aria-hidden="true">${escapeHtml(r.judgeIcon || judge.icon)}</div>
