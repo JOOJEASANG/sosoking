@@ -35,8 +35,9 @@ if (!footer.includes('businessRows')
 }
 
 const app = read('public/js/app.js');
-if (!app.includes("./components/footer.js?v=20260729-compact-spacing-1")) {
-  errors.push('public/js/app.js: compact footer cache version is missing');
+const footerSpecifier = './components/footer.js?v=20260729-brand-policy-1';
+if (!app.includes(footerSpecifier)) {
+  errors.push('public/js/app.js: canonical compact footer module version is missing');
 }
 
 const index = read('public/index.html');
@@ -46,6 +47,9 @@ if (!index.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')) {
 }
 if (!serviceWorker.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')) {
   errors.push('public/sw.js: corrected spacing stylesheet is not in the active cache graph');
+}
+if (!serviceWorker.includes('/js/components/footer.js?v=20260729-brand-policy-1')) {
+  errors.push('public/sw.js: canonical compact footer module is not in the active cache graph');
 }
 const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
 if (!appVersion || !serviceWorker.includes(`/js/app.js?v=${appVersion}`)) {
@@ -66,4 +70,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Layout spacing validation passed: route endings are compact, the footer no longer stretches, and cache versions remain consistent.');
+console.log('Layout spacing validation passed: route endings are compact, footer rows stay compact, and app/service-worker cache versions remain consistent.');
