@@ -11,13 +11,16 @@ for (const value of [
   "{ id: 'plaintiff', label: '원고측'",
   "{ id: 'defendant', label: '피고측'",
   "{ id: 'both', label: '쌍방'",
-  "doc(db, 'results', caseId)",
+  "httpsCallable(functions, 'getPublicResult')",
   "doc(db, 'result_reactions', caseId)",
   'court_comments/${caseId}/items',
   "httpsCallable(functions, 'voteResult')",
   "httpsCallable(functions, 'addDiscussionComment')",
   '이전 방청석 기록'
 ]) need(page, value, 'discussion page');
+if (page.includes("doc(db, 'results', caseId)")) {
+  errors.push('discussion page: public discussion still reads the internal results document directly');
+}
 if (page.includes("id: 'tooMuch'") || page.includes("id: 'funny'")) {
   errors.push('discussion page: more than the three approved choices are present');
 }
@@ -59,6 +62,7 @@ need(main, "require('./discussion')", 'function export');
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
 need(deploy, 'functions:addDiscussionComment', 'function deployment');
+need(deploy, 'functions:getPublicResult', 'public result deployment');
 
 const firebaseText = read('firebase.json');
 const firebase = JSON.parse(firebaseText);
@@ -70,6 +74,7 @@ need(firebaseText, '/@(result|trial|discussion)/**', 'discussion CSP');
 
 const rules = read('firestore.rules');
 need(rules, 'match /court_comments/{caseId}/items/{commentId}', 'legacy comment compatibility');
+need(rules, 'function isPublicMirror(caseId)', 'public mirror participation guard');
 
 const index = read('public/index.html');
 const worker = read('public/sw.js');
@@ -89,4 +94,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Discussion court validation passed: three choices, legacy data compatibility, protected participation, routes, deployment, and cache wiring.');
+console.log('Discussion court validation passed: three choices, isolated public result loading, protected participation, routes, deployment, and cache wiring.');
