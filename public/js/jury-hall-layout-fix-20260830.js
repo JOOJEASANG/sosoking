@@ -5,6 +5,7 @@
 // - 모바일에서 민심소 하단 버튼이 카드 밖으로 넘치지 않게 한다.
 
 const JURY_TARGET_KEY = 'sosoking-jury-target-case';
+const HALL_INTRO_COPY = '민심소에 쌓인 참여 기록으로 만든 랭킹입니다. 판결 내용과 어느 쪽이 우세한지는 여기서 공개하지 않고, 블라인드 판정은 민심소에서 진행합니다.';
 const boundHallCards = new WeakSet();
 let patchQueued = false;
 
@@ -160,8 +161,8 @@ function patchHall() {
   if (!page) return;
 
   const intro = page.querySelector('.hall-intro-copy');
-  if (intro) {
-    intro.textContent = '민심소에 쌓인 참여 기록으로 만든 랭킹입니다. 판결 내용과 어느 쪽이 우세한지는 여기서 공개하지 않고, 블라인드 판정은 민심소에서 진행합니다.';
+  if (intro && intro.textContent !== HALL_INTRO_COPY) {
+    intro.textContent = HALL_INTRO_COPY;
   }
 
   page.querySelectorAll('.hall-section-title').forEach(title => {
@@ -175,9 +176,9 @@ function patchHall() {
   page.querySelectorAll('.hall-card').forEach(card => {
     const originalHref = card.getAttribute('href') || '';
     const caseId = card.dataset.juryCaseId || resultCaseIdFromHref(originalHref);
-    if (caseId) card.dataset.juryCaseId = caseId;
+    if (caseId && card.dataset.juryCaseId !== caseId) card.dataset.juryCaseId = caseId;
 
-    card.setAttribute('href', '#/jury');
+    if (card.getAttribute('href') !== '#/jury') card.setAttribute('href', '#/jury');
     card.removeAttribute('data-public-result-link');
 
     const body = card.querySelector('.hall-card-body');
@@ -203,6 +204,14 @@ function patchHall() {
   });
 }
 
+function clearRequestedJuryCase() {
+  try {
+    sessionStorage.removeItem(JURY_TARGET_KEY);
+  } catch {
+    /* no-op */
+  }
+}
+
 function openRequestedJuryCase() {
   if (!document.querySelector('.jury-page')) return;
 
@@ -214,15 +223,16 @@ function openRequestedJuryCase() {
   }
   if (!targetCaseId) return;
 
-  const card = [...document.querySelectorAll('.jury-list-card')]
-    .find(element => element.dataset.caseId === targetCaseId);
-  if (!card) return;
+  const cards = [...document.querySelectorAll('.jury-list-card')];
+  if (!cards.length) return;
 
-  try {
-    sessionStorage.removeItem(JURY_TARGET_KEY);
-  } catch {
-    /* no-op */
+  const card = cards.find(element => element.dataset.caseId === targetCaseId);
+  if (!card) {
+    clearRequestedJuryCase();
+    return;
   }
+
+  clearRequestedJuryCase();
   card.click();
 }
 
@@ -241,7 +251,9 @@ function schedulePatch() {
   });
 }
 
-const host = document.getElementById('page-content') || document.body;
+// app.js는 라우팅 때 #page-content 요소 자체를 교체한다.
+// 교체되는 자식이 아니라 고정된 #app을 감시해야 이후 페이지에서도 보정이 유지된다.
+const host = document.getElementById('app') || document.body;
 const observer = new MutationObserver(schedulePatch);
 observer.observe(host, { childList: true, subtree: true });
 window.addEventListener('hashchange', schedulePatch);
