@@ -90,21 +90,27 @@ for (const required of [
   'AI 샘플 사건 수동 생성',
   'dailyToggle.checked = false',
   'dailyToggle.disabled = true',
+  "toggleLabel.style.display = 'none';",
   'AI 모델 선택',
   "value: 'gemini-2.5-flash'",
   "value: 'gemini-2.5-flash-lite'",
   "value: 'gemini-2.5-pro'"
 ]) {
-  if (!manualAi.includes(required)) errors.push(`public/admin/admin-manual-ai-mode.js: manual-only AI/model control missing ${required}`);
+  if (!manualAi.includes(required)) errors.push(`public/admin/admin-manual-ai-mode.js: manual-only AI/model/save control missing ${required}`);
+}
+if (manualAi.includes('toggleLabel?.remove()')) {
+  errors.push('public/admin/admin-manual-ai-mode.js: canonical AI settings save control must remain in the DOM');
 }
 
 const adminDashboard = read('public/admin/admin.js');
 for (const required of [
   "setDoc(doc(db, 'policy_docs', active)",
   'content,',
-  "toast('정책 문서를 저장했습니다.'"
+  "toast('정책 문서를 저장했습니다.'",
+  "dailyAiEnabled: target.querySelector('#dailyOn').checked",
+  "geminiModel: target.querySelector('#model').value.trim() || 'gemini-2.5-flash'"
 ]) {
-  if (!adminDashboard.includes(required)) errors.push(`public/admin/admin.js: managed policy save path missing ${required}`);
+  if (!adminDashboard.includes(required)) errors.push(`public/admin/admin.js: managed policy/AI save path missing ${required}`);
 }
 
 const publicPolicy = read('public/js/pages/policy.js');
@@ -117,7 +123,7 @@ for (const required of [
   '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
   '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1',
   '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1',
-  '/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-model-selector-1'
+  '/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-settings-save-fix-1'
 ]) {
   if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);
 }
@@ -141,4 +147,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator validation passed: login/logout routing, canonical policy editing, configurable case limits, selectable manual AI models, and synchronized app cache remain connected.');
+console.log('Administrator validation passed: login/logout routing, canonical policy editing, configurable case limits, selectable manual AI models with a working settings save path, and synchronized app cache remain connected.');
