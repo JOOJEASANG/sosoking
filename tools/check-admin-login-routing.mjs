@@ -89,9 +89,13 @@ for (const required of [
   '자동 예약 없음',
   'AI 샘플 사건 수동 생성',
   'dailyToggle.checked = false',
-  'dailyToggle.disabled = true'
+  'dailyToggle.disabled = true',
+  'AI 모델 선택',
+  "value: 'gemini-2.5-flash'",
+  "value: 'gemini-2.5-flash-lite'",
+  "value: 'gemini-2.5-pro'"
 ]) {
-  if (!manualAi.includes(required)) errors.push(`public/admin/admin-manual-ai-mode.js: manual-only AI control missing ${required}`);
+  if (!manualAi.includes(required)) errors.push(`public/admin/admin-manual-ai-mode.js: manual-only AI/model control missing ${required}`);
 }
 
 const adminDashboard = read('public/admin/admin.js');
@@ -113,7 +117,7 @@ for (const required of [
   '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
   '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1',
   '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1',
-  '/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-loop-fix-1'
+  '/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-model-selector-1'
 ]) {
   if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);
 }
@@ -137,4 +141,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator validation passed: login/logout routing, canonical policy editing, configurable case limits, manual AI generation, and synchronized app cache remain connected.');
+console.log('Administrator validation passed: login/logout routing, canonical policy editing, configurable case limits, selectable manual AI models, and synchronized app cache remain connected.');
