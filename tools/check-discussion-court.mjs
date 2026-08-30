@@ -16,14 +16,24 @@ for (const value of [
   'court_comments/${caseId}/items',
   "httpsCallable(functions, 'voteResult')",
   "httpsCallable(functions, 'addDiscussionComment')",
+  '최초 선택은 기록 후 변경할 수 없습니다.',
+  'response.data?.alreadyVoted === true',
   '이전 방청석 기록'
 ]) need(page, value, 'discussion page');
+if (page.includes('선택은 다시 변경할 수 있습니다.')) {
+  errors.push('discussion page: obsolete mutable-vote copy remains');
+}
 if (page.includes("id: 'tooMuch'") || page.includes("id: 'funny'")) {
   errors.push('discussion page: more than the three approved choices are present');
 }
 if ((page.match(/\{ id: '(plaintiff|defendant|both)', label:/g) || []).length !== 3) {
   errors.push('discussion page: stance definition count is not exactly three');
 }
+
+const social = read('functions/social.js');
+need(social, "const REACTIONS = ['plaintiff','defendant','both']", 'jury vote server');
+need(social, 'if (REACTIONS.includes(previousRaw))', 'jury vote server');
+need(social, 'alreadyVoted = true', 'jury vote server');
 
 const server = read('functions/discussion.js');
 for (const value of [
@@ -53,7 +63,7 @@ for (const value of ['jury-debate', 'addDiscussionComment', 'court_comments']) {
 }
 
 const app = read('public/js/app.js');
-for (const value of ['renderDiscussion', "path.startsWith('/discussion/')", "hash.startsWith('#/discussion/')"]) {
+for (const value of ['renderDiscussion', "path.startsWith('/discussion/')", "hash.startsWith('#/discussion/')", "./pages/discussion.js?v=20260830-final-blind-1"]) {
   need(app, value, 'discussion route');
 }
 if (app.includes("from './pages/board")) {
@@ -84,9 +94,9 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('discussion cache: active application versions differ');
 }
 for (const value of [
-  '/js/pages/discussion.js?v=20260730-discussion-court-1',
+  '/js/pages/discussion.js?v=20260830-final-blind-1',
   '/js/pages/result-comments.js?v=20260830-final-audit-1',
-  '/js/pages/jury.js?v=20260830-jury-vote-fix-1'
+  '/js/pages/jury.js?v=20260830-final-blind-1'
 ]) need(worker, value, 'discussion cache');
 if (worker.includes('/js/pages/board.js')) {
   errors.push('discussion cache: retired board page is still cached');
@@ -98,4 +108,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Discussion court validation passed: three choices, transactional deletion safety, inline jury debate, routes, deployment, and canonical cache wiring.');
+console.log('Discussion court validation passed: immutable three-way choices, transactional deletion safety, inline jury debate, routes, deployment, and canonical cache wiring.');

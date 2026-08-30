@@ -14,6 +14,11 @@ for (const required of [
   'assertParticipablePublicResult(latestResultSnap.data());',
   "tx.update(resultRef, {\n        reactionTotal: FieldValue.increment(1)",
   "tx.update(resultRef, {\n      commentCount: FieldValue.increment(1)",
+  "const REACTIONS = ['plaintiff','defendant','both']",
+  'if (REACTIONS.includes(previousRaw))',
+  'savedReaction = previousRaw',
+  'alreadyVoted = true',
+  'return { success: true, reaction: savedReaction, alreadyVoted }',
   "삭제 중인 사건은 항소할 수 없습니다.",
   'const [latestResult, latestCase] = await Promise.all([',
   "tx.update(caseRef, {\n        hasAppeal: true"
@@ -25,6 +30,9 @@ if (social.includes("tx.set(resultRef, {\n        reactionTotal: FieldValue.incr
 }
 if (social.includes("batch.set(resultRef, {\n    commentCount: FieldValue.increment(1)")) {
   errors.push('functions/social.js: comment path still uses a non-transactional result write');
+}
+if (social.includes("'tooMuch','funny'") || social.includes('if (prev && prev !== reaction) updates[`counts.${prev}`]')) {
+  errors.push('functions/social.js: public verdict vote can still be changed after reveal');
 }
 
 const adminVisibility = read('functions/admin-visibility.js');
@@ -83,16 +91,26 @@ for (const required of [
 const immutableAction = action => new RegExp(`${action.replace('/', '\\/')}@[0-9a-f]{40}`);
 const workflowFiles = [
   '.github/workflows/firebase-deploy.yml',
+  '.github/workflows/hosting-only-deploy.yml',
   '.github/workflows/migrate-legacy-case-ids.yml',
-  '.github/workflows/validate-pr.yml'
+  '.github/workflows/validate-pr.yml',
+  '.github/workflows/verify-live-hosting.yml'
 ];
 for (const file of workflowFiles) {
   const source = read(file);
   if (!immutableAction('actions/checkout').test(source)) errors.push(`${file}: checkout action is not pinned to an immutable commit SHA`);
-  if (!immutableAction('actions/setup-node').test(source)) errors.push(`${file}: setup-node action is not pinned to an immutable commit SHA`);
   if (/actions\/(?:checkout|setup-node|setup-java)@v\d/.test(source)) {
     errors.push(`${file}: mutable GitHub Action major-version tag remains`);
   }
+}
+for (const file of [
+  '.github/workflows/firebase-deploy.yml',
+  '.github/workflows/hosting-only-deploy.yml',
+  '.github/workflows/migrate-legacy-case-ids.yml',
+  '.github/workflows/validate-pr.yml'
+]) {
+  const source = read(file);
+  if (!immutableAction('actions/setup-node').test(source)) errors.push(`${file}: setup-node action is not pinned to an immutable commit SHA`);
 }
 for (const file of ['.github/workflows/firebase-deploy.yml', '.github/workflows/validate-pr.yml']) {
   const source = read(file);
@@ -116,6 +134,27 @@ if (cleanupStep < 0 || strictVerifyStep <= cleanupStep) {
 }
 if (deployWorkflow.includes('firebase functions:delete "$function_name" --region asia-northeast3')) {
   errors.push('firebase-deploy.yml: legacy cleanup must not assume all obsolete functions are in one region');
+}
+
+const hostingOnly = read('.github/workflows/hosting-only-deploy.yml');
+for (const required of [
+  'actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09',
+  'actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444',
+  'persist-credentials: false',
+  'firebase deploy --only hosting --project sosoking-481e6 --non-interactive'
+]) {
+  if (!hostingOnly.includes(required)) errors.push(`hosting-only-deploy.yml: missing ${required}`);
+}
+
+const liveVerify = read('.github/workflows/verify-live-hosting.yml');
+for (const required of [
+  'workflows: ["Deploy Firebase", "Deploy Hosting Only"]',
+  'https://sosoking-481e6.web.app',
+  'https://sosoking.co.kr',
+  'https://www.sosoking.co.kr',
+  'public/deploy-version.txt'
+]) {
+  if (!liveVerify.includes(required)) errors.push(`verify-live-hosting.yml: missing ${required}`);
 }
 
 const prValidation = read('.github/workflows/validate-pr.yml');
@@ -152,4 +191,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Lifecycle and operational hardening validation passed: moderation, deletion races, public originals, reviewed legacy cleanup, single PR validation, immutable Actions pins, secret-file ignores, and strict deployed-function drift checks are intact.');
+console.log('Lifecycle and operational hardening validation passed: immutable jury votes, moderation/deletion guards, public originals, exact Functions drift checks, and immutable production workflow verification are intact.');

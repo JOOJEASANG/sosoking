@@ -5,6 +5,7 @@ import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-pub
 
 const BRAND_LOGO = '/logo.png?v=20260729-brand-unified-1';
 const HOME_PUBLIC_RECORD_LIMIT = 5;
+const JURY_TARGET_KEY = 'sosoking-jury-target-case';
 const JUDGES = [
   { name: '꼰대형', icon: '🧓', desc: '기본·예의·사람 사는 도리로 끝까지 훈계' },
   { name: '냉혈형', icon: '🧊', desc: '서운함보다 시간·수량·결과를 차갑게 계산' },
@@ -86,22 +87,22 @@ function formatDate(value) {
 }
 
 function publicSummary(record = {}) {
-  return record.sentence || record.publicCaseDescription || record.verdict || '';
+  return record.publicCaseDescription || record.reception || record.investigation || '';
 }
 
 function publicFeedCard(caseId, record = {}) {
   const title = record.caseTitle || '생활분쟁 사건';
   const judgeType = record.judgeType || '소소킹 AI 재판부';
   const date = formatDate(record.createdAt);
-  return `<a class="card example-card" data-public-result-link="true" href="#/result/${encodeURIComponent(caseId)}" style="display:block;padding:18px 20px;color:inherit;text-decoration:none;">
+  return `<a class="card example-card" data-public-jury-case-id="${escapeHtml(caseId)}" href="#/jury" style="display:block;padding:18px 20px;color:inherit;text-decoration:none;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
       <div class="case-title" style="flex:1;">${escapeHtml(title)}</div>
       ${date ? `<div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(date)}</div>` : ''}
     </div>
-    <div style="font-size:13px;color:var(--cream-dim);margin-top:7px;line-height:1.65;">${escapeHtml(compactText(publicSummary(record), 80) || '공개된 AI 판결 기록입니다.')}</div>
+    <div style="font-size:13px;color:var(--cream-dim);margin-top:7px;line-height:1.65;">${escapeHtml(compactText(publicSummary(record), 80) || 'AI 판결을 가린 공개 사건입니다. 사건 기록을 읽고 먼저 판정해보세요.')}</div>
     <div class="case-meta" style="margin-top:10px;justify-content:space-between;gap:10px;">
       <span>${JUDGE_ICON[judgeType] || record.judgeIcon || '⚖️'} ${escapeHtml(judgeType)} 판사</span>
-      <span style="color:var(--gold);font-size:12px;">판결문 보기 →</span>
+      <span style="color:var(--gold);font-size:12px;">사건 읽고 판정하기 →</span>
     </div>
   </a>`;
 }
@@ -114,10 +115,17 @@ async function loadPublicFeed(container) {
     if (!container.isConnected || !host.isConnected) return;
     host.innerHTML = rows.length
       ? rows.map(([caseId, record]) => publicFeedCard(caseId, record)).join('')
-      : '<div style="text-align:center;padding:34px 0;color:var(--cream-dim);font-size:14px;">📭 아직 공개된 판결기록이 없습니다.<br><a href="#/submit" style="display:inline-block;margin-top:10px;color:var(--gold);">첫 사건 접수하기 →</a></div>';
+      : '<div style="text-align:center;padding:34px 0;color:var(--cream-dim);font-size:14px;">📭 아직 공개된 사건이 없습니다.<br><a href="#/submit" style="display:inline-block;margin-top:10px;color:var(--gold);">첫 사건 접수하기 →</a></div>';
+    host.querySelectorAll('[data-public-jury-case-id]').forEach(link => {
+      link.addEventListener('click', () => {
+        const caseId = String(link.dataset.publicJuryCaseId || '');
+        if (!caseId) return;
+        try { sessionStorage.setItem(JURY_TARGET_KEY, caseId); } catch {}
+      });
+    });
   } catch (error) {
     console.warn('home public feed load failed:', error?.code || error);
-    host.innerHTML = '<div style="text-align:center;padding:34px 0;color:var(--cream-dim);font-size:14px;">판결기록을 불러오지 못했습니다.<br><button type="button" class="btn btn-secondary" id="home-feed-retry" style="margin-top:12px;">다시 불러오기</button></div>';
+    host.innerHTML = '<div style="text-align:center;padding:34px 0;color:var(--cream-dim);font-size:14px;">공개 사건을 불러오지 못했습니다.<br><button type="button" class="btn btn-secondary" id="home-feed-retry" style="margin-top:12px;">다시 불러오기</button></div>';
     host.querySelector('#home-feed-retry')?.addEventListener('click', () => loadPublicFeed(container));
   }
 }
@@ -214,9 +222,9 @@ export async function renderHome(container) {
       </div>
 
       <div class="container" style="margin-top:44px;">
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🔥 사용자가 직접 공개한 AI 생활판결</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:800;margin-bottom:4px;">최근 공개 판결 5건</div>
-        <div class="section-sub">접수 원문은 작성자만 보고, 공개용 사건 기록과 AI 판결만 공개됩니다.</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🔥 사용자가 직접 공개한 생활사건</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:800;margin-bottom:4px;">최근 공개 사건 5건</div>
+        <div class="section-sub">판결은 가린 채 공개용 사건 기록만 미리 보여드립니다. 카드를 누르면 민심소에서 먼저 판정합니다.</div>
         <div id="feed-container" style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">
           <div class="loading-dots"><span></span><span></span><span></span></div>
         </div>

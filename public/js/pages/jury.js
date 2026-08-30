@@ -88,20 +88,13 @@ function verdictWinner(data = {}) {
   return Object.prototype.hasOwnProperty.call(SIDE_LABEL, raw) ? raw : '';
 }
 
-function validGrievance(data = {}) {
-  const value = Number(data.grievanceIndex);
-  return Number.isInteger(value) && value >= 1 && value <= 10 ? value : null;
-}
-
 function juryListCard(caseId, data, judged) {
-  const grievance = validGrievance(data);
   return `
     <button type="button" class="jury-list-card${judged ? ' judged' : ''}" data-case-id="${escapeHtml(caseId)}">
       <div class="jury-list-main">
         <div class="jury-list-title">${escapeHtml(data.caseTitle || '생활분쟁 사건')}</div>
         <div class="jury-list-meta">
           <span class="jury-list-judge">${escapeHtml(data.judgeIcon || '⚖️')} ${escapeHtml(data.judgeType || '소소킹 AI 재판부')} 판사</span>
-          ${grievance !== null ? `<span class="jury-list-grievance">억울지수 ${grievance}/10</span>` : ''}
         </div>
       </div>
       <span class="jury-list-cta">${judged ? '판정 완료 · 다시 보기' : '판정하기 ›'}</span>
@@ -227,7 +220,7 @@ function renderCaseCard(container, slot, caseId, data) {
         <button class="jury-vote-btn" data-jury-vote="defendant">🛡️ 피고 승</button>
         <button class="jury-vote-btn" data-jury-vote="both">🤝 쌍방 과실</button>
       </div>
-      <p class="jury-note">투표 전에는 AI 판결과 다른 이용자의 민심 비율을 보여주지 않습니다.</p>
+      <p class="jury-note">투표 전에는 AI 판결, 민심 비율, 결과성 지표를 보여주지 않습니다.</p>
     </div>`;
 
   slot.querySelectorAll('[data-jury-vote]').forEach(button => {
@@ -244,9 +237,13 @@ function renderCaseCard(container, slot, caseId, data) {
       buttons.forEach(item => { item.disabled = true; });
       try {
         const voteResult = httpsCallable(functions, 'voteResult');
-        await voteResult({ caseId, reaction: side });
+        const response = await voteResult({ caseId, reaction: side });
+        const savedSide = String(response.data?.reaction || side);
+        if (!Object.prototype.hasOwnProperty.call(SIDE_LABEL, savedSide)) {
+          throw new Error('저장된 민심 판정을 확인하지 못했습니다.');
+        }
         markJurySeen(caseId);
-        await revealVerdict(container, slot, caseId, data, side, { recordScore: true });
+        await revealVerdict(container, slot, caseId, data, savedSide, { recordScore: response.data?.alreadyVoted !== true });
       } catch (error) {
         console.error('jury vote failed:', error);
         buttons.forEach(item => { item.disabled = false; });

@@ -14,12 +14,12 @@ for (const phrase of [
   'data-home-daily-limit',
   '담당 판사는 사건마다 자동 배정',
   '7명의 AI 판사',
-  '최근 공개 판결 5건',
-  '접수 원문은 작성자만 보고',
+  '최근 공개 사건 5건',
+  '판결은 가린 채 공개용 사건 기록만 미리 보여드립니다.',
   '비공개 접수 → 내 예상 판정 → AI 판결'
 ]) requireText(home, phrase, 'public/js/pages/home.js');
-for (const removed of ['실제 판례는 직접 판결해보세요.', 'AI 생활판결과 실제 판례 맞히기', '운명에 맡기기']) {
-  if (home.includes(removed)) errors.push(`public/js/pages/home.js: removed copy remains: ${removed}`);
+for (const removed of ['최근 공개 판결 5건', '판결문 보기 →', '실제 판례는 직접 판결해보세요.', 'AI 생활판결과 실제 판례 맞히기', '운명에 맡기기']) {
+  if (home.includes(removed)) errors.push(`public/js/pages/home.js: removed or spoiler copy remains: ${removed}`);
 }
 
 const guide = read('public/js/pages/guide.js');
@@ -59,7 +59,7 @@ const index = read('public/index.html');
 for (const phrase of [
   '소소한 일상을 판결하는 AI 생활법정',
   '민심소의 블라인드 투표와 토론',
-  '/js/app.js?v=20260830-final-audit-1'
+  '/js/app.js?v=20260830-final-blind-1'
 ]) requireText(index, phrase, 'public/index.html');
 for (const removed of ['오늘의 재판', '/js/home-copy-guard.js', '/js/judge-final-guard.js', '/js/judge-runtime-guard.js']) {
   if (index.includes(removed)) errors.push(`public/index.html: removed feature/runtime patch remains: ${removed}`);
@@ -70,7 +70,7 @@ if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index
 
 const app = read('public/js/app.js');
 for (const moduleUrl of [
-  './pages/home.js?v=20260830-final-audit-1',
+  './pages/home.js?v=20260830-final-blind-1',
   './pages/submit.js?v=20260830-final-audit-1',
   './pages/policy.js?v=20260830-final-audit-1',
   './pages/guide.js?v=20260830-final-audit-1',
@@ -97,7 +97,7 @@ if (!sw.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
   errors.push('public/index.html and public/sw.js: cache name differs from application version');
 }
 for (const asset of [
-  '/js/pages/home.js?v=20260830-final-audit-1',
+  '/js/pages/home.js?v=20260830-final-blind-1',
   '/js/pages/guide.js?v=20260830-final-audit-1',
   '/js/pages/policy.js?v=20260830-final-audit-1',
   '/js/pages/submit.js?v=20260830-final-audit-1',
@@ -120,4 +120,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: current seven-judge flow, owner prediction, configurable limits, private-original disclosure, public participation, legacy-policy detection, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: current seven-judge flow, blind home entry, owner prediction, configurable limits, private-original disclosure, public participation, legacy-policy detection, and synchronized cache versions.');

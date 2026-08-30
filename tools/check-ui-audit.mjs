@@ -36,8 +36,12 @@ if (!home.includes("const BRAND_LOGO = '/logo.png?v=20260729-brand-unified-1'"))
   errors.push('home.js: unified logo is missing');
 }
 if (!home.includes('비공개 접수 → 내 예상 판정 → AI 판결')
-  || !home.includes('최근 공개 판결 5건')) {
-  errors.push('home.js: current product flow copy is missing');
+  || !home.includes('최근 공개 사건 5건')
+  || !home.includes('사건 읽고 판정하기 →')) {
+  errors.push('home.js: current blind product flow copy is missing');
+}
+if (home.includes('최근 공개 판결 5건') || home.includes('판결문 보기 →')) {
+  errors.push('home.js: verdict-spoiling public feed copy remains');
 }
 
 for (const file of ['public/js/pages/home.js', 'public/js/pages/hall.js', 'public/js/pages/jury.js']) {
@@ -134,4 +138,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: unified brand assets, canonical privacy-safe public surfaces, stable four-item navigation, synchronized caches, and PWA install flow.');
+console.log('UI audit validation passed: unified brand assets, blind privacy-safe public surfaces, stable four-item navigation, synchronized caches, and PWA install flow.');

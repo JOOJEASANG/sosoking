@@ -33,10 +33,11 @@ for (const value of [
   '민심소',
   'reactionTotal',
   'commentCount',
-  'grievanceIndex'
+  'discussionSection(rows)',
+  '토론 활발 사건'
 ]) need(hall, value, 'hall ranking');
-if (hall.includes('hashString(`${id}:grievance`)') || hall.includes('grievance`) % 10')) {
-  errors.push('hall ranking: synthetic grievance fallback remains');
+for (const forbidden of ['grievanceIndex', 'grievanceSection', '억울지수 TOP', 'validGrievance']) {
+  if (hall.includes(forbidden)) errors.push(`hall ranking: result-derived grievance signal remains: ${forbidden}`);
 }
 
 const jury = read('public/js/pages/jury.js');
@@ -48,13 +49,14 @@ for (const value of [
   '피고 승',
   '쌍방 과실'
 ]) need(jury, value, 'jury list');
-if (jury.includes('Number(data?.grievanceIndex) || 5')) {
-  errors.push('jury list: synthetic grievance default remains');
+if (jury.includes('grievanceIndex') || jury.includes('억울지수')) {
+  errors.push('jury list: result-derived grievance signal remains before voting');
 }
 
 const app = read('public/js/app.js');
-need(app, "import { renderHome } from './pages/home.js?v=20260830-final-audit-1';", 'active home module');
-need(app, "import { renderHall } from './pages/hall.js?v=20260829-arena-2';", 'active hall module');
+need(app, "import { renderHome } from './pages/home.js?v=20260830-final-blind-1';", 'active home module');
+need(app, "import { renderHall } from './pages/hall.js?v=20260830-final-blind-1';", 'active hall module');
+need(app, "import { renderJury } from './pages/jury.js?v=20260830-final-blind-1';", 'active jury module');
 need(app, "else if (hash === '#/board') renderTask = renderHall(content);", 'board compatibility route');
 for (const retired of [
   'home-judge-assignment.js',
@@ -74,10 +76,10 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active application versions differ');
 }
 for (const value of [
-  "const CACHE_NAME = 'sosoking-app-v20260830-final-audit-1';",
-  '/js/pages/home.js?v=20260830-final-audit-1',
-  '/js/pages/hall.js?v=20260829-arena-2',
-  '/js/pages/jury.js?v=20260830-jury-vote-fix-1'
+  "const CACHE_NAME = 'sosoking-app-v20260830-final-blind-1';",
+  '/js/pages/home.js?v=20260830-final-blind-1',
+  '/js/pages/hall.js?v=20260830-final-blind-1',
+  '/js/pages/jury.js?v=20260830-final-blind-1'
 ]) need(worker, value, 'active cache');
 for (const retired of [
   'home-judge-assignment.js',
@@ -97,4 +99,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Judge and public ranking validation passed: seven automatic judges, canonical hall/jury flow, no synthetic grievance score, and retired board/search modules are absent.');
+console.log('Judge and public ranking validation passed: seven automatic judges, blind non-directional hall/jury flow, and retired board/search modules are absent.');

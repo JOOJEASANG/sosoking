@@ -1,5 +1,6 @@
 // 명예의 전당 — 공개 판결의 참여 기록을 이용한 블라인드 랭킹 보드.
-// 판결 내용·승패·민심 분포는 여기서 보여주지 않고, 카드를 누르면 민심소의 같은 사건으로 이동한다.
+// 판결 내용·승패·민심 분포·결과성 지표는 여기서 보여주지 않고,
+// 카드를 누르면 민심소의 같은 사건으로 이동한다.
 
 import { db } from '../firebase.js?v=20260729-auth-session-1';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
@@ -22,11 +23,6 @@ function commentCount(record = {}) {
 
 function buzzScore(record = {}) {
   return reactionTotal(record) + commentCount(record);
-}
-
-function validGrievance(record = {}) {
-  const value = Number(record.grievanceIndex);
-  return Number.isInteger(value) && value >= 1 && value <= 10 ? value : null;
 }
 
 function judgeChip(record = {}) {
@@ -106,21 +102,18 @@ function buzzSection(rows) {
   return sectionHtml('🔥 화제의 사건', '투표와 댓글 참여가 많이 쌓인 공개 사건', cards, '아직 참여 기록이 충분한 사건이 없습니다.');
 }
 
-function grievanceSection(rows) {
+function discussionSection(rows) {
   const ranked = rows
-    .filter(([, record]) => validGrievance(record) !== null)
-    .sort((a, b) => {
-      const difference = validGrievance(b[1]) - validGrievance(a[1]);
-      return difference || buzzScore(b[1]) - buzzScore(a[1]);
-    })
+    .filter(([, record]) => commentCount(record) > 0)
+    .sort((a, b) => commentCount(b[1]) - commentCount(a[1]) || reactionTotal(b[1]) - reactionTotal(a[1]))
     .slice(0, SECTION_SIZE);
   const cards = ranked.map(([caseId, record], index) => cardHtml(
     index,
     caseId,
     record,
-    `억울지수 ${validGrievance(record)}/10`
+    `💬 댓글 ${commentCount(record)}개`
   )).join('');
-  return sectionHtml('😤 억울지수 TOP', '실제 판결 데이터에 억울지수가 기록된 사건만 집계', cards, '억울지수가 기록된 공개 사건이 아직 없습니다.');
+  return sectionHtml('💬 토론 활발 사건', '어느 쪽이 이겼는지는 숨기고 댓글 참여만 집계', cards, '아직 댓글 토론이 쌓인 사건이 없습니다.');
 }
 
 async function controversySection(rows) {
@@ -170,7 +163,7 @@ export async function renderHall(container) {
       <div class="page-header"><a href="#/" class="back-btn" aria-label="홈으로 돌아가기">‹</a><span class="logo">명예의 전당</span></div>
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div class="hall-intro-title">명예의 전당</div>
-        <p class="hall-intro-copy">민심소에 쌓인 참여 기록으로 만든 랭킹입니다. <strong style="color:var(--gold);">판결 내용과 어느 쪽이 우세한지는 여기서 미리 공개하지 않습니다.</strong> 궁금한 사건을 누르면 민심소에서 직접 판정한 뒤 결과를 확인합니다.</p>
+        <p class="hall-intro-copy">민심소에 쌓인 <strong style="color:var(--gold);">참여량과 접전도처럼 결론을 드러내지 않는 기록</strong>으로 만든 랭킹입니다. 판결 내용·승패·우세 방향은 여기서 미리 공개하지 않습니다. 궁금한 사건을 누르면 민심소에서 직접 판정한 뒤 결과를 확인합니다.</p>
         <div id="hall-slot"><div class="loading-dots"><span></span><span></span><span></span></div></div>
       </div>
     </div>`;
@@ -199,7 +192,7 @@ export async function renderHall(container) {
   slot.innerHTML = `
     ${buzzSection(rows)}
     ${controversy}
-    ${grievanceSection(rows)}
+    ${discussionSection(rows)}
     <div class="hall-cta">
       <p>랭킹만 보고 결론 내리기는 금지입니다.<br>판결을 가린 채 사건부터 읽고 직접 한 표를 정해보세요.</p>
       <a href="#/jury" class="btn btn-primary">🗳️ 민심소에서 판정하기</a>

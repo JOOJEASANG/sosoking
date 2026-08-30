@@ -9,15 +9,14 @@ const {
   renderSitemapXml,
   publicResultUrl,
   normalizeTagParam,
-  loadTaggedResults,
   renderTagPageHtml,
-  listPublicTagEntries,
   tagPageUrl
 } = require('./public-seo');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const SITEMAP_RESULT_LIMIT = 5000;
+const TAG_RESULT_LIMIT = 60;
 
 function isSanitizedPublicResult(raw = {}) {
   return raw.isPublic === true
@@ -32,6 +31,23 @@ function normalizeSafePublicResult(caseId, raw = {}) {
     ...raw,
     caseDescription: String(raw.publicCaseDescription || '')
   });
+}
+
+function timestampMillis(value) {
+  if (!value) return 0;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isoDay(value) {
+  try {
+    const date = value?.toDate ? value.toDate() : new Date(value);
+    return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : '';
+  } catch {
+    return '';
+  }
 }
 
 async function loadSafePublicResult(caseId) {
@@ -66,16 +82,57 @@ async function listSafePublicResultEntries() {
     .filter(document => isSanitizedPublicResult(document.data() || {}))
     .map(document => ({
       caseId: document.id,
-      lastmod: (() => {
-        const value = document.data()?.updatedAt || document.data()?.createdAt;
-        try {
-          const date = value?.toDate ? value.toDate() : new Date(value);
-          return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : '';
-        } catch {
-          return '';
-        }
-      })()
+      lastmod: isoDay(document.data()?.updatedAt || document.data()?.createdAt)
     }));
+}
+
+async function loadSafeTaggedResults(tag) {
+  const normalizedTag = normalizeTagParam(tag);
+  if (!normalizedTag) return [];
+
+  const snapshot = await db.collection('results')
+    .where('isPublic', '==', true)
+    .where('tags', 'array-contains', normalizedTag)
+    .limit(TAG_RESULT_LIMIT)
+    .get();
+
+  return snapshot.docs
+    .filter(document => isSanitizedPublicResult(document.data() || {}))
+    .map(document => {
+      const raw = document.data() || {};
+      return {
+        ...normalizeSafePublicResult(document.id, raw),
+        createdAtMillis: timestampMillis(raw.updatedAt || raw.createdAt)
+      };
+    })
+    .sort((a, b) => b.createdAtMillis - a.createdAtMillis);
+}
+
+async function listSafePublicTagEntries() {
+  let snapshot;
+  try {
+    snapshot = await safePublicResultsQuery()
+      .orderBy('createdAt', 'desc')
+      .limit(SITEMAP_RESULT_LIMIT)
+      .get();
+  } catch (error) {
+    console.warn('ordered safe public tag query failed; retrying without ordering:', error?.code || error);
+    snapshot = await safePublicResultsQuery()
+      .limit(SITEMAP_RESULT_LIMIT)
+      .get();
+  }
+
+  const seen = new Map();
+  for (const document of snapshot.docs) {
+    const raw = document.data() || {};
+    if (!isSanitizedPublicResult(raw)) continue;
+    const normalized = normalizeSafePublicResult(document.id, raw);
+    const lastmod = isoDay(raw.updatedAt || raw.createdAt);
+    for (const tag of normalized.tags || []) {
+      if (!seen.has(tag) || lastmod > seen.get(tag)) seen.set(tag, lastmod);
+    }
+  }
+  return [...seen.entries()].map(([tag, lastmod]) => ({ tag, lastmod }));
 }
 
 function renderNotFoundHtml() {
@@ -152,7 +209,7 @@ exports.publicTagPage = onRequest({
     return;
   }
   try {
-    const items = await loadTaggedResults(tag);
+    const items = await loadSafeTaggedResults(tag);
     const canonical = tagPageUrl(tag);
     response
       .set('Content-Type', 'text/html; charset=utf-8')
@@ -184,7 +241,7 @@ exports.publicSitemap = onRequest({
   try {
     const [entries, tagEntries] = await Promise.all([
       listSafePublicResultEntries(),
-      listPublicTagEntries().catch(() => [])
+      listSafePublicTagEntries().catch(() => [])
     ]);
     response
       .set('Content-Type', 'application/xml; charset=utf-8')
@@ -203,5 +260,7 @@ Object.defineProperties(module.exports, {
   isSanitizedPublicResult: { value: isSanitizedPublicResult, enumerable: false },
   loadSafePublicResult: { value: loadSafePublicResult, enumerable: false },
   listSafePublicResultEntries: { value: listSafePublicResultEntries, enumerable: false },
+  loadSafeTaggedResults: { value: loadSafeTaggedResults, enumerable: false },
+  listSafePublicTagEntries: { value: listSafePublicTagEntries, enumerable: false },
   normalizeSafePublicResult: { value: normalizeSafePublicResult, enumerable: false }
 });

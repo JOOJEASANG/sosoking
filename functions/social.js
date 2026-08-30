@@ -8,7 +8,7 @@ const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
-const REACTIONS = ['plaintiff','defendant','both','tooMuch','funny'];
+const REACTIONS = ['plaintiff','defendant','both'];
 const APPEAL_LOCK_TIMEOUT_MS = 4 * 60 * 1000;
 const APPEAL_REQUEST_TIMEOUT_MS = 75 * 1000;
 
@@ -166,8 +166,8 @@ exports.voteResult = onCall({
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);
   const reaction = cleanText(request.data?.reaction, 20);
-  if (!caseId || !REACTIONS.includes(reaction)) {
-    throw new HttpsError('invalid-argument', '잘못된 반응입니다.');
+  if (!/^[A-Za-z0-9_-]{1,180}$/.test(caseId) || !REACTIONS.includes(reaction)) {
+    throw new HttpsError('invalid-argument', '원고 승, 피고 승, 쌍방 과실 중 하나를 선택해 주세요.');
   }
 
   const { resultRef } = await assertPublicResult(caseId);
@@ -178,6 +178,8 @@ exports.voteResult = onCall({
 
   const summaryRef = db.doc(`result_reactions/${caseId}`);
   const voteRef = db.doc(`result_reactions/${caseId}/votes/${uid}`);
+  let savedReaction = reaction;
+  let alreadyVoted = false;
 
   await db.runTransaction(async tx => {
     const [latestResultSnap, voteSnap] = await Promise.all([
@@ -187,25 +189,30 @@ exports.voteResult = onCall({
     if (!latestResultSnap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
     assertParticipablePublicResult(latestResultSnap.data());
 
-    const prev = voteSnap.exists ? voteSnap.data().reaction : '';
-    const isNewVote = !prev;
+    const previousRaw = voteSnap.exists ? cleanText(voteSnap.data().reaction, 20) : '';
+    if (REACTIONS.includes(previousRaw)) {
+      savedReaction = previousRaw;
+      alreadyVoted = true;
+      return;
+    }
 
+    const legacyReaction = previousRaw && !REACTIONS.includes(previousRaw) ? previousRaw : '';
     const updates = {
       updatedAt: FieldValue.serverTimestamp(),
-      total: FieldValue.increment(isNewVote ? 1 : 0)
+      total: FieldValue.increment(voteSnap.exists ? 0 : 1),
+      [`counts.${reaction}`]: FieldValue.increment(1)
     };
-
-    if (prev && prev !== reaction) updates[`counts.${prev}`] = FieldValue.increment(-1);
-    if (prev !== reaction) updates[`counts.${reaction}`] = FieldValue.increment(1);
+    if (legacyReaction) updates[`counts.${legacyReaction}`] = FieldValue.increment(-1);
 
     tx.set(summaryRef, updates, { merge: true });
     tx.set(voteRef, {
       uid,
       reaction,
+      createdAt: voteSnap.exists ? (voteSnap.data().createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    if (isNewVote) {
+    if (!voteSnap.exists) {
       tx.update(resultRef, {
         reactionTotal: FieldValue.increment(1),
         updatedAt: FieldValue.serverTimestamp()
@@ -213,7 +220,7 @@ exports.voteResult = onCall({
     }
   });
 
-  return { success: true };
+  return { success: true, reaction: savedReaction, alreadyVoted };
 });
 
 exports.addCourtComment = onCall({

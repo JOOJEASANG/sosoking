@@ -85,7 +85,7 @@ if (!policy.includes('접수 횟수와 재접수 대기시간은 서비스 화�
 
 const app = read('public/js/app.js');
 for (const required of [
-  "import { renderHome } from './pages/home.js?v=20260830-final-audit-1';",
+  "import { renderHome } from './pages/home.js?v=20260830-final-blind-1';",
   "import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';",
   "import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';",
   "import { renderGuide } from './pages/guide.js?v=20260830-final-audit-1';"
@@ -96,7 +96,7 @@ for (const required of [
 const index = read('public/index.html');
 const worker = read('public/sw.js');
 for (const required of [
-  '/js/pages/home.js?v=20260830-final-audit-1',
+  '/js/pages/home.js?v=20260830-final-blind-1',
   '/js/pages/submit.js?v=20260830-final-audit-1',
   '/js/pages/policy.js?v=20260830-final-audit-1',
   '/js/pages/guide.js?v=20260830-final-audit-1'

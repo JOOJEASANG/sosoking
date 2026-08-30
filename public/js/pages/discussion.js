@@ -35,7 +35,8 @@ function ensureDiscussionStyle() {
     .discussion-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;}
     .discussion-choice{border:1px solid var(--border);background:var(--surface-soft);color:var(--cream);border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center;min-height:128px;display:flex;flex-direction:column;justify-content:center;transition:transform .15s ease,border-color .15s ease,background .15s ease;}
     .discussion-choice:hover{transform:translateY(-1px);border-color:var(--gold);}
-    .discussion-choice.active{border-color:var(--gold);background:rgba(201,168,76,.14);box-shadow:0 0 0 1px rgba(201,168,76,.18) inset;}
+    .discussion-choice:disabled{cursor:default;opacity:.66;transform:none;}
+    .discussion-choice.active{border-color:var(--gold);background:rgba(201,168,76,.14);box-shadow:0 0 0 1px rgba(201,168,76,.18) inset;opacity:1;}
     .discussion-choice-icon{font-size:26px;margin-bottom:6px;}
     .discussion-choice-label{font-size:15px;font-weight:900;color:var(--gold);}
     .discussion-choice-count{font-size:12px;color:var(--cream-dim);margin-top:5px;}
@@ -121,11 +122,12 @@ async function loadDiscussion(caseId) {
 function renderChoices(reactions, selected) {
   const counts = reactions?.counts || {};
   const total = STANCES.reduce((sum, item) => sum + Number(counts[item.id] || 0), 0);
+  const locked = STANCE_MAP.has(selected);
 
   return STANCES.map(item => {
     const count = Number(counts[item.id] || 0);
     const percent = total ? Math.round(count / total * 100) : 0;
-    return `<button type="button" class="discussion-choice${selected === item.id ? ' active' : ''}" data-discussion-stance="${item.id}" aria-pressed="${selected === item.id ? 'true' : 'false'}">
+    return `<button type="button" class="discussion-choice${selected === item.id ? ' active' : ''}" data-discussion-stance="${item.id}" aria-pressed="${selected === item.id ? 'true' : 'false'}"${locked ? ' disabled' : ''}>
       <span class="discussion-choice-icon" aria-hidden="true">${item.icon}</span>
       <span>
         <span class="discussion-choice-label">${item.label}</span>
@@ -217,13 +219,13 @@ export async function renderDiscussion(container, caseId) {
 
     <section class="card" style="padding:20px;margin-bottom:16px;">
       <div style="font-family:var(--font-serif);font-size:19px;font-weight:900;color:var(--gold);margin-bottom:5px;">어느 쪽 판단에 더 공감하나요?</div>
-      <div style="font-size:12px;color:var(--cream-dim);line-height:1.65;margin-bottom:14px;">원고측·피고측·쌍방 중 하나를 선택하세요. 선택은 다시 변경할 수 있습니다.</div>
+      <div style="font-size:12px;color:var(--cream-dim);line-height:1.65;margin-bottom:14px;">원고측·피고측·쌍방 중 하나를 선택하세요. 최초 선택은 기록 후 변경할 수 없습니다.</div>
       <div class="discussion-choice-grid">${renderChoices(data.reactions, selected)}</div>
     </section>
 
     <section class="card" style="padding:20px;margin-bottom:16px;">
       <div style="font-weight:900;color:var(--gold);margin-bottom:5px;">선택한 입장으로 의견 남기기</div>
-      <div id="discussion-selected-note" style="font-size:12px;color:var(--cream-dim);margin-bottom:11px;">${selected ? `${STANCE_MAP.get(selected).label} 입장으로 참여 중입니다.` : '먼저 위의 세 입장 중 하나를 선택해주세요.'}</div>
+      <div id="discussion-selected-note" style="font-size:12px;color:var(--cream-dim);margin-bottom:11px;">${selected ? `${STANCE_MAP.get(selected).label} 입장으로 참여 중입니다. 최초 선택은 유지됩니다.` : '먼저 위의 세 입장 중 하나를 선택해주세요.'}</div>
       <textarea id="discussion-comment-input" class="form-textarea" maxlength="600" style="min-height:130px;line-height:1.75;" placeholder="판결기록의 어떤 내용에 동의하거나 반대하는지 구체적으로 적어주세요."></textarea>
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px;">
         <span style="font-size:10px;color:var(--cream-dim);">개인정보·욕설·실명 언급은 제한됩니다.</span>
@@ -255,8 +257,13 @@ export async function renderDiscussion(container, caseId) {
       const oldText = button.querySelector('.discussion-choice-count')?.textContent || '';
       button.disabled = true;
       try {
-        await httpsCallable(functions, 'voteResult')({ caseId, reaction: stance });
-        showToast(`${STANCE_MAP.get(stance).label} 입장으로 기록했습니다.`, 'success');
+        const response = await httpsCallable(functions, 'voteResult')({ caseId, reaction: stance });
+        const savedStance = String(response.data?.reaction || stance);
+        if (!STANCE_MAP.has(savedStance)) throw new Error('저장된 민심 판정을 확인하지 못했습니다.');
+        const message = response.data?.alreadyVoted === true
+          ? `기존 ${STANCE_MAP.get(savedStance).label} 입장이 유지됩니다.`
+          : `${STANCE_MAP.get(savedStance).label} 입장으로 기록했습니다.`;
+        showToast(message, 'success');
         await renderDiscussion(container, caseId);
       } catch (error) {
         button.disabled = false;

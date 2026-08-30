@@ -2,7 +2,7 @@ name: Verify Live Hosting
 
 on:
   workflow_run:
-    workflows: ["Deploy Firebase"]
+    workflows: ["Deploy Firebase", "Deploy Hosting Only"]
     types: [completed]
 
 jobs:
@@ -13,12 +13,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Require Firebase deployment success
+      - name: Require deployment success
         env:
           DEPLOY_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           if [ "$DEPLOY_CONCLUSION" != "success" ]; then
-            echo "Deploy Firebase did not succeed: $DEPLOY_CONCLUSION"
+            echo "Production deployment did not succeed: $DEPLOY_CONCLUSION"
             exit 1
           fi
 
