@@ -75,8 +75,10 @@ const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"
 if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active application versions differ');
 }
+if (!appVersion || !worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
+  errors.push('public/index.html and public/sw.js: active cache name differs from the application version');
+}
 for (const value of [
-  "const CACHE_NAME = 'sosoking-app-v20260830-final-blind-1';",
   '/js/pages/home.js?v=20260830-final-blind-1',
   '/js/pages/hall.js?v=20260830-final-blind-1',
   '/js/pages/jury.js?v=20260830-final-blind-1'
