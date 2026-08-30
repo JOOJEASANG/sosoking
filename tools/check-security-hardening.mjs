@@ -43,6 +43,7 @@ if (!cspHeaders.length || cspHeaders.some(header => !header.value.includes("fram
 const rules = read('firestore.rules');
 for (const required of [
   'function isSafePublicResultData(data)',
+  'function isPublicResultListData(data)',
   'data.publicDataVersion == 1',
   "!data.keys().hasAny(['userId', 'caseDescription', 'nickname'])",
   'allow get: if isSafePublicResultData(resource.data)',
@@ -51,7 +52,7 @@ for (const required of [
   if (!rules.includes(required)) errors.push(`firestore.rules: missing ${required}`);
 }
 if (rules.includes('allow list: if signedIn() && isPublicResultListData(resource.data)')) {
-  errors.push('firestore.rules: sanitized public result lists must not depend on anonymous sign-in timing');
+  errors.push('firestore.rules: public result lists must not depend on anonymous sign-in timing');
 }
 
 const sanitizer = read('functions/public-result-sanitizer.js');
@@ -100,12 +101,14 @@ for (const required of [
   if (!publicLoader.includes(required)) errors.push(`public/js/utils/public-results.js: missing ${required}`);
 }
 
-const board = read('public/js/pages/board.js');
-if (!board.includes('loadSafePublicResults')) {
-  errors.push('public/js/pages/board.js: board does not use the sanitized public result loader');
-}
-if (board.includes('r.caseDescription')) {
-  errors.push('public/js/pages/board.js: board still renders raw caseDescription');
+for (const file of ['public/js/pages/home.js', 'public/js/pages/jury.js', 'public/js/pages/hall.js']) {
+  const source = read(file);
+  if (!source.includes('loadSafePublicResults')) {
+    errors.push(`${file}: canonical public screen does not use the safe public result loader`);
+  }
+  if (/\b(?:record|data|r)\.caseDescription\b/.test(source)) {
+    errors.push(`${file}: canonical public screen still references raw caseDescription`);
+  }
 }
 
 const social = read('functions/social.js');
@@ -141,4 +144,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, public record access, deploy-safe sanitation and index handling, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
+console.log('Security hardening validation passed: App Check, direct-query-compatible public records, deploy sanitation, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
