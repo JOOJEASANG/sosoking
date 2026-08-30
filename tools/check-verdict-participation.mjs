@@ -5,7 +5,9 @@ const read = path => fs.readFileSync(path, 'utf8');
 const expect = (condition, message) => { if (!condition) errors.push(message); };
 
 const app = read('public/js/app.js');
-const board = read('public/js/pages/board.js');
+const home = read('public/js/pages/home.js');
+const hall = read('public/js/pages/hall.js');
+const jury = read('public/js/pages/jury.js');
 const result = read('public/js/pages/result.js');
 const resultComments = read('public/js/pages/result-comments.js');
 const resultCourt = read('public/js/pages/result-court.js');
@@ -23,16 +25,20 @@ expect(app.includes("hash.startsWith('#/verdict/')") && app.includes('renderResu
   'public/js/app.js: owned verdict hash must render the full verdict page');
 expect(!app.includes('renderParticipation') && !app.includes('./pages/participation.js'),
   'public/js/app.js: obsolete separate participation page must not return');
-expect(board.includes('function resultPath') && board.includes('return `#/result/${encodeURIComponent(id)}`'),
-  'public/js/pages/board.js: verdict record cards must retain the full verdict route');
-expect(board.includes('function discussionPath')
-  && board.includes('return `#/discussion/${encodeURIComponent(id)}`')
-  && board.includes('원고측·피고측·쌍방')
-  && board.includes('판결문 보기')
-  && board.includes('data-public-result-link="true"')
-  && board.includes('data-discussion-record-link="true"')
-  && !board.includes('totalVotes('),
-  'public/js/pages/board.js: records must provide separate full-verdict and three-way discussion actions without jury totals');
+expect(!app.includes("from './pages/board") && app.includes("else if (hash === '#/board') renderTask = renderHall(content);"),
+  'public/js/app.js: retired board must map to the canonical hall instead of loading a legacy module');
+
+expect(home.includes('href="#/result/${encodeURIComponent(caseId)}"')
+  && home.includes('data-public-result-link="true"')
+  && home.includes('판결문 보기 →'),
+  'public/js/pages/home.js: recent public records must retain the full verdict route');
+expect(hall.includes('#/jury')
+  && hall.includes('민심소에서 판결을 보지 않고 먼저 판정하기'),
+  'public/js/pages/hall.js: ranking cards must lead to blind jury participation rather than reveal results early');
+expect(jury.includes('원고 승') && jury.includes('피고 승') && jury.includes('쌍방 과실')
+  && jury.includes('가려졌던 AI 판사의 판결과 민심 집계가 열리고'),
+  'public/js/pages/jury.js: blind three-way public verdict participation is missing');
+
 expect(result.includes('💬 방청석 한마디') && result.includes("httpsCallable(functions, 'addCourtComment')"),
   'public/js/pages/result.js: legacy audience comments must remain available');
 expect(resultComments.includes("reactionButton?.closest('.card')?.remove()")
@@ -45,6 +51,11 @@ expect(resultComments.includes("httpsCallable(functions, 'voteOwnVerdict')")
   && resultComments.includes('첫 선택이 기록되며')
   && resultComments.includes('ownerVerdictVote'),
   'public/js/pages/result-comments.js: owners must predict once before their AI verdict is revealed');
+expect(resultComments.includes('originalVisible')
+  && resultComments.includes('작성자가 처음 접수한 원문입니다.')
+  && resultComments.includes('공개용 사건 내용입니다. 작성자가 처음 입력한 원문은 공개하지 않습니다.'),
+  'public/js/pages/result-comments.js: original/public-safe disclosure state is not rendered clearly');
+
 expect(ownerVerdict.includes("const OWNER_VERDICT_REACTIONS = ['plaintiff', 'defendant', 'both']")
   && ownerVerdict.includes('caseData.userId !== uid')
   && ownerVerdict.includes('ownerVerdictVote: reaction')
@@ -53,9 +64,12 @@ expect(ownerVerdict.includes("const OWNER_VERDICT_REACTIONS = ['plaintiff', 'def
 expect(functionsMain.includes("require('./owner-verdict')")
   && deployWorkflow.includes('functions:voteOwnVerdict'),
   'owner blind-verdict callable must be exported and included in production deployment');
+
 expect(resultCourt.includes("[data-theme='dark'] .result-document-page")
   && resultCourt.includes('background:linear-gradient(145deg,#1a2130,#10151f)'),
   'public/js/pages/result-court.js: dark full-verdict styling is missing');
+expect(resultCourt.includes('처음 입력한 접수 원문은 작성자 본인에게만 보입니다.'),
+  'public/js/pages/result-court.js: publication confirmation must distinguish the private original');
 expect(trial.includes('location.hash = `#/verdict/${encodeURIComponent(caseId)}`'),
   'public/js/pages/trial.js: completed submissions must open the owned verdict route');
 expect(myCases.includes('`#/verdict/${encodeURIComponent(id)}`'),
@@ -69,8 +83,10 @@ expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
 expect(sw.includes('/js/pages/result-court.js?v=20260829-arena-1')
   && sw.includes('/js/pages/discussion.js?v=20260730-discussion-court-1')
-  && !sw.includes('/js/pages/participation.js'),
-  'public/sw.js: full verdict and discussion modules are missing from the cache graph');
+  && sw.includes('/js/pages/jury.js?v=20260829-arena-2')
+  && !sw.includes('/js/pages/participation.js')
+  && !sw.includes('/js/pages/board.js'),
+  'public/sw.js: canonical full verdict/jury/discussion modules or retired-board cleanup are inconsistent');
 expect(/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(sw),
   'public/sw.js: versioned application cache name is missing');
 
@@ -80,4 +96,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: owner verdicts stay sealed until a one-time prediction, public records keep separate discussion access, and cache versions stay synchronized.');
+console.log('Verdict record validation passed: owner verdicts stay sealed until one-time prediction, public rankings remain blind, original text stays private, and canonical participation/cache routes are synchronized.');
