@@ -81,7 +81,7 @@ for (const required of [
 }
 
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-model-selector-1')) {
+if (!adminIndex.includes('/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-settings-save-fix-1')) {
   errors.push('public/admin/index.html: current administrator AI interface is not loaded');
 }
 
@@ -90,6 +90,7 @@ for (const required of [
   "root.querySelector('#dailyOn')",
   'dailyToggle.checked = false;',
   'dailyToggle.disabled = true;',
+  "toggleLabel.style.display = 'none';",
   '관리자 수동 AI 샘플 사건 생성',
   'AI 샘플 사건 수동 생성',
   '자동 예약 없음',
@@ -112,11 +113,11 @@ for (const required of [
   '선택 모델 호출이 실패하면 서버의 기본 모델 순서로 자동 재시도합니다.'
 ]) {
   if (!adminMode.includes(required)) {
-    errors.push(`public/admin/admin-manual-ai-mode.js: manual generation/model selector or loop guard missing: ${required}`);
+    errors.push(`public/admin/admin-manual-ai-mode.js: manual generation/model selector/save guard missing: ${required}`);
   }
 }
-if (!adminMode.includes('toggleLabel?.remove()')) {
-  errors.push('public/admin/admin-manual-ai-mode.js: obsolete scheduled-generation toggle is still visible');
+if (adminMode.includes('toggleLabel?.remove()')) {
+  errors.push('public/admin/admin-manual-ai-mode.js: hidden #dailyOn control is removed, which breaks the canonical settings save handler');
 }
 if (adminMode.includes("generateButton.textContent = 'AI 샘플 사건 수동 생성';")) {
   errors.push('public/admin/admin-manual-ai-mode.js: generate button text is rewritten unconditionally and can retrigger MutationObserver');
@@ -127,6 +128,7 @@ for (const required of [
   "generateDaily: httpsCallable(functions, 'generateDailyAiNow')",
   "target.querySelector('#generate-daily-now')",
   "await callables.generateDaily({})",
+  "dailyAiEnabled: target.querySelector('#dailyOn').checked",
   "target.querySelector('#model').value.trim() || 'gemini-2.5-flash'"
 ]) {
   if (!admin.includes(required)) {
@@ -140,4 +142,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only AI validation passed: scheduled generation stays removed, the AI tab mutation guard is idempotent, selectable stable Gemini models persist through the existing setting, and the deployed callable remains administrator-only.');
+console.log('Administrator-only AI validation passed: scheduled generation stays removed, the hidden disabled toggle remains available to the canonical save handler, selectable Gemini models persist safely, and the deployed callable remains administrator-only.');
