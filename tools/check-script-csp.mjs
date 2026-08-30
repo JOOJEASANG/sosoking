@@ -87,7 +87,7 @@ for (const specifier of [
   "./pages/result-comments.js?v=20260830-final-audit-1",
   "./pages/policy.js?v=20260830-final-audit-1",
   "./pages/hall.js?v=20260829-arena-2",
-  "./pages/jury.js?v=20260829-arena-2"
+  "./pages/jury.js?v=20260830-jury-vote-fix-1"
 ]) {
   if (!app.includes(specifier)) errors.push(`public/js/app.js: canonical module import is missing ${specifier}`);
 }
