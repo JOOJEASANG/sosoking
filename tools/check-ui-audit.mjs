@@ -31,19 +31,23 @@ checkPng('public/icons/favicon-32.png', 32, 32);
 checkPng('public/logo.png', 512, 512);
 checkPng('public/og-image.png', 1200, 630);
 
-const home = read('public/js/pages/home-court.js');
-if (!home.includes('/logo.png?v=20260729-brand-unified-1') || !home.includes('logo.onerror')) {
-  errors.push('home-court.js: unified logo or fallback is missing');
+const home = read('public/js/pages/home.js');
+if (!home.includes("const BRAND_LOGO = '/logo.png?v=20260729-brand-unified-1'")) {
+  errors.push('home.js: unified logo is missing');
 }
-if (!home.includes('공개 판결은 투표와 토론으로 함께 즐겨보세요.')) {
-  errors.push('home-court.js: current participation copy is missing');
+if (!home.includes('비공개 접수 → 내 예상 판정 → AI 판결')
+  || !home.includes('최근 공개 판결 5건')) {
+  errors.push('home.js: current product flow copy is missing');
 }
 
-const board = read('public/js/pages/board.js');
-if (!board.includes('function summaryText(r)')
-  || !board.includes('r.sentence || r.publicCaseDescription || r.verdict')
-  || board.includes('r.caseDescription')) {
-  errors.push('board.js: privacy-safe public excerpts are not rendered consistently');
+for (const file of ['public/js/pages/home.js', 'public/js/pages/hall.js', 'public/js/pages/jury.js']) {
+  const source = read(file);
+  if (!source.includes('loadSafePublicResults')) {
+    errors.push(`${file}: sanitized public result loader is missing`);
+  }
+  if (/\b(?:r|record|data)\.caseDescription\b/.test(source)) {
+    errors.push(`${file}: raw caseDescription is rendered on a public surface`);
+  }
 }
 
 const nav = read('public/js/components/nav.js');
@@ -81,6 +85,9 @@ if (app.includes('renderDailyRealCourt') || app.includes('#/daily-court') || app
 if (!app.includes('renderThemeToggle();') || !app.includes('initNavAuthSync();')) {
   errors.push('app.js: global theme or authentication navigation synchronization is missing');
 }
+for (const retired of ['home-court.js', 'home-seven-judges.js', 'board.js', 'submit-guard.js', 'policy-configurable-limit.js']) {
+  if (app.includes(retired)) errors.push(`app.js: retired UI module remains active: ${retired}`);
+}
 
 const index = read('public/index.html');
 const serviceWorker = read('public/sw.js');
@@ -95,6 +102,9 @@ if (!brandVersion || !serviceWorker.includes(`/css/brand-logo.css?v=${brandVersi
 }
 if (serviceWorker.includes('daily-real-court.js') || serviceWorker.includes('/daily-court')) {
   errors.push('public/sw.js: removed daily-court assets remain');
+}
+for (const retired of ['home-court.js', 'home-seven-judges.js', '/js/pages/board.js', 'submit-guard.js', 'policy-configurable-limit.js', 'judge-final-guard.js', 'judge-runtime-guard.js']) {
+  if (serviceWorker.includes(retired)) errors.push(`public/sw.js: retired UI asset remains: ${retired}`);
 }
 
 const manifest = JSON.parse(read('public/site.webmanifest'));
@@ -124,4 +134,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: unified brand assets, privacy-safe excerpts, stable four-item navigation, synchronized caches, and PWA install flow.');
+console.log('UI audit validation passed: unified brand assets, canonical privacy-safe public surfaces, stable four-item navigation, synchronized caches, and PWA install flow.');
