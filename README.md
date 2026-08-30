@@ -1,21 +1,52 @@
 # 소소킹 판결소
 
-사소한 생활 사건을 AI가 지나치게 진지한 재판·판결문 형식으로 처리하는 Firebase 기반 오락 서비스입니다.
+사소한 생활 사건을 생성형 AI가 지나치게 진지한 재판·판결문 형식으로 처리하는 Firebase 기반 오락 서비스입니다.
 
 > 실제 법률 자문이나 법원 판결이 아니며 법적 효력이 없습니다. 범죄 피해, 폭력, 의료·정신건강 문제 등 중대한 사안은 관련 기관이나 전문가의 도움을 받아야 합니다.
 
+## 현재 서비스 흐름
+
+1. Google 또는 이메일 계정으로 로그인합니다. 이메일 계정은 이메일 인증까지 완료해야 합니다.
+2. 개인정보를 제외한 사소한 생활분쟁을 한 칸에 입력합니다.
+3. 7명의 AI 판사 중 한 명이 자동 배정되어 사건접수·수사보고·원고측 변론·피고측 변론·판결문을 생성합니다.
+4. 접수한 본인도 AI 판결을 보기 전에 `원고 승 / 피고 승 / 쌍방 과실` 중 하나를 먼저 선택합니다.
+5. 선택 후 AI 판결을 열어 내 예상과 비교합니다.
+6. 사건은 기본 비공개입니다. 작성자가 공개를 선택하면 공개용 사건 정보와 AI 판결이 판결기록에 노출되고 민심소의 블라인드 투표·토론 대상이 됩니다.
+7. 실제 접수 원문은 작성자 본인에게만 제공됩니다.
+
 ## 주요 기능
 
-- Firebase Auth 기반 익명·Google·이메일 로그인
-- 사건 접수 및 계정별 일일 한도·재접수 쿨다운
-- Gemini를 이용한 생활형 AI 판결 생성과 로컬 대체 판결
-- 판사 성향 선택 및 재판 진행 화면
-- 공개 판결기록, 반응, 방청석 댓글과 신고
-- 민심소: 다른 사람의 사건을 판결문 없이 읽고 투표한 뒤, AI 판결과 민심을 비교
-- 내 사건 조회 및 항소심 판결 생성
-- 매일 자동 생성되는 오늘의 AI 사건
-- 관리자 페이지에서 사건, 회원, AI, 사용량, 사이트 설정 관리
-- 서버 집계 공개 통계와 PWA 설치·서비스 워커 지원
+- Firebase Auth 기반 Google·이메일 계정 및 내부 익명 세션
+- 계정별 사건 접수 한도와 재접수 쿨다운을 운영 설정으로 제어
+- Gemini 기반 생활형 AI 판결 생성과 장애 시 로컬 대체 판결
+- 꼰대형·냉혈형·회피형·추궁형·오버형·드립형·빙의형 판사 자동 배정
+- 본인 사건 AI 판결 사전 예상 투표
+- 공개 판결기록 및 안전한 공개용 사건 정보
+- 민심소: 판결을 가린 채 사건을 먼저 읽고 투표한 뒤 AI 판결·전체 민심과 비교
+- 민심소 댓글 토론, 판결 반응, 신고
+- 명예의 전당: 투표·댓글·실제 억울지수 데이터 기반 블라인드 랭킹
+- 내 사건 조회·삭제 및 항소심 판결 생성
+- 관리자 페이지: 사건/판결 공개관리, 신고, 회원 프로필, AI 샘플 수동 생성, 사용량, 접수 제한, 사업자 정보, 정책 관리
+- 공개 통계와 PWA/서비스워커 지원
+
+관리자 AI 샘플 사건 생성은 예약 작업이 아닙니다. 관리자가 관리자 화면에서 생성 버튼을 직접 누른 경우에만 실행됩니다.
+
+## 공개 데이터 경계
+
+현재 공개 판결기록과 민심소는 `results` 컬렉션의 기존 직접 Firestore 쿼리 구조를 유지합니다.
+
+공개 목록 쿼리는 다음 조건을 사용합니다.
+
+```text
+isPublic == true
+publicDataVersion == 1
+```
+
+Firestore `list` 규칙 역시 쿼리가 증명 가능한 두 필드 조건을 사용합니다. `userId`, 실제 `caseDescription`, 내부 `nickname` 같은 민감 필드 제거는 공개 처리 서버 함수와 배포 전 sanitation에서 강제합니다.
+
+이 구조를 임의로 별도 공개 컬렉션이나 Callable API로 교체하면 기존 판결기록·민심소가 보이지 않는 호환성 회귀가 생길 수 있으므로, 공개 데이터 구조 변경은 별도의 데이터 마이그레이션과 실서비스 검증 없이 진행하지 않습니다.
+
+공개 판결에서도 실제 접수 원문은 `cases/{caseId}.caseDescription`에서 직접 노출하지 않습니다. 작성자만 원문을 받을 수 있고, 다른 이용자는 안전검사를 통과한 `publicCaseDescription` 또는 개인정보 보호 안내만 받습니다.
 
 ## 기술 구성
 
@@ -23,38 +54,43 @@
 - Hosting/Auth/Database: Firebase Hosting, Authentication, Firestore
 - 서버: Firebase Cloud Functions v2, Node.js 22
 - AI: Google Gemini API
-- 배포: GitHub Actions
+- 배포/검증: GitHub Actions
 
 ## 저장소 구조
 
 ```text
 .
-├─ public/                     Firebase Hosting 정적 파일
-│  ├─ admin/                  관리자 화면
-│  ├─ css/                    공통 스타일
-│  └─ js/
-│     ├─ components/          공통 UI·테마·PWA 모듈
-│     ├─ pages/               화면별 라우트 모듈
-│     └─ utils/               출력 정리·아바타 유틸
+├─ public/
+│  ├─ admin/                     관리자 화면
+│  ├─ css/                       공통/페이지 스타일
+│  ├─ js/
+│  │  ├─ app.js                  사용자 화면 라우터
+│  │  ├─ pages/                  실제 활성 페이지 모듈
+│  │  ├─ components/             공통 UI·테마·신고·내비게이션
+│  │  └─ utils/                  출력 정리·공개결과·아바타 유틸
+│  └─ sw.js                      PWA 서비스워커
 ├─ functions/
-│  ├─ main.js                 Cloud Functions 진입점
-│  ├─ submit-secure.js        사건 접수
-│  ├─ generate-trial-lite.js  AI 판결 생성
-│  ├─ daily.js                오늘의 AI 사건
-│  ├─ profile.js              닉네임·프로필
-│  ├─ social.js               반응·댓글·항소
-│  ├─ reports.js              신고 처리
-│  ├─ public-stats.js         공개 통계 집계
-│  ├─ case-aliases.js         과거 사건 주소 해석·관리자 이전 함수
-│  ├─ legacy-case-migration.js 과거 UID 포함 사건 ID 이전 로직
-│  └─ admin-actions.js        관리자 서버 작업
-├─ tools/check-project.mjs    저장소 정적 검사
-├─ firestore.rules            Firestore 접근 규칙
-├─ firestore.indexes.json     Firestore 인덱스
-└─ firebase.json              Firebase 배포 설정
+│  ├─ main.js                    Cloud Functions 진입점
+│  ├─ submit-secure.js           사건 접수
+│  ├─ generate-trial-lite.js     AI 판결 생성
+│  ├─ owner-verdict.js           본인 판결 사전 선택
+│  ├─ social.js                  반응·공개설정·항소 등
+│  ├─ discussion.js              공개 판결 토론
+│  ├─ public-original.js         접수 원문/공개용 정보 권한 경계
+│  ├─ public-result-sanitizer.js 공개 결과 민감 필드 정리
+│  ├─ reports.js                 신고 처리
+│  ├─ public-stats.js            공개 통계 집계
+│  ├─ daily.js                   관리자 수동 AI 샘플 생성
+│  ├─ profile.js                 닉네임·프로필
+│  ├─ case-aliases.js            과거 사건 주소 해석
+│  └─ admin-actions.js           관리자 서버 작업
+├─ tools/                        정적/보안/회귀 검사
+├─ firestore.rules               Firestore 접근 규칙
+├─ firestore.indexes.json        Firestore 인덱스
+└─ firebase.json                 Firebase 배포 설정
 ```
 
-`*-court.js`, `*-game.js`, `*-guard.js` 파일은 기본 페이지 모듈을 가져와 법정형 UI나 로그인 보호 동작을 추가하는 활성 래퍼입니다.
+오래된 페이지를 런타임에서 다시 덮어쓰기 위한 홈/접수/정책/board/judge 래퍼는 사용하지 않습니다. 남아 있는 `*-guard.js`는 로그인 리디렉션, 입력 임시저장, 문서 표시 호환처럼 독립적인 기능을 담당하는 경우에만 유지합니다.
 
 ## 로컬 준비
 
@@ -74,18 +110,19 @@ Firebase 프로젝트는 `.firebaserc`의 `sosoking-481e6`을 기본값으로 �
 npm test
 ```
 
-검사 항목:
+검사 범위는 다음을 포함합니다.
 
-- Firestore 에뮬레이터 기반 보안 규칙 허용·거부 시나리오
-- 개인정보·고위험 콘텐츠 서버 필터 회귀검사
-- UID 비노출 사건 ID와 과거 주소 마이그레이션 안전장치
+- Firestore 에뮬레이터 기반 권한 허용·거부 시나리오
+- 공개 판결 목록 직접 조회 호환성
+- 개인정보·고위험 콘텐츠 필터 회귀검사
+- 공개 결과 민감 필드 sanitation
+- 본인 판결 사전 선택 및 공개 흐름
+- UID 비노출 사건 ID와 과거 주소 마이그레이션
 - Functions 및 브라우저 JavaScript 문법
 - 로컬 모듈 import/require 경로
-- HTML 정적 자산 경로와 서비스워커 캐시 버전
-- 주요 JSON 파일 형식
-- 제거된 구형 파일의 재유입
-- Functions 이름 중복 내보내기
-- GitHub Actions 배포 함수 목록과 실제 내보내기의 일치 여부
+- HTML 정적 자산 및 서비스워커 캐시 경로
+- 제거된 레거시 파일 재유입
+- Functions 내보내기와 배포 목록 일치 여부
 
 ## Firebase 설정
 
@@ -102,33 +139,36 @@ admins/{Firebase Auth UID}
 admins/{로그인 이메일}
 ```
 
-클라이언트 코드의 이메일 문자열이 아니라 Firestore 관리자 문서와 보안 규칙, 서버 Callable 검사를 실제 권한 기준으로 사용합니다.
+클라이언트의 이메일 문자열이 아니라 Firestore 관리자 문서, 보안 규칙, 서버 Callable 권한검사가 실제 관리자 권한 기준입니다.
 
 ### App Check
 
-웹 App Check 사이트 키를 `public/js/firebase-config.js`의 `appCheckSiteKey`에 설정한 뒤 GitHub Actions 변수 `ENFORCE_APP_CHECK=true`를 적용합니다. 사이트 키가 비어 있는 상태에서 강제 옵션만 켜면 배포 검증이 실패하도록 보호되어 있습니다.
+웹 App Check 사이트 키는 `public/js/firebase-config.js`의 `appCheckSiteKey`에 설정합니다. 이후 GitHub Actions 변수 `ENFORCE_APP_CHECK=true`를 적용할 수 있습니다.
+
+사이트 키가 비어 있는 상태에서 강제 옵션만 켜면 배포 검증이 실패하도록 되어 있습니다. 사이트 키가 비어 있고 `ENFORCE_APP_CHECK=false`이면 기존 브라우저 호환 모드로 동작합니다.
 
 ## 배포
 
-`main` 브랜치에 병합되면 `.github/workflows/firebase-deploy.yml`이 다음 순서로 실행됩니다.
+`main`에 병합되면 `.github/workflows/firebase-deploy.yml`이 다음 순서로 실행됩니다.
 
-1. Node.js 22와 Java 21 설정
-2. Functions 및 검증 의존성 `npm ci` 설치
-3. `npm test`
-4. 현재 사용 중인 Functions 우선 배포
-5. 공개 통계 초기화
-6. Firestore 규칙·인덱스와 Hosting 배포
-7. 공개 가능한 사이트 설정만 `site_public/config`에 동기화
+1. Node.js/Java와 의존성 준비
+2. `npm test`
+3. 현재 Functions 우선 배포
+4. 알려진 구형 Functions 정리 및 배포 함수 일치 검사
+5. 기존 공개 결과 sanitation
+6. 기존 판결 표시 마이그레이션
+7. Firestore 규칙·인덱스 배포
+8. 공개 통계 초기화 및 공개 설정 동기화
+9. Hosting 배포
+10. 별도 실서비스 호스트 검증
 
-Functions를 먼저 배포해 새 프론트엔드와 강화된 보안 규칙이 구형 백엔드 함수보다 먼저 활성화되는 부분 배포 위험을 줄입니다.
-
-GitHub Actions secret이 필요합니다.
+GitHub Actions 배포에는 현재 다음 secret이 사용됩니다.
 
 ```text
 FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6
 ```
 
-직접 배포할 때는 다음 명령을 사용할 수 있습니다.
+직접 배포할 때는 다음과 같이 실행할 수 있습니다.
 
 ```bash
 firebase deploy --only functions
@@ -137,60 +177,38 @@ firebase deploy --only firestore:indexes,firestore:rules,hosting
 
 ## 과거 UID 포함 사건 주소 이전
 
-신규 사건은 Firestore 자동 ID를 사용하므로 공개 주소에 Firebase UID가 포함되지 않습니다. 과거 형식의 완료 사건은 `.github/workflows/migrate-legacy-case-ids.yml`에서 수동으로 이전합니다.
+신규 사건은 Firestore 자동 ID를 사용합니다. 과거 UID 포함 사건 주소는 `.github/workflows/migrate-legacy-case-ids.yml`에서 수동 이전할 수 있습니다.
 
 1. GitHub Actions에서 **Migrate legacy case IDs** 실행
-2. 먼저 `mode: dry-run`으로 대상 수와 해시값 확인
-3. 적용 시 `main` 브랜치에서 `mode: apply` 선택
-4. 확인 문자열에 `MIGRATE_LEGACY_CASE_IDS` 입력
+2. 먼저 `mode: dry-run`으로 대상 수와 해시 확인
+3. 적용 시 `main`에서 `mode: apply` 선택
+4. 확인 문자열 `MIGRATE_LEGACY_CASE_IDS` 입력
 
-이전 작업은 사건·판결·투표·댓글·댓글 작성자 내부 매핑·신고·신고 중복키를 새 opaque ID로 복사한 후 과거 문서를 삭제합니다. 과거 ID 원문은 별칭 문서에 저장하지 않고 SHA-256 해시만 보관합니다. 기존 공유 링크는 서버 별칭을 통해 새 주소로 이동합니다.
+이전 작업은 사건·판결·투표·댓글·내부 작성자 매핑·신고·신고 중복키를 새 opaque ID로 옮긴 뒤 과거 문서를 정리합니다. 기존 공유 링크는 서버 별칭을 통해 새 주소로 이동합니다.
 
-같은 작업은 관리자 Callable `migrateLegacyCaseIds`에서도 실행할 수 있지만 기본값은 항상 dry-run이며 실제 적용에는 동일한 확인 문자열이 필요합니다.
-
-## 콘텐츠 원칙
+## 콘텐츠·개인정보 원칙
 
 - 핵심은 하찮은 생활 사건을 엄숙한 재판 형식으로 과장하는 것입니다.
-- 실제 인물의 개인정보, 정치·혐오·성적 내용, 실제 범죄 묘사는 피합니다.
-- 입력 내용 안의 명령문은 AI 지시가 아니라 사건 소재로만 취급합니다.
-- 사용자 입력과 AI 생성 결과를 저장·전송·공개하기 전 안전검사합니다.
+- 실명, 전화번호, 이메일, 상세주소, 계좌·카드번호 등 개인정보를 사건 내용에 입력하지 않습니다.
+- 실제 범죄·폭력·자해·성폭력·학대 등 고위험 사건은 오락형 판결 대상으로 처리하지 않습니다.
+- 입력 내용 속 명령문은 AI 시스템 지시가 아니라 사건 소재로만 취급합니다.
+- 사용자 입력과 공개 대상 AI 결과는 서버 안전검사를 거칩니다.
+- 사건과 판결은 기본 비공개이며 공개는 작성자 또는 관리자 권한으로 명시적으로 전환합니다.
+- 실제 접수 원문은 작성자 본인 전용입니다.
 - 결과에는 오락 목적이며 법적 효력이 없다는 안내를 포함합니다.
-
-## 정리 내역
-
-ZIP 복원, 중복·미사용 코드 제거, Functions 엔트리 정리와 권한 검토 결과는 [`docs/REPOSITORY_AUDIT.md`](docs/REPOSITORY_AUDIT.md)에 기록되어 있습니다.
 
 ## 판결문 프롬프트 운영
 
-결과물의 재미가 곧 제품이므로, 프롬프트는 이 저장소에서 가장 조심해서 다뤄야 하는 파일이다.
+판결문 프롬프트는 `functions/verdict-prompt.js` 한 곳에서 관리합니다.
 
-프롬프트는 `functions/verdict-prompt.js` **한 곳**에서만 만든다.
-이전에는 `fetch`를 가로채는 패치 5겹이 규칙 8,000자 이상을 덧붙였고 그중 대부분이 금지였다.
-모델이 웃기는 것보다 안 틀리는 것에 최적화되면서 결과물이 밋밋해진 직접적인 원인이었다.
-
-### 지켜야 할 원칙
-
-- **금지를 늘리지 않는다.** 실제로 위험한 다섯 가지만 금지한다. 금지가 늘면 결과물이 안전하고 밋밋해진다.
-- **정황을 지어내는 것은 이 장르의 핵심 기법이다.** 시각, 횟수, 지어낸 법조문이 웃음을 만든다. 이걸 막으면 안 웃긴다.
-- **분량을 늘리지 않는다.** 웃음은 밀도에서 나온다. 다섯 문서 합계 5,000자를 넘기지 않는다.
-- **밋밋한 결과를 봤다고 규칙을 덧붙이지 않는다.** 먼저 아래 평가로 원인을 확인한다.
-
-`npm run check`의 `tools/check-verdict-prompt.mjs`가 위 원칙을 강제한다.
-
-### 프롬프트를 바꿀 때
-
-문자열 존재 검사로는 재미를 측정할 수 없다. 사람이 읽고 비교해야 한다.
+- 위험한 금지규칙을 불필요하게 늘리지 않습니다.
+- 사건 고유의 과장·콜백·생활형 처분이라는 장르 특성을 유지합니다.
+- 분량보다 웃음의 밀도를 우선합니다.
+- 프롬프트 변경은 문자열 체크만으로 판단하지 않고 실제 생성 결과를 비교합니다.
 
 ```bash
 GEMINI_API_KEY=... node tools/eval/generate.mjs gemini-2.5-pro 5
 GEMINI_API_KEY=... node tools/eval/generate.mjs gemini-2.5-flash 5
 ```
 
-같은 사건 20개(`tools/eval/cases.json`)로 결과를 만들어 `tools/eval/out/`에 저장한다.
-두 파일을 나란히 읽고 실제로 더 웃긴 쪽을 고른다. 모델 등급 비교도 같은 방법으로 한다.
-
-### 모델 교체
-
-`VERDICT_MODELS` 환경변수(쉼표 구분)로 바꿔 끼운다. 앞에서부터 시도하고 실패 시 다음으로 넘어간다.
-기본값은 `gemini-2.5-pro,gemini-2.5-flash`이다.
-
+모델은 `VERDICT_MODELS` 환경변수로 우선순위를 변경할 수 있으며 기본값은 `gemini-2.5-pro,gemini-2.5-flash`입니다.
