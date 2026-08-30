@@ -168,6 +168,18 @@ async function loadJuryList(container, requestedCaseId = '') {
     return;
   }
 
+  if (requestedCaseId) {
+    try {
+      const snap = await getDoc(doc(db, 'results', requestedCaseId));
+      if (snap.exists() && snap.data()?.verdict) {
+        await openCase(container, requestedCaseId, snap.data());
+        return;
+      }
+    } catch (err) {
+      console.warn('jury private case fetch failed:', err?.code || err);
+    }
+  }
+
   const seen = jurySeenSet();
   slot.innerHTML = `<div class="jury-list-head">공개 사건 ${rows.length}건 · 판결은 투표 전까지 가려집니다</div><div class="jury-list">${rows.map(([caseId, data]) => juryListCard(caseId, data, seen.has(caseId))).join('')}</div>`;
   slot.querySelectorAll('.jury-list-card').forEach(button => {
@@ -294,8 +306,10 @@ async function revealVerdict(container, slot, caseId, data, mySide, { recordScor
       ${tallyHtml(summary.counts, summary.total)}
       <div class="jury-actions">
         <a href="#/result/${encodeURIComponent(caseId)}" class="btn btn-primary">📜 판결문 전체 보기</a>
-        <a href="#/discussion/${encodeURIComponent(caseId)}" class="btn btn-secondary">💬 토론 크게 보기</a>
-        <button type="button" class="btn btn-ghost" id="jury-next">다른 사건 판정</button>
+        <div class="jury-actions-row">
+          <a href="#/discussion/${encodeURIComponent(caseId)}" class="btn btn-secondary">💬 토론 보기</a>
+          <button type="button" class="btn btn-ghost" id="jury-next">다음 사건</button>
+        </div>
       </div>
       <div id="jury-debate"></div>
     </div>`;

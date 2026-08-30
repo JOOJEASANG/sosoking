@@ -240,9 +240,10 @@ export async function renderTrial(container, caseId) {
         <div class="card" style="padding:18px;text-align:center;border-color:rgba(201,168,76,.55);">
           <div style="font-size:30px;margin-bottom:6px;">🔨</div>
           <div style="font-weight:900;color:var(--gold);">판결문 작성 완료</div>
-          <div style="font-size:12px;color:var(--cream-dim);margin-top:4px;">접수 장면부터 판결 콜백까지 완성된 기록으로 이동합니다.</div>
+          <div style="font-size:12px;color:var(--cream-dim);margin-top:4px;">판결 예측 화면으로 이동합니다.</div>
         </div>`;
-      setTimeout(() => { location.hash = `#/verdict/${encodeURIComponent(caseId)}`; }, 1200);
+      try { sessionStorage.setItem('sosoking-jury-target-case', caseId); } catch {}
+      setTimeout(() => { location.hash = '#/jury'; }, 1200);
     }
   }, err => showError(err.message));
 
