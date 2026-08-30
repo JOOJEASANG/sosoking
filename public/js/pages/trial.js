@@ -23,11 +23,19 @@ const JUDGES = [
 ];
 
 const STAGE_LOADING = {
-  filed: '접수계가 사건 전체를 끌고 갈 핵심 장면을 사건기록 첫 줄에 올리는 중입니다... 📋',
-  investigation: '조사관이 말과 행동의 어긋남을 시간순서로 맞추고 결정적 세부를 찾는 중입니다... 🔍',
-  plaintiff: '원고 측이 원래 기대했던 아주 평범한 결말이 어떻게 무너졌는지 정리하는 중입니다... 💼',
-  defendant: '피고 측의 그럴듯한 항변이 앞선 기록과 자기 논리에 걸리지 않는지 대조하는 중입니다... 🛡️',
-  sentenced: '재판부가 사건의 핵심 물건과 연결된 생활형 처분과 마지막 콜백을 작성하는 중입니다... ⚖️'
+  filed: '도장 찍는 소리가 복도에 울려 퍼지고 있습니다.\n사건번호 부여 중 · 담당 판사 긴급 호출 중',
+  investigation: '현장 보존 완료. CCTV 영상 되감는 중...\n국과수에 감정 의뢰서 발송 완료. 잠복 보고서 취합 중.',
+  plaintiff: '원고 측이 억울함을 조목조목 정리하고 있습니다.\n청구취지에 커피 잔 수 또는 저녁 메뉴가 포함될 예정입니다.',
+  defendant: '피고 측 변명을 수신 중입니다.\n앞선 진술과 조용히 충돌하는 부분을 포착 중.',
+  sentenced: '재판부가 망치를 들었습니다.\n이 사건에만 맞는 생활형 처분 최종 확정 임박.'
+};
+
+const STAGE_EMOJI = {
+  filed: '📋',
+  investigation: '🔍',
+  plaintiff: '💬',
+  defendant: '🛡️',
+  sentenced: '⚖️'
 };
 
 const JUDGE_PROGRESS = {
@@ -130,8 +138,8 @@ export async function renderTrial(container, caseId) {
         <div id="steps-container"></div>
 
         <div id="loading-area" style="text-align:center;padding:34px 0;">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-          <div id="loading-text" style="font-size:13px;color:var(--cream-dim);white-space:pre-line;line-height:1.75;margin-top:10px;"></div>
+          <div id="stage-emoji" style="font-size:46px;display:inline-block;animation:stage-bounce 1s ease-in-out infinite;">📋</div>
+          <div id="loading-text" style="font-size:13px;color:var(--cream-dim);white-space:pre-line;line-height:1.75;margin-top:12px;"></div>
         </div>
       </div>
     </div>`;
@@ -147,6 +155,9 @@ export async function renderTrial(container, caseId) {
 
     const loadingText = document.getElementById('loading-text');
     if (loadingText) loadingText.textContent = progressMessage(visualStage, judge);
+
+    const stageEmojiEl = document.getElementById('stage-emoji');
+    if (stageEmojiEl) stageEmojiEl.textContent = STAGE_EMOJI[visualStage] || '⚖️';
 
     const status = document.getElementById('docket-status');
     if (status) status.textContent = stageLabel(visualStage);
@@ -286,10 +297,21 @@ function renderTimeline(activeStage) {
 
   const activeIndex = Math.max(0, DOCKET_STEPS.findIndex(([id]) => id === activeStage));
   el.innerHTML = DOCKET_STEPS.map(([id, title, sub], i) => {
-    const done = i <= activeIndex;
-    return `<div style="min-width:116px;padding:10px 9px;border-radius:12px;border:1px solid ${done ? 'rgba(201,168,76,.65)' : 'var(--border)'};background:${done ? 'rgba(201,168,76,.11)' : 'rgba(255,255,255,.025)'};">
-      <div style="font-size:15px;margin-bottom:3px;">${done ? '✅' : '▫️'}</div>
-      <div style="font-size:12px;font-weight:900;color:${done ? 'var(--gold)' : 'var(--cream-dim)'};">${escapeHtml(title)}</div>
+    const isActive = i === activeIndex;
+    const isDone = i < activeIndex;
+    const emoji = isActive ? (STAGE_EMOJI[id] || '⚖️') : (isDone ? '✅' : '▫️');
+    const emojiStyle = isActive ? `font-size:18px;display:inline-block;animation:stage-bounce 0.9s ease-in-out infinite;` : `font-size:15px;`;
+    const cardBorder = isActive
+      ? 'rgba(201,168,76,.9)'
+      : isDone ? 'rgba(201,168,76,.5)' : 'var(--border)';
+    const cardBg = isActive
+      ? 'rgba(201,168,76,.18)'
+      : isDone ? 'rgba(201,168,76,.08)' : 'rgba(255,255,255,.025)';
+    const cardAnim = isActive ? 'animation:step-glow 1.5s ease-in-out infinite;' : '';
+    const titleColor = (isActive || isDone) ? 'var(--gold)' : 'var(--cream-dim)';
+    return `<div style="min-width:116px;padding:10px 9px;border-radius:12px;border:1px solid ${cardBorder};background:${cardBg};${cardAnim}">
+      <div style="${emojiStyle}margin-bottom:3px;">${emoji}</div>
+      <div style="font-size:12px;font-weight:900;color:${titleColor};">${escapeHtml(title)}</div>
       <div style="font-size:10px;color:var(--cream-dim);margin-top:2px;">${escapeHtml(sub)}</div>
     </div>`;
   }).join('');
