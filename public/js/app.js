@@ -1,56 +1,24 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
-import { renderHome } from './pages/home-seven-judges.js?v=20260730-home-layout-route-1';
-// Cache lineage marker for search-free home: './pages/home-no-search.js?v=20260730-search-scope-1';
-// Cache lineage marker for judge assignment: './pages/home-judge-assignment.js?v=20260730-judge-board-search-1';
-// Cache lineage marker for configurable limits: './pages/home-court.js?v=20260730-configurable-limit-1';
-// Cache lineage marker for CSP: './pages/home-court.js?v=20260729-brand-unified-1';
-import { renderSubmit } from './pages/submit-guard.js?v=20260731-private-first-publication-1';
-// Cache lineage marker: './pages/submit-guard.js?v=20260730-configurable-limit-1';
-import { renderTrial } from './pages/trial-game.js?v=20260729-dark-record-participation-1';
-import { renderResult } from './pages/result-comments.js?v=20260829-arena-1';
-// Cache lineage marker: './pages/result-comments.js?v=20260829-jury-content-1';
-// Cache lineage marker: './pages/result-comments.js?v=20260801-public-original-modal-1';
-// Cache lineage marker: './pages/result-comments.js?v=20260730-discussion-court-1';
+import { renderHome } from './pages/home.js?v=20260830-final-audit-1';
+import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';
+import { renderTrial } from './pages/trial.js?v=20260810-current-judges-1';
+import { renderResult } from './pages/result-comments.js?v=20260830-final-audit-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260730-discussion-court-1';
-import { renderPolicy } from './pages/policy-configurable-limit.js?v=20260730-final-audit-1';
-// Cache lineage marker: './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';
+import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
-// Cache lineage marker: './pages/my-cases-game.js?v=20260729-dark-record-participation-1';
-import { renderGuide } from './pages/guide.js?v=20260802-remove-daily-court-1';
+import { renderGuide } from './pages/guide.js?v=20260830-final-audit-1';
 import { renderAuth } from './pages/auth2.js?v=20260829-avatar-1';
 import { renderHall } from './pages/hall.js?v=20260829-arena-2';
 import { renderJury } from './pages/jury.js?v=20260829-arena-2';
-// Cache lineage marker for retired board list: './pages/board-full-content-search.js?v=20260829-jury-longform-1';
-// Cache lineage marker for full search: './pages/board-full-content-search.js?v=20260730-search-scope-1';
-// Cache lineage marker for pagination: './pages/board-search-pagination.js?v=20260730-judge-board-search-1';
-// Cache lineage marker for discussion: './pages/board-court.js?v=20260730-discussion-court-1';
-// Cache lineage marker for CSP: './pages/board-court.js?v=20260729-script-csp-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
-// Cache lineage marker for the compact-spacing regression check: ./components/footer.js?v=20260729-compact-spacing-1
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
 import { initNavAuthSync, renderNav } from './components/nav.js?v=20260829-arena-1';
-// Cache lineage marker: './components/nav.js?v=20260829-avatar-1';
-// Cache lineage marker: './components/nav.js?v=20260802-remove-daily-court-2';
 import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260829-arena-1';
-// Cache lineage marker: './components/header-icons.js?v=20260806-unified-service-nav-1';
-// Cache lineage marker: './components/header-icons.js?v=20260730-header-icon-single-1';
 
 let routeSequence = 0;
 let routeQueued = false;
-
-function removeRetiredDailyCourtUi() {
-  document.querySelectorAll(
-    'a[href*="daily-court"], [data-nav-key="daily-court"], [data-daily-court]'
-  ).forEach(element => element.remove());
-}
-
-function startRetiredUiGuard() {
-  removeRetiredDailyCourtUi();
-  const observer = new MutationObserver(removeRetiredDailyCourtUi);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-}
 
 function decodeRouteValue(value) {
   try {
@@ -66,6 +34,7 @@ function normalizedRoute() {
     const path = location.pathname.replace(/\/$/, '') || '/';
     if (path === '/') return '#/';
     if (path === '/board') return '#/board';
+    if (path === '/jury') return '#/jury';
     if (path === '/submit') return '#/submit';
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
@@ -117,7 +86,7 @@ async function route() {
   const sequence = ++routeSequence;
   if (window._pageCleanup) {
     try { window._pageCleanup(); }
-    catch (err) { console.warn('page cleanup failed:', err); }
+    catch (error) { console.warn('page cleanup failed:', error); }
     window._pageCleanup = null;
   }
 
@@ -153,18 +122,15 @@ async function route() {
     else renderTask = renderHome(content);
 
     renderNav(hash);
-    removeRetiredDailyCourtUi();
     await renderTask;
     if (sequence !== routeSequence || !content.isConnected) return;
-    removeRetiredDailyCourtUi();
     normalizePageHeaderIcons(content, hash);
     renderThemeToggle();
-  } catch (err) {
-    console.error('route render failed:', { hash, err });
+  } catch (error) {
+    console.error('route render failed:', { hash, error });
     if (sequence === routeSequence && content.isConnected) {
       renderRouteError(content);
       renderNav(hash);
-      removeRetiredDailyCourtUi();
       normalizePageHeaderIcons(content, hash);
       renderThemeToggle();
     }
@@ -176,7 +142,7 @@ function scheduleRoute() {
   routeQueued = true;
   queueMicrotask(() => {
     routeQueued = false;
-    route();
+    void route();
   });
 }
 
@@ -184,11 +150,10 @@ window.addEventListener('hashchange', scheduleRoute);
 window.addEventListener('popstate', scheduleRoute);
 
 (async () => {
-  startRetiredUiGuard();
   initTheme();
   initCourtDesign();
   try { await initAuth(); }
-  catch (err) { console.error('initial authentication failed:', err); }
+  catch (error) { console.error('initial authentication failed:', error); }
   initAdminLoginRedirect();
   initNavAuthSync();
   renderFooter();
