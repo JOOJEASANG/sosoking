@@ -3,9 +3,9 @@ import fs from 'node:fs';
 const errors = [];
 const read = file => fs.readFileSync(file, 'utf8');
 
-const homeCourt = read('public/js/pages/home-court.js');
+const home = read('public/js/pages/home.js');
 for (const required of [
-  'async function applySafePublicFeed(container)',
+  'async function loadPublicFeed(container)',
   'const HOME_PUBLIC_RECORD_LIMIT = 5',
   'loadSafePublicResults',
   'maxRows: HOME_PUBLIC_RECORD_LIMIT',
@@ -13,16 +13,15 @@ for (const required of [
   'publicFeedCard(caseId, record)',
   'data-public-result-link="true"',
   'href="#/result/${encodeURIComponent(caseId)}"',
-  '판결문 바로 보기 →'
+  '판결문 보기 →'
 ]) {
-  if (!homeCourt.includes(required)) errors.push(`public/js/pages/home-court.js: missing ${required}`);
+  if (!home.includes(required)) errors.push(`public/js/pages/home.js: missing ${required}`);
 }
-if (homeCourt.includes('record.caseDescription') || homeCourt.includes('r.caseDescription')) {
-  errors.push('public/js/pages/home-court.js: raw caseDescription is used in the active home feed');
+if (home.includes('record.caseDescription') || home.includes('r.caseDescription')) {
+  errors.push('public/js/pages/home.js: raw caseDescription is used in the active home feed');
 }
-if (!homeCourt.includes('await Promise.all([')
-  || !homeCourt.includes('applySafePublicFeed(container)')) {
-  errors.push('public/js/pages/home-court.js: safe public feed is not awaited by the active renderer');
+if (!home.includes('loadPublicFeed(container)')) {
+  errors.push('public/js/pages/home.js: safe public feed is not invoked by the active renderer');
 }
 
 const loader = read('public/js/utils/public-results.js');
@@ -37,31 +36,40 @@ for (const required of [
   if (!loader.includes(required)) errors.push(`public/js/utils/public-results.js: missing ${required}`);
 }
 
-const board = read('public/js/pages/board.js');
+const jury = read('public/js/pages/jury.js');
 for (const required of [
   'loadSafePublicResults',
-  'maxRows: 40',
-  'data-public-result-link="true"',
-  '`#/result/${encodeURIComponent(id)}`',
-  '`#/discussion/${encodeURIComponent(id)}`',
-  'data-discussion-record-link="true"',
-  '판결문 보기',
-  '토론장'
+  'maxRows: 60',
+  'publicCaseDescription',
+  'jury-list-card',
+  '판정하기'
 ]) {
-  if (!board.includes(required)) errors.push(`public/js/pages/board.js: missing ${required}`);
+  if (!jury.includes(required)) errors.push(`public/js/pages/jury.js: missing ${required}`);
+}
+if (jury.includes('data?.caseDescription')) {
+  errors.push('public/js/pages/jury.js: raw caseDescription is used in the public jury list');
+}
+
+const hall = read('public/js/pages/hall.js');
+for (const required of [
+  'loadSafePublicResults',
+  'maxRows: 100',
+  '명예의 전당',
+  '#/jury'
+]) {
+  if (!hall.includes(required)) errors.push(`public/js/pages/hall.js: missing ${required}`);
 }
 
 const app = read('public/js/app.js');
 for (const moduleUrl of [
-  './pages/home-court.js?v=20260730-configurable-limit-1',
-  './pages/board-court.js?v=20260730-discussion-court-1'
+  "./pages/home.js?v=20260830-final-audit-1",
+  "./pages/hall.js?v=20260829-arena-2",
+  "./pages/jury.js?v=20260829-arena-2"
 ]) {
-  if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: active module version is stale: ${moduleUrl}`);
+  if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: active module is missing: ${moduleUrl}`);
 }
-
-const boardCourt = read('public/js/pages/board-court.js');
-if (!boardCourt.includes("./board.js?v=20260730-discussion-court-1")) {
-  errors.push('public/js/pages/board-court.js: public board module version is stale');
+for (const retired of ['home-court.js', 'board.js', 'board-court.js']) {
+  if (app.includes(retired)) errors.push(`public/js/app.js: retired public feed module remains: ${retired}`);
 }
 
 const index = read('public/index.html');
@@ -71,21 +79,24 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active app cache versions are inconsistent');
 }
 for (const required of [
-  '/js/pages/home-court.js?v=20260730-configurable-limit-1',
-  '/js/pages/board-court.js?v=20260730-discussion-court-1',
-  '/js/pages/board.js?v=20260730-discussion-court-1',
+  '/js/pages/home.js?v=20260830-final-audit-1',
+  '/js/pages/hall.js?v=20260829-arena-2',
+  '/js/pages/jury.js?v=20260829-arena-2',
   '/js/utils/public-results.js?v=20260730-public-records-2'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: missing ${required}`);
+}
+for (const retired of ['home-court.js', '/js/pages/board.js', 'board-court.js']) {
+  if (worker.includes(retired)) errors.push(`public/sw.js: retired public feed module remains cached: ${retired}`);
 }
 if (!/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(worker)) {
   errors.push('public/sw.js: versioned application cache name is missing');
 }
 
 if (errors.length) {
-  console.error(`Home public feed validation failed (${errors.length})`);
+  console.error(`Public feed validation failed (${errors.length})`);
   errors.forEach(error => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('Home public feed validation passed: sanitized records link to verdict content and case-specific discussions.');
+console.log('Public feed validation passed: home, jury and hall use the sanitized direct-results loader without raw case descriptions.');
