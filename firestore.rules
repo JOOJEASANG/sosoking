@@ -39,6 +39,12 @@ service cloud.firestore {
         && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
     }
 
+    // Firestore 목록 규칙은 쿼리가 증명할 수 있는 필드 조건만 사용한다.
+    // 민감 필드 제거는 모든 공개 쓰기 경로와 배포 전 sanitation에서 강제한다.
+    function isPublicResultListData(data) {
+      return data.isPublic == true && data.publicDataVersion == 1;
+    }
+
     function isResultPublic(caseId) {
       return isSafePublicResultData(resultDoc(caseId).data);
     }
@@ -81,12 +87,10 @@ service cloud.firestore {
     }
 
     match /results/{caseId} {
-      // 공개 목록도 문서 자체가 완전히 정제된 경우에만 읽을 수 있다.
-      // 실수로 isPublic/publicDataVersion만 설정된 민감 문서는 list/get 모두 실패한다.
       allow get: if isSafePublicResultData(resource.data)
         || isCaseOwner(caseId)
         || isAdmin();
-      allow list: if isAdmin() || isSafePublicResultData(resource.data);
+      allow list: if isAdmin() || isPublicResultListData(resource.data);
       allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();
