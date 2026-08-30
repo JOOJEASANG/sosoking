@@ -2,7 +2,8 @@
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260829-jury-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260829-jury-content-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260829-arena-1';
-const CACHE_NAME = 'sosoking-app-v20260829-arena-2';
+// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260829-arena-2';
+const CACHE_NAME = 'sosoking-app-v20260830-security-boundary-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-auto-gm-world-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-surface-cleanup-1';
 // Cache lineage: const CACHE_NAME = 'sosoking-app-v20260812-game-guide-polish-1';
