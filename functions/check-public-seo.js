@@ -16,7 +16,9 @@ const {
 } = require('./public-seo');
 const {
   loadSafePublicResult,
-  listSafePublicResultEntries
+  listSafePublicResultEntries,
+  loadSafeTaggedResults,
+  listSafePublicTagEntries
 } = require('./public-seo-safe');
 
 const PUBLIC_ID = 'seo_public_case_20260729';
@@ -46,6 +48,7 @@ async function run() {
       judgeType: '논리집착형',
       judgeIcon: '🧮',
       grievanceIndex: 8,
+      tags: ['푸딩', '냉장고'],
       reception: '접수취지\n마지막 푸딩이 사라진 경위를 접수한다.\n\n사건개요\n냉장고에서 마지막 푸딩이 사라졌다.',
       investigation: '**확인 정황**\n냉장고 빈칸과 숟가락이 정황으로 확인된다.\n\n주요 증거:\n1. 내용물이 없는 푸딩 용기\n2. 싱크대의 작은 숟가락\n\n진술 검토\n피고는 유통기한 임박을 주장한다.\n\n조사관 의견\n피고의 설명만으로는 섭취 경위가 충분히 소명되지 않는다.',
       plaintiffArg: '청구취지\n원고는 푸딩 보충과 정식 사과를 요구한다.',
@@ -58,15 +61,19 @@ async function run() {
       isPublic: false,
       caseTitle: '비공개 사건',
       caseDescription: '검색엔진에 절대 노출되면 안 되는 내용',
+      tags: ['푸딩'],
       createdAt: now,
       updatedAt: now
     }),
     db.doc(`results/${UNSAFE_ID}`).set({
       isPublic: true,
+      publicDataVersion: 1,
       userId: 'must-never-be-rendered',
       nickname: '원문 닉네임',
       caseDescription: '정리 전 원문 사건 내용',
+      publicCaseDescription: '겉보기 공개 설명',
       caseTitle: '정리 전 공개 사건',
+      tags: ['푸딩'],
       createdAt: now,
       updatedAt: now
     })
@@ -115,14 +122,22 @@ async function run() {
   assert.ok(!entries.some(entry => entry.caseId === PRIVATE_ID), 'dynamic sitemap must exclude private results');
   assert.ok(!entries.some(entry => entry.caseId === UNSAFE_ID), 'dynamic sitemap must exclude unsanitized public results');
 
-  const sitemap = renderSitemapXml(entries);
+  const tagged = await loadSafeTaggedResults('푸딩');
+  assert.ok(tagged.some(item => item.caseId === PUBLIC_ID), 'safe tag page should include sanitized matching result');
+  assert.ok(!tagged.some(item => item.caseId === PRIVATE_ID), 'safe tag page must exclude private matching result');
+  assert.ok(!tagged.some(item => item.caseId === UNSAFE_ID), 'safe tag page must exclude unsanitized matching result');
+
+  const tagEntries = await listSafePublicTagEntries();
+  assert.ok(tagEntries.some(entry => entry.tag === '푸딩'), 'safe sitemap tag entries should include sanitized public tags');
+
+  const sitemap = renderSitemapXml(entries, tagEntries);
   assert.match(sitemap, new RegExp(`<loc>${publicResultUrl(PUBLIC_ID)}</loc>`));
   assert.doesNotMatch(sitemap, new RegExp(PRIVATE_ID));
   assert.doesNotMatch(sitemap, new RegExp(UNSAFE_ID));
   assert.doesNotMatch(sitemap, /#\/result\//);
 
   await cleanup();
-  console.log('Public SEO emulator validation passed: sanitized public-only loading, structured result headings, metadata, and sitemap filtering.');
+  console.log('Public SEO emulator validation passed: result and tag routes exclude private/unsanitized records and preserve structured metadata.');
 }
 
 run().catch(async error => {
