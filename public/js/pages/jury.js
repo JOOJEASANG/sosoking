@@ -185,7 +185,17 @@ async function priorVoteFor(caseId) {
   try {
     const snapshot = await getDoc(doc(db, `result_reactions/${caseId}/votes/${user.uid}`));
     const reaction = snapshot.exists() ? String(snapshot.data().reaction || '') : '';
-    return Object.prototype.hasOwnProperty.call(SIDE_LABEL, reaction) ? reaction : '';
+    if (Object.prototype.hasOwnProperty.call(SIDE_LABEL, reaction)) return reaction;
+
+    // Owner may have predicted via voteOwnVerdict before making the case public
+    try {
+      const caseSnap = await getDoc(doc(db, 'cases', caseId));
+      if (caseSnap.exists() && caseSnap.data().userId === user.uid) {
+        const ownerVote = String(caseSnap.data().ownerVerdictVote || '');
+        if (Object.prototype.hasOwnProperty.call(SIDE_LABEL, ownerVote)) return ownerVote;
+      }
+    } catch {}
+    return '';
   } catch (error) {
     console.warn('jury prior vote load failed:', error?.code || error);
     return '';
@@ -294,8 +304,10 @@ async function revealVerdict(container, slot, caseId, data, mySide, { recordScor
       ${tallyHtml(summary.counts, summary.total)}
       <div class="jury-actions">
         <a href="#/result/${encodeURIComponent(caseId)}" class="btn btn-primary">📜 판결문 전체 보기</a>
-        <a href="#/discussion/${encodeURIComponent(caseId)}" class="btn btn-secondary">💬 토론 크게 보기</a>
-        <button type="button" class="btn btn-ghost" id="jury-next">다른 사건 판정</button>
+        <div class="jury-actions-row">
+          <a href="#/discussion/${encodeURIComponent(caseId)}" class="btn btn-secondary">💬 토론 보기</a>
+          <button type="button" class="btn btn-ghost" id="jury-next">다음 사건</button>
+        </div>
       </div>
       <div id="jury-debate"></div>
     </div>`;

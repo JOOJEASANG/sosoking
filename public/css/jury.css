@@ -173,11 +173,22 @@
 
 .jury-actions {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-top: 18px;
 }
 
-.jury-actions .btn {
+.jury-actions > .btn {
+  width: 100%;
+  text-align: center;
+}
+
+.jury-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.jury-actions-row .btn {
   flex: 1;
   text-align: center;
 }
