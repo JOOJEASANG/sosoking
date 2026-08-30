@@ -82,19 +82,26 @@ if (!themeInit.includes("localStorage.getItem('theme')") || !/try\s*\{[\s\S]*cat
 
 const app = fs.readFileSync('public/js/app.js', 'utf8');
 for (const specifier of [
-  './pages/home-court.js?v=20260729-brand-unified-1',
-  './pages/board-court.js?v=20260729-script-csp-1'
+  "./pages/home.js?v=20260830-final-audit-1",
+  "./pages/submit.js?v=20260830-final-audit-1",
+  "./pages/result-comments.js?v=20260830-final-audit-1",
+  "./pages/policy.js?v=20260830-final-audit-1",
+  "./pages/hall.js?v=20260829-arena-2",
+  "./pages/jury.js?v=20260829-arena-2"
 ]) {
-  if (!app.includes(specifier)) errors.push(`public/js/app.js: stale CSP module import remains instead of ${specifier}`);
+  if (!app.includes(specifier)) errors.push(`public/js/app.js: canonical module import is missing ${specifier}`);
 }
-const homeCourt = fs.readFileSync('public/js/pages/home-court.js', 'utf8');
-if (!homeCourt.includes("./home.js?v=20260729-script-csp-1")) {
-  errors.push('public/js/pages/home-court.js: stale home module cache version remains');
+for (const retired of ['home-court.js', 'board-court.js', 'home-seven-judges.js', 'submit-guard.js', 'policy-configurable-limit.js']) {
+  if (app.includes(retired)) errors.push(`public/js/app.js: retired module remains under CSP: ${retired}`);
 }
-const boardCourt = fs.readFileSync('public/js/pages/board-court.js', 'utf8');
-if (!boardCourt.includes("./board.js?v=20260729-script-csp-1")) {
-  errors.push('public/js/pages/board-court.js: stale board module cache version remains');
+
+const index = fs.readFileSync('public/index.html', 'utf8');
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+const worker = fs.readFileSync('public/sw.js', 'utf8');
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html/public/sw.js: active app version is not synchronized');
 }
+
 const adminIndex = fs.readFileSync('public/admin/index.html', 'utf8');
 if (!adminIndex.includes('/admin/admin-bootstrap.js?v=20260729-report-moderation-1')) {
   errors.push('public/admin/index.html: consolidated administrator bootstrap version is missing');
@@ -113,4 +120,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Script CSP validation passed: route-scoped policy, no inline execution, and synchronized module cache versions.');
+console.log('Script CSP validation passed: route-scoped policy, no inline execution, canonical modules, and synchronized app cache versions.');
