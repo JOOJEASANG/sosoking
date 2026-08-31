@@ -2,6 +2,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/f
 
 export const DEFAULT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const ACTIVITY_STORAGE_KEY = 'sosoking:auth-activity:v1';
+const ACTIVITY_REFRESH_THROTTLE_MS = 1000;
 const ACTIVITY_WRITE_THROTTLE_MS = 5000;
 const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel', 'scroll'];
 
@@ -47,6 +48,7 @@ export function startIdleSessionTimeout({
   let timer = null;
   let activeUid = '';
   let lastLocalActivityAt = 0;
+  let lastHandledActivityAt = 0;
   let timingOut = false;
   let stopped = false;
 
@@ -102,6 +104,8 @@ export function startIdleSessionTimeout({
     const user = auth.currentUser;
     if (!user || user.isAnonymous || !activeUid || user.uid !== activeUid || timingOut) return;
     const now = Date.now();
+    if (now - lastHandledActivityAt < ACTIVITY_REFRESH_THROTTLE_MS) return;
+    lastHandledActivityAt = now;
     lastLocalActivityAt = now;
     if (now - Number(recordActivity.lastWrittenAt || 0) >= ACTIVITY_WRITE_THROTTLE_MS) {
       recordActivity.lastWrittenAt = now;
@@ -130,12 +134,14 @@ export function startIdleSessionTimeout({
     if (!user || user.isAnonymous) {
       activeUid = '';
       lastLocalActivityAt = 0;
+      lastHandledActivityAt = 0;
       return;
     }
 
     activeUid = user.uid;
     const now = Date.now();
     lastLocalActivityAt = now;
+    lastHandledActivityAt = now;
     recordActivity.lastWrittenAt = now;
     writeActivity(activeUid, now);
     schedule();
