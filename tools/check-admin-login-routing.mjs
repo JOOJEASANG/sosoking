@@ -25,10 +25,11 @@ if (!app.includes("if (hash === '#/auth' && await redirectAdminAccountRoute()) r
   errors.push('public/js/app.js: account route does not redirect an existing administrator session');
 }
 const initAuthIndex = app.indexOf('await initAuth()');
+const timeoutIndex = app.indexOf('startIdleSessionTimeout({ auth, onTimeout: autoLogoutInactiveUser });');
 const redirectListenerIndex = app.indexOf('initAdminLoginRedirect()');
 const routeIndex = app.lastIndexOf('await route()');
-if (initAuthIndex < 0 || redirectListenerIndex <= initAuthIndex || routeIndex <= redirectListenerIndex) {
-  errors.push('public/js/app.js: administrator redirect listener must start after auth initialization and before routing');
+if (initAuthIndex < 0 || timeoutIndex <= initAuthIndex || redirectListenerIndex <= timeoutIndex || routeIndex <= redirectListenerIndex) {
+  errors.push('public/js/app.js: idle timeout and administrator redirect listener must start after auth initialization and before routing');
 }
 
 const rules = read('firestore.rules');
@@ -48,6 +49,8 @@ for (const required of [
   'await mountDashboard(user)',
   "const HOME_PATH = '/#/';",
   'async function signOutToHome()',
+  'async function signOutForIdleTimeout()',
+  'startIdleSessionTimeout({ auth, onTimeout: signOutForIdleTimeout });',
   'await signOut(auth)',
   'location.replace(HOME_PATH)',
   "actions.querySelector('#admin-logout')?.addEventListener('click', () => void signOutToHome())",
@@ -120,7 +123,7 @@ if (!publicPolicy.includes("getDoc(doc(db, 'policy_docs', safeType))")) {
 
 const adminIndex = read('public/admin/index.html');
 for (const required of [
-  '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
+  '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1&idle=20260831-idle-timeout-1',
   '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1',
   '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1',
   '/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-settings-save-fix-1'
@@ -147,4 +150,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator validation passed: login/logout routing, canonical policy editing, configurable case limits, selectable manual AI models with a working settings save path, and synchronized app cache remain connected.');
+console.log('Administrator validation passed: login/logout routing, idle session expiry, canonical policy editing, configurable case limits, selectable manual AI models with a working settings save path, and synchronized app cache remain connected.');
