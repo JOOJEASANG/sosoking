@@ -1,4 +1,6 @@
-import { initAuth } from './firebase.js?v=20260729-auth-session-1';
+import { initAuth, auth } from './firebase.js?v=20260729-auth-session-1';
+import { signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { startIdleSessionTimeout } from './session-timeout.js?v=20260831-idle-timeout-1';
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
 import { renderHome } from './pages/home.js?v=20260830-final-blind-1';
 import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';
@@ -16,6 +18,7 @@ import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-t
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
 import { initNavAuthSync, renderNav } from './components/nav.js?v=20260829-arena-1';
 import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260829-arena-1';
+import { showToast } from './components/toast.js?v=20260630-3';
 
 let routeSequence = 0;
 let routeQueued = false;
@@ -146,6 +149,16 @@ function scheduleRoute() {
   });
 }
 
+async function autoLogoutInactiveUser() {
+  await signOut(auth);
+  await signInAnonymously(auth).catch(error => {
+    console.warn('anonymous session restore after idle logout failed:', error?.code || error);
+  });
+  showToast('30분 동안 활동이 없어 자동 로그아웃되었습니다.', 'info');
+  if (location.hash === '#/auth') scheduleRoute();
+  else location.hash = '#/auth';
+}
+
 window.addEventListener('hashchange', scheduleRoute);
 window.addEventListener('popstate', scheduleRoute);
 
@@ -154,6 +167,7 @@ window.addEventListener('popstate', scheduleRoute);
   initCourtDesign();
   try { await initAuth(); }
   catch (error) { console.error('initial authentication failed:', error); }
+  startIdleSessionTimeout({ auth, onTimeout: autoLogoutInactiveUser });
   initAdminLoginRedirect();
   initNavAuthSync();
   renderFooter();

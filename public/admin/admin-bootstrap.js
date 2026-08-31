@@ -12,6 +12,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { firebaseConfig } from '../js/firebase-config.js';
+import { startIdleSessionTimeout } from '../js/session-timeout.js?v=20260831-idle-timeout-1';
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -59,6 +60,11 @@ async function signOutToHome() {
     logoutRedirectStarted = false;
     toast(friendlyError(error, '로그아웃에 실패했습니다.'), 'error');
   }
+}
+
+async function signOutForIdleTimeout() {
+  await signOut(auth);
+  toast('30분 동안 활동이 없어 자동 로그아웃되었습니다.', 'info');
 }
 
 async function isAdmin(user) {
@@ -223,6 +229,8 @@ function renderNoAccess(user) {
     </div>`;
   document.getElementById('strict-noaccess-logout')?.addEventListener('click', () => void signOutToHome());
 }
+
+startIdleSessionTimeout({ auth, onTimeout: signOutForIdleTimeout });
 
 getRedirectResult(auth).catch(error => {
   console.error('admin redirect login result failed:', error);
