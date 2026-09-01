@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260831-idle-timeout-1';
+const CACHE_NAME = 'sosoking-app-v20260901-daily-vote-feedback-1';
 
 const APP_SHELL = [
   '/',
@@ -16,7 +16,7 @@ const APP_SHELL = [
   '/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1',
   '/js/document-display-guard.js?v=20260802-original-button-layout-1',
   '/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2',
-  '/js/app.js?v=20260831-idle-timeout-1',
+  '/js/app.js?v=20260901-daily-vote-feedback-1',
   '/js/session-timeout.js?v=20260831-idle-timeout-1',
   '/js/result-link-share.js?v=20260811-result-share-1',
   '/js/submit-draft-guard.js?v=20260807-submit-draft-1',
@@ -38,7 +38,7 @@ const APP_SHELL = [
   '/js/pages/guide.js?v=20260830-final-audit-1',
   '/js/pages/auth2.js?v=20260829-avatar-1',
   '/js/pages/hall.js?v=20260830-final-blind-1',
-  '/js/pages/jury.js?v=20260830-final-blind-1',
+  '/js/pages/jury.js?v=20260901-daily-vote-feedback-1',
   '/js/utils/sanitize.js?v=20260630-3',
   '/js/utils/public-results.js?v=20260730-public-records-2',
   '/js/utils/jury-seen.js?v=20260829-jury-content-1',
