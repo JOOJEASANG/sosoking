@@ -20,6 +20,27 @@ function cleanText(value, maxLen) {
     .slice(0, maxLen);
 }
 
+function safeVoteCount(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+}
+
+function normalizeReactionCounts(data = {}) {
+  const nested = data.counts && typeof data.counts === 'object' && !Array.isArray(data.counts)
+    ? data.counts
+    : {};
+  const includeLegacyFlatFields = Number(data.reactionDataVersion || 0) < 2;
+  return Object.fromEntries(REACTIONS.map(side => [
+    side,
+    safeVoteCount(nested[side])
+      + (includeLegacyFlatFields ? safeVoteCount(data[`counts.${side}`]) : 0)
+  ]));
+}
+
+function reactionCountTotal(counts = {}) {
+  return REACTIONS.reduce((sum, side) => sum + safeVoteCount(counts[side]), 0);
+}
+
 function timestampMillis(value) {
   if (value?.toMillis) return value.toMillis();
   const parsed = new Date(value || 0).getTime();
@@ -180,47 +201,54 @@ exports.voteResult = onCall({
   const voteRef = db.doc(`result_reactions/${caseId}/votes/${uid}`);
   let savedReaction = reaction;
   let alreadyVoted = false;
+  let summaryCounts = Object.fromEntries(REACTIONS.map(side => [side, 0]));
+  let summaryTotal = 0;
 
   await db.runTransaction(async tx => {
-    const [latestResultSnap, voteSnap] = await Promise.all([
+    const [latestResultSnap, voteSnap, summarySnap] = await Promise.all([
       tx.get(resultRef),
-      tx.get(voteRef)
+      tx.get(voteRef),
+      tx.get(summaryRef)
     ]);
     if (!latestResultSnap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
     assertParticipablePublicResult(latestResultSnap.data());
 
+    const summaryData = summarySnap.exists ? summarySnap.data() : {};
+    summaryCounts = normalizeReactionCounts(summaryData);
     const previousRaw = voteSnap.exists ? cleanText(voteSnap.data().reaction, 20) : '';
+
     if (REACTIONS.includes(previousRaw)) {
       savedReaction = previousRaw;
       alreadyVoted = true;
-      return;
+    } else {
+      summaryCounts[reaction] = safeVoteCount(summaryCounts[reaction]) + 1;
+      tx.set(voteRef, {
+        uid,
+        reaction,
+        createdAt: voteSnap.exists ? (voteSnap.data().createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
     }
 
-    const legacyReaction = previousRaw && !REACTIONS.includes(previousRaw) ? previousRaw : '';
-    const updates = {
-      updatedAt: FieldValue.serverTimestamp(),
-      total: FieldValue.increment(voteSnap.exists ? 0 : 1),
-      [`counts.${reaction}`]: FieldValue.increment(1)
-    };
-    if (legacyReaction) updates[`counts.${legacyReaction}`] = FieldValue.increment(-1);
-
-    tx.set(summaryRef, updates, { merge: true });
-    tx.set(voteRef, {
-      uid,
-      reaction,
-      createdAt: voteSnap.exists ? (voteSnap.data().createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp(),
+    summaryTotal = reactionCountTotal(summaryCounts);
+    tx.set(summaryRef, {
+      reactionDataVersion: 2,
+      counts: summaryCounts,
+      total: summaryTotal,
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
-
-    if (!voteSnap.exists) {
-      tx.update(resultRef, {
-        reactionTotal: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp()
-      });
-    }
+    tx.update(resultRef, {
+      reactionTotal: summaryTotal,
+      updatedAt: FieldValue.serverTimestamp()
+    });
   });
 
-  return { success: true, reaction: savedReaction, alreadyVoted };
+  return {
+    success: true,
+    reaction: savedReaction,
+    alreadyVoted,
+    summary: { counts: summaryCounts, total: summaryTotal }
+  };
 });
 
 exports.addCourtComment = onCall({
