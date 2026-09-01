@@ -150,6 +150,9 @@ for (const name of deployedFunctions) {
 if (!deployWorkflow.includes('node tools/sync-public-config.mjs')) {
   errors.push('firebase-deploy.yml: safe public configuration sync is missing');
 }
+if (!deployWorkflow.includes('node functions/repair-result-reactions-cli.js')) {
+  errors.push('firebase-deploy.yml: existing public vote tally repair is missing');
+}
 
 // Regression checks for the consolidated administrator UI.
 const adminIndex = read('public/admin/index.html');
@@ -246,8 +249,13 @@ if (!securityServer.includes('globalAiDailyLimit') || !securityServer.includes('
 }
 
 const socialServer = read('functions/social.js');
-if (!socialServer.includes('reactionTotal: FieldValue.increment(1)')) {
-  errors.push('functions/social.js: result vote total is not synchronized');
+if (!socialServer.includes('reactionTotal: summaryTotal')
+  || !socialServer.includes('reactionDataVersion: 2')
+  || !socialServer.includes('counts: summaryCounts')) {
+  errors.push('functions/social.js: canonical result vote tally is not synchronized');
+}
+if (socialServer.includes('updates[`counts.${reaction}`]') || socialServer.includes('[`counts.${reaction}`]')) {
+  errors.push('functions/social.js: dotted count keys are still used for vote tally persistence');
 }
 if (!socialServer.includes('commentCount: FieldValue.increment(1)')) {
   errors.push('functions/social.js: result comment total is not synchronized');
