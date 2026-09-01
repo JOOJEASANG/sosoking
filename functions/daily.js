@@ -71,6 +71,7 @@ const RESPONSE_SCHEMA = {
   properties: {
     caseTitle: { type: 'string' },
     caseDescription: { type: 'string' },
+    winner: { type: 'string' },
     reception: { type: 'string' },
     investigation: { type: 'string' },
     plaintiffArg: { type: 'string' },
@@ -81,6 +82,7 @@ const RESPONSE_SCHEMA = {
   required: [
     'caseTitle',
     'caseDescription',
+    'winner',
     'reception',
     'investigation',
     'plaintiffArg',
@@ -155,9 +157,13 @@ function normalizeTitle(value) {
   return cleanText(title, 30);
 }
 
+function normalizeWinner(value, fallback = '') {
+  const winner = cleanText(value, 20).toLowerCase();
+  return ['plaintiff', 'defendant', 'both'].includes(winner) ? winner : fallback;
+}
+
 function oneSentence(value, fallback) {
   let sentence = cleanText(value, 90) || fallback;
-  if (!sentence.startsWith('피고는')) sentence = `피고는 ${sentence.replace(/^피고(인)?은?\s*/, '')}`;
   if (!sentence.endsWith('.')) sentence += '.';
   return sentence.slice(0, 90);
 }
@@ -226,6 +232,7 @@ function fallbackContent(dateKey, judge) {
   return {
     caseTitle: '냉장고 마지막 푸딩 실종 사건',
     caseDescription,
+    winner: 'plaintiff',
     reception: `접수취지\n원고는 퇴근 후 보장되어야 할 마지막 푸딩 기대권이 예고 없이 소멸했다며 본 사건을 접수하였다.\n\n사건개요\n${caseDescription}\n\n접수의견\n본 건은 금액으로는 소액이나 숟가락을 들고 냉장고 문을 연 원고의 기대 밀도는 결코 소액이 아니므로 정식 기록으로 남긴다.`,
     investigation: `확인 정황\n냉장고 내부에는 푸딩이 있던 것으로 추정되는 빈 자리와 사용 여부를 묵비하는 작은 숟가락이 확인되었다.\n\n주요 증거\n빈 자리 1개, 숟가락 1개, 원고의 허공을 바라보는 표정 1건을 증거로 채택한다.\n\n조사관 의견\n용기는 발견되지 않았으나 냉장고의 지나치게 정돈된 공백이 오히려 범행 후 현장 정리 가능성을 강하게 말하고 있다.`,
     plaintiffArg: `청구취지\n원고는 피고가 푸딩의 행방을 밝히고 동급 이상의 디저트를 신속히 보충할 것을 구한다.\n\n주장요지\n퇴근 후 푸딩은 단순 유제품이 아니라 하루를 버틴 사람에게 예정된 폐회식이었다. 피고의 행위는 그 폐회식을 개회도 전에 종료시켰다.`,
@@ -263,12 +270,13 @@ ${extra}
 반드시 아래 구조를 지킨다.
 - caseTitle: 내용을 바로 알 수 있고 반드시 '사건'으로 끝나는 30자 이내 사건명
 - caseDescription: 200자 이내 사건 경위
+- winner: 재판부 최종 승패를 반드시 "plaintiff" / "defendant" / "both" 중 하나로 작성
 - reception: '접수취지', '사건개요', '접수의견' 소제목과 빈 줄 포함
 - investigation: '확인 정황', '주요 증거', '조사관 의견' 소제목과 빈 줄 포함
 - plaintiffArg: '청구취지', '주장요지' 소제목과 빈 줄 포함
 - defendantArg: '답변취지', '항변요지' 소제목과 빈 줄 포함
-- verdict: 첫머리에 '주문', 이어서 '판단이유', '재판부 의견' 소제목과 빈 줄 포함. 주문은 번호형 생활 처분 2~3개
-- sentence: 판결 핵심을 요약한 실행 가능한 생활형 처분 한 문장`;
+- verdict: 첫머리에 '주문', 이어서 '판단이유', '재판부 의견' 소제목과 빈 줄 포함. 주문은 번호형 생활 처분 2~3개이며 winner와 모순되지 않아야 함
+- sentence: 판결 핵심을 요약한 실행 가능한 생활형 처분 한 문장. winner와 모순되지 않아야 함`;
 }
 
 function normalizeDailyContent(ai, dateKey, judge) {
@@ -276,6 +284,7 @@ function normalizeDailyContent(ai, dateKey, judge) {
   return {
     caseTitle: normalizeTitle(ai?.caseTitle || fallback.caseTitle),
     caseDescription: cleanText(ai?.caseDescription, 300) || fallback.caseDescription,
+    winner: normalizeWinner(ai?.winner, fallback.winner),
     grievanceIndex: grievanceForDate(dateKey),
     nickname: '오늘의억울인',
     judgeType: judge.type,
@@ -359,6 +368,7 @@ function moderateDailyContent(data, dateKey, judge, settings = {}) {
 function isCompleteResult(data = {}) {
   return Boolean(
     cleanText(data.caseTitle, 30) &&
+    normalizeWinner(data.winner) &&
     cleanDocument(data.reception, 200).length >= 40 &&
     cleanDocument(data.investigation, 200).length >= 40 &&
     cleanDocument(data.plaintiffArg, 200).length >= 30 &&
@@ -439,6 +449,7 @@ async function createDailyAiCase(force = false) {
     courtStage: 'sentenced',
     caseTitle: data.caseTitle,
     caseDescription: data.caseDescription,
+    winner: data.winner,
     grievanceIndex: data.grievanceIndex,
     nickname: data.nickname,
     judgeType: data.judgeType,
@@ -464,6 +475,7 @@ async function createDailyAiCase(force = false) {
     division: '제3생활부',
     isPublic: moderation.publish,
     caseTitle: data.caseTitle,
+    winner: data.winner,
     // 공개 문서는 공개 스키마(publicDataVersion 1 + 민감 필드 제외)를 지켜야
     // 판결기록·사이트맵·민심소·공개 상세에 실제로 나타난다.
     // 그렇지 않으면 isPublic이 true인데도 어디에도 보이지 않는 문서가 된다.
@@ -493,7 +505,7 @@ async function createDailyAiCase(force = false) {
       : (generated.modelName ? 'gemini-rest' : 'local-daily-fallback'),
     aiModel: moderation.usedSafetyFallback ? '' : generated.modelName,
     aiFallbackReason: [generated.fallbackReason, moderation.code].filter(Boolean).join(' | '),
-    promptVersion: 'daily-document-v4-judge-personas',
+    promptVersion: 'daily-document-v5-judge-winner',
     contentSafetyStatus: moderation.status,
     contentSafetyCode: moderation.code,
     contentSafetyCheckedAt: now,
@@ -519,6 +531,7 @@ async function createDailyAiCase(force = false) {
     model: moderation.usedSafetyFallback ? '' : generated.modelName,
     fallback: !generated.modelName || moderation.usedSafetyFallback,
     published: moderation.publish,
+    winner: data.winner,
     contentSafetyStatus: moderation.status
   };
 }

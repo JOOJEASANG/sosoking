@@ -87,7 +87,7 @@ const app = read('public/js/app.js');
 for (const moduleUrl of [
   "./pages/home.js?v=20260830-final-blind-1",
   "./pages/hall.js?v=20260830-final-blind-1",
-  "./pages/jury.js?v=20260830-final-blind-1"
+  "./pages/jury.js?v=20260901-daily-vote-feedback-1"
 ]) {
   if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: active module is missing: ${moduleUrl}`);
 }
@@ -104,7 +104,7 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
 for (const required of [
   '/js/pages/home.js?v=20260830-final-blind-1',
   '/js/pages/hall.js?v=20260830-final-blind-1',
-  '/js/pages/jury.js?v=20260830-final-blind-1',
+  '/js/pages/jury.js?v=20260901-daily-vote-feedback-1',
   '/js/utils/public-results.js?v=20260730-public-records-2'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: missing ${required}`);

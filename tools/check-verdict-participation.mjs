@@ -51,9 +51,13 @@ expect(jury.includes('원고 승') && jury.includes('피고 승') && jury.includ
   && jury.includes('가려졌던 AI 판결과 전체 민심 집계가 열립니다.')
   && jury.includes('투표 전에는 AI 판결, 민심 비율, 결과성 지표를 보여주지 않습니다.')
   && jury.includes('response.data?.reaction')
+  && jury.includes('getDocFromServer')
+  && jury.includes('내 투표 반영 완료')
+  && jury.includes('재판부 판결과 일치!')
+  && jury.includes('재판부와 다른 선택')
   && !jury.includes('jury-list-grievance')
   && !jury.includes('억울지수'),
-  'public/js/pages/jury.js: blind unbiased three-way verdict participation is missing');
+  'public/js/pages/jury.js: blind three-way participation and immediate server-refreshed feedback are missing');
 expect(discussion.includes('최초 선택은 기록 후 변경할 수 없습니다.')
   && discussion.includes('response.data?.alreadyVoted === true')
   && !discussion.includes('선택은 다시 변경할 수 있습니다.'),
@@ -109,7 +113,7 @@ for (const moduleUrl of [
   "./pages/home.js?v=20260830-final-blind-1",
   "./pages/discussion.js?v=20260830-final-blind-1",
   "./pages/hall.js?v=20260830-final-blind-1",
-  "./pages/jury.js?v=20260830-final-blind-1"
+  "./pages/jury.js?v=20260901-daily-vote-feedback-1"
 ]) {
   expect(app.includes(moduleUrl), `public/js/app.js: final blind module cache is missing ${moduleUrl}`);
 }
@@ -123,7 +127,7 @@ expect(sw.includes('/js/pages/result-court.js?v=20260829-arena-1')
   && sw.includes('/js/pages/discussion.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/home.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/hall.js?v=20260830-final-blind-1')
-  && sw.includes('/js/pages/jury.js?v=20260830-final-blind-1')
+  && sw.includes('/js/pages/jury.js?v=20260901-daily-vote-feedback-1')
   && !sw.includes('/js/pages/participation.js')
   && !sw.includes('/js/pages/board.js'),
   'public/sw.js: canonical verdict/blind jury/discussion modules or retired-board cleanup are inconsistent');
@@ -136,4 +140,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: all normal entry surfaces remain blind, public and owner predictions are first-choice locked, and cache routes are synchronized.');
+console.log('Verdict record validation passed: blind voting stays intact, daily/public choices get immediate server-refreshed feedback, and immutable vote routes remain synchronized.');

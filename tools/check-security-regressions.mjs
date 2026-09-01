@@ -75,8 +75,11 @@ const daily = read('functions/daily.js');
 if (!daily.includes('moderateDailyContent')) {
   errors.push('functions/daily.js: post-generation daily content moderation is missing');
 }
-if (!daily.includes("promptVersion: 'daily-document-v4-judge-personas'")) {
-  errors.push('functions/daily.js: moderated daily judge-persona prompt version is missing');
+if (!daily.includes("promptVersion: 'daily-document-v5-judge-winner'")) {
+  errors.push('functions/daily.js: moderated daily judge/winner prompt version is missing');
+}
+if (!daily.includes('winner: data.winner') || !daily.includes('normalizeWinner')) {
+  errors.push('functions/daily.js: daily verdict winner is not normalized and persisted');
 }
 if (!daily.includes('isPublic: moderation.publish')) {
   errors.push('functions/daily.js: daily publication is not controlled by moderation');

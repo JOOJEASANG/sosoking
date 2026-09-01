@@ -96,7 +96,7 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
 for (const value of [
   '/js/pages/discussion.js?v=20260830-final-blind-1',
   '/js/pages/result-comments.js?v=20260830-final-audit-1',
-  '/js/pages/jury.js?v=20260830-final-blind-1'
+  '/js/pages/jury.js?v=20260901-daily-vote-feedback-1'
 ]) need(worker, value, 'discussion cache');
 if (worker.includes('/js/pages/board.js')) {
   errors.push('discussion cache: retired board page is still cached');

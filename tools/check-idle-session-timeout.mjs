@@ -47,10 +47,10 @@ if (admin.includes('signInAnonymously')) {
 const index = read('public/index.html');
 const worker = read('public/sw.js');
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
-if (appVersion !== '20260831-idle-timeout-1') errors.push('public/index.html: idle timeout app release is not active');
-if (!worker.includes(`/js/app.js?v=${appVersion}`)) errors.push('public/sw.js: idle timeout app version is not cached');
+if (!appVersion) errors.push('public/index.html: active application version is missing');
+if (!worker.includes(`/js/app.js?v=${appVersion}`)) errors.push('public/sw.js: active app version is not cached');
 if (!worker.includes('/js/session-timeout.js?v=20260831-idle-timeout-1')) errors.push('public/sw.js: idle session module is not in the app shell');
-if (!worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) errors.push('public/sw.js: cache version does not match idle timeout app version');
+if (!worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) errors.push('public/sw.js: cache version does not match the active app version');
 
 const adminIndex = read('public/admin/index.html');
 if (!adminIndex.includes('&idle=20260831-idle-timeout-1')) errors.push('public/admin/index.html: administrator bootstrap cache is not busted for idle timeout');
