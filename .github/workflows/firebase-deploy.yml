@@ -108,6 +108,12 @@ jobs:
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node functions/sanitize-public-results-cli.js
 
+      - name: Repair public vote tallies
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node functions/repair-result-reactions-cli.js
+
       - name: Reformat existing verdict number lines
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -144,4 +150,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, current Functions, known legacy cleanup, deployed-function drift validation, Firestore configuration, public result sanitation, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, current Functions, known legacy cleanup, deployed-function drift validation, Firestore configuration, public result sanitation, vote tally repair, and official seed cleanup finished for commit $GITHUB_SHA"
