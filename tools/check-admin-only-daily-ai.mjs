@@ -30,10 +30,16 @@ for (const required of [
 
 for (const required of [
   'const RESPONSE_SCHEMA = {',
+  "winner: { type: 'string' }",
+  "'winner',",
+  'function normalizeWinner(value, fallback = \'\')',
   'function buildPrompt(dateKey, judge, settings = {})',
   'function normalizeDailyContent(ai, dateKey, judge)',
   'function moderateDailyContent(data, dateKey, judge, settings = {})',
-  "promptVersion: 'daily-document-v4-judge-personas'",
+  'winner: normalizeWinner(ai?.winner, fallback.winner)',
+  'winner: data.winner',
+  "promptVersion: 'daily-document-v5-judge-winner'",
+  'winner: 재판부 최종 승패를 반드시',
   "type: '꼰대형'",
   "type: '냉혈형'",
   "type: '회피형'",
@@ -142,4 +148,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator-only AI validation passed: scheduled generation stays removed, the hidden disabled toggle remains available to the canonical save handler, selectable Gemini models persist safely, and the deployed callable remains administrator-only.');
+console.log('Administrator-only AI validation passed: scheduled generation stays removed, generated daily verdicts include a structured winner, selectable Gemini models persist safely, and the deployed callable remains administrator-only.');
