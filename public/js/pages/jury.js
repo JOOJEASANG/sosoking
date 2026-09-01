@@ -8,6 +8,7 @@ import { showToast } from '../components/toast.js?v=20260630-3';
 import {
   doc,
   getDoc,
+  getDocFromServer,
   collection,
   getDocs,
   query,
@@ -83,9 +84,22 @@ function paragraphsHtml(text, maxLen) {
   return body.split(/\n{2,}/).map(part => `<p>${escapeHtml(part)}</p>`).join('');
 }
 
+function inferLegacyDailyWinner(data = {}) {
+  if (String(data.source || '') !== 'daily_ai') return '';
+  const text = `${data.verdict || ''}\n${data.sentence || ''}`.replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+
+  // winner가 저장되기 전 생성된 일일 AI 사건만 보수적으로 복구한다.
+  if (/(쌍방\s*(?:과실|책임)|양측\s*(?:모두|각자)|원고와\s*피고\s*모두)/.test(text)) return 'both';
+  if (/(원고(?:의)?\s*청구.{0,40}(?:기각|배척)|피고\s*승|원고\s*패소)/.test(text)) return 'defendant';
+  if (/(피고\s*(?:는|에게|가).{0,100}(?:사과|보충|반환|배상|제공|부여|이행|금지|삭제|정리|구매|교체)|원고\s*승|피고\s*(?:책임|패소))/.test(text)) return 'plaintiff';
+  return '';
+}
+
 function verdictWinner(data = {}) {
   const raw = String(data.winner || '').toLowerCase();
-  return Object.prototype.hasOwnProperty.call(SIDE_LABEL, raw) ? raw : '';
+  if (Object.prototype.hasOwnProperty.call(SIDE_LABEL, raw)) return raw;
+  return inferLegacyDailyWinner(data);
 }
 
 function juryListCard(caseId, data, judged) {
@@ -239,11 +253,17 @@ function renderCaseCard(container, slot, caseId, data) {
         const voteResult = httpsCallable(functions, 'voteResult');
         const response = await voteResult({ caseId, reaction: side });
         const savedSide = String(response.data?.reaction || side);
+        const alreadyVoted = response.data?.alreadyVoted === true;
         if (!Object.prototype.hasOwnProperty.call(SIDE_LABEL, savedSide)) {
           throw new Error('저장된 민심 판정을 확인하지 못했습니다.');
         }
         markJurySeen(caseId);
-        await revealVerdict(container, slot, caseId, data, savedSide, { recordScore: response.data?.alreadyVoted !== true });
+        await revealVerdict(container, slot, caseId, data, savedSide, {
+          recordScore: !alreadyVoted,
+          freshVote: true,
+          alreadyVoted
+        });
+        showToast(alreadyVoted ? '최초에 기록한 선택으로 결과를 표시합니다.' : '투표가 반영되었습니다.', 'success');
       } catch (error) {
         console.error('jury vote failed:', error);
         buttons.forEach(item => { item.disabled = false; });
@@ -254,8 +274,15 @@ function renderCaseCard(container, slot, caseId, data) {
 }
 
 async function reactionSummary(caseId) {
+  const ref = doc(db, `result_reactions/${caseId}`);
   try {
-    const snapshot = await getDoc(doc(db, `result_reactions/${caseId}`));
+    let snapshot;
+    try {
+      snapshot = await getDocFromServer(ref);
+    } catch (serverError) {
+      console.warn('jury tally server refresh failed, using available cache:', serverError?.code || serverError);
+      snapshot = await getDoc(ref);
+    }
     if (!snapshot.exists()) return { counts: {}, total: 0 };
     const counts = snapshot.data().counts || {};
     const total = ['plaintiff', 'defendant', 'both'].reduce((sum, side) => sum + Math.max(0, Number(counts[side] || 0)), 0);
@@ -270,7 +297,7 @@ function tallyHtml(counts, total) {
   return `<div class="jury-tally">${['plaintiff', 'defendant', 'both'].map(side => {
     const count = Math.max(0, Number(counts?.[side] || 0));
     const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-    return `<div class="jury-tally-row"><span>${SIDE_LABEL[side]}</span><span class="jury-tally-track"><i style="width:${percent}%"></i></span><span class="jury-tally-value">${percent}%</span></div>`;
+    return `<div class="jury-tally-row"><span>${SIDE_LABEL[side]}</span><span class="jury-tally-track"><i style="width:${percent}%"></i></span><span class="jury-tally-value">${percent}% · ${count}표</span></div>`;
   }).join('')}</div>`;
 }
 
@@ -280,7 +307,7 @@ function verdictExcerpt(data) {
   return `<div class="jury-verdict-excerpt"><span class="jury-side-tag jury-side-verdict">AI 재판부 판결</span>${body.split(/\n{2,}/).map(part => `<p>${escapeHtml(part)}</p>`).join('')}</div>`;
 }
 
-async function revealVerdict(container, slot, caseId, data, mySide, { recordScore }) {
+async function revealVerdict(container, slot, caseId, data, mySide, { recordScore, freshVote = false, alreadyVoted = false }) {
   markJurySeen(caseId);
   const winner = verdictWinner(data);
   const comparable = Boolean(winner);
@@ -290,14 +317,18 @@ async function revealVerdict(container, slot, caseId, data, mySide, { recordScor
   const summary = await reactionSummary(caseId);
   if (!slot.isConnected) return;
 
+  const tallyStatus = freshVote
+    ? (alreadyVoted ? `이전에 기록한 최초 선택 · 현재 민심 ${summary.total}표` : `✓ 내 투표 반영 완료 · 현재 민심 ${summary.total}표`)
+    : `현재 민심 ${summary.total}표`;
+
   slot.innerHTML = `
     <div class="card jury-card">
       <div class="jury-case-title">${escapeHtml(data.caseTitle || '생활분쟁 사건')}</div>
-      <span class="jury-verdict-badge${agreed ? ' jury-verdict-agree' : ''}">${comparable ? (agreed ? '🎯 AI 판결과 일치' : '👀 AI와 다른 판단') : '⚖️ AI 판결 공개'}</span>
+      <span class="jury-verdict-badge${agreed ? ' jury-verdict-agree' : ''}">${comparable ? (agreed ? '🎯 재판부 판결과 일치!' : '👀 재판부와 다른 선택') : '⚖️ AI 판결 공개'}</span>
       <p class="jury-reveal-line">내 선택: <strong>${SIDE_LABEL[mySide]}</strong></p>
       ${comparable ? `<p class="jury-reveal-line">AI 재판부: <strong>${SIDE_LABEL[winner]}</strong></p>` : ''}
       ${verdictExcerpt(data)}
-      <div style="margin-top:16px;font-size:12px;color:var(--cream-dim);">현재 민심 ${summary.total}표</div>
+      <div style="margin-top:16px;font-size:12px;color:var(--cream-dim);">${tallyStatus}</div>
       ${tallyHtml(summary.counts, summary.total)}
       <div class="jury-actions">
         <a href="#/result/${encodeURIComponent(caseId)}" class="btn btn-primary">📜 판결문 전체 보기</a>
