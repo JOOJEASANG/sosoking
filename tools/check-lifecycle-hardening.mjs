@@ -9,16 +9,18 @@ for (const required of [
   'function isModerationHidden(...records)',
   'assertVisibilityChangeAllowed(caseData, resultData, isPublic);',
   "운영 검토로 숨김 처리된 판결문은 다시 공개할 수 없습니다.",
-  'const [latestResultSnap, voteSnap] = await Promise.all([',
+  'const [latestResultSnap, voteSnap, summarySnap] = await Promise.all([',
   'const latestResultSnap = await tx.get(resultRef);',
   'assertParticipablePublicResult(latestResultSnap.data());',
-  "tx.update(resultRef, {\n        reactionTotal: FieldValue.increment(1)",
+  'reactionDataVersion: 2',
+  'counts: summaryCounts',
+  'reactionTotal: summaryTotal',
+  'summary: { counts: summaryCounts, total: summaryTotal }',
   "tx.update(resultRef, {\n      commentCount: FieldValue.increment(1)",
   "const REACTIONS = ['plaintiff','defendant','both']",
   'if (REACTIONS.includes(previousRaw))',
   'savedReaction = previousRaw',
   'alreadyVoted = true',
-  'return { success: true, reaction: savedReaction, alreadyVoted }',
   "삭제 중인 사건은 항소할 수 없습니다.",
   'const [latestResult, latestCase] = await Promise.all([',
   "tx.update(caseRef, {\n        hasAppeal: true"
@@ -33,6 +35,9 @@ if (social.includes("batch.set(resultRef, {\n    commentCount: FieldValue.increm
 }
 if (social.includes("'tooMuch','funny'") || social.includes('if (prev && prev !== reaction) updates[`counts.${prev}`]')) {
   errors.push('functions/social.js: public verdict vote can still be changed after reveal');
+}
+if (social.includes('[`counts.${reaction}`]') || social.includes('updates[`counts.${reaction}`]')) {
+  errors.push('functions/social.js: vote tally still writes dotted count keys through set() instead of the canonical nested counts map');
 }
 
 const adminVisibility = read('functions/admin-visibility.js');
@@ -123,9 +128,11 @@ for (const required of [
   'node tools/list-obsolete-deployed-functions.mjs',
   'firebase functions:delete',
   '--force --project sosoking-481e6 --non-interactive',
-  'Verify deployed Functions match source'
+  'Verify deployed Functions match source',
+  'Repair public vote tallies',
+  'node functions/repair-result-reactions-cli.js'
 ]) {
-  if (!deployWorkflow.includes(required)) errors.push(`firebase-deploy.yml: missing reviewed legacy cleanup step ${required}`);
+  if (!deployWorkflow.includes(required)) errors.push(`firebase-deploy.yml: missing reviewed legacy cleanup or vote repair step ${required}`);
 }
 const cleanupStep = deployWorkflow.indexOf('Remove known obsolete Functions');
 const strictVerifyStep = deployWorkflow.indexOf('Verify deployed Functions match source');
@@ -191,4 +198,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Lifecycle and operational hardening validation passed: immutable jury votes, moderation/deletion guards, public originals, exact Functions drift checks, and immutable production workflow verification are intact.');
+console.log('Lifecycle and operational hardening validation passed: immutable jury votes, canonical vote tallies, moderation/deletion guards, public originals, exact Functions drift checks, and immutable production workflow verification are intact.');

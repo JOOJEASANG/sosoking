@@ -67,11 +67,18 @@ expect(social.includes("const REACTIONS = ['plaintiff','defendant','both']")
   && social.includes('if (REACTIONS.includes(previousRaw))')
   && social.includes('savedReaction = previousRaw')
   && social.includes('alreadyVoted = true')
-  && social.includes('return { success: true, reaction: savedReaction, alreadyVoted }'),
-  'functions/social.js: public jury choice must be three-way and permanently locked to the first valid vote');
+  && social.includes('reactionDataVersion: 2')
+  && social.includes('counts: summaryCounts')
+  && social.includes('reactionTotal: summaryTotal')
+  && social.includes('summary: { counts: summaryCounts, total: summaryTotal }'),
+  'functions/social.js: public jury choice must be immutable and synchronize the canonical three-way tally');
 expect(!social.includes("'tooMuch','funny'")
-  && !social.includes('if (prev && prev !== reaction) updates[`counts.${prev}`]'),
-  'functions/social.js: mutable or legacy five-way jury voting remains active');
+  && !social.includes('if (prev && prev !== reaction) updates[`counts.${prev}`]')
+  && !social.includes('updates[`counts.${reaction}`]')
+  && !social.includes('[`counts.${reaction}`]'),
+  'functions/social.js: mutable, legacy five-way, or dotted-key jury tally persistence remains active');
+expect(deployWorkflow.includes('node functions/repair-result-reactions-cli.js'),
+  'firebase-deploy.yml: existing vote tallies are not repaired from authoritative vote documents');
 
 expect(result.includes('💬 방청석 한마디') && result.includes("httpsCallable(functions, 'addCourtComment')"),
   'public/js/pages/result.js: legacy audience comments must remain available');
@@ -84,7 +91,7 @@ expect(resultComments.includes("httpsCallable(functions, 'voteOwnVerdict')")
   && resultComments.includes('AI 판결 봉인 중')
   && resultComments.includes('최초 선택만 기록되며 AI 판결을 본 뒤에는 바꿀 수 없습니다.')
   && resultComments.includes('ownerVerdictVote'),
-  'public/js/pages/result-comments.js: owners must predict once before their AI verdict is revealed');
+  'functions/result-comments.js: owners must predict once before their AI verdict is revealed');
 expect(resultComments.includes('originalVisible')
   && resultComments.includes('이 내용은 내가 사건 접수 때 직접 입력한 원문이며 작성자 본인에게만 표시됩니다.')
   && resultComments.includes('실제 접수 원문은 작성자에게만 공개됩니다. 아래에는 공개용으로 안전하게 정리된 사건 정보만 표시됩니다.'),
@@ -140,4 +147,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: blind voting stays intact, daily/public choices get immediate server-refreshed feedback, and immutable vote routes remain synchronized.');
+console.log('Verdict record validation passed: blind voting stays intact, canonical public tallies are repaired/synchronized, daily/public choices get immediate server feedback, and immutable vote routes remain synchronized.');
