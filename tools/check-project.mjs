@@ -314,8 +314,11 @@ const daily = read('functions/daily.js');
 if (daily.includes('desiredVerdict')) {
   errors.push('functions/daily.js: removed desiredVerdict field was reintroduced');
 }
-if (!daily.includes("promptVersion: 'daily-document-v4-judge-personas'")) {
-  errors.push('functions/daily.js: moderated structured seven-judge document prompt version is missing');
+if (!daily.includes("promptVersion: 'daily-document-v5-judge-winner'")) {
+  errors.push('functions/daily.js: moderated structured seven-judge winner prompt version is missing');
+}
+if (!daily.includes('winner: data.winner') || !daily.includes('normalizeWinner')) {
+  errors.push('functions/daily.js: structured daily winner contract is missing');
 }
 
 if (errors.length) {
