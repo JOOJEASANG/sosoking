@@ -64,7 +64,7 @@ assert.ok(myCases.includes("? `#/verdict/${encodeURIComponent(id)}`"), '내 사�
 assert.ok(app.includes("hash.startsWith('#/verdict/')"), '소유자 판결 경로가 누락되었습니다.');
 assert.ok(app.includes("hash.startsWith('#/result/')"), '공개 판결 경로가 누락되었습니다.');
 assert.ok((app.match(/renderResult\(content, caseId\)/g) || []).length >= 2, '공개/소유자 판결은 같은 렌더러를 사용해야 합니다.');
-assert.ok(app.includes("./pages/result-comments.js?v=20260830-final-audit-1"), '원문보기 결과 모듈이 최종 감사 버전이어야 합니다.');
+assert.ok(app.includes("./pages/result-comments.js?v=20260902-result-vote-fix-1"), '원문보기 결과 모듈이 최종 감사 버전이어야 합니다.');
 
 for (const retired of [
   'original-inline-accordion-guard.js',
@@ -74,6 +74,6 @@ for (const retired of [
   assert.ok(!index.includes(retired), `index.html이 삭제된 원문보기 가드를 불러옵니다: ${retired}`);
   assert.ok(!serviceWorker.includes(retired), `서비스워커가 삭제된 원문보기 가드를 캐시합니다: ${retired}`);
 }
-assert.ok(serviceWorker.includes('/js/pages/result-comments.js?v=20260830-final-audit-1'), '서비스워커가 기준 원문보기 결과 모듈을 캐시해야 합니다.');
+assert.ok(serviceWorker.includes('/js/pages/result-comments.js?v=20260902-result-vote-fix-1'), '서비스워커가 기준 원문보기 결과 모듈을 캐시해야 합니다.');
 
 console.log('Original submission validation passed: actual submission text is owner-only, public viewers receive only safe public content, and duplicate DOM guards are removed.');

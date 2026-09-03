@@ -3,7 +3,7 @@ import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-acces
 import { renderHome } from './pages/home.js?v=20260830-final-audit-1';
 import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';
 import { renderTrial } from './pages/trial.js?v=20260810-current-judges-1';
-import { renderResult } from './pages/result-comments.js?v=20260830-final-audit-1';
+import { renderResult } from './pages/result-comments.js?v=20260902-result-vote-fix-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260730-discussion-court-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
