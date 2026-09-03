@@ -42,11 +42,27 @@ async function loadOwnerVerdictState(caseId) {
     if (!snapshot.exists()) return { isOwner: false, vote: '', verificationFailed: isOwnedVerdictRoute() };
     const data = snapshot.data();
     if (data.userId !== user.uid) return { isOwner: false, vote: '', verificationFailed: isOwnedVerdictRoute() };
-    return {
-      isOwner: true,
-      vote: validOwnerVote(data.ownerVerdictVote) ? data.ownerVerdictVote : '',
-      verificationFailed: false
-    };
+
+    const ownerVote = String(data.ownerVerdictVote || '');
+    if (validOwnerVote(ownerVote)) {
+      return { isOwner: true, vote: ownerVote, verificationFailed: false };
+    }
+
+    try {
+      const publicVoteSnap = await getDoc(doc(db, `result_reactions/${caseId}/votes/${user.uid}`));
+      const publicVote = publicVoteSnap.exists() ? String(publicVoteSnap.data().reaction || '') : '';
+      return {
+        isOwner: true,
+        vote: validOwnerVote(publicVote) ? publicVote : '',
+        verificationFailed: false
+      };
+    } catch (voteError) {
+      if (isOwnedVerdictRoute()) {
+        console.warn('owner public vote verification failed:', voteError?.code || voteError);
+        return { isOwner: true, vote: '', verificationFailed: true };
+      }
+      return { isOwner: true, vote: '', verificationFailed: false };
+    }
   } catch (error) {
     if (isOwnedVerdictRoute()) {
       console.warn('owner verdict state verification failed:', error?.code || error);
