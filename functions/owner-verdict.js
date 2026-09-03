@@ -61,13 +61,15 @@ exports.voteOwnVerdict = onCall({
 
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
+  const publicVoteRef = db.doc(`result_reactions/${caseId}/votes/${uid}`);
   let savedReaction = '';
   let alreadyVoted = false;
 
   await db.runTransaction(async tx => {
-    const [caseSnap, resultSnap] = await Promise.all([
+    const [caseSnap, resultSnap, publicVoteSnap] = await Promise.all([
       tx.get(caseRef),
-      tx.get(resultRef)
+      tx.get(resultRef),
+      tx.get(publicVoteRef)
     ]);
     if (!caseSnap.exists || !resultSnap.exists) {
       throw new HttpsError('not-found', '사건 또는 판결문을 찾을 수 없습니다.');
@@ -77,10 +79,24 @@ exports.voteOwnVerdict = onCall({
     const resultData = resultSnap.data();
     assertOwnerVerdictVoteAllowed(caseData, resultData, uid);
 
-    const previous = cleanText(caseData.ownerVerdictVote, 20);
+    const ownerPrevious = cleanText(caseData.ownerVerdictVote, 20);
+    const publicPrevious = publicVoteSnap.exists
+      ? cleanText(publicVoteSnap.data().reaction, 20)
+      : '';
+    const previous = OWNER_VERDICT_REACTIONS.includes(ownerPrevious)
+      ? ownerPrevious
+      : (OWNER_VERDICT_REACTIONS.includes(publicPrevious) ? publicPrevious : '');
+
     if (OWNER_VERDICT_REACTIONS.includes(previous)) {
       savedReaction = previous;
       alreadyVoted = true;
+      if (!OWNER_VERDICT_REACTIONS.includes(ownerPrevious) && OWNER_VERDICT_REACTIONS.includes(publicPrevious)) {
+        tx.update(caseRef, {
+          ownerVerdictVote: publicPrevious,
+          ownerVerdictVotedAt: publicVoteSnap.data().createdAt || FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp()
+        });
+      }
       return;
     }
 
