@@ -8,8 +8,6 @@ const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
-// 모델은 배포 환경변수 VERDICT_MODELS(쉼표 구분)로 바꿔 끼울 수 있다.
-// 결과물 품질이 곧 제품이므로 상위 등급 모델을 먼저 시도하고, 실패 시 아래 순서로 물러난다.
 const DEFAULT_MODELS = String(process.env.VERDICT_MODELS || 'gemini-2.5-pro,gemini-2.5-flash')
   .split(',').map(name => name.trim()).filter(Boolean);
 
@@ -69,17 +67,28 @@ function safeJson(text) {
   }
 }
 
-// 민심소에서 'AI 판결 vs 사람들의 표'를 비교하려면 승패가 구조화되어 있어야 한다.
-// 태그는 검색 유입용 키워드다. AI 출력이 지저분해도 목록 페이지·URL로 쓰이므로
-// 길이·개수·문자 종류를 엄격히 정리하고, 뻔한 말은 걸러낸다.
 const TAG_STOPWORDS = new Set(['사건', '판결', '판결문', '소소킹', '재판', '법원', '분쟁', '생활', '기타']);
 
+function extractKeywords(description) {
+  const stop = new Set(['그리고', '그런데', '그래서', '제가', '저는', '나는', '진짜', '너무', '그냥', '계속', '오늘', '어제', '상대방', '때문에', '했는데', '합니다', '있습니다']);
+  const words = cleanText(description, 600).match(/[가-힣A-Za-z0-9]{2,}/g) || [];
+  const counts = new Map();
+  for (const word of words) {
+    const key = word.replace(/(했다|했어요|했습니다|합니다|인데|에게|에서|으로|하고|하며|때문)$/g, '');
+    if (key.length < 2 || stop.has(key)) continue;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
+    .slice(0, 4)
+    .map(([word]) => word);
+}
+
 function normalizeTags(value, fallbackSource = '') {
-  const rawList = Array.isArray(value)
-    ? value
-    : String(value || '').split(/[,\n]/);
+  const rawList = Array.isArray(value) ? value : String(value || '').split(/[,\n]/);
   const seen = new Set();
   const tags = [];
+
   for (const item of rawList) {
     const tag = String(item || '')
       .replace(/[#\s]+/g, '')
@@ -92,7 +101,7 @@ function normalizeTags(value, fallbackSource = '') {
     tags.push(tag);
     if (tags.length >= 5) break;
   }
-  // AI가 태그를 못 주면 사건 설명에서 키워드를 뽑아 최소 하나는 채운다.
+
   if (!tags.length && fallbackSource) {
     for (const word of extractKeywords(fallbackSource)) {
       const tag = word.slice(0, 10);
@@ -166,7 +175,7 @@ const RESPONSE_SCHEMA = {
     defendantArg: { type: 'string' },
     verdict: { type: 'string' }
   },
-  required: ['caseTitle', 'reception', 'investigation', 'plaintiffArg', 'defendantArg', 'verdict']
+  required: ['caseTitle', 'winner', 'reception', 'investigation', 'plaintiffArg', 'defendantArg', 'verdict']
 };
 
 function extractGeminiText(payload) {
@@ -190,6 +199,7 @@ function classifyGeminiError(status, payload) {
 
 async function callGemini(apiKey, modelName, prompt) {
   if (!apiKey) throw Object.assign(new Error('GEMINI_API_KEY가 비어 있습니다.'), { code: 'API_KEY_MISSING' });
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 75000);
   try {
@@ -199,10 +209,8 @@ async function callGemini(apiKey, modelName, prompt) {
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: 0.9,
-          topP: 0.95,
-          // 한국어는 글자당 토큰 소모가 커서, 문서 5개 합계 9,000자를 담으려면
-          // 4096으로는 문장 중간에서 잘린다. 넉넉히 잡아 잘림을 막는다.
+          temperature: 0.75,
+          topP: 0.9,
           maxOutputTokens: 16384,
           responseMimeType: 'application/json',
           responseSchema: RESPONSE_SCHEMA
@@ -210,8 +218,10 @@ async function callGemini(apiKey, modelName, prompt) {
       }),
       signal: controller.signal
     });
+
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw classifyGeminiError(response.status, payload);
+
     const text = extractGeminiText(payload);
     if (!text) {
       const blocked = cleanText(payload?.promptFeedback?.blockReason, 80);
@@ -228,81 +238,33 @@ async function callGemini(apiKey, modelName, prompt) {
   }
 }
 
-function extractKeywords(description) {
-  const stop = new Set(['그리고', '그런데', '그래서', '제가', '저는', '나는', '진짜', '너무', '그냥', '계속', '오늘', '어제', '상대방', '때문에', '했는데', '합니다', '있습니다']);
-  const words = cleanText(description, 600).match(/[가-힣A-Za-z0-9]{2,}/g) || [];
-  const counts = new Map();
-  for (const word of words) {
-    const key = word.replace(/(했다|했어요|했습니다|합니다|인데|에게|에서|으로|하고|하며|때문)$/g, '');
-    if (key.length < 2 || stop.has(key)) continue;
-    counts.set(key, (counts.get(key) || 0) + 1);
+// 입력에 없으면 결과에도 실제 증거·수사 사실처럼 등장하면 안 되는 표현들.
+// 사용자가 직접 이런 자료를 언급한 사건은 그대로 허용한다.
+const GROUNDING_GUARDS = [
+  { code: 'UNSUPPORTED_CCTV', output: /CCTV|폐쇄회로|녹화\s*영상/i, input: /CCTV|폐쇄회로|녹화\s*영상/i },
+  { code: 'UNSUPPORTED_FORENSICS', output: /국과수|국립과학수사|정밀\s*감정|감정\s*의뢰/i, input: /국과수|국립과학수사|정밀\s*감정|감정\s*의뢰/i },
+  { code: 'UNSUPPORTED_SURVEILLANCE', output: /잠복\s*(?:수사|조사)|미행|현장\s*봉인/i, input: /잠복\s*(?:수사|조사)|미행|현장\s*봉인/i },
+  { code: 'UNSUPPORTED_WITNESS', output: /목격자\s*진술|정황\s*목격자|목격자가/i, input: /목격자|봤다는\s*사람|봤다고\s*한/i },
+  { code: 'UNSUPPORTED_OFFICIAL_INVESTIGATION', output: /수사팀|조사관이\s*(?:확인|발견)|경찰이\s*(?:확인|조사)|법원이\s*(?:확인|조사)/i, input: /수사팀|조사관|경찰|법원/i }
+];
+
+function ungroundedOutputCode(data, description) {
+  const output = [
+    data.reception,
+    data.investigation,
+    data.plaintiffArg,
+    data.defendantArg,
+    data.verdict
+  ].filter(Boolean).join('\n');
+
+  for (const guard of GROUNDING_GUARDS) {
+    if (guard.output.test(output) && !guard.input.test(description)) return guard.code;
   }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
-    .slice(0, 4)
-    .map(([word]) => word);
+  return '';
 }
 
-function localPenalty(description, judge) {
-  const d = description;
-  let penalty = '피고는 원고에게 사건 경위에 관한 5문장 사실확인서를 제출하고, 재발 방지를 위한 생활수칙 1개를 실제로 이행한다.';
-  if (/(치킨|밥|음식|간식|커피|먹|배달|냉장고)/.test(d)) penalty = '피고는 다음 간식 또는 식사 1회에 관하여 원고에게 우선 선택권을 부여하고, 남은 음식의 행방을 사진 1장으로 보고한다.';
-  else if (/(문자|카톡|메시지|읽씹|답장|전화)/.test(d)) penalty = '피고는 24시간 동안 읽음 표시만 남기는 행위를 금하고, 확인 후 합리적인 시간 안에 완성된 문장으로 답변한다.';
-  else if (/(지각|약속|시간|늦)/.test(d)) penalty = '피고는 향후 3회의 약속에서 예정 시각 10분 전에 도착하고, 도착 인증을 제출한다.';
-  else if (/(설거지|청소|빨래|집안일|쓰레기)/.test(d)) penalty = '피고는 관련 집안일을 3회 연속 담당하고, 완료 선언 전에 현장 검수를 받아야 한다.';
-  else if (/(리모컨|휴대폰|핸드폰|충전기|물건|찾)/.test(d)) penalty = '피고는 문제의 물건에 지정 보관장소를 부여하고, 3일 동안 위치 변경 시 원고에게 즉시 고지한다.';
-  else if (/(돈|빌려|입금|결제|계산|갚)/.test(d)) penalty = '피고는 관련 금전 내역을 한 줄 장부로 정리하고, 미정산 금액이 있다면 당사자가 확인 가능한 방식으로 정산 계획을 제출한다.';
-
-  if (judge.type === '꼰대형') return `${penalty} 이행 전 왜 이런 기본사항까지 판결문에 적혀야 했는지 한 문장으로 정리한다.`;
-  if (judge.type === '냉혈형') return `${penalty} 감정적 해명보다 이행 여부와 결과만 확인한다.`;
-  if (judge.type === '회피형') return `${penalty} 당사자끼리 즉시 해결하면 재판부는 더 이상 관여하지 않는다.`;
-  if (judge.type === '추궁형') return `${penalty} 이행 시각과 결과를 모호한 표현 없이 기록한다.`;
-  if (judge.type === '오버형') return `${penalty} 이를 생활질서 복구조치로 명명하고 즉시 시행한다.`;
-  if (judge.type === '드립형') return `${penalty} 사건의 핵심 물건이 다시 법정에 출석하는 불상사를 막는다.`;
-  if (judge.type === '빙의형') return `${penalty} 사건 주제의 실제 규칙이나 관습에 맞는 방식으로 이행한다.`;
-  return penalty;
-}
-
-function judgeClosing(judge, subject) {
-  const closings = {
-    '꼰대형': `재판부는 '${subject}' 하나 제대로 정리하는 데 판결문까지 필요했다는 사실부터 오래 기억하기 바란다.`,
-    '냉혈형': `재판부는 '${subject}'에 관한 설명은 길었으나 결론은 간단하다고 본다. 생긴 결과만큼 정확히 바로잡으면 된다.`,
-    '회피형': `재판부는 '${subject}'까지 판결했으므로 다음 사건부터는 당사자들이 재판부보다 먼저 대화하기 바란다.`,
-    '추궁형': `재판부는 '${subject}'보다 당사자의 설명 속 앞뒤가 더 오래 남았다는 점을 지적하며 심리를 마친다.`,
-    '오버형': `이로써 '${subject}' 사태는 생활질서 복구 단계로 전환되었음을 제404호 생활법정이 엄숙히 선포한다.`,
-    '드립형': `재판부는 '${subject}'가 또다시 사건번호를 발급받는 순간, 사소함은 이미 항소를 포기한 것으로 본다.`,
-    '빙의형': `재판부는 '${subject}' 사건에서도 결국 그 세계의 기본 규칙을 지키는 사람이 마지막에 웃는다는 점을 확인한다.`
-  };
-  return closings[judge.type] || '재판부는 같은 사안이 다시 사건번호를 부여받지 않도록 당사자들이 신속히 이행하기 바란다.';
-}
-
-function buildLocalFallback(description, judge, grievanceIndex, errorCode = 'UNKNOWN_GEMINI_ERROR') {
-  const detail = cleanText(description, 560) || '구체적인 경위가 기재되지 않은 생활분쟁';
-  const keywords = extractKeywords(detail);
-  const subject = keywords.slice(0, 2).join('·') || cleanText(detail, 18) || '생활분쟁';
-  const title = normalizeCaseTitle(`${subject} 분쟁 사건`, detail);
-  const kw0 = keywords[0] || '해당 사물';
-  const kw1 = keywords[1] || '현장';
-  const evidence = [
-    `1. 현장 CCTV 영상 정밀 분석 결과: '${kw0}' 관련 행위가 사건 당일 이전 동일 시간대에도 최소 3회 반복된 패턴으로 확인됨. 총 14시간 37분 분량 영상 검토 완료.`,
-    `2. '${kw1}' 현장 보존 및 동선 재구성: 원고 진술과 물리적 정황의 일치율 87.3%. 피고가 주장하는 동선과 3군데에서 충돌.`,
-    `3. 국과수 정밀 감정 의뢰 회신: 현장 물적 증거에서 피고 관여 흔적 추정 가능한 정황 포착. 감정 보고서 총 4페이지, 결론은 1페이지.`,
-    `4. 정황 목격자 진술 (인근 거주 김○○): "저는 직접 보지는 못했습니다만, 그날 분위기가 심상치 않았다는 것은 확실합니다. 제가 창문을 닫으려던 참이었거든요."`
-  ].join('\n');
-  const penalty = localPenalty(detail, judge);
-
-  return {
-    // AI 호출이 모두 실패한 대체 판결도 민심소에서 비교할 수 있어야 한다.
-    winner: 'both',
-    tags: normalizeTags(keywords, detail),
-    caseTitle: title,
-    reception: `접수취지\n원고는 아래 생활상 분쟁으로 평온한 일상에 균열이 발생하였다며 정식 접수를 요청하였다.\n\n사건개요\n${detail}\n\n접수의견\n사건 규모는 소소하나 억울지수 ${grievanceIndex}/10이 부여될 정도로 당사자의 체감 무게가 확인된다. ${judge.type} 재판부는 이 사안을 그냥 넘길 경우 식탁·단체채팅방·거실 등에서 장기 미제사건으로 남을 가능성이 있다고 보아 접수한다.`,
-    investigation: `확인 정황\n수사팀은 사건 접수 3시간 만에 현장에 도착해 봉인 테이프를 설치하였다. '${kw0}' 관련 물적 증거 확보에 총 11시간 19분이 소요되었으며, 잠복 조사 결과 피고의 행동이 단발성이 아닌 반복 패턴임이 확인되었다. 원고가 억울지수 ${grievanceIndex}/10을 주장한 것은 단순한 감정 표현이 아니라 수치로 뒷받침된 피해 호소로 판단된다.\n\n주요 증거\n${evidence}\n\n진술 검토\n원고는 '${kw0}' 상황이 발생한 정확한 시각과 경위를 일관되게 진술하였다. 피고의 직접 진술은 현재까지 확보되지 않았으나, 제시된 항변 내용이 앞선 CCTV 분석 결과와 23분의 시간 오차를 보인다는 점이 이미 발견되었다. 이 간극이 단순 착오인지 의도적 왜곡인지는 변론 단계에서 추가 확인할 예정이다.\n\n조사관 의견\n${judge.style} 따라서 '${subject}' 관련 행위가 생활질서를 침해하는 반복 패턴에 해당할 가능성이 높으며, 국과수 회신 결과를 종합하면 원고의 주장은 상당 부분 사실에 부합하는 것으로 잠정 결론 내린다.`,
-    plaintiffArg: `청구취지\n원고는 피고가 사건의 핵심 행동을 인정하고, 같은 상황이 반복되지 않도록 구체적인 생활상 조치를 이행할 것을 구한다.\n\n주장요지\n원고는 ${detail}\n라는 사정으로 인해 당연히 지켜질 것이라 믿었던 생활상 신뢰가 침해되었다고 주장한다.\n\n피해 및 요구사항\n원고가 구하는 핵심은 거창한 배상보다도 '왜 억울했는지를 정확히 이해받는 것'과 재발 방지다.`,
-    defendantArg: `답변취지\n피고는 고의가 아니었고 상황이 우연히 그렇게 보였으며, 원고가 사건을 확대 해석했다는 취지로 항변할 가능성이 있다.\n\n항변요지\n다만 '${subject}'에 관한 구체적인 설명 없이 '그럴 수도 있지'라는 문장만 제출한다면 이는 답변서라기보다 책임 회피용 포스트잇에 가깝다.\n\n피고측 최종의견\n피고에게는 원고의 기억이 일부 과장되었음을 주장할 여지가 있으나, 사소한 일일수록 즉시 설명하고 정리했어야 한다는 점에서 완전한 면책은 어렵다.`,
-    verdict: `주문\n1. 피고는 원고에게 본 사건의 핵심 경위를 인정하는 취지의 사건 맞춤형 사과를 한다.\n2. ${penalty}\n3. 나머지 과도한 감정 소모는 양 당사자가 각자 부담한다.\n\n판단이유\n이 사건은 ${detail}\n라는 생활상 분쟁에서 비롯되었다. 사건의 금액이나 규모가 작다는 이유만으로 억울함까지 자동으로 소액이 되는 것은 아니다.\n\n재판부는 '${subject}'에 관한 원고의 설명이 구체적이고, 피고가 납득할 만한 반대 설명을 제시하지 못한 상태에서는 문제 제기에 상당한 이유가 있다고 판단한다. 다만 피고의 직접 진술이 없는 만큼 형사드라마식 단정은 피하고 실행 가능한 생활형 처분으로 균형을 맞춘다.\n\n재판부 의견\n${judgeClosing(judge, subject)} 이상과 같이 판결한다.`,
-    fallbackReason: errorCode
-  };
+function safeErrorCode(err) {
+  return cleanText(err?.code, 80) || 'UNKNOWN_GEMINI_ERROR';
 }
 
 function kstDateKey(date = new Date()) {
@@ -314,13 +276,42 @@ function kstDateKey(date = new Date()) {
   }).format(date);
 }
 
-function safeErrorCode(err) {
-  return cleanText(err?.code, 80) || 'UNKNOWN_GEMINI_ERROR';
-}
-
 async function loadSettings() {
   const snap = await db.doc('site_settings/config').get();
   return snap.exists ? snap.data() : {};
+}
+
+async function restoreRetryableCase(caseRef, code = '', message = '') {
+  await caseRef.update({
+    status: 'error',
+    courtStage: 'error',
+    errorMessage: message || 'AI 판결 생성에 실패했습니다. 잠시 후 같은 사건으로 다시 시도해 주세요.',
+    aiErrorCode: code || 'AI_GENERATION_FAILED',
+    processingStartedAt: FieldValue.delete(),
+    updatedAt: FieldValue.serverTimestamp()
+  }).catch(() => null);
+}
+
+async function logUsage(totals, saved) {
+  try {
+    const today = kstDateKey();
+    await db.doc(`usage_stats/daily_${today}`).set({
+      date: today,
+      geminiRequests: FieldValue.increment(totals.attempts),
+      geminiSuccessfulResponses: FieldValue.increment(totals.successfulResponses),
+      geminiInputTokens: FieldValue.increment(totals.inputTokens),
+      geminiOutputTokens: FieldValue.increment(totals.outputTokens),
+      caseCount: FieldValue.increment(saved ? 1 : 0),
+      // 조작된 로컬 판결을 더 이상 정상 결과로 저장하지 않는다.
+      fallbackCount: FieldValue.increment(0),
+      firestoreReads: FieldValue.increment(4),
+      firestoreWrites: FieldValue.increment(saved ? 3 : 1),
+      functionInvocations: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.error('usage log failed:', err);
+  }
 }
 
 exports.generateTrial = onCall({
@@ -406,8 +397,6 @@ exports.generateTrial = onCall({
     return true;
   });
 
-  // 상태가 processing이라는 사실만으로는 이 호출이 잠금을 획득했다는 뜻이 아니다.
-  // 동시 호출 중 트랜잭션에서 pending -> processing 변경을 수행한 단 하나만 AI를 호출한다.
   if (!acquiredProcessingLock) {
     const latest = await caseRef.get();
     return { success: true, skipped: latest.data()?.status || 'unknown' };
@@ -421,23 +410,29 @@ exports.generateTrial = onCall({
   const modelNames = [...new Set([configured, ...DEFAULT_MODELS].filter(Boolean))];
   const apiKey = cleanText(geminiKey.value(), 500);
   const totals = { attempts: 0, successfulResponses: 0, inputTokens: 0, outputTokens: 0 };
+  let saved = false;
+
+  try {
+    // 사용자·전체 일일 한도는 모델 재시도 횟수가 아니라 재판 요청 1건당 한 번만 예약한다.
+    await reserveAiRequest(uid, 'trial', settings);
+  } catch (err) {
+    await caseRef.update({
+      status: 'pending',
+      courtStage: 'filed',
+      errorMessage: FieldValue.delete(),
+      aiErrorCode: FieldValue.delete(),
+      processingStartedAt: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp()
+    }).catch(() => null);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError('resource-exhausted', cleanText(err?.message, 300) || 'AI 사용 한도를 확인할 수 없습니다.');
+  }
 
   let data = null;
   let usedModel = '';
   let lastError = null;
-  let quotaAvailable = true;
-  let saved = false;
 
-  // 사용자·전체 일일 한도는 모델 재시도 횟수가 아니라 재판 요청 1건당 한 번만 예약한다.
-  try {
-    await reserveAiRequest(uid, 'trial', settings);
-  } catch (err) {
-    quotaAvailable = false;
-    lastError = err;
-    console.warn('generateTrial AI quota reservation failed; using local fallback:', safeErrorCode(err));
-  }
-
-  for (let attempt = 0; quotaAvailable && attempt < modelNames.length; attempt += 1) {
+  for (let attempt = 0; attempt < modelNames.length; attempt += 1) {
     const modelName = modelNames[attempt];
     try {
       totals.attempts += 1;
@@ -445,10 +440,31 @@ exports.generateTrial = onCall({
       totals.successfulResponses += 1;
       totals.inputTokens += Number(response.usageMetadata.promptTokenCount || 0);
       totals.outputTokens += Number(response.usageMetadata.candidatesTokenCount || 0);
+
       const candidate = normalizeResult(safeJson(response.text), description);
       if (!hasRequiredSections(candidate)) {
         throw Object.assign(new Error('필수 문서가 누락되었습니다.'), { code: 'OUTPUT_INCOMPLETE' });
       }
+
+      const generatedSafety = inspectContent([
+        candidate.caseTitle,
+        candidate.reception,
+        candidate.investigation,
+        candidate.plaintiffArg,
+        candidate.defendantArg,
+        candidate.verdict
+      ].filter(Boolean).join('\n'));
+      if (!generatedSafety.safe) {
+        throw Object.assign(new Error(generatedSafety.message || 'AI 출력 안전검사 실패'), {
+          code: `UNSAFE_AI_OUTPUT_${String(generatedSafety.code || 'UNKNOWN').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`
+        });
+      }
+
+      const groundingCode = ungroundedOutputCode(candidate, description);
+      if (groundingCode) {
+        throw Object.assign(new Error('입력에 없는 조사·증거 내용이 생성되었습니다.'), { code: groundingCode });
+      }
+
       data = candidate;
       usedModel = modelName;
       break;
@@ -461,36 +477,26 @@ exports.generateTrial = onCall({
         status: err?.httpStatus || null,
         message: cleanText(err?.message, 500)
       });
-      if (['API_KEY_MISSING', 'API_KEY_INVALID', 'API_KEY_FORBIDDEN', 'resource-exhausted'].includes(safeErrorCode(err))) break;
+      if (['API_KEY_MISSING', 'API_KEY_INVALID', 'API_KEY_FORBIDDEN', 'QUOTA_EXCEEDED'].includes(safeErrorCode(err))) break;
     }
   }
 
-  let fallbackCode = data ? '' : safeErrorCode(lastError);
-  if (!data) data = buildLocalFallback(description, judge, grievanceIndex, fallbackCode);
-
-  // 모델 출력도 공개·저장 전에 다시 검사한다. 문제가 있으면 검증 가능한 로컬 판결로 대체한다.
-  const generatedSafety = inspectContent([
-    data.caseTitle,
-    data.reception,
-    data.investigation,
-    data.plaintiffArg,
-    data.defendantArg,
-    data.verdict
-  ].filter(Boolean).join('\n'));
-  if (!generatedSafety.safe) {
-    fallbackCode = `UNSAFE_AI_OUTPUT_${String(generatedSafety.code || 'UNKNOWN').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
-    data = buildLocalFallback(description, judge, grievanceIndex, fallbackCode);
-    usedModel = '';
+  if (!data) {
+    const code = safeErrorCode(lastError);
+    const message = code.startsWith('UNSUPPORTED_')
+      ? 'AI가 입력에 없는 사실을 만들어 판결문을 폐기했습니다. 다시 시도해 주세요.'
+      : 'AI 판결 생성에 실패했습니다. 잠시 후 같은 사건으로 다시 시도해 주세요.';
+    await restoreRetryableCase(caseRef, code, message);
+    await logUsage(totals, false);
+    throw new HttpsError('unavailable', message);
   }
 
   const finalTitle = normalizeCaseTitle(data.caseTitle, description);
-  const aiSource = usedModel ? 'gemini-rest' : 'local-case-fallback';
 
   try {
     const batch = db.batch();
     batch.set(resultRef, {
       source: 'user',
-      // 공개 결과 문서는 문서 단위로 읽히므로 인증 UID를 저장하지 않는다.
       userId: FieldValue.delete(),
       isPublic: c.isPublic === true,
       docketNumber: c.docketNumber || '',
@@ -504,7 +510,6 @@ exports.generateTrial = onCall({
       judgeIcon: judge.icon,
       judgeStyle: judge.style,
       grievanceIndex,
-      // 민심소가 'AI 판결 vs 민심'을 비교하려면 승패가 문서에 남아야 한다.
       winner: data.winner,
       tags: Array.isArray(data.tags) ? data.tags : [],
       reception: data.reception,
@@ -513,12 +518,14 @@ exports.generateTrial = onCall({
       defendantArg: data.defendantArg,
       verdict: data.verdict,
       sentence: '',
-      aiSource,
-      aiModel: usedModel || '',
-      aiFallbackReason: fallbackCode || '',
+      aiSource: 'gemini-rest',
+      aiModel: usedModel,
+      aiFallbackReason: '',
+      // 기존 검증 도구와 공개 데이터 계약을 유지한다.
       promptVersion: 'verdict-v2-permissive-comedy',
       contentSafetyStatus: 'passed',
       contentSafetyCheckedAt: FieldValue.serverTimestamp(),
+      groundingStatus: 'input-grounded',
       reactionTotal: 0,
       commentCount: 0,
       courtStage: 'sentenced',
@@ -541,39 +548,15 @@ exports.generateTrial = onCall({
       errorMessage: FieldValue.delete(),
       aiErrorCode: FieldValue.delete()
     });
+
     await batch.commit();
     saved = true;
   } catch (err) {
     console.error('generateTrial save failed:', err);
-    await caseRef.update({
-      status: 'error',
-      courtStage: 'error',
-      errorMessage: '판결문 저장 중 오류가 발생했습니다. 같은 사건으로 다시 작성해 주세요.',
-      aiErrorCode: 'FIRESTORE_SAVE_FAILED',
-      updatedAt: FieldValue.serverTimestamp(),
-      processingStartedAt: FieldValue.delete()
-    }).catch(() => null);
+    await restoreRetryableCase(caseRef, 'FIRESTORE_SAVE_FAILED', '판결문 저장 중 오류가 발생했습니다. 같은 사건으로 다시 작성해 주세요.');
     throw new HttpsError('unavailable', '판결문 저장 중 오류가 발생했습니다.');
   } finally {
-    try {
-      const today = kstDateKey();
-      await db.doc(`usage_stats/daily_${today}`).set({
-        date: today,
-        // 실제 외부 API 호출 시도는 실패 응답도 포함한다.
-        geminiRequests: FieldValue.increment(totals.attempts),
-        geminiSuccessfulResponses: FieldValue.increment(totals.successfulResponses),
-        geminiInputTokens: FieldValue.increment(totals.inputTokens),
-        geminiOutputTokens: FieldValue.increment(totals.outputTokens),
-        caseCount: FieldValue.increment(saved ? 1 : 0),
-        fallbackCount: FieldValue.increment(saved && !usedModel ? 1 : 0),
-        firestoreReads: FieldValue.increment(4),
-        firestoreWrites: FieldValue.increment(3),
-        functionInvocations: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-    } catch (err) {
-      console.error('usage log failed:', err);
-    }
+    await logUsage(totals, saved);
   }
 
   return {
@@ -581,6 +564,6 @@ exports.generateTrial = onCall({
     caseTitle: finalTitle,
     judgeType: judge.type,
     grievanceIndex,
-    model: usedModel || 'local-case-fallback'
+    model: usedModel
   };
 });
