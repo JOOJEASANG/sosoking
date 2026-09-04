@@ -90,8 +90,10 @@ const trialReservations = trial.match(/reserveAiRequest\(uid, 'trial', settings\
 if (trialReservations.length !== 1) {
   errors.push(`functions/generate-trial-lite.js: trial quota must be reserved exactly once per operation, found ${trialReservations.length}`);
 }
-if (!trial.includes('for (let attempt = 0; quotaAvailable && attempt < modelNames.length')) {
-  errors.push('functions/generate-trial-lite.js: model retries are not gated by a single quota reservation');
+const trialReservationIndex = trial.indexOf("await reserveAiRequest(uid, 'trial', settings)");
+const trialRetryLoopIndex = trial.indexOf('for (let attempt = 0; attempt < modelNames.length');
+if (trialReservationIndex < 0 || trialRetryLoopIndex < 0 || trialReservationIndex > trialRetryLoopIndex) {
+  errors.push('functions/generate-trial-lite.js: model retries must occur only after the single quota reservation');
 }
 if (!trial.includes('totals.attempts += 1') || !trial.includes('geminiRequests: FieldValue.increment(totals.attempts)')) {
   errors.push('functions/generate-trial-lite.js: failed Gemini attempts are not included in usage accounting');
