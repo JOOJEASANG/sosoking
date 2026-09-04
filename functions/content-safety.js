@@ -33,13 +33,34 @@ const PII_PATTERNS = [
     code: 'person-name-labeled',
     pattern: /(?:성명|실명|이름|본명|피해자|가해자|원고|피고)\s*[:：]\s*[가-힣]{2,4}(?=\s|$|[,.!?])/,
     message: '실명으로 보이는 이름은 입력하지 말아 주세요.'
-  },
-  {
-    code: 'person-name-honorific',
-    pattern: /(?:^|\s)[가-힣]{2,4}\s*(?:씨|님|군|양)(?:은|는|이|가|을|를|에게|께서|와|과|도|의)?(?=\s|$|[,.!?])/,
-    message: '실명으로 보이는 이름은 입력하지 말아 주세요.'
   }
 ];
+
+const HONORIFIC_NAME_PATTERN = /(?:^|\s)([가-힣]{2,4})\s*(씨|님|군|양)(?:은|는|이|가|을|를|에게|께서|와|과|도|의)?(?=\s|$|[,.!?])/g;
+
+// '님'은 사람 이름뿐 아니라 직책·관계 호칭에 매우 자주 붙는다.
+// 아래 일반 호칭은 실명으로 오인하지 않고 허용한다.
+const COMMON_NIM_STEMS = new Set([
+  '사장', '점장', '원장', '회장', '대표', '이사', '과장', '부장', '팀장', '실장', '대리', '주임',
+  '선생', '교수', '교장', '교감', '강사', '코치', '감독', '기사', '의사', '간호사', '약사', '변호사',
+  '판사', '검사', '경찰', '경찰관', '공무원', '직원', '매니저', '담당자', '관리자', '고객', '회원',
+  '주인', '손님', '부모', '아버', '어머', '장인', '장모', '사모', '목사', '신부', '스님', '선배', '후배',
+  '친구', '독자', '작가', '하느', '하나', '부처'
+]);
+
+// '씨'가 사람 이름이 아닌 단어 일부인 대표적인 경우.
+const COMMON_SSI_STEMS = new Set(['아저', '아가']);
+
+function hasLikelyPersonalNameHonorific(text) {
+  for (const match of text.matchAll(HONORIFIC_NAME_PATTERN)) {
+    const stem = match[1];
+    const honorific = match[2];
+    if (honorific === '님' && COMMON_NIM_STEMS.has(stem)) continue;
+    if (honorific === '씨' && COMMON_SSI_STEMS.has(stem)) continue;
+    return true;
+  }
+  return false;
+}
 
 const HIGH_RISK_PATTERNS = [
   {
@@ -85,6 +106,15 @@ function inspectContent(value, { allowHighRisk = false } = {}) {
     if (item.pattern.test(text)) {
       return { safe: false, category: 'pii', code: item.code, message: item.message };
     }
+  }
+
+  if (hasLikelyPersonalNameHonorific(text)) {
+    return {
+      safe: false,
+      category: 'pii',
+      code: 'person-name-honorific',
+      message: '실명으로 보이는 이름은 입력하지 말아 주세요.'
+    };
   }
 
   if (PROMPT_ATTACK_PATTERNS.some(pattern => pattern.test(text))) {
