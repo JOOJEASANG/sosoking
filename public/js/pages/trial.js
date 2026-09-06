@@ -508,6 +508,11 @@ function renderSteps(data) {
     .join('');
 }
 
+function formatListContent(text) {
+  // Insert newline before inline numbered items (e.g. "text 2. next" → "text\n2. next")
+  return text.replace(/([^\n])\s+(\d+\.\s)/g, '$1\n$2');
+}
+
 function documentCard(number, title, subtitle, content, verdict = false, character = null) {
   const charBadge = character?.name
     ? `<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 7px;border-radius:999px;border:1px solid rgba(201,168,76,.32);background:rgba(201,168,76,.08);font-size:10px;font-weight:900;color:var(--gold);margin-bottom:10px;">${escapeHtml(character.icon)} ${escapeHtml(character.name)}<span style="opacity:.6;font-weight:700;margin-left:2px;">· ${escapeHtml(character.role)}</span></div>`
@@ -522,6 +527,6 @@ function documentCard(number, title, subtitle, content, verdict = false, charact
       </div>
       <span class="badge badge-gold">${escapeHtml(subtitle)}</span>
     </div>
-    <div class="step-content" style="white-space:pre-line;line-height:1.9;">${escapeHtml(content)}</div>
+    <div class="step-content" style="white-space:pre-line;line-height:1.9;">${escapeHtml(formatListContent(content))}</div>
   </section>`;
 }
