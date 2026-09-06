@@ -12,6 +12,7 @@ const APP_SHELL = [
   '/css/sans-font.css?v=20260729-sans-font-1',
   '/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1',
   '/css/jury.css?v=20260830-final-audit-1',
+  '/css/animations.css?v=20260906-anim-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
   '/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1',
   '/js/document-display-guard.js?v=20260802-original-button-layout-1',

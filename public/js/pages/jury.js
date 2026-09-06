@@ -297,7 +297,7 @@ function tallyHtml(counts, total) {
   return `<div class="jury-tally">${['plaintiff', 'defendant', 'both'].map(side => {
     const count = Math.max(0, Number(counts?.[side] || 0));
     const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-    return `<div class="jury-tally-row"><span>${SIDE_LABEL[side]}</span><span class="jury-tally-track"><i style="width:${percent}%"></i></span><span class="jury-tally-value">${percent}% · ${count}표</span></div>`;
+    return `<div class="jury-tally-row"><span>${SIDE_LABEL[side]}</span><span class="jury-tally-track"><i class="jury-tally-bar" style="width:${percent}%"></i></span><span class="jury-tally-value">${percent}% · ${count}표</span></div>`;
   }).join('')}</div>`;
 }
 
@@ -324,7 +324,7 @@ async function revealVerdict(container, slot, caseId, data, mySide, { recordScor
   slot.innerHTML = `
     <div class="card jury-card">
       <div class="jury-case-title">${escapeHtml(data.caseTitle || '생활분쟁 사건')}</div>
-      <span class="jury-verdict-badge${agreed ? ' jury-verdict-agree' : ''}">${comparable ? (agreed ? '🎯 재판부 판결과 일치!' : '👀 재판부와 다른 선택') : '⚖️ AI 판결 공개'}</span>
+      <span class="jury-verdict-badge${agreed ? ' jury-verdict-agree' : (comparable ? ' jury-verdict-miss' : '')}">${comparable ? (agreed ? '🎯 재판부 판결과 일치!' : '👀 재판부와 다른 선택') : '⚖️ AI 판결 공개'}</span>
       <p class="jury-reveal-line">내 선택: <strong>${SIDE_LABEL[mySide]}</strong></p>
       ${comparable ? `<p class="jury-reveal-line">AI 재판부: <strong>${SIDE_LABEL[winner]}</strong></p>` : ''}
       ${verdictExcerpt(data)}
