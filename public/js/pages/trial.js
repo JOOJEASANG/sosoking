@@ -273,6 +273,7 @@ export async function renderTrial(container, caseId) {
     </div>`;
 
   let visualStepIndex = 0;
+  let waitCycleCount = 0;
   let unsubscribeCase = null;
   let unsubscribeResult = null;
 
@@ -312,14 +313,32 @@ export async function renderTrial(container, caseId) {
 
   showVisualStage('filed', true);
 
+  const WAIT_CYCLE_MESSAGES = [
+    '재판부 숙의가 길어지고 있습니다. 판결문 마지막 문구를 다듬는 중입니다.',
+    '판사가 사건 맞춤형 생활형 처분을 최종 확정하는 중입니다.',
+    'AI 판사가 서명란을 채우고 있습니다. 완료되면 바로 이동합니다.',
+    '주문과 판단이유가 완성 직전입니다. 잠시만 더 기다려주세요.',
+  ];
+
   const progressTimer = setInterval(() => {
     if (!container.isConnected) {
       clearInterval(progressTimer);
       return;
     }
-    if (visualStepIndex < PROGRESS_STAGES.length - 1) visualStepIndex += 1;
-    showVisualStage(PROGRESS_STAGES[visualStepIndex]);
-  }, 3200);
+    if (visualStepIndex < PROGRESS_STAGES.length - 1) {
+      visualStepIndex += 1;
+      showVisualStage(PROGRESS_STAGES[visualStepIndex]);
+    } else {
+      const el = document.getElementById('loading-text');
+      if (el) {
+        const judge = assignedJudge(caseId, caseData?.judgeType || '');
+        const base = progressMessage('sentenced', judge);
+        const extra = WAIT_CYCLE_MESSAGES[waitCycleCount % WAIT_CYCLE_MESSAGES.length];
+        el.textContent = `${base}\n\n${extra}`;
+        waitCycleCount += 1;
+      }
+    }
+  }, 2000);
 
   const stop = () => {
     clearInterval(progressTimer);
