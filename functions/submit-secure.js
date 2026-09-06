@@ -10,6 +10,8 @@ const DEFAULT_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
+const CHAR_NAMES = ['김하준','이서연','박도윤','최지우','정민준','윤서현','강예진','장현우','조나연','임지민','한승현','오민호','신지은','류하은','황성민','송채원','백준혁','노은서','석민재','구다은'];
+const RELATION_LABELS = ['직장동료','룸메이트','이웃','친구','선후배','연인','가족','온라인 지인'];
 
 function textValue(value, maxLen) {
   return String(value || '')
@@ -49,6 +51,15 @@ function makeDocket(today) {
 function randomNickname() {
   return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)]
     + NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
+}
+
+function randomCharName(exclude = '') {
+  const pool = exclude ? CHAR_NAMES.filter(n => n !== exclude) : CHAR_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function randomRelation() {
+  return RELATION_LABELS[Math.floor(Math.random() * RELATION_LABELS.length)];
 }
 
 function containsBannedWord(text, bannedWords = []) {
@@ -112,6 +123,9 @@ exports.submitCase = onCall({
 
   const today = kstDateKey();
   const docketNumber = makeDocket(today);
+  const plaintiffName = randomCharName();
+  const defendantName = randomCharName(plaintiffName);
+  const relation = randomRelation();
   const caseRef = db.collection('cases').doc();
   const caseId = caseRef.id;
   const limitRef = db.doc(`rate_limits/${uid}`);
@@ -146,6 +160,9 @@ exports.submitCase = onCall({
       caseTitle: 'AI 사건명 작성 중',
       caseDescription: desc,
       nickname: profileNickname || randomNickname(),
+      plaintiffName,
+      defendantName,
+      relation,
       status: 'pending',
       // 공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.
       isPublic,

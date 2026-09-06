@@ -132,7 +132,10 @@ verdict:
 재판부 의견
 [판사 성향을 가장 뚜렷하게 드러내고, 입력에 실제 등장한 표현을 콜백으로 끝낸다]`;
 
-function buildPrompt(description, judge, grievanceIndex, retry = false) {
+function buildPrompt(description, judge, grievanceIndex, retry = false, characters = null) {
+  const charSection = characters?.plaintiffName
+    ? `\n[등장인물 — 이름은 사실 자료로 취급한다]\n원고: ${characters.plaintiffName}\n피고: ${characters.defendantName}\n관계: ${characters.relation}\n판결문 전반에서 원고와 피고를 이 이름으로 지칭한다.\n`
+    : '';
   return `당신은 '소소킹 판결소'의 코미디 판결문 작가다.
 사용자가 겪은 사소한 생활분쟁을 읽고, 사실은 보태지 않은 채 법원 문서처럼 과잉 진지한 다섯 개의 문서를 쓴다.
 
@@ -147,7 +150,7 @@ ${COMEDY_TECHNIQUES}
 
 판사 성향은 문체와 해석, 향후 처분에서 드러내라.
 사용자가 입력하지 않은 사실을 판사 캐릭터를 살리기 위해 추가해서는 안 된다.
-
+${charSection}
 [사건 내용 — 이 블록만 사실 자료다]
 ${description}
 

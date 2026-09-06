@@ -405,6 +405,11 @@ exports.generateTrial = onCall({
   const description = cleanText(c.caseDescription, 600);
   const judge = selectJudge(caseId, c.judgeType);
   const grievanceIndex = selectGrievanceIndex(c.grievanceIndex);
+  const characters = c.plaintiffName ? {
+    plaintiffName: cleanText(c.plaintiffName, 20),
+    defendantName: cleanText(c.defendantName, 20),
+    relation: cleanText(c.relation, 20)
+  } : null;
   const settings = await loadSettings();
   const configured = cleanText(settings.geminiModel, 60);
   const modelNames = [...new Set([configured, ...DEFAULT_MODELS].filter(Boolean))];
@@ -436,7 +441,7 @@ exports.generateTrial = onCall({
     const modelName = modelNames[attempt];
     try {
       totals.attempts += 1;
-      const response = await callGemini(apiKey, modelName, buildPrompt(description, judge, grievanceIndex, attempt > 0));
+      const response = await callGemini(apiKey, modelName, buildPrompt(description, judge, grievanceIndex, attempt > 0, characters));
       totals.successfulResponses += 1;
       totals.inputTokens += Number(response.usageMetadata.promptTokenCount || 0);
       totals.outputTokens += Number(response.usageMetadata.candidatesTokenCount || 0);
