@@ -4,7 +4,7 @@ import { startIdleSessionTimeout } from './session-timeout.js?v=20260831-idle-ti
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
 import { renderHome } from './pages/home.js?v=20260830-final-blind-1';
 import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';
-import { renderTrial } from './pages/trial.js?v=20260830-stage-animation-1';
+import { renderTrial } from './pages/trial.js?v=20260906-drama-1';
 import { renderResult } from './pages/result-comments.js?v=20260830-final-audit-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260830-final-blind-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
@@ -22,6 +22,28 @@ import { showToast } from './components/toast.js?v=20260630-3';
 
 let routeSequence = 0;
 let routeQueued = false;
+
+let _cardObserver = null;
+function initCardObserver() {
+  if (_cardObserver) _cardObserver.disconnect();
+  _cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      el.style.transitionDelay = `${i * 55}ms`;
+      el.classList.add('anim-card-in');
+      _cardObserver.unobserve(el);
+    });
+  }, { threshold: 0.08 });
+}
+
+function observeCards(container) {
+  if (!_cardObserver) initCardObserver();
+  container.querySelectorAll('.card:not(.anim-card-in)').forEach(el => {
+    el.classList.add('anim-card');
+    _cardObserver.observe(el);
+  });
+}
 
 function decodeRouteValue(value) {
   try {
@@ -96,8 +118,20 @@ async function route() {
   const hash = normalizedRoute();
   if (hash === '#/auth' && await redirectAdminAccountRoute()) return;
 
+  // 나가는 페이지 fade-out
+  const outgoing = document.getElementById('page-content');
+  if (outgoing && outgoing.firstChild) {
+    outgoing.style.opacity = '0';
+    outgoing.style.transform = 'translateY(-6px)';
+    await new Promise(r => setTimeout(r, 190));
+    if (sequence !== routeSequence) return;
+  }
+
   const content = freshContentHost();
   if (!content) return;
+  // 들어오는 페이지 초기 상태 (숨김)
+  content.style.opacity = '0';
+  content.style.transform = 'translateY(10px)';
   window.scrollTo(0, 0);
 
   try {
@@ -129,6 +163,14 @@ async function route() {
     if (sequence !== routeSequence || !content.isConnected) return;
     normalizePageHeaderIcons(content, hash);
     renderThemeToggle();
+    // 들어오는 페이지 fade-in + 카드 입장
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        content.style.opacity = '';
+        content.style.transform = '';
+        observeCards(content);
+      });
+    });
   } catch (error) {
     console.error('route render failed:', { hash, error });
     if (sequence === routeSequence && content.isConnected) {
@@ -136,6 +178,12 @@ async function route() {
       renderNav(hash);
       normalizePageHeaderIcons(content, hash);
       renderThemeToggle();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          content.style.opacity = '';
+          content.style.transform = '';
+        });
+      });
     }
   }
 }

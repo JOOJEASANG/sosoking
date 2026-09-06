@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260903-owner-public-vote-1';
+const CACHE_NAME = 'sosoking-app-v20260906-drama-1';
 
 const APP_SHELL = [
   '/',
@@ -12,11 +12,12 @@ const APP_SHELL = [
   '/css/sans-font.css?v=20260729-sans-font-1',
   '/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1',
   '/css/jury.css?v=20260830-final-audit-1',
+  '/css/animations.css?v=20260906-anim-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
   '/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1',
   '/js/document-display-guard.js?v=20260802-original-button-layout-1',
   '/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2',
-  '/js/app.js?v=20260903-owner-public-vote-1',
+  '/js/app.js?v=20260906-drama-1',
   '/js/session-timeout.js?v=20260831-idle-timeout-1',
   '/js/result-link-share.js?v=20260811-result-share-1',
   '/js/submit-draft-guard.js?v=20260807-submit-draft-1',
@@ -27,7 +28,7 @@ const APP_SHELL = [
   '/js/admin-access.js?v=20260730-admin-redirect-1',
   '/js/pages/home.js?v=20260830-final-blind-1',
   '/js/pages/submit.js?v=20260830-final-audit-1',
-  '/js/pages/trial.js?v=20260830-stage-animation-1',
+  '/js/pages/trial.js?v=20260906-drama-1',
   '/js/pages/result-comments.js?v=20260830-final-audit-1',
   '/js/pages/result-court.js?v=20260829-arena-1',
   '/js/pages/result.js?v=20260829-jury-content-1',

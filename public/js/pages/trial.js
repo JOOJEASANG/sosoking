@@ -226,8 +226,8 @@ function courtSceneHtml() {
         <div class="trial-gavel">🔨</div>
       </div>
       <div class="trial-parties" aria-hidden="true">
-        <div class="trial-party" data-side="plaintiff"><div class="trial-bubble">진술 중</div><span class="trial-party-icon">🙋</span><span class="trial-party-label">원고석</span></div>
-        <div class="trial-party" data-side="defendant"><div class="trial-bubble">반론 중</div><span class="trial-party-icon">🙅</span><span class="trial-party-label">피고석</span></div>
+        <div class="trial-party" data-side="plaintiff"><div class="trial-bubble">진술 중</div><span class="trial-party-icon">🙋</span><span class="trial-party-label" id="party-plaintiff-label">원고</span></div>
+        <div class="trial-party" data-side="defendant"><div class="trial-bubble">반론 중</div><span class="trial-party-icon">🙅</span><span class="trial-party-label" id="party-defendant-label">피고</span></div>
       </div>
       <div class="trial-scene-caption">
         <div id="trial-scene-title" class="trial-scene-title">접수 완료 대기</div>
@@ -353,6 +353,10 @@ export async function renderTrial(container, caseId) {
   unsubscribeCase = onSnapshot(doc(db, 'cases', caseId), snap => {
     if (!snap.exists()) return;
     caseData = snap.data();
+    const pLabel = document.getElementById('party-plaintiff-label');
+    const dLabel = document.getElementById('party-defendant-label');
+    if (pLabel && caseData.plaintiffName) pLabel.textContent = caseData.plaintiffName;
+    if (dLabel && caseData.defendantName) dLabel.textContent = caseData.defendantName;
     const actualStage = stageFor(caseData.courtStage || caseData.status);
     updateDocket(caseData, caseId, PROGRESS_STAGES[visualStepIndex]);
     showVisualStage(actualStage);
@@ -461,23 +465,37 @@ function renderSteps(data) {
   const target = document.getElementById('steps-container');
   if (!target) return;
 
+  const judgeType = caseData?.judgeType;
+  const judgeEntry = judgeType ? JUDGES.find(([t]) => t === judgeType) : null;
+  const pName = caseData?.plaintiffName || null;
+  const dName = caseData?.defendantName || null;
+
   const sections = [
-    ['01', '사건접수', '사건접수보고서', data.reception],
-    ['02', '수사보고', '정황 및 증거 검토', data.investigation],
-    ['03', '원고측 변론', '청구취지 및 주장요지', data.plaintiffArg],
-    ['04', '피고측 변론', '답변취지 및 항변요지', data.defendantArg],
-    ['05', '재판부 판결', '주문 및 판단이유', data.verdict]
+    ['01', '사건접수', '사건접수보고서', data.reception, false, null],
+    ['02', '수사보고', '정황 및 증거 검토', data.investigation, false,
+      { icon: '🔍', name: '수사관', role: '수사보고' }],
+    ['03', '원고측 변론', '청구취지 및 주장요지', data.plaintiffArg, false,
+      pName ? { icon: '🗣️', name: pName, role: '원고' } : null],
+    ['04', '피고측 변론', '답변취지 및 항변요지', data.defendantArg, false,
+      dName ? { icon: '🛡️', name: dName, role: '피고' } : null],
+    ['05', '재판부 판결', '주문 및 판단이유', data.verdict, true,
+      judgeEntry ? { icon: judgeEntry[1], name: `${judgeType} 판사`, role: '재판부 판결' } : null]
   ];
 
   target.innerHTML = sections
     .filter(([, , , content]) => content)
-    .map(([number, title, subtitle, content], index) => documentCard(number, title, subtitle, content, index === 4))
+    .map(([number, title, subtitle, content, verdict, character]) =>
+      documentCard(number, title, subtitle, content, verdict, character))
     .join('');
 }
 
-function documentCard(number, title, subtitle, content, verdict = false) {
+function documentCard(number, title, subtitle, content, verdict = false, character = null) {
+  const charBadge = character?.name
+    ? `<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 7px;border-radius:999px;border:1px solid rgba(201,168,76,.32);background:rgba(201,168,76,.08);font-size:10px;font-weight:900;color:var(--gold);margin-bottom:10px;">${escapeHtml(character.icon)} ${escapeHtml(character.name)}<span style="opacity:.6;font-weight:700;margin-left:2px;">· ${escapeHtml(character.role)}</span></div>`
+    : '';
   return `<section class="card court-document step-card visible" style="margin-bottom:14px;padding:20px;position:relative;overflow:hidden;">
     ${verdict ? '<div class="verdict-stamp">판결</div>' : ''}
+    ${charBadge}
     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
       <div>
         <div style="font-size:10px;color:var(--gold);font-weight:900;letter-spacing:.14em;">DOCUMENT ${number}</div>
