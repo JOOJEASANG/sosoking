@@ -5,7 +5,7 @@ import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-acces
 import { renderHome } from './pages/home.js?v=20260830-final-blind-1';
 import { renderSubmit } from './pages/submit.js?v=20260906-list-fix-1';
 import { renderTrial } from './pages/trial.js?v=20260906-list-fix-1';
-import { renderResult } from './pages/result-comments.js?v=20260830-final-audit-1';
+import { renderResult } from './pages/result-comments.js?v=20260906-result-clean-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260830-final-blind-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';

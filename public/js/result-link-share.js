@@ -105,10 +105,12 @@ function installShareButton(page) {
     if (!(await ensurePublic(caseId, actions, button))) return;
     const title = page.querySelector('.result-cover h2')?.textContent?.trim() || '소소킹 판결';
     const judge = page.querySelector('.judge-name')?.textContent?.trim() || 'AI 판사';
+    const grievance = page.querySelector('.grievance-score strong')?.textContent?.trim();
+    const grievanceText = grievance ? ` · 억울지수 ${grievance}/10` : '';
     const url = `${location.origin}/result/${encodeURIComponent(caseId)}`;
     await shareOrCopy({
       title: `${title} · 소소킹 판결소`,
-      text: `⚖️ ${judge}가 내린 “${title}” 판결 결과를 확인해보세요.`,
+      text: `⚖️ ${judge}의 판결: “${title}”${grievanceText}\n소소킹 AI 생활법정에서 결과를 확인해보세요.`,
       url
     });
   });

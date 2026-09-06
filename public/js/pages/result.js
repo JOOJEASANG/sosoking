@@ -75,12 +75,24 @@ function regexEscape(value) {
 function normalizeReadableText(value) {
   return String(value || '')
     .replace(/\\n/g, '\n')
+    .replace(/([^\n])\s+(\d+\.\s)/g, '$1\n$2')
     .replace(/\r/g, '')
     .replace(/([.!?])(?=[가-힣A-Za-z0-9])/g, '$1 ')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n[ \t]+/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+function updatePageMeta(caseTitle, judgeType, grievanceIndex) {
+  const fullTitle = `${caseTitle} | 소소킹 판결소`;
+  const desc = `${judgeType} 판사의 AI 판결 · 억울지수 ${grievanceIndex}/10 · 소소킹 오락형 생활법정`;
+  document.title = fullTitle;
+  const set = (sel, val) => document.querySelector(sel)?.setAttribute('content', val);
+  set('meta[property="og:title"]', fullTitle);
+  set('meta[property="og:description"]', desc);
+  set('meta[name="twitter:title"]', fullTitle);
+  set('meta[name="twitter:description"]', desc);
 }
 
 function splitReadableParagraphs(value) {
@@ -220,6 +232,8 @@ export async function renderResult(container, caseId) {
     .map(tag => String(tag || '').trim())
     .filter(tag => /^[가-힣a-zA-Z0-9]{2,10}$/.test(tag))
     .slice(0, 5);
+
+  updatePageMeta(title, judgeType, grievanceIndex);
 
   const sections = [
     ['01', '사건접수', '사건접수보고서', 'reception', r.reception],

@@ -1,4 +1,4 @@
-import { renderResult as renderStyledResult } from './result-court.js?v=20260829-arena-1';
+import { renderResult as renderStyledResult } from './result-court.js?v=20260906-result-clean-1';
 import { db, auth, functions } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
