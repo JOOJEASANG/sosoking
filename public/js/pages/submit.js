@@ -114,7 +114,10 @@ export async function renderSubmit(container) {
     return;
   }
 
-  const settings = await loadSubmitSettings();
+  // Render immediately with defaults — no await before innerHTML to avoid blank screen
+  const settingsPromise = loadSubmitSettings();
+  const defaults = { dailyLimitEnabled: false, dailyLimit: DEFAULT_DAILY_LIMIT, cooldownSec: 45 };
+
   container.innerHTML = `
     <div>
       <div class="page-header">
@@ -157,10 +160,10 @@ export async function renderSubmit(container) {
             </div>
           </div>
 
-          <div class="disclaimer" style="margin-bottom:24px;">
+          <div class="disclaimer" style="margin-bottom:24px;" id="submit-disclaimer">
             <strong>⚠️ 접수 전 확인사항</strong><br>
-            · 하루 접수 한도: ${submissionLimitText(settings)}<br>
-            · 재접수 대기: <strong>${settings.cooldownSec}초</strong><br>
+            · 하루 접수 한도: ${submissionLimitText(defaults)}<br>
+            · 재접수 대기: <strong>${defaults.cooldownSec}초</strong><br>
             · 접수 원문은 작성자 본인에게만 공개하는 것을 원칙으로 합니다<br>
             · 실제 분쟁 해결이 아닌 AI 오락 콘텐츠이며 법적 효력이 없습니다
           </div>
@@ -169,6 +172,12 @@ export async function renderSubmit(container) {
         </form>
       </div>
     </div>`;
+
+  // Update disclaimer once real settings arrive (non-blocking)
+  settingsPromise.then(settings => {
+    const el = container.querySelector('#submit-disclaimer');
+    if (el) el.innerHTML = `<strong>⚠️ 접수 전 확인사항</strong><br>· 하루 접수 한도: ${submissionLimitText(settings)}<br>· 재접수 대기: <strong>${settings.cooldownSec}초</strong><br>· 접수 원문은 작성자 본인에게만 공개하는 것을 원칙으로 합니다<br>· 실제 분쟁 해결이 아닌 AI 오락 콘텐츠이며 법적 효력이 없습니다`;
+  }).catch(() => {});
 
   const descInput = container.querySelector('#case-desc');
   const counter = container.querySelector('#desc-count');

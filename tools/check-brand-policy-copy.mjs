@@ -70,7 +70,7 @@ if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index
 const app = read('public/js/app.js');
 for (const moduleUrl of [
   './pages/home.js?v=20260830-final-blind-1',
-  './pages/submit.js?v=20260830-final-audit-1',
+  './pages/submit.js?v=20260906-list-fix-1',
   './pages/policy.js?v=20260830-final-audit-1',
   './pages/guide.js?v=20260830-final-audit-1',
   './components/footer.js?v=20260729-brand-policy-1',
@@ -99,7 +99,7 @@ for (const asset of [
   '/js/pages/home.js?v=20260830-final-blind-1',
   '/js/pages/guide.js?v=20260830-final-audit-1',
   '/js/pages/policy.js?v=20260830-final-audit-1',
-  '/js/pages/submit.js?v=20260830-final-audit-1',
+  '/js/pages/submit.js?v=20260906-list-fix-1',
   '/js/components/footer.js?v=20260729-brand-policy-1',
   '/js/components/nav.js?v=20260829-arena-1'
 ]) requireText(sw, asset, 'public/sw.js');
