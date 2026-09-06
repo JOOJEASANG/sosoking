@@ -130,7 +130,7 @@ expect(Boolean(appVersion) && sw.includes(`/js/app.js?v=${appVersion}`),
 const resultModuleVersion = app.match(/\.\/pages\/result-comments\.js\?v=([^"']+)/)?.[1] || '';
 expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js?v=${resultModuleVersion}`),
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
-expect(sw.includes('/js/pages/result-court.js?v=20260829-arena-1')
+expect(sw.includes('/js/pages/result-court.js?v=20260906-result-clean-1')
   && sw.includes('/js/pages/discussion.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/home.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/hall.js?v=20260830-final-blind-1')
