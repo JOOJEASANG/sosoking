@@ -86,7 +86,7 @@ for (const required of [
 
 const trialGenerator = read('functions/generate-trial-lite.js') + read('functions/verdict-prompt.js');
 for (const required of [
-  'function buildPrompt(description, judge, grievanceIndex, retry = false)',
+  'function buildPrompt(description, judge, grievanceIndex, retry = false, characters = null)',
   "promptVersion: 'verdict-v2-permissive-comedy'",
   'reception:',
   'investigation:',
