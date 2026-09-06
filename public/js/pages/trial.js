@@ -419,10 +419,13 @@ export async function renderTrial(container, caseId) {
 
   window._pageCleanup = stop;
 
-  try {
-    const generateTrial = httpsCallable(functions, 'generateTrial');
-    await generateTrial({ caseId });
-  } catch (e) {
+  // AI 생성은 오래 걸리므로 여기서 await하지 않는다.
+  // 라우터는 renderTrial이 끝날 때까지 들어오는 페이지를 숨겨두기 때문에,
+  // 이 호출을 기다리면 재판 진행 애니메이션이 생성 내내 빈 화면으로 남는다.
+  // 결과는 위의 onSnapshot이 받아 판결문으로 이동시킨다.
+  const generateTrial = httpsCallable(functions, 'generateTrial');
+  generateTrial({ caseId }).catch(e => {
+    if (!container.isConnected) return;
     console.error(e);
     const msg = `${e?.code || ''} ${e?.message || ''}`.toLowerCase();
     if (msg.includes('deadline') || msg.includes('timeout')) {
@@ -430,7 +433,7 @@ export async function renderTrial(container, caseId) {
       return;
     }
     showError(e?.message || 'AI 판결문 생성에 실패했습니다.');
-  }
+  });
 }
 
 function stageFor(stage) {
