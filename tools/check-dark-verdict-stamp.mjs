@@ -23,7 +23,7 @@ if (!index.includes('/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp
 
 const trialGenerator = read('functions/generate-trial-lite.js') + read('functions/verdict-prompt.js');
 for (const required of [
-  'function buildPrompt(description, judge, grievanceIndex, retry = false)',
+  'function buildPrompt(description, judge, grievanceIndex, retry = false, characters = null)',
   'reception:',
   'investigation:',
   'plaintiffArg:',
