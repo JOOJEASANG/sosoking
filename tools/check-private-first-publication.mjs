@@ -32,7 +32,7 @@ if (submitPage.includes('id="is-public"') || submitPage.includes("document.getEl
 }
 
 const app = read('public/js/app.js');
-if (!app.includes("import { renderSubmit } from './pages/submit.js?v=20260830-final-audit-1';")) {
+if (!app.includes("import { renderSubmit } from './pages/submit.js?v=20260906-list-fix-1';")) {
   errors.push('public/js/app.js: canonical private-first submit page is not active');
 }
 for (const retired of ['submit-guard.js', 'submit-court.js']) {
@@ -48,7 +48,7 @@ if (!appVersion) {
 const worker = read('public/sw.js');
 for (const required of [
   `/js/app.js?v=${appVersion}`,
-  '/js/pages/submit.js?v=20260830-final-audit-1'
+  '/js/pages/submit.js?v=20260906-list-fix-1'
 ]) {
   if (!worker.includes(required)) {
     errors.push(`public/sw.js: private-first canonical cache graph missing ${required}`);

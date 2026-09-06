@@ -17,7 +17,7 @@ for (const required of [
   "new MutationObserver(schedule).observe(document.body"
 ]) assert.ok(resultShare.includes(required), `판결 결과 공유 흐름 누락: ${required}`);
 
-const resultAsset = '/js/result-link-share.js?v=20260811-result-share-1';
+const resultAsset = '/js/result-link-share.js?v=20260906-result-clean-1';
 assert.ok(courtIndex.includes(resultAsset), '판결 결과 공유 모듈이 판결소에 연결되어야 합니다.');
 assert.ok(sw.includes(`'${resultAsset}'`), '판결 결과 공유 모듈이 service worker 캐시에 포함되어야 합니다.');
 

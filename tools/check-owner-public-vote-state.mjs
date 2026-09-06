@@ -40,7 +40,7 @@ if (appVersion && !sw.includes(`/js/app.js?v=${appVersion}`)) {
 if (appVersion && !sw.includes(`sosoking-app-v${appVersion}`)) {
   errors.push('public/sw.js: cache name does not match the active app version');
 }
-need(sw, '/js/pages/result-comments.js?v=20260830-final-audit-1',
+need(sw, '/js/pages/result-comments.js?v=20260906-result-clean-1',
   'public/sw.js: verdict module must remain in the refreshed app shell');
 
 if (errors.length) {
