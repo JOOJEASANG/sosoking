@@ -1,3 +1,6 @@
+import { db, functions } from '../firebase.js?v=20260729-auth-session-1';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 import { showToast } from '../components/toast.js?v=20260630-3';
 
@@ -47,13 +50,30 @@ function todayCase(deck) {
   return deck[n];
 }
 
-// 실시간 집계 전까지 보여줄 결정적 예시 분포 (베타).
-function sampleSplit(id) {
-  const h = hashString(`split:${id}`);
-  const b = 7 + (h % 8);            // 쌍방 7~14%
-  const p = 40 + ((h >> 4) % 21);   // 원고 40~60%
-  const d = Math.max(1, 100 - p - b);
-  return { p, d, b };
+// 실시간 여론: debate_polls/{caseId} 문서를 읽는다(공개 읽기, 서버만 쓰기).
+async function fetchPoll(caseId) {
+  try {
+    const snap = await getDoc(doc(db, 'debate_polls', caseId));
+    const data = snap.exists() ? snap.data() : {};
+    const src = data && typeof data.counts === 'object' && data.counts ? data.counts : {};
+    const counts = {
+      p: Math.max(0, Math.floor(Number(src.p) || 0)),
+      d: Math.max(0, Math.floor(Number(src.d) || 0)),
+      b: Math.max(0, Math.floor(Number(src.b) || 0))
+    };
+    return { counts, total: counts.p + counts.d + counts.b };
+  } catch (error) {
+    console.warn('debate poll load failed:', error?.code || error);
+    return { counts: { p: 0, d: 0, b: 0 }, total: 0 };
+  }
+}
+
+function bumpStreak() {
+  const dayKey = new Date().toDateString();
+  if (store.get(STREAK_DAY_KEY, null) !== dayKey) {
+    store.set(STREAK_KEY, store.get(STREAK_KEY, 0) + 1);
+    store.set(STREAK_DAY_KEY, dayKey);
+  }
 }
 
 function assignJudge(id) {
@@ -213,7 +233,7 @@ function paintCase(container, c) {
       <div class="debate-wrap">
         <div class="debate-daterail">
           <div class="d">오늘 <b>${escapeHtml(fmtDate.format(new Date()))}</b>의 토론${streak > 0 ? ` · 🔥 ${streak}일 연속` : ''}</div>
-          <span class="debate-beta">BETA · 로컬 집계</span>
+          <span class="debate-beta">🟢 실시간 집계</span>
         </div>
 
         <section class="debate-card" aria-live="polite">
@@ -227,7 +247,7 @@ function paintCase(container, c) {
           <div class="debate-crux"><span class="k">쟁점</span><span class="v">${escapeHtml(c.crux)}</span></div>
 
           <div class="debate-vote">
-            <p class="debate-vote-q">당신의 판단은? · 투표하면 여론이 공개됩니다</p>
+            <p class="debate-vote-q">당신의 판단은? · 투표하면 여론이 공개됩니다<br><span id="debate-live-count" style="color:var(--gold);"></span></p>
             <div class="debate-duo">
               <button class="dbtn p" type="button" data-s="p"><div class="s">원고 편</div><div class="l">${escapeHtml(c.plaintiff)}</div></button>
               <button class="dbtn d" type="button" data-s="d"><div class="s">피고 편</div><div class="l">${escapeHtml(c.defendant)}</div></button>
@@ -247,34 +267,54 @@ function paintCase(container, c) {
 
   container.querySelectorAll('.debate-vote [data-s]').forEach(btn =>
     btn.addEventListener('click', () => castVote(container, c, btn.dataset.s)));
-  if (voted) revealResults(container, c, voted, false);
   renderArchive(container, c);
+
+  fetchPoll(c.id).then(poll => {
+    if (!container.isConnected) return;
+    const teaser = container.querySelector('#debate-live-count');
+    if (teaser && !voted) {
+      teaser.textContent = poll.total > 0
+        ? `지금까지 ${poll.total.toLocaleString()}명이 판단했어요`
+        : '첫 투표자가 되어보세요';
+    }
+    if (voted) {
+      container.querySelectorAll('.debate-vote [data-s]').forEach(btn => { btn.disabled = true; });
+      revealResults(container, c, voted, poll, false);
+    }
+  });
 }
 
-function castVote(container, c, side) {
+async function castVote(container, c, side) {
   const votes = store.get(VOTES_KEY, {});
   if (votes[c.id]) return;
-  votes[c.id] = side;
-  store.set(VOTES_KEY, votes);
+  const buttons = container.querySelectorAll('.debate-vote [data-s]');
+  buttons.forEach(btn => { btn.disabled = true; });
 
-  const dayKey = new Date().toDateString();
-  const lastDay = store.get(STREAK_DAY_KEY, null);
-  if (lastDay !== dayKey) {
-    store.set(STREAK_KEY, store.get(STREAK_KEY, 0) + 1);
-    store.set(STREAK_DAY_KEY, dayKey);
+  try {
+    const call = httpsCallable(functions, 'castDebateVote');
+    const response = await call({ caseId: c.id, side });
+    if (!container.isConnected) return;
+    const poll = response.data?.poll || { counts: { p: 0, d: 0, b: 0 }, total: 0 };
+    const savedSide = response.data?.side || side;
+    votes[c.id] = savedSide;
+    store.set(VOTES_KEY, votes);
+    bumpStreak();
+    revealResults(container, c, savedSide, poll, true);
+    showToast('투표 완료! 실시간 여론이 공개됐어요 ⚖️', 'success');
+  } catch (error) {
+    console.warn('debate vote failed:', error?.code || error);
+    buttons.forEach(btn => { btn.disabled = false; });
+    showToast(String(error?.message || '투표 중 오류가 발생했습니다.').replace('FirebaseError: ', ''), 'error');
   }
-  revealResults(container, c, side, true);
-  showToast('투표 완료! 여론이 공개됐어요 ⚖️', 'success');
 }
 
-function revealResults(container, c, side, animate) {
-  const base = sampleSplit(c.id);
-  // 내 선택 1표를 예시 분포에 살짝 반영
-  const raw = { p: base.p * 40, d: base.d * 40, b: base.b * 40 };
-  raw[side] += 40;
-  const total = raw.p + raw.d + raw.b;
-  const P = { p: Math.round(raw.p / total * 100), d: Math.round(raw.d / total * 100) };
-  P.b = Math.max(0, 100 - P.p - P.d);
+function revealResults(container, c, side, poll, animate) {
+  const counts = (poll && poll.counts) || { p: 0, d: 0, b: 0 };
+  const total = (poll && poll.total) || (counts.p + counts.d + counts.b) || 0;
+  const P = total > 0
+    ? { p: Math.round(counts.p / total * 100), d: Math.round(counts.d / total * 100) }
+    : { p: 0, d: 0 };
+  P.b = total > 0 ? Math.max(0, 100 - P.p - P.d) : 0;
 
   const top = P.p >= P.d && P.p >= P.b ? 'p' : (P.d >= P.b ? 'd' : 'b');
   const mine = P[side];
@@ -287,7 +327,7 @@ function revealResults(container, c, side, animate) {
   if (!box) return;
   box.hidden = false;
   box.innerHTML = `
-    <div class="debate-poll-label"><span>민심 현황</span><b>예시 분포 · 실시간 집계 준비 중</b></div>
+    <div class="debate-poll-label"><span>민심 현황 · 실시간 여론</span><b>총 ${total.toLocaleString()}명 참여</b></div>
     <div class="debate-splitbar" role="img" aria-label="원고 ${P.p}%, 피고 ${P.d}%, 쌍방 ${P.b}%">
       <div class="debate-seg p" style="width:${animate ? 0 : P.p}%">${P.p > 10 ? P.p + '%' : ''}</div>
       <div class="debate-seg d" style="width:${animate ? 0 : P.d}%">${P.d > 10 ? P.d + '%' : ''}</div>

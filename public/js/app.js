@@ -6,7 +6,8 @@ import { renderHome } from './pages/home.js?v=20260830-final-blind-1';
 import { renderSubmit } from './pages/submit.js?v=20260906-list-fix-1';
 import { renderTrial } from './pages/trial.js?v=20260906-trial-flow-2';
 import { renderResult } from './pages/result-comments.js?v=20260906-result-clean-1';
-import { renderDebate } from './pages/debate.js?v=20260907-debate-1';
+import { renderDebate } from './pages/debate.js?v=20260907-debate-2';
+import { renderClinic } from './pages/clinic.js?v=20260907-clinic-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260830-final-blind-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
@@ -70,6 +71,7 @@ function normalizedRoute() {
       const debateId = decodeRouteValue(path.replace('/debate/', ''));
       return debateId ? `#/debate/${encodeURIComponent(debateId)}` : '#/debate';
     }
+    if (path === '/clinic') return '#/clinic';
     if (path.startsWith('/result/')) {
       const caseId = decodeRouteValue(path.replace('/result/', ''));
       return caseId ? `#/result/${encodeURIComponent(caseId)}` : '#/';
@@ -160,6 +162,7 @@ async function route() {
       const debateId = decodeRouteValue(hash.replace('#/debate/', ''));
       renderTask = renderDebate(content, debateId);
     } else if (hash === '#/debate') renderTask = renderDebate(content);
+    else if (hash === '#/clinic') renderTask = renderClinic(content);
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
