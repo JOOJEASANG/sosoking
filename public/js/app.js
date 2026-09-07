@@ -6,6 +6,7 @@ import { renderHome } from './pages/home.js?v=20260830-final-blind-1';
 import { renderSubmit } from './pages/submit.js?v=20260906-list-fix-1';
 import { renderTrial } from './pages/trial.js?v=20260906-trial-flow-2';
 import { renderResult } from './pages/result-comments.js?v=20260906-result-clean-1';
+import { renderDebate } from './pages/debate.js?v=20260907-debate-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260830-final-blind-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
@@ -64,6 +65,11 @@ function normalizedRoute() {
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
+    if (path === '/debate') return '#/debate';
+    if (path.startsWith('/debate/')) {
+      const debateId = decodeRouteValue(path.replace('/debate/', ''));
+      return debateId ? `#/debate/${encodeURIComponent(debateId)}` : '#/debate';
+    }
     if (path.startsWith('/result/')) {
       const caseId = decodeRouteValue(path.replace('/result/', ''));
       return caseId ? `#/result/${encodeURIComponent(caseId)}` : '#/';
@@ -150,7 +156,11 @@ async function route() {
     } else if (hash.startsWith('#/discussion/')) {
       const caseId = decodeRouteValue(hash.replace('#/discussion/', ''));
       renderTask = caseId ? renderDiscussion(content, caseId) : renderHall(content);
-    } else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
+    } else if (hash.startsWith('#/debate/')) {
+      const debateId = decodeRouteValue(hash.replace('#/debate/', ''));
+      renderTask = renderDebate(content, debateId);
+    } else if (hash === '#/debate') renderTask = renderDebate(content);
+    else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
     else if (hash === '#/auth') renderTask = renderAuth(content);
