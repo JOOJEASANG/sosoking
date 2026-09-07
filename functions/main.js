@@ -17,5 +17,6 @@ Object.assign(exports, require('./case-aliases'));
 Object.assign(exports, require('./submit-secure'));
 Object.assign(exports, require('./generate-trial-lite'));
 Object.assign(exports, require('./debate'));
+Object.assign(exports, require('./advice'));
 Object.assign(exports, require('./admin-actions'));
 Object.assign(exports, require('./admin-visibility'));
