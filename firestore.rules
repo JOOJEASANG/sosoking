@@ -106,6 +106,17 @@ service cloud.firestore {
       }
     }
 
+    // 오늘의 토론 실시간 집계: 누구나 여론을 읽고, 쓰기는 castDebateVote 서버 함수만.
+    match /debate_polls/{caseId} {
+      allow read: if true;
+      allow write: if false;
+
+      match /voters/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow write: if false;
+      }
+    }
+
     match /court_comments/{caseId}/items/{commentId} {
       allow read: if canReadPublicCourt(caseId);
       allow write: if false;
