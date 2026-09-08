@@ -178,7 +178,10 @@ export async function renderHome(container) {
         <h1 class="hero-h1">사소한 일도<br><span style="font-size:.58em;color:var(--gold);font-style:italic;">오늘은 판결감입니다.</span></h1>
         <p class="hero-sub">내 억울함은 AI 판사에게 맡기고,<br><strong>내 사건도 판결을 보기 전에 내가 먼저 찍어보세요.</strong><br><span style="font-size:11px;opacity:.62;">꼰대·냉혈·회피·추궁·오버·드립·빙의 중 누가 배정될지는 사건마다 달라집니다.</span></p>
 
-        <div class="hero-tw">📌 현재 생활법정 심의중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span></div>
+        <div class="hero-tw" style="display:block;width:min(340px,88vw);max-width:none;margin:0 auto 28px;padding:11px 14px;text-align:left;">
+          <div style="font-size:12px;opacity:.78;">📌 현재 생활법정 심의중</div>
+          <div style="height:1.6em;line-height:1.6;overflow:hidden;white-space:nowrap;margin-top:2px;font-size:13px;"><strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span></div>
+        </div>
 
         <a href="#/submit" class="hero-cta hero-cta-pulse">⚖️ 내 사건 접수하기</a>
         <div class="hero-disclaimer">운영 설정 확인 중 · 비공개 생성 · 법적 효력 없음</div>
