@@ -203,11 +203,26 @@ async function callAdvice(container, worry, counselorId) {
   } catch (error) {
     console.warn('generateAdvice failed:', error?.code || error);
     if (!container.isConnected) return;
-    if (result) result.hidden = true;
-    showToast(String(error?.message || '상담 중 오류가 발생했습니다.').replace('FirebaseError: ', ''), 'error');
+    const code = String(error?.code || '');
+    const msg = String(error?.message || '상담 중 오류가 발생했습니다.').replace('FirebaseError: ', '');
+    if (code.includes('resource-exhausted')) { renderLimit(container, msg); }
+    else { if (result) result.hidden = true; showToast(msg, 'error'); }
   } finally {
     if (go) { go.disabled = false; }
   }
+}
+
+function renderLimit(container, message) {
+  const result = container.querySelector('#clinic-result');
+  if (!result) return;
+  result.hidden = false;
+  result.innerHTML = `
+    <div class="clinic-care" style="border-color:var(--gold);background:rgba(201,168,76,.1);">
+      <h3>😵‍💫 오늘 무료 상담이 다 찼어요</h3>
+      <p>${escapeHtml(message)}</p>
+      <a href="#/auth" style="justify-content:center;font-weight:900;color:#241a05;background:var(--gold);border-color:var(--gold);">로그인하고 더 상담받기 →</a>
+    </div>`;
+  result.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderResult(container, worry, data) {
