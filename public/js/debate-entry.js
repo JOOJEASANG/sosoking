@@ -1,4 +1,4 @@
-// 홈에 '미친 상담소' 유니버스 진입 블록(두 개의 문)을 주입하는 가드.
+// 홈에 '미친 소소킹 유니버스' 진입 블록(세 개의 문)을 주입하는 가드.
 // home.js를 수정하지 않으려고(캐시 버전 연쇄 회피) 기존 *-guard.js 패턴을 따른다.
 const ENTRY_ID = 'sosoking-rooms-entry';
 
@@ -47,8 +47,9 @@ function buildRooms() {
   const doors = document.createElement('div');
   doors.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;';
   doors.append(
-    door({ href: '#/clinic', emoji: '🔮', title: '미친 상담소', desc: '고민 한 줄 → 병맛 처방', accent: '#ff4d3d' }),
-    door({ href: '#/debate', emoji: '⚖️', title: '오늘의 토론', desc: '오늘 딜레마에 한 표', accent: 'var(--gold)' })
+    door({ href: '#/clinic',    emoji: '🔮', title: '미친 상담소', desc: '고민 한 줄 → 병맛 처방',   accent: '#ff4d3d' }),
+    door({ href: '#/translate', emoji: '💥', title: '미친 번역소', desc: '12가지 병맛 번역기',       accent: '#e07b00' }),
+    door({ href: '#/debate',    emoji: '⚖️', title: '오늘의 토론', desc: '오늘 딜레마에 한 표',     accent: 'var(--gold)' })
   );
 
   section.append(eyebrow, doors);
