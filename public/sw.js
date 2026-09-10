@@ -22,7 +22,7 @@ const APP_SHELL = [
   '/js/result-link-share.js?v=20260906-result-clean-1',
   '/js/submit-draft-guard.js?v=20260807-submit-draft-1',
   '/js/service-hub-guard.js?v=20260829-jury-1',
-  '/js/debate-entry.js?v=20260909-translate-1',
+  '/js/debate-entry.js?v=20260910-home-3doors-1',
   '/js/avatar-fallback.js?v=20260829-avatar-1',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/firebase-config.js',

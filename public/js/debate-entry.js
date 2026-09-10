@@ -41,15 +41,15 @@ function buildRooms() {
   section.style.cssText = 'margin:22px 16px 0;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(201,168,76,.14),rgba(201,168,76,.04));border:1px solid var(--border);box-shadow:var(--shadow);';
 
   const eyebrow = document.createElement('div');
-  eyebrow.textContent = "JUST FOR FUN · 오늘 뭐부터?";
+  eyebrow.textContent = "소소킹에서 뭐할까?";
   eyebrow.style.cssText = 'font-size:10px;letter-spacing:.14em;color:var(--gold);font-weight:800;margin-bottom:11px;';
 
   const doors = document.createElement('div');
   doors.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;';
   doors.append(
+    door({ href: '#/submit',    emoji: '⚖️', title: '판결소',    desc: 'AI 판사에게 사건 접수',      accent: 'var(--gold)' }),
     door({ href: '#/clinic',    emoji: '🔮', title: '미친 상담소', desc: '고민 한 줄 → 병맛 처방',   accent: '#ff4d3d' }),
-    door({ href: '#/translate', emoji: '💥', title: '미친 번역소', desc: '12가지 병맛 번역기',       accent: '#e07b00' }),
-    door({ href: '#/debate',    emoji: '⚖️', title: '오늘의 토론', desc: '오늘 딜레마에 한 표',     accent: 'var(--gold)' })
+    door({ href: '#/translate', emoji: '💥', title: '미친 번역소', desc: '12가지 병맛 번역기',       accent: '#e07b00' })
   );
 
   section.append(eyebrow, doors);
