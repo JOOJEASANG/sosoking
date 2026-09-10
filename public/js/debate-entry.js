@@ -57,23 +57,7 @@ function buildRooms() {
 }
 
 function normalizeHome() {
-  if (!isHomeRoute()) {
-    document.getElementById(ENTRY_ID)?.remove();
-    return;
-  }
-  const content = document.getElementById('page-content');
-  if (!content) return;
-  const hero = content.querySelector('.hero-section');
-  if (!hero) {
-    document.getElementById(ENTRY_ID)?.remove();
-    return;
-  }
-  if (document.getElementById(ENTRY_ID)) return;
-
-  const rooms = buildRooms();
-  const anchor = content.querySelector('#court-entrance');
-  if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(rooms, anchor);
-  else hero.insertAdjacentElement('afterend', rooms);
+  document.getElementById(ENTRY_ID)?.remove();
 }
 
 let scheduled = false;

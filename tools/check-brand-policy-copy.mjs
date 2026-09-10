@@ -74,7 +74,7 @@ for (const moduleUrl of [
   './pages/policy.js?v=20260830-final-audit-1',
   './pages/guide.js?v=20260830-final-audit-1',
   './components/footer.js?v=20260729-brand-policy-1',
-  './components/nav.js?v=20260829-arena-1'
+  './components/nav.js?v=20260910-services-1'
 ]) requireText(app, moduleUrl, 'public/js/app.js');
 if (app.includes('renderDailyRealCourt') || app.includes('#/daily-court') || app.includes('daily-real-court.js')) {
   errors.push('public/js/app.js: removed feature route remains');
@@ -101,7 +101,7 @@ for (const asset of [
   '/js/pages/policy.js?v=20260830-final-audit-1',
   '/js/pages/submit.js?v=20260906-list-fix-1',
   '/js/components/footer.js?v=20260729-brand-policy-1',
-  '/js/components/nav.js?v=20260829-arena-1'
+  '/js/components/nav.js?v=20260910-services-1'
 ]) requireText(sw, asset, 'public/sw.js');
 for (const retired of ['home-copy-guard.js', 'home-seven-judges.js', 'home-court.js', 'policy-configurable-limit.js', 'submit-guard.js', 'submit-court.js', 'judge-final-guard.js', 'judge-runtime-guard.js']) {
   if (sw.includes(retired)) errors.push(`public/sw.js: retired asset remains: ${retired}`);

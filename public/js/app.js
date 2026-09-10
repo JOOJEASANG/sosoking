@@ -9,6 +9,7 @@ import { renderResult } from './pages/result-comments.js?v=20260906-result-clean
 import { renderDebate } from './pages/debate.js?v=20260907-debate-2';
 import { renderClinic } from './pages/clinic.js?v=20260907-clinic-2';
 import { renderTranslate } from './pages/translate.js?v=20260909-translate-1';
+import { renderServices } from './pages/services.js?v=20260910-services-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260830-final-blind-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
@@ -19,7 +20,7 @@ import { renderJury } from './pages/jury.js?v=20260901-daily-vote-feedback-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
-import { initNavAuthSync, renderNav } from './components/nav.js?v=20260829-arena-1';
+import { initNavAuthSync, renderNav } from './components/nav.js?v=20260910-services-1';
 import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260829-arena-1';
 import { showToast } from './components/toast.js?v=20260630-3';
 
@@ -74,6 +75,7 @@ function normalizedRoute() {
     }
     if (path === '/clinic') return '#/clinic';
     if (path === '/translate') return '#/translate';
+    if (path === '/services') return '#/services';
     if (path.startsWith('/result/')) {
       const caseId = decodeRouteValue(path.replace('/result/', ''));
       return caseId ? `#/result/${encodeURIComponent(caseId)}` : '#/';
@@ -166,6 +168,7 @@ async function route() {
     } else if (hash === '#/debate') renderTask = renderDebate(content);
     else if (hash === '#/clinic') renderTask = renderClinic(content);
     else if (hash === '#/translate') renderTask = renderTranslate(content);
+    else if (hash === '#/services') renderTask = renderServices(content);
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
