@@ -38,7 +38,7 @@ export function renderNav(activeRoute = '') {
   const isBoard = hash.startsWith('#/board');
   const isSubmit = hash.startsWith('#/submit');
   const isAccount = hash.startsWith('#/auth') || hash.startsWith('#/my-cases');
-  const isJury = hash.startsWith('#/jury');
+  const isServices = hash.startsWith('#/services') || hash.startsWith('#/clinic') || hash.startsWith('#/translate') || hash.startsWith('#/debate') || hash.startsWith('#/jury');
   const user = auth.currentUser;
   const isLoggedIn = Boolean(user && !user.isAnonymous);
 
@@ -58,9 +58,9 @@ export function renderNav(activeRoute = '') {
       <span class="nav-icon"><img class="nav-brand-icon" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="" width="25" height="25"></span>
       <span class="nav-label">사건접수</span>
     </a>
-    <a href="#/jury" class="nav-item${isJury ? ' active' : ''}"${isJury ? ' aria-current="page"' : ''} aria-label="민심소로 이동">
-      <span class="nav-icon nav-service-mark" aria-hidden="true">🗳️</span>
-      <span class="nav-label">민심소</span>
+    <a href="#/services" class="nav-item${isServices ? ' active' : ''}"${isServices ? ' aria-current="page"' : ''} aria-label="서비스 목록으로 이동">
+      <span class="nav-icon nav-service-mark" aria-hidden="true">✨</span>
+      <span class="nav-label">서비스</span>
     </a>
     <a href="#/auth" class="nav-item${isAccount ? ' active' : ''}" id="nav-account-item"${isAccount ? ' aria-current="page"' : ''}>
       <span class="nav-icon" id="nav-account-icon" aria-hidden="true">${isLoggedIn ? '●' : '👤'}</span>
