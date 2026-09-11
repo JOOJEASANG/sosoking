@@ -6,6 +6,11 @@ import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-pub
 const BRAND_LOGO = '/logo.png?v=20260729-brand-unified-1';
 const HOME_PUBLIC_RECORD_LIMIT = 5;
 const JURY_TARGET_KEY = 'sosoking-jury-target-case';
+const HOME_SERVICES = [
+  { href: '#/submit',    emoji: '⚖️', title: '판결소', tag: 'AI 생활법정',   desc: '억울한 일 접수 → 7명 판사가 판결문 작성', accent: 'var(--gold)' },
+  { href: '#/clinic',    emoji: '🔮', title: '상담소', tag: '병맛 고민상담', desc: '고민 한 줄 넣으면 미친 처방전이 나옵니다', accent: '#ff4d3d' },
+  { href: '#/translate', emoji: '💥', title: '번역소', tag: '광기의 번역기', desc: '평범한 말을 12가지 병맛 말투로 번역',     accent: '#e07b00' }
+];
 const JUDGES = [
   { name: '꼰대형', icon: '🧓', desc: '기본·예의·사람 사는 도리로 끝까지 훈계' },
   { name: '냉혈형', icon: '🧊', desc: '서운함보다 시간·수량·결과를 차갑게 계산' },
@@ -84,6 +89,20 @@ function formatDate(value) {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function serviceHeroCard({ href, emoji, title, tag, desc, accent }) {
+  return `<a href="${href}" class="home-service-card" aria-label="${escapeHtml(title)} 바로가기" style="display:flex;align-items:center;gap:14px;padding:15px 17px;border-radius:16px;text-decoration:none;color:inherit;background:var(--card-bg,rgba(255,255,255,.045));border:1px solid var(--border);border-left:4px solid ${accent};transition:transform .14s;">
+    <span aria-hidden="true" style="flex-shrink:0;font-size:31px;line-height:1;">${emoji}</span>
+    <span style="flex:1;min-width:0;">
+      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <strong style="font-family:var(--font-serif);font-size:18px;font-weight:900;">${escapeHtml(title)}</strong>
+        <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--cream-dim);white-space:nowrap;">${escapeHtml(tag)}</span>
+      </span>
+      <span style="display:block;font-size:12.5px;color:var(--cream-dim);margin-top:4px;line-height:1.5;">${escapeHtml(desc)}</span>
+    </span>
+    <span aria-hidden="true" style="flex-shrink:0;color:var(--gold);font-size:18px;">→</span>
+  </a>`;
 }
 
 function publicSummary(record = {}) {
@@ -174,16 +193,14 @@ export async function renderHome(container) {
     <div style="padding-bottom:60px;">
       <section class="hero-section">
         <img src="${BRAND_LOGO}" alt="소소킹 로고" width="132" height="132" decoding="async" fetchpriority="high" style="width:132px;height:132px;margin:0 auto 14px;display:block;animation:wiggle 3.5s ease-in-out infinite;">
-        <div class="hero-badge">⚖️ 사소한 일상을 과하게 진지하게 판결합니다</div>
-        <h1 class="hero-h1">사소한 일도<br><span style="font-size:.58em;color:var(--gold);font-style:italic;">오늘은 판결감입니다.</span></h1>
-        <p class="hero-sub">내 억울함은 AI 판사에게 맡기고,<br><strong>내 사건도 판결을 보기 전에 내가 먼저 찍어보세요.</strong><br><span style="font-size:11px;opacity:.62;">꼰대·냉혈·회피·추궁·오버·드립·빙의 중 누가 배정될지는 사건마다 달라집니다.</span></p>
+        <div class="hero-badge">✨ 판결·상담·번역, 3대 과몰입 놀이터</div>
+        <h1 class="hero-h1">사소한 일상<br><span style="font-size:.58em;color:var(--gold);font-style:italic;">어디에 맡겨볼까요?</span></h1>
+        <p class="hero-sub">억울하면 <strong>판결소</strong>, 답답하면 <strong>상담소</strong>, 심심하면 <strong>번역소</strong>.<br><span style="font-size:11px;opacity:.62;">한 줄만 던지면 AI가 알아서 과몰입해 드립니다.</span></p>
 
-        <div class="hero-tw" style="display:block;width:min(340px,88vw);max-width:none;margin:0 auto 28px;padding:11px 14px;text-align:left;">
-          <div style="font-size:12px;opacity:.78;">📌 현재 생활법정 심의중</div>
-          <div style="height:1.6em;line-height:1.6;overflow:hidden;white-space:nowrap;margin-top:2px;font-size:13px;"><strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span></div>
+        <div class="home-service-grid" style="display:flex;flex-direction:column;gap:11px;width:min(420px,92vw);margin:6px auto 22px;">
+          ${HOME_SERVICES.map(serviceHeroCard).join('')}
         </div>
 
-        <a href="#/submit" class="hero-cta hero-cta-pulse">⚖️ 내 사건 접수하기</a>
         <div class="hero-disclaimer">운영 설정 확인 중 · 비공개 생성 · 법적 효력 없음</div>
 
         <div class="stats-row">
@@ -193,7 +210,8 @@ export async function renderHome(container) {
         </div>
       </section>
 
-      <div class="container" id="court-entrance" style="margin-top:22px;">
+      <div class="container" id="court-entrance" style="margin-top:34px;">
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:10px;">⚖️ 대표 서비스 · 판결소</div>
         <div class="court-shell" style="padding:20px;">
           <div style="display:flex;gap:16px;align-items:center;">
             <div class="court-seal" aria-hidden="true">⚖️</div>
@@ -209,6 +227,13 @@ export async function renderHome(container) {
             <div><strong>1회</strong><span>내 예상 판정</span></div>
           </div>
         </div>
+
+        <div class="hero-tw" style="display:block;width:min(340px,88vw);max-width:none;margin:16px auto 0;padding:11px 14px;text-align:left;">
+          <div style="font-size:12px;opacity:.78;">📌 현재 생활법정 심의중</div>
+          <div style="height:1.6em;line-height:1.6;overflow:hidden;white-space:nowrap;margin-top:2px;font-size:13px;"><strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span></div>
+        </div>
+
+        <a href="#/submit" class="hero-cta hero-cta-pulse" style="margin-top:18px;">⚖️ 내 사건 접수하기</a>
       </div>
 
       <div class="container" style="margin-top:44px;">
@@ -262,7 +287,7 @@ export async function renderHome(container) {
       </div>
 
       <div class="container" style="margin-top:20px;">
-        <div class="disclaimer"><strong>⚠️ 오락 서비스 안내</strong><br>소소킹 판결소는 사소한 생활분쟁을 생성형 AI가 법정 문서처럼 과장해 만드는 오락 서비스입니다. 실제 사례·판례 서비스나 법률상담이 아니며 결과에는 법적 효력이 없습니다.</div>
+        <div class="disclaimer"><strong>⚠️ 오락 서비스 안내</strong><br>소소킹은 사소한 생활분쟁을 생성형 AI가 법정 문서처럼 과장해 만드는 오락 서비스입니다. 실제 사례·판례 서비스나 법률상담이 아니며 결과에는 법적 효력이 없습니다.</div>
       </div>
 
       <section class="cta-section" style="margin-top:48px;">

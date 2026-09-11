@@ -30,7 +30,7 @@ const APP_SHELL = [
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/firebase-config.js',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
-  '/js/pages/home.js?v=20260908-home-tw-1',
+  '/js/pages/home.js?v=20260911-home-services-1',
   '/js/pages/submit.js?v=20260906-list-fix-1',
   '/js/pages/trial.js?v=20260906-trial-flow-2',
   '/js/pages/result-comments.js?v=20260906-result-clean-1',
