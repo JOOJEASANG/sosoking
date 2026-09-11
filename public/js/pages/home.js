@@ -211,7 +211,7 @@ export async function renderHome(container) {
       </section>
 
       <div class="container" id="court-entrance" style="margin-top:34px;">
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:10px;">⚖️ 대표 서비스 · 판결소</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:10px;text-align:center;">⚖️ 대표 서비스 · 판결소</div>
         <div class="court-shell" style="padding:20px;">
           <div style="display:flex;gap:16px;align-items:center;">
             <div class="court-seal" aria-hidden="true">⚖️</div>
@@ -228,12 +228,14 @@ export async function renderHome(container) {
           </div>
         </div>
 
-        <div class="hero-tw" style="display:block;width:min(340px,88vw);max-width:none;margin:16px auto 0;padding:11px 14px;text-align:left;">
+        <div class="hero-tw" style="display:block;width:min(340px,88vw);max-width:none;margin:16px auto 0;padding:11px 14px;text-align:center;">
           <div style="font-size:12px;opacity:.78;">📌 현재 생활법정 심의중</div>
           <div style="height:1.6em;line-height:1.6;overflow:hidden;white-space:nowrap;margin-top:2px;font-size:13px;"><strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span></div>
         </div>
 
-        <a href="#/submit" class="hero-cta hero-cta-pulse" style="margin-top:18px;">⚖️ 내 사건 접수하기</a>
+        <div style="text-align:center;margin-top:18px;">
+          <a href="#/submit" class="hero-cta hero-cta-pulse">⚖️ 내 사건 접수하기</a>
+        </div>
       </div>
 
       <div class="container" style="margin-top:44px;">

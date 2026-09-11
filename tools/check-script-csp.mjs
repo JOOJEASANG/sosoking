@@ -82,7 +82,7 @@ if (!themeInit.includes("localStorage.getItem('theme')") || !/try\s*\{[\s\S]*cat
 
 const app = fs.readFileSync('public/js/app.js', 'utf8');
 for (const specifier of [
-  "./pages/home.js?v=20260911-home-services-1",
+  "./pages/home.js?v=20260911-home-center-1",
   "./pages/submit.js?v=20260906-list-fix-1",
   "./pages/result-comments.js?v=20260906-result-clean-1",
   "./pages/policy.js?v=20260830-final-audit-1",
