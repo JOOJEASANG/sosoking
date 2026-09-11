@@ -85,7 +85,7 @@ for (const specifier of [
   "./pages/home.js?v=20260911-home-plus1-1",
   "./pages/submit.js?v=20260906-list-fix-1",
   "./pages/result-comments.js?v=20260906-result-clean-1",
-  "./pages/policy.js?v=20260830-final-audit-1",
+  "./pages/policy.js?v=20260911-services-doc-1",
   "./pages/hall.js?v=20260911-likes-1",
   "./pages/jury.js?v=20260901-daily-vote-feedback-1"
 ]) {

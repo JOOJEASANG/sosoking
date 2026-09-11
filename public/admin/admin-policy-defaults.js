@@ -1,4 +1,4 @@
-import { renderPolicy } from '../js/pages/policy.js?v=20260830-final-audit-1';
+import { renderPolicy } from '../js/pages/policy.js?v=20260911-services-doc-1';
 
 const DEFAULT_CACHE = new Map();
 let loadSequence = 0;

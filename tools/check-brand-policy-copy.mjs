@@ -32,7 +32,10 @@ for (const phrase of [
   '원고·피고·쌍방 중 먼저 판정',
   '판결과 내 판단 비교·토론',
   '검색엔진에 노출될 수 있으며',
-  '개별 회원이 어느 선택을 했는지는 공개 목록에 표시하지 않고'
+  '개별 회원이 어느 선택을 했는지는 공개 목록에 표시하지 않고',
+  '미친 상담소',
+  '미친 번역소',
+  '상담소·번역소 결과는 기본 공개'
 ]) requireText(guide, phrase, 'public/js/pages/guide.js');
 for (const removed of ['오늘의 실제 판례', '매일 실제 법원 판례', '일간·주간·누적 랭킹']) {
   if (guide.includes(removed)) errors.push(`public/js/pages/guide.js: removed feature copy remains: ${removed}`);
@@ -45,7 +48,10 @@ for (const phrase of [
   '공개용 사건 정보, 공개용 닉네임',
   '원고 승·피고 승·쌍방 과실 중 최초 1회 예상 판정',
   "getDoc(doc(db, 'policy_docs', safeType))",
-  'const OBSOLETE_SIGNATURES = {'
+  'const OBSOLETE_SIGNATURES = {',
+  '제6조의2 (미친 상담소·미친 번역소와 좋아요)',
+  '미친 상담소·미친 번역소의 결과는 기본적으로 공개',
+  '미친 상담소에 입력한 고민, 미친 번역소에 입력한 문장'
 ]) requireText(policy, phrase, 'public/js/pages/policy.js');
 for (const removed of ['NEW_DAILY_COPY', 'OLD_DAILY_COPY', 'NEW_DAILY_STATS_COPY']) {
   if (policy.includes(removed)) errors.push(`public/js/pages/policy.js: obsolete replacement helper remains: ${removed}`);
@@ -71,8 +77,8 @@ const app = read('public/js/app.js');
 for (const moduleUrl of [
   './pages/home.js?v=20260911-home-plus1-1',
   './pages/submit.js?v=20260906-list-fix-1',
-  './pages/policy.js?v=20260830-final-audit-1',
-  './pages/guide.js?v=20260830-final-audit-1',
+  './pages/policy.js?v=20260911-services-doc-1',
+  './pages/guide.js?v=20260911-services-doc-1',
   './components/footer.js?v=20260729-brand-policy-1',
   './components/nav.js?v=20260910-services-1'
 ]) requireText(app, moduleUrl, 'public/js/app.js');
@@ -97,8 +103,8 @@ if (!sw.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
 }
 for (const asset of [
   '/js/pages/home.js?v=20260911-home-plus1-1',
-  '/js/pages/guide.js?v=20260830-final-audit-1',
-  '/js/pages/policy.js?v=20260830-final-audit-1',
+  '/js/pages/guide.js?v=20260911-services-doc-1',
+  '/js/pages/policy.js?v=20260911-services-doc-1',
   '/js/pages/submit.js?v=20260906-list-fix-1',
   '/js/components/footer.js?v=20260729-brand-policy-1',
   '/js/components/nav.js?v=20260910-services-1'
