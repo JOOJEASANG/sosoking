@@ -220,10 +220,14 @@ function normalizePublicResult(caseId, raw = {}) {
   const caseTitle = cleanText(raw.caseTitle, 140) || '생활분쟁 사건';
   const caseDescription = cleanText(raw.caseDescription, 6000);
   const verdict = cleanText(raw.verdict, 12000);
-  const description = compactText(
-    caseDescription || raw.sentence || verdict || raw.reception || `${caseTitle}에 대한 소소킹 AI 생활판결 기록입니다.`,
-    170
+  const snippetBase = compactText(
+    cleanText(raw.sentence) || cleanText(raw.publicCaseDescription) || caseDescription || cleanText(raw.reception) || '',
+    90
   );
+  const judgeLabel = cleanText(raw.judgeType, 20) || 'AI 재판부';
+  const description = snippetBase
+    ? compactText(`${snippetBase} · ${judgeLabel} 판사 · 소소킹 AI 생활법정`, 160)
+    : `${caseTitle}에 대한 소소킹 AI 생활판결 기록입니다.`;
 
   return {
     caseId,
