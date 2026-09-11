@@ -50,13 +50,22 @@ for (const required of [
   'dailyLimit,',
   '연속 테스트가 필요하면 재접수 대기시간도 0초로 저장하세요.',
   "setDoc(doc(db, 'site_settings', 'config')",
-  "setDoc(doc(db, 'site_public', 'config')"
+  "setDoc(doc(db, 'site_public', 'config')",
+  '서비스별 무료 한도 (익명 / 회원)',
+  'svc-advice-anon',
+  'svc-advice-user',
+  'svc-translate-anon',
+  'svc-translate-user',
+  'adviceAnonDailyLimit:',
+  'adviceUserDailyLimit:',
+  'translateAnonDailyLimit:',
+  'translateUserDailyLimit:'
 ]) {
   if (!adminLimit.includes(required)) errors.push(`public/admin/admin-daily-limit.js: administrator control missing ${required}`);
 }
 
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-daily-limit.js?v=20260730-configurable-limit-1')) {
+if (!adminIndex.includes('/admin/admin-daily-limit.js?v=20260911-service-limits-1')) {
   errors.push('public/admin/index.html: configurable limit helper is not loaded');
 }
 
