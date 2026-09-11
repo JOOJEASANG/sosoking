@@ -69,7 +69,7 @@ if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index
 
 const app = read('public/js/app.js');
 for (const moduleUrl of [
-  './pages/home.js?v=20260911-home-services-1',
+  './pages/home.js?v=20260911-home-center-1',
   './pages/submit.js?v=20260906-list-fix-1',
   './pages/policy.js?v=20260830-final-audit-1',
   './pages/guide.js?v=20260830-final-audit-1',
@@ -96,7 +96,7 @@ if (!sw.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
   errors.push('public/index.html and public/sw.js: cache name differs from application version');
 }
 for (const asset of [
-  '/js/pages/home.js?v=20260911-home-services-1',
+  '/js/pages/home.js?v=20260911-home-center-1',
   '/js/pages/guide.js?v=20260830-final-audit-1',
   '/js/pages/policy.js?v=20260830-final-audit-1',
   '/js/pages/submit.js?v=20260906-list-fix-1',
