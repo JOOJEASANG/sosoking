@@ -201,9 +201,11 @@ export async function renderTranslate(container) {
         navigator.clipboard.writeText(txt).then(() => showToast('복사됨!'), () => showToast('복사 실패'));
       });
       resultEl.querySelector('#tl-share')?.addEventListener('click', () => {
-        const txt = `${data.modeEmoji} 미친 번역소 — ${data.modeLabel}\n\n${data.result.translated}\n\nsosoking.web.app`;
+        const rid = data.result.resultId;
+        const url = rid ? `${location.origin}/translate/${encodeURIComponent(rid)}` : `${location.origin}/#/translate`;
+        const txt = `${data.modeEmoji} 미친 번역소 — ${data.modeLabel}\n\n${data.result.translated}\n\n${url}`;
         if (navigator.share) {
-          navigator.share({ title: '미친 번역소', text: txt }).catch(() => {});
+          navigator.share({ title: '미친 번역소', text: txt, url }).catch(() => {});
         } else {
           navigator.clipboard.writeText(txt).then(() => showToast('링크 복사됨!'), () => showToast('복사 실패'));
         }

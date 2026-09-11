@@ -211,10 +211,13 @@ exports.generateTranslation = onCall({
       uid,
       modeId: mode.id,
       modeLabel: mode.label,
+      modeEmoji: mode.emoji,
       originalText: text,
       translated: result.translated,
       style_note: result.style_note,
       tagline: result.tagline,
+      isPublic: true,
+      likeCount: 0,
       createdAt: FieldValue.serverTimestamp()
     });
     resultId = docRef.id;

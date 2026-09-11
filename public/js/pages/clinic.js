@@ -258,7 +258,7 @@ function renderResult(container, worry, data) {
   });
   result.querySelector('#clinic-share')?.addEventListener('click', () => {
     const text = `😵‍💫 미친 고민상담소 처방전\n고민: ${worry}\n${data.counselorName} 왈: ${a.prescription}`;
-    const url = `${location.origin}/#/clinic`;
+    const url = a.resultId ? `${location.origin}/advice/${encodeURIComponent(a.resultId)}` : `${location.origin}/#/clinic`;
     if (navigator.share) navigator.share({ title: '미친 고민상담소', text, url }).catch(() => {});
     else if (navigator.clipboard?.writeText) navigator.clipboard.writeText(`${text}\n${url}`).then(() => showToast('처방전을 복사했어요 📋', 'success')).catch(() => {});
     else showToast('공유를 지원하지 않는 환경이에요', 'info');

@@ -37,7 +37,7 @@ if (!seo.includes("array-contains")) {
 }
 
 const safe = read('functions/public-seo-safe.js');
-if (!safe.includes('exports.publicTagPage') || !safe.includes('renderSitemapXml(entries, tagEntries)')) {
+if (!safe.includes('exports.publicTagPage') || !safe.includes('renderSitemapXml(entries, tagEntries')) {
   errors.push('functions/public-seo-safe.js: publicTagPage 또는 사이트맵 태그 연결이 없습니다.');
 }
 

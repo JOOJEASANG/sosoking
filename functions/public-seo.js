@@ -220,10 +220,14 @@ function normalizePublicResult(caseId, raw = {}) {
   const caseTitle = cleanText(raw.caseTitle, 140) || '생활분쟁 사건';
   const caseDescription = cleanText(raw.caseDescription, 6000);
   const verdict = cleanText(raw.verdict, 12000);
-  const description = compactText(
-    caseDescription || raw.sentence || verdict || raw.reception || `${caseTitle}에 대한 소소킹 AI 생활판결 기록입니다.`,
-    170
+  const snippetBase = compactText(
+    cleanText(raw.sentence) || cleanText(raw.publicCaseDescription) || caseDescription || cleanText(raw.reception) || '',
+    90
   );
+  const judgeLabel = cleanText(raw.judgeType, 20) || 'AI 재판부';
+  const description = snippetBase
+    ? compactText(`${snippetBase} · ${judgeLabel} 판사 · 소소킹 AI 생활법정`, 160)
+    : `${caseTitle}에 대한 소소킹 AI 생활판결 기록입니다.`;
 
   return {
     caseId,
@@ -507,7 +511,7 @@ async function listPublicResultEntries() {
     }));
 }
 
-function renderSitemapXml(entries, tagEntries = []) {
+function renderSitemapXml(entries, tagEntries = [], extraUrls = []) {
   const staticUrls = [
     { loc: `${SITE_ORIGIN}/` },
     { loc: `${SITE_ORIGIN}/board` },
@@ -522,7 +526,10 @@ function renderSitemapXml(entries, tagEntries = []) {
     loc: tagPageUrl(entry.tag),
     lastmod: entry.lastmod || ''
   }));
-  const rows = [...staticUrls, ...tagUrls, ...resultUrls]
+  const serviceUrls = (Array.isArray(extraUrls) ? extraUrls : [])
+    .filter(entry => entry && entry.loc)
+    .map(entry => ({ loc: entry.loc, lastmod: entry.lastmod || '' }));
+  const rows = [...staticUrls, ...tagUrls, ...resultUrls, ...serviceUrls]
     .map(entry => `  <url>\n    <loc>${xmlEscape(entry.loc)}</loc>${entry.lastmod ? `\n    <lastmod>${xmlEscape(entry.lastmod)}</lastmod>` : ''}\n  </url>`)
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${rows}\n</urlset>\n`;

@@ -133,8 +133,35 @@ if (serviceWorker.includes('/js/pages/board.js')) {
   errors.push('public/sw.js: retired board module remains in the public SEO cache graph');
 }
 
+const services = read('functions/public-seo-services.js');
+for (const required of [
+  'exports.publicAdvicePage',
+  'exports.publicTranslatePage',
+  'listPublicServiceSitemapUrls',
+  "raw.isPublic !== true",
+  'rel="canonical"',
+  'name="robots"',
+  'index, follow',
+  'application/ld+json',
+  "'advice_results'",
+  "'translation_results'"
+]) {
+  if (!services.includes(required)) errors.push(`functions/public-seo-services.js: missing ${required}`);
+}
+if (!main.includes("require('./public-seo-services')")) {
+  errors.push('functions/main.js: advice/translation SEO functions are not exported');
+}
+const adviceRewrite = rewrites.find(item => item.source === '/advice/**');
+const translateRewrite = rewrites.find(item => item.source === '/translate/**');
+if (adviceRewrite?.function?.functionId !== 'publicAdvicePage' || adviceRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /advice/** is not routed to publicAdvicePage in asia-northeast3');
+}
+if (translateRewrite?.function?.functionId !== 'publicTranslatePage' || translateRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /translate/** is not routed to publicTranslatePage in asia-northeast3');
+}
+
 const deploy = read('.github/workflows/firebase-deploy.yml');
-for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap', 'functions:publicTagPage']) {
+for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap', 'functions:publicTagPage', 'functions:publicAdvicePage', 'functions:publicTranslatePage']) {
   if (!deploy.includes(functionName)) errors.push(`firebase-deploy.yml: ${functionName} is not deployed`);
 }
 if (deploy.includes('functions:sanitizePublicResult')) {

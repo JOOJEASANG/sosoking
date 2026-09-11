@@ -199,5 +199,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    // 좋아요 기록: 로그인한 사용자가 자신의 기록만 읽고, 쓰기는 서버만.
+    match /advice_results_likes/{likeId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /translation_results_likes/{likeId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
   }
 }

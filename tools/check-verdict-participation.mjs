@@ -117,9 +117,9 @@ expect(myCases.includes('`#/verdict/${encodeURIComponent(id)}`'),
   'public/js/pages/my-cases.js: owned completed cases must open the owned verdict route');
 
 for (const moduleUrl of [
-  "./pages/home.js?v=20260908-home-tw-1",
+  "./pages/home.js?v=20260911-home-services-1",
   "./pages/discussion.js?v=20260830-final-blind-1",
-  "./pages/hall.js?v=20260830-final-blind-1",
+  "./pages/hall.js?v=20260911-likes-1",
   "./pages/jury.js?v=20260901-daily-vote-feedback-1"
 ]) {
   expect(app.includes(moduleUrl), `public/js/app.js: final blind module cache is missing ${moduleUrl}`);
@@ -132,8 +132,8 @@ expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
 expect(sw.includes('/js/pages/result-court.js?v=20260906-result-clean-1')
   && sw.includes('/js/pages/discussion.js?v=20260830-final-blind-1')
-  && sw.includes('/js/pages/home.js?v=20260908-home-tw-1')
-  && sw.includes('/js/pages/hall.js?v=20260830-final-blind-1')
+  && sw.includes('/js/pages/home.js?v=20260911-home-services-1')
+  && sw.includes('/js/pages/hall.js?v=20260911-likes-1')
   && sw.includes('/js/pages/jury.js?v=20260901-daily-vote-feedback-1')
   && !sw.includes('/js/pages/participation.js')
   && !sw.includes('/js/pages/board.js'),
