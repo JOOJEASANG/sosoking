@@ -125,7 +125,7 @@ const adminIndex = read('public/admin/index.html');
 for (const required of [
   '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1&idle=20260831-idle-timeout-1',
   '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1',
-  '/admin/admin-daily-limit.js?v=20260730-configurable-limit-1',
+  '/admin/admin-daily-limit.js?v=20260911-service-limits-1',
   '/admin/admin-manual-ai-mode.js?v=20260831-admin-ai-settings-save-fix-1'
 ]) {
   if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);

@@ -17,6 +17,12 @@ function clampLimit(value) {
   return Math.max(1, Math.min(1000, parsed));
 }
 
+function clampRange(value, fallback, min, max) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, parsed));
+}
+
 function loadSettings(force = false) {
   if (force || !settingsPromise) {
     settingsPromise = getDoc(doc(db, 'site_settings', 'config'))
@@ -77,15 +83,46 @@ async function enhanceSiteSettings(root) {
       </div>`);
   }
 
+  const serviceAnchor = form.querySelector('[data-limit-test-note]');
+  if (serviceAnchor && !form.querySelector('[data-service-limits]')) {
+    serviceAnchor.insertAdjacentHTML('afterend', `
+      <div data-service-limits class="card" style="padding:15px 16px;margin:0 0 18px;background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.28);">
+        <div style="font-size:13px;font-weight:800;color:var(--gold);margin-bottom:3px;">서비스별 무료 한도 (익명 / 회원)</div>
+        <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-bottom:12px;">상담소·번역소의 하루 사용 횟수입니다. 익명은 로그인 유도용, 회원은 상한. 판결소는 위 접수 제한을 따릅니다.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label class="form-label" style="font-size:12px;">🔮 상담소 익명<input type="number" id="svc-advice-anon" class="form-input" min="1" max="100" value="${clampRange(settings.adviceAnonDailyLimit, 3, 1, 100)}"></label>
+          <label class="form-label" style="font-size:12px;">🔮 상담소 회원<input type="number" id="svc-advice-user" class="form-input" min="1" max="1000" value="${clampRange(settings.adviceUserDailyLimit, 10, 1, 1000)}"></label>
+          <label class="form-label" style="font-size:12px;">💥 번역소 익명<input type="number" id="svc-translate-anon" class="form-input" min="1" max="100" value="${clampRange(settings.translateAnonDailyLimit, 5, 1, 100)}"></label>
+          <label class="form-label" style="font-size:12px;">💥 번역소 회원<input type="number" id="svc-translate-user" class="form-input" min="1" max="1000" value="${clampRange(settings.translateUserDailyLimit, 20, 1, 1000)}"></label>
+        </div>
+      </div>`);
+  }
+
   form.addEventListener('submit', async () => {
     const dailyLimitEnabled = toggle instanceof HTMLInputElement && toggle.checked;
     const dailyLimit = clampLimit(limitInput.value);
     limitInput.value = String(dailyLimit);
+    const serviceLimits = {
+      adviceAnonDailyLimit: clampRange(form.querySelector('#svc-advice-anon')?.value, 3, 1, 100),
+      adviceUserDailyLimit: clampRange(form.querySelector('#svc-advice-user')?.value, 10, 1, 1000),
+      translateAnonDailyLimit: clampRange(form.querySelector('#svc-translate-anon')?.value, 5, 1, 100),
+      translateUserDailyLimit: clampRange(form.querySelector('#svc-translate-user')?.value, 20, 1, 1000)
+    };
+    for (const [key, id] of [
+      ['adviceAnonDailyLimit', '#svc-advice-anon'],
+      ['adviceUserDailyLimit', '#svc-advice-user'],
+      ['translateAnonDailyLimit', '#svc-translate-anon'],
+      ['translateUserDailyLimit', '#svc-translate-user']
+    ]) {
+      const el = form.querySelector(id);
+      if (el instanceof HTMLInputElement) el.value = String(serviceLimits[key]);
+    }
     try {
       await Promise.all([
         setDoc(doc(db, 'site_settings', 'config'), {
           dailyLimitEnabled,
           dailyLimit,
+          ...serviceLimits,
           updatedAt: serverTimestamp()
         }, { merge: true }),
         setDoc(doc(db, 'site_public', 'config'), {
@@ -94,7 +131,7 @@ async function enhanceSiteSettings(root) {
           updatedAt: serverTimestamp()
         }, { merge: true })
       ]);
-      settingsPromise = Promise.resolve({ ...settings, dailyLimitEnabled, dailyLimit });
+      settingsPromise = Promise.resolve({ ...settings, dailyLimitEnabled, dailyLimit, ...serviceLimits });
     } catch (error) {
       console.error('administrator daily limit save failed:', error);
     }
