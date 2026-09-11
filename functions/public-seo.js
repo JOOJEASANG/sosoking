@@ -511,7 +511,7 @@ async function listPublicResultEntries() {
     }));
 }
 
-function renderSitemapXml(entries, tagEntries = []) {
+function renderSitemapXml(entries, tagEntries = [], extraUrls = []) {
   const staticUrls = [
     { loc: `${SITE_ORIGIN}/` },
     { loc: `${SITE_ORIGIN}/board` },
@@ -526,7 +526,10 @@ function renderSitemapXml(entries, tagEntries = []) {
     loc: tagPageUrl(entry.tag),
     lastmod: entry.lastmod || ''
   }));
-  const rows = [...staticUrls, ...tagUrls, ...resultUrls]
+  const serviceUrls = (Array.isArray(extraUrls) ? extraUrls : [])
+    .filter(entry => entry && entry.loc)
+    .map(entry => ({ loc: entry.loc, lastmod: entry.lastmod || '' }));
+  const rows = [...staticUrls, ...tagUrls, ...resultUrls, ...serviceUrls]
     .map(entry => `  <url>\n    <loc>${xmlEscape(entry.loc)}</loc>${entry.lastmod ? `\n    <lastmod>${xmlEscape(entry.lastmod)}</lastmod>` : ''}\n  </url>`)
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${rows}\n</urlset>\n`;

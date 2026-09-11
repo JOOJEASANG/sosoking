@@ -12,6 +12,7 @@ const {
   renderTagPageHtml,
   tagPageUrl
 } = require('./public-seo');
+const { listPublicServiceSitemapUrls } = require('./public-seo-services');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -239,9 +240,10 @@ exports.publicSitemap = onRequest({
 }, async (request, response) => {
   if (!allowReadMethod(request, response)) return;
   try {
-    const [entries, tagEntries] = await Promise.all([
+    const [entries, tagEntries, serviceUrls] = await Promise.all([
       listSafePublicResultEntries(),
-      listSafePublicTagEntries().catch(() => [])
+      listSafePublicTagEntries().catch(() => []),
+      listPublicServiceSitemapUrls().catch(() => [])
     ]);
     response
       .set('Content-Type', 'application/xml; charset=utf-8')
@@ -249,7 +251,7 @@ exports.publicSitemap = onRequest({
       .set('X-Robots-Tag', 'noindex')
       .set('Vary', 'Accept-Encoding')
       .status(200)
-      .send(renderSitemapXml(entries, tagEntries));
+      .send(renderSitemapXml(entries, tagEntries, serviceUrls));
   } catch (error) {
     console.error('safe public sitemap failed:', { code: error?.code || '', message: error?.message || '' });
     response.status(503).set('Retry-After', '300').send('Sitemap temporarily unavailable');
