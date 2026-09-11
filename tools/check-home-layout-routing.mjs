@@ -25,7 +25,7 @@ if (home.includes('운명에 맡기기')) {
 }
 
 const app = read('public/js/app.js');
-need(app, "import { renderHome } from './pages/home.js?v=20260911-home-center-1';", 'application modules');
+need(app, "import { renderHome } from './pages/home.js?v=20260911-home-plus1-1';", 'application modules');
 const normalizedRouteSource = app.split('function normalizedRoute() {')[1]?.split('\nfunction freshContentHost()')[0] || '';
 for (const value of [
   "if (hash === '' || hash === '#')",
@@ -51,7 +51,7 @@ if (!worker.includes(`/js/app.js?v=${appVersion}`)) {
 if (!worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVersion}';`)) {
   errors.push('public/index.html and public/sw.js: active cache name differs from the application version');
 }
-need(worker, '/js/pages/home.js?v=20260911-home-center-1', 'active application cache');
+need(worker, '/js/pages/home.js?v=20260911-home-plus1-1', 'active application cache');
 for (const retired of ['home-seven-judges.js', 'home-no-search.js', 'home-court.js', 'home-judge-assignment.js']) {
   if (worker.includes(retired)) errors.push(`active application cache: retired home wrapper remains: ${retired}`);
 }
