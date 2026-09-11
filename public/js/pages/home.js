@@ -198,7 +198,13 @@ export async function renderHome(container) {
         <p class="hero-sub">억울하면 <strong>판결소</strong>, 답답하면 <strong>상담소</strong>, 심심하면 <strong>번역소</strong>.<br><span style="font-size:11px;opacity:.62;">한 줄만 던지면 AI가 알아서 과몰입해 드립니다.</span></p>
 
         <div class="home-service-grid" style="display:flex;flex-direction:column;gap:11px;width:min(420px,92vw);margin:6px auto 22px;">
-          ${HOME_SERVICES.map(serviceHeroCard).join('')}
+          ${HOME_SERVICES.slice(0, 2).map(serviceHeroCard).join('')}
+          <div style="display:flex;align-items:center;gap:10px;margin:5px 2px 0;color:var(--cream-dim);font-size:11px;font-weight:800;">
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+            <span style="white-space:nowrap;">🎁 서비스로 하나 더</span>
+            <span style="flex:1;height:1px;background:var(--border);"></span>
+          </div>
+          ${HOME_SERVICES.slice(2).map(serviceHeroCard).join('')}
         </div>
 
         <div class="hero-disclaimer">운영 설정 확인 중 · 비공개 생성 · 법적 효력 없음</div>
