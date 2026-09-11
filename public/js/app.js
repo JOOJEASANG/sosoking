@@ -9,13 +9,15 @@ import { renderResult } from './pages/result-comments.js?v=20260906-result-clean
 import { renderDebate } from './pages/debate.js?v=20260907-debate-2';
 import { renderClinic } from './pages/clinic.js?v=20260907-clinic-2';
 import { renderTranslate } from './pages/translate.js?v=20260909-translate-1';
-import { renderServices } from './pages/services.js?v=20260910-services-1';
+import { renderServices } from './pages/services.js?v=20260911-likes-1';
+import { renderClinicList } from './pages/clinic-list.js?v=20260911-likes-1';
+import { renderTranslateList } from './pages/translate-list.js?v=20260911-likes-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260830-final-blind-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
 import { renderGuide } from './pages/guide.js?v=20260830-final-audit-1';
 import { renderAuth } from './pages/auth2.js?v=20260829-avatar-1';
-import { renderHall } from './pages/hall.js?v=20260830-final-blind-1';
+import { renderHall } from './pages/hall.js?v=20260911-likes-1';
 import { renderJury } from './pages/jury.js?v=20260901-daily-vote-feedback-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
@@ -74,7 +76,9 @@ function normalizedRoute() {
       return debateId ? `#/debate/${encodeURIComponent(debateId)}` : '#/debate';
     }
     if (path === '/clinic') return '#/clinic';
+    if (path === '/clinic-list') return '#/clinic-list';
     if (path === '/translate') return '#/translate';
+    if (path === '/translate-list') return '#/translate-list';
     if (path === '/services') return '#/services';
     if (path.startsWith('/result/')) {
       const caseId = decodeRouteValue(path.replace('/result/', ''));
@@ -167,7 +171,9 @@ async function route() {
       renderTask = renderDebate(content, debateId);
     } else if (hash === '#/debate') renderTask = renderDebate(content);
     else if (hash === '#/clinic') renderTask = renderClinic(content);
+    else if (hash === '#/clinic-list') renderTask = renderClinicList(content);
     else if (hash === '#/translate') renderTask = renderTranslate(content);
+    else if (hash === '#/translate-list') renderTask = renderTranslateList(content);
     else if (hash === '#/services') renderTask = renderServices(content);
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);

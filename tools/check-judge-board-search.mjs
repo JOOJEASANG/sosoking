@@ -55,7 +55,7 @@ if (jury.includes('grievanceIndex') || jury.includes('억울지수')) {
 
 const app = read('public/js/app.js');
 need(app, "import { renderHome } from './pages/home.js?v=20260908-home-tw-1';", 'active home module');
-need(app, "import { renderHall } from './pages/hall.js?v=20260830-final-blind-1';", 'active hall module');
+need(app, "import { renderHall } from './pages/hall.js?v=20260911-likes-1';", 'active hall module');
 need(app, "import { renderJury } from './pages/jury.js?v=20260901-daily-vote-feedback-1';", 'active jury module');
 need(app, "else if (hash === '#/board') renderTask = renderHall(content);", 'board compatibility route');
 for (const retired of [
@@ -80,7 +80,7 @@ if (!appVersion || !worker.includes(`const CACHE_NAME = 'sosoking-app-v${appVers
 }
 for (const value of [
   '/js/pages/home.js?v=20260908-home-tw-1',
-  '/js/pages/hall.js?v=20260830-final-blind-1',
+  '/js/pages/hall.js?v=20260911-likes-1',
   '/js/pages/jury.js?v=20260901-daily-vote-feedback-1'
 ]) need(worker, value, 'active cache');
 for (const retired of [
