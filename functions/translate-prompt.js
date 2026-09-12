@@ -101,9 +101,9 @@ const HARD_LIMITS = `[반드시 지킨다]
 
 const OUTPUT_FORMAT = `[출력 형식]
 JSON 객체 하나만 출력한다. 아래 세 키만 사용한다.
-translated: 입력 텍스트를 해당 캐릭터로 번역한 결과. 반드시 웃겨야 한다. 250자 이내.
+translated: 입력 텍스트를 해당 캐릭터로 번역한 결과. 반드시 웃겨야 한다. 원문보다 과하게 늘이지 말고 짧고 강하게, 핵심을 찌르는 한 방으로. 원문이 짧으면 번역도 짧게. 200자 이내.
 style_note: 사용한 언어 특성이나 캐릭터 설명 한 문장(30자 이내).
-tagline: 이 번역의 핵심을 요약한 재미있는 한 줄(40자 이내).`;
+tagline: 이 번역의 핵심을 찌르는 재미있는 한 줄(40자 이내).`;
 
 function buildTranslationPrompt(text, mode) {
   return `당신은 '미친 번역소'의 병맛 전담 번역가다.
@@ -119,7 +119,7 @@ ${OUTPUT_FORMAT}
 ${text}
 """
 
-위 원문을 캐릭터로서 번역하라. 반드시 웃겨야 한다. 하지만 혐오·비하 없이.`;
+위 원문을 캐릭터로서 번역하라. 반드시 웃겨야 한다. 짧고 강하게, 핵심을 찌르는 한 방으로. 하지만 혐오·비하 없이.`;
 }
 
 module.exports = { TRANSLATION_MODES, buildTranslationPrompt };
