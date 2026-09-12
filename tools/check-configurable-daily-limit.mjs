@@ -96,8 +96,8 @@ const app = read('public/js/app.js');
 for (const required of [
   "import { renderHome } from './pages/home.js?v=20260911-home-plus1-1';",
   "import { renderSubmit } from './pages/submit.js?v=20260906-list-fix-1';",
-  "import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';",
-  "import { renderGuide } from './pages/guide.js?v=20260830-final-audit-1';"
+  "import { renderPolicy } from './pages/policy.js?v=20260911-services-doc-1';",
+  "import { renderGuide } from './pages/guide.js?v=20260911-services-doc-1';"
 ]) {
   if (!app.includes(required)) errors.push(`public/js/app.js: canonical configurable-limit module missing ${required}`);
 }
@@ -107,8 +107,8 @@ const worker = read('public/sw.js');
 for (const required of [
   '/js/pages/home.js?v=20260911-home-plus1-1',
   '/js/pages/submit.js?v=20260906-list-fix-1',
-  '/js/pages/policy.js?v=20260830-final-audit-1',
-  '/js/pages/guide.js?v=20260830-final-audit-1'
+  '/js/pages/policy.js?v=20260911-services-doc-1',
+  '/js/pages/guide.js?v=20260911-services-doc-1'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: canonical configurable-limit cache entry missing ${required}`);
 }

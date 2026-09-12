@@ -117,7 +117,7 @@ async function logUsage(totals) {
 
 function normalizeResult(parsed) {
   return {
-    translated: clean(parsed?.translated, 500) || '번역기가 잠시 폭발했습니다.',
+    translated: clean(parsed?.translated, 300) || '번역기가 잠시 폭발했습니다.',
     style_note: clean(parsed?.style_note, 80) || '',
     tagline: clean(parsed?.tagline, 100) || ''
   };

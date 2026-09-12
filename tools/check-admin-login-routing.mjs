@@ -62,7 +62,7 @@ for (const required of [
 
 const adminPolicy = read('public/admin/admin-policy-defaults.js');
 for (const required of [
-  "import { renderPolicy } from '../js/pages/policy.js?v=20260830-final-audit-1'",
+  "import { renderPolicy } from '../js/pages/policy.js?v=20260911-services-doc-1'",
   'async function currentSitePolicy(type)',
   "root.querySelector('#policy-content')",
   'textarea.value = content',

@@ -24,6 +24,7 @@ export function renderGuide(container) {
     ['판결 결과를 공개하면 어떻게 되나요?', '공개용 사건 정보와 AI 판결이 공개 판결기록이 되어 민심소의 블라인드 투표·토론 대상이 됩니다. 공개 주소는 검색엔진에 노출될 수 있으며, 작성자는 다시 비공개로 전환하거나 사건 전체를 삭제할 수 있습니다.'],
     ['내 민심소 투표가 다른 사람에게 공개되나요?', '개별 회원이 어느 선택을 했는지는 공개 목록에 표시하지 않고 선택지별 전체 표 수와 비율만 보여줍니다. 댓글을 작성하면 설정한 닉네임과 댓글 내용은 공개될 수 있습니다.'],
     ['토론과 사건 접수에서 무엇을 조심해야 하나요?', '실명·연락처·주소·계좌번호 같은 개인정보, 욕설, 위협, 실제 범죄·폭력·위기 상황, 타인의 신상을 특정할 수 있는 내용은 입력하지 마세요. 신고된 공개 글은 운영 정책에 따라 숨김 또는 삭제될 수 있습니다.'],
+    ['미친 상담소·미친 번역소 결과도 공개되나요?', '네. 판결소 사건은 작성자가 공개를 선택해야 하지만, 미친 상담소·미친 번역소의 결과는 기본적으로 공개되어 인기 목록과 검색엔진에 노출될 수 있고 다른 이용자가 좋아요를 남길 수 있습니다. 그러니 실명·연락처 등 개인정보나 민감한 고민은 입력하지 마세요.'],
     ['진짜 심각한 일이라면요?', '실제 범죄·폭력·손해·가정·노동·계약·의료·정신건강 문제는 이 서비스에 맡기지 말고 관계 기관이나 적절한 전문가에게 도움을 요청해야 합니다.']
   ];
 
@@ -75,6 +76,28 @@ export function renderGuide(container) {
           </div>
         </section>
 
+        <section aria-labelledby="services-guide-title" style="margin-bottom:36px;">
+          <h2 id="services-guide-title" style="font-family:var(--font-serif);font-size:18px;font-weight:800;margin-bottom:6px;color:var(--gold);">미친 상담소 · 미친 번역소</h2>
+          <p style="font-size:12px;color:var(--cream-dim);margin-bottom:16px;">판결소 말고도 가볍게 즐기는 두 가지가 더 있습니다.</p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card" style="display:flex;gap:14px;align-items:flex-start;padding:17px 19px;">
+              <div style="font-size:26px;flex-shrink:0;" aria-hidden="true">🔮</div>
+              <div style="min-width:0;"><div style="font-weight:800;font-size:15px;margin-bottom:4px;color:var(--cream);">미친 상담소</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.75;">고민 한 줄을 넣으면 AI 상담사가 병맛 처방전을 써줍니다.</div></div>
+            </div>
+            <div class="card" style="display:flex;gap:14px;align-items:flex-start;padding:17px 19px;">
+              <div style="font-size:26px;flex-shrink:0;" aria-hidden="true">💥</div>
+              <div style="min-width:0;"><div style="font-weight:800;font-size:15px;margin-bottom:4px;color:var(--cream);">미친 번역소</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.75;">아무 문장이나 넣으면 12가지 병맛 말투로 번역해줍니다.</div></div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:12px;padding:14px 16px;border-color:rgba(201,168,76,.38);font-size:12.5px;color:var(--cream-dim);line-height:1.75;">
+            ⚠️ 판결소와 달리 <strong style="color:var(--cream);">상담소·번역소 결과는 기본 공개</strong>되어 인기 목록·검색엔진에 노출되고 다른 이용자가 <strong style="color:var(--cream);">좋아요</strong>를 남길 수 있습니다. 실명·연락처 등 개인정보나 민감한 내용은 입력하지 마세요.
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+            <a href="#/clinic" class="btn btn-secondary" style="flex:1;min-width:150px;">🔮 상담소 가기</a>
+            <a href="#/translate" class="btn btn-secondary" style="flex:1;min-width:150px;">💥 번역소 가기</a>
+          </div>
+        </section>
+
         <section aria-labelledby="privacy-guide-title" class="card" style="padding:18px 20px;margin-bottom:32px;border-color:rgba(201,168,76,.38);">
           <h2 id="privacy-guide-title" style="font-family:var(--font-serif);font-size:17px;font-weight:800;margin-bottom:8px;color:var(--gold);">🔐 공개와 개인정보 한눈에 보기</h2>
           <div style="font-size:13px;color:var(--cream-dim);line-height:1.8;">
@@ -82,7 +105,8 @@ export function renderGuide(container) {
             · 최초 접수 원문은 <strong style="color:var(--cream);">작성자 본인만</strong> 확인합니다.<br>
             · 공개 전 서버에서 개인정보·고위험 내용 안전검사를 수행합니다.<br>
             · 공개 후에는 공개용 사건 정보·AI 판결·공개 닉네임·투표 집계·공개 댓글이 다른 이용자에게 보일 수 있습니다.<br>
-            · 공개 판결은 검색엔진에 노출될 수 있으므로 공개 전에 내용을 다시 확인하세요.
+            · 공개 판결은 검색엔진에 노출될 수 있으므로 공개 전에 내용을 다시 확인하세요.<br>
+            · <strong style="color:var(--cream);">미친 상담소·미친 번역소</strong> 결과는 기본 공개되어 목록·검색에 노출되고 좋아요를 받을 수 있으니 입력에 개인정보를 넣지 마세요.
           </div>
         </section>
 
