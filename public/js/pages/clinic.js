@@ -4,14 +4,18 @@ import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 import { showToast } from '../components/toast.js?v=20260630-3';
 
 const COUNSELORS = [
-  { id: 'musok', emoji: '🔮', name: '만신 김보살', tag: '신점 40년' },
-  { id: 'uju', emoji: '🛸', name: '우주교 라엘롱', tag: '교주 3대째' },
-  { id: 'halmae', emoji: '👵', name: '옆집 순자씨', tag: '인생 78년차' },
-  { id: 'tbal', emoji: '🤖', name: '이성재', tag: '감정 0% 논리 100%' },
-  { id: 'bungeo', emoji: '🐟', name: '지나가던 붕어', tag: '기억력 3초' },
-  { id: 'baeu', emoji: '🎭', name: '대배우 오갈비', tag: '국립극단 40년' }
+  { id: 'gold', emoji: '🧸', name: '금쪽 솔루션 박사', tag: '국민 마음멘토' },
+  { id: 'profiler', emoji: '🕵️', name: '프로파일러 강력반', tag: '심리분석 20년' },
+  { id: 'latte', emoji: '👔', name: '라떼 부장님', tag: '왕년에·요즘것들' },
+  { id: 'salon', emoji: '💇', name: '미용실 원장님', tag: '온 동네 소문통' },
+  { id: 'taxi', emoji: '🚕', name: '택시기사 아저씨', tag: '인생 통달 40년' },
+  { id: 'hani', emoji: '🌿', name: '한의사 원장', tag: '기력이 허합니다' },
+  { id: 'guru', emoji: '🔮', name: '우주 구루', tag: '우주기운 3대째' },
+  { id: 'bungeo', emoji: '🐟', name: '지나가던 붕어', tag: '기억력 3초' }
 ];
 const EMOJI = Object.fromEntries(COUNSELORS.map(c => [c.id, c.emoji]));
+// '랜덤 뽑기' 타일은 페르소나가 아니라 UI 전용이라 COUNSELORS에 넣지 않는다.
+const RANDOM_ID = 'random';
 
 const SAMPLES = [
   '썸녀가 카톡 1을 3시간째 안 읽어요',
@@ -21,9 +25,9 @@ const SAMPLES = [
 ];
 
 const HALL = [
-  { q: '남친이 게임하느라 답장을 안 해요', by: '🔮 만신 김보살', a: '그 남자, 전생에 PC방 사장이었소. 카톡 대신 롤 전적을 보시오. 승률이 곧 그의 사랑이니.' },
-  { q: '월요일이 너무 싫어요', by: '🤖 이성재', a: '월요일은 7일 중 1일, 즉 14.3%입니다. 나머지 85.7%를 낭비하는 게 더 비효율적입니다.' },
-  { q: '배달 최소주문 맞추려고 안 먹을 걸 시켰어요', by: '👵 옆집 순자씨', a: '아이고 잘했어. 남기면 아까우니 그것도 다 먹고, 담엔 그냥 나가서 사 먹어.' }
+  { q: '남친이 게임하느라 답장을 안 해요', by: '🕵️ 프로파일러 강력반', a: '진술을 재구성해보죠. 3시간 무응답, 안읽씹… 행동 패턴상 범인은 게임이 아니라, 확인 안 하고 기다린 본인의 초조함입니다.' },
+  { q: '월요일이 너무 싫어요', by: '👔 라떼 부장님', a: '내가 왕년엔 월화수목금금금이었어! 월요일 하나 가지고~ 요즘 것들은. …그래도 뭐, 커피 한 잔 하고 시작해.' },
+  { q: '자꾸 야식을 시켜먹어요', by: '🌿 한의사 원장', a: '기력이 허하고 위장에 열이 많습니다. 야식은 몸이 아니라 마음이 허해서 그래요. 따뜻한 물 한 잔 드시고 일찍 주무세요.' }
 ];
 
 let picked = null;
@@ -51,6 +55,7 @@ function ensureClinicStyle() {
     .clinic-sec{font-size:10px;letter-spacing:.14em;color:var(--cream-dim);text-transform:uppercase;font-weight:700;margin:22px 2px 10px;}
     .clinic-docs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
     .clinic-doc{cursor:pointer;position:relative;border:1.5px solid var(--border);border-radius:14px;background:var(--navy-card);padding:12px 6px 10px;text-align:center;transition:transform .14s,border-color .18s;font-family:inherit;color:var(--cream);}
+    .clinic-doc.random{border-style:dashed;border-color:rgba(201,168,76,.5);}
     .clinic-doc:hover{transform:translateY(-3px);}
     .clinic-doc:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
     .clinic-doc[aria-pressed="true"]{border-color:var(--gold);background:rgba(201,168,76,.1);}
@@ -149,12 +154,19 @@ export async function renderClinic(container) {
     worryEl.value = b.dataset.s; countEl.textContent = `${worryEl.value.length} / 200`; worryEl.focus();
   }));
 
-  container.querySelector('#clinic-docs').innerHTML = COUNSELORS.map(d => `
+  const counselorTiles = COUNSELORS.map(d => `
     <button class="clinic-doc" type="button" data-id="${d.id}" aria-pressed="false" aria-label="${escapeHtml(d.name)} · ${escapeHtml(d.tag)}">
       <div class="clinic-doc-face" aria-hidden="true">${d.emoji}</div>
       <div class="clinic-doc-name">${escapeHtml(d.name)}</div>
       <div class="clinic-doc-tag">${escapeHtml(d.tag)}</div>
     </button>`).join('');
+  const randomTile = `
+    <button class="clinic-doc random" type="button" data-id="${RANDOM_ID}" aria-pressed="false" aria-label="랜덤 뽑기 · 아무나 걸려라">
+      <div class="clinic-doc-face" aria-hidden="true">🎲</div>
+      <div class="clinic-doc-name">랜덤 뽑기</div>
+      <div class="clinic-doc-tag">아무나 걸려라</div>
+    </button>`;
+  container.querySelector('#clinic-docs').innerHTML = counselorTiles + randomTile;
   container.querySelectorAll('#clinic-docs [data-id]').forEach(b => b.addEventListener('click', () => {
     picked = b.dataset.id;
     container.querySelectorAll('#clinic-docs [data-id]').forEach(x => x.setAttribute('aria-pressed', x.dataset.id === picked));
@@ -174,7 +186,8 @@ async function submitWorry(container) {
   const worryEl = container.querySelector('#clinic-worry');
   const worry = (worryEl?.value || '').trim();
   if (worry.length < 3) { showToast('고민을 조금만 더 적어주세요 🙏', 'error'); worryEl?.focus(); return; }
-  if (!picked) {
+  // 미선택이거나 '랜덤 뽑기'면 실제 상담사 한 명을 즉석에서 뽑아 확정한다.
+  if (!picked || picked === RANDOM_ID) {
     picked = COUNSELORS[Math.floor(Math.random() * COUNSELORS.length)].id;
     container.querySelectorAll('#clinic-docs [data-id]').forEach(x => x.setAttribute('aria-pressed', x.dataset.id === picked));
   }

@@ -194,6 +194,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 상담소·번역소 작성자 매핑: 공개 결과에 uid를 남기지 않고 서버(Admin SDK)만 접근한다.
+    match /advice_result_authors/{resultId} {
+      allow read, write: if false;
+    }
+    match /translation_result_authors/{resultId} {
+      allow read, write: if false;
+    }
+
     // 미친 상담소 결과: 누구나 읽고, 쓰기는 서버만.
     match /advice_results/{resultId} {
       allow read: if true;

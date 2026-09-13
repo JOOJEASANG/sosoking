@@ -207,8 +207,10 @@ exports.generateTranslation = onCall({
   let resultId = null;
   try {
     const docRef = db.collection('translation_results').doc();
-    await docRef.set({
-      uid,
+    // translation_results는 firestore.rules에서 전체 공개(read: if true)이므로 작성자 uid를
+    // 공개 문서에 남기지 않는다. 소유·모더레이션용 작성자 매핑은 서버 전용 컬렉션에 분리 보관한다.
+    const batch = db.batch();
+    batch.set(docRef, {
       modeId: mode.id,
       modeLabel: mode.label,
       modeEmoji: mode.emoji,
@@ -220,6 +222,12 @@ exports.generateTranslation = onCall({
       likeCount: 0,
       createdAt: FieldValue.serverTimestamp()
     });
+    batch.set(db.doc(`translation_result_authors/${docRef.id}`), {
+      uid,
+      resultId: docRef.id,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    await batch.commit();
     resultId = docRef.id;
   } catch (_) {}
 

@@ -105,6 +105,26 @@ if (!trial.includes('generatedSafety = inspectContent') || !/promptVersion: '[^'
   errors.push('functions/generate-trial-lite.js: generated trial safety validation is missing');
 }
 
+// 상담소·번역소 공개 결과(advice_results/translation_results)는 firestore.rules에서
+// 전체 공개(read: if true)이므로 공개 문서에 작성자 uid를 저장하면 안 된다.
+// 소유·모더레이션용 작성자 매핑은 서버 전용 컬렉션에 분리 보관한다.
+const publicServiceWriters = [
+  { file: 'functions/advice.js', authors: 'advice_result_authors/' },
+  { file: 'functions/translate.js', authors: 'translation_result_authors/' }
+];
+for (const { file, authors } of publicServiceWriters) {
+  const source = read(file);
+  if (!source.includes(authors)) {
+    errors.push(`${file}: private author mapping (${authors}) is missing`);
+  }
+  const publicSet = source.match(/batch\.set\(docRef,\s*\{([\s\S]*?)\}\);/)?.[1];
+  if (!publicSet) {
+    errors.push(`${file}: public result write block was not found`);
+  } else if (/\buid\b/.test(publicSet)) {
+    errors.push(`${file}: author uid is stored in the world-readable public result document`);
+  }
+}
+
 const reports = read('functions/reports.js');
 if (!reports.includes('exports.submitReport')) {
   errors.push('functions/reports.js: secure report callable is missing');
@@ -201,7 +221,7 @@ const rules = read('firestore.rules');
 if (!/match \/reports\/\{reportId\}[\s\S]*allow create: if false;/.test(rules)) {
   errors.push('firestore.rules: direct report creation is still allowed');
 }
-for (const privatePath of ['court_comment_authors', 'action_limits', 'report_keys', 'case_id_aliases']) {
+for (const privatePath of ['court_comment_authors', 'action_limits', 'report_keys', 'case_id_aliases', 'advice_result_authors', 'translation_result_authors']) {
   if (!rules.includes(`match /${privatePath}/`)) {
     errors.push(`firestore.rules: explicit private rule is missing for ${privatePath}`);
   }
