@@ -18,8 +18,9 @@ const LIKE_TOP = 10;
 
 const COUNSELOR_EMOJI = {
   // 현재 캐릭터
-  gold: '🧸', boss: '🍲', dog: '🐶', mc: '🎤', monk: '🧘', bungeo: '🐟',
+  gold: '🧸', profiler: '🕵️', latte: '👔', salon: '💇', taxi: '🚕', hani: '🌿', guru: '🔮', bungeo: '🐟',
   // 과거 캐릭터(기존 공개 처방전 호환)
+  boss: '🍲', dog: '🐶', mc: '🎤', monk: '🧘',
   musok: '🔮', uju: '🛸', halmae: '👵', tbal: '🤖', baeu: '🎭'
 };
 
