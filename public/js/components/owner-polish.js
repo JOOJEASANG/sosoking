@@ -92,8 +92,6 @@ export function initOwnerPolish() {
       min-height: 54px;
     }
 
-    .theme-preference-card { margin-bottom: 18px; }
-
     @media (max-width: 420px) {
       .container { padding-left: 16px; padding-right: 16px; }
       .court-shell { padding: 18px !important; }

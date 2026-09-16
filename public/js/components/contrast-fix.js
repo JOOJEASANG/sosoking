@@ -50,7 +50,7 @@ export function initContrastFix() {
 
     html,body{background:var(--navy)!important;color:var(--cream)!important;}
     body::before{opacity:1;}
-    .card,.judge-option,.theme-preference-card{background:var(--navy-card)!important;color:var(--cream)!important;border-color:var(--border)!important;box-shadow:var(--shadow-soft)!important;}
+    .card,.judge-option{background:var(--navy-card)!important;color:var(--cream)!important;border-color:var(--border)!important;box-shadow:var(--shadow-soft)!important;}
     .page-header{background:color-mix(in srgb,var(--navy-light) 95%,transparent)!important;border-bottom-color:var(--border)!important;color:var(--cream)!important;}
     .page-header .logo{color:var(--gold)!important;}
     .back-btn{color:var(--cream-dim)!important;}
@@ -87,7 +87,7 @@ export function initContrastFix() {
 
     .example-card:hover,.admin-table tr:hover td{background:var(--surface-hover)!important;}
     .case-title,.step-content,.judge-option-name,.admin-table td{color:var(--cream)!important;}
-    .case-meta,.judge-option-desc,.slider-labels,.char-counter,.theme-preference-desc,.auth-help,.auth-profile-grid{color:var(--cream-dim)!important;}
+    .case-meta,.judge-option-desc,.slider-labels,.char-counter,.auth-help,.auth-profile-grid{color:var(--cream-dim)!important;}
     .admin-table td,.admin-table th{border-bottom-color:var(--border-soft)!important;}
     .tag{background:var(--surface-soft)!important;color:var(--cream-dim)!important;}
 
