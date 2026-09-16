@@ -116,6 +116,7 @@ npm test
 - 공개 판결 목록 직접 조회 호환성
 - 개인정보·고위험 콘텐츠 필터 회귀검사
 - 공개 결과 민감 필드 sanitation
+- 순수 로직 동작 단위 테스트 (`node --test`): 콘텐츠 안전검사, 공개 결과 sanitizer, 판결 번호줄 정규화
 - 본인 판결 사전 선택 및 공개 흐름
 - UID 비노출 사건 ID와 과거 주소 마이그레이션
 - Functions 및 브라우저 JavaScript 문법
@@ -123,6 +124,23 @@ npm test
 - HTML 정적 자산 및 서비스워커 캐시 경로
 - 제거된 레거시 파일 재유입
 - Functions 내보내기와 배포 목록 일치 여부
+
+### 린트·포맷·단위 테스트
+
+```bash
+npm run lint          # ESLint (실제 버그 규칙은 error, 스타일은 warning)
+npm run test:unit     # node --test 기반 동작 단위 테스트
+npm run format:check  # Prettier 포맷 검사(선택)
+npm run format        # Prettier 자동 포맷(선택, 변경 파일 중심 사용 권장)
+```
+
+- ESLint는 `eslint.config.js` flat config로 구성합니다. `no-undef`처럼 실제 버그를 잡는 규칙은 error, `no-var`·`no-unused-vars`처럼 기존 코드에 남은 스타일 항목은 warning으로 두어 점진적으로 정리합니다. 서버 입력 새니타이저의 제어문자 정규식은 의도된 패턴이므로 `no-control-regex`는 끕니다.
+- `npm test`에는 `test:unit`이 포함되어 PR 검증과 배포 파이프라인 모두에서 실행됩니다. `npm run lint`는 배포를 막지 않도록 PR 검증(`validate-pr.yml`)에서만 게이트로 실행합니다.
+- Prettier는 기존 코드를 일괄 재포맷하지 않습니다. 문자열 매칭 회귀검사가 깨지는 것을 피하기 위해 신규·수정 파일 위주로 사용합니다.
+
+### 의존성 자동 업데이트
+
+`.github/dependabot.yml`이 루트 npm, `functions/` npm, GitHub Actions 의존성을 매주 점검해 업데이트 PR을 생성합니다.
 
 ## Firebase 설정
 
