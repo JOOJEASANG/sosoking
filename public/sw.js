@@ -26,7 +26,7 @@ const APP_SHELL = [
   '/js/pages/services.js?v=20260911-likes-1',
   '/js/pages/clinic-list.js?v=20260911-likes-1',
   '/js/pages/translate-list.js?v=20260911-likes-1',
-  '/js/avatar-fallback.js?v=20260829-avatar-1',
+  '/js/avatar-fallback.js?v=20260917-avatar-photo-2',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/firebase-config.js',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
