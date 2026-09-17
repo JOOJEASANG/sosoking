@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260911-home-plus1-1';
+const CACHE_NAME = 'sosoking-app-v20260917-jury-voted-badge-1';
 
 const APP_SHELL = [
   '/',
@@ -11,7 +11,7 @@ const APP_SHELL = [
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/css/sans-font.css?v=20260729-sans-font-1',
   '/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1',
-  '/css/jury.css?v=20260830-final-audit-1',
+  '/css/jury.css?v=20260917-jury-voted-badge-1',
   '/css/animations.css?v=20260906-anim-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
   '/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1',
@@ -46,7 +46,7 @@ const APP_SHELL = [
   '/js/pages/guide.js?v=20260830-final-audit-1',
   '/js/pages/auth2.js?v=20260829-avatar-1',
   '/js/pages/hall.js?v=20260911-likes-1',
-  '/js/pages/jury.js?v=20260901-daily-vote-feedback-1',
+  '/js/pages/jury.js?v=20260917-jury-voted-badge-1',
   '/js/utils/sanitize.js?v=20260630-3',
   '/js/utils/public-results.js?v=20260730-public-records-2',
   '/js/utils/jury-seen.js?v=20260829-jury-content-1',
