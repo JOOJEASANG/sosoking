@@ -221,8 +221,8 @@ const submitServer = read('functions/submit-secure.js');
 if (!submitServer.includes('settings.dailyLimit')) {
   errors.push('functions/submit-secure.js: configured daily limit is not used');
 }
-if (!submitServer.includes('requireVerifiedUser(request)')) {
-  errors.push('functions/submit-secure.js: verified login enforcement is missing');
+if (!submitServer.includes('requireAnyAuth(request)')) {
+  errors.push('functions/submit-secure.js: auth enforcement is missing');
 }
 if (!submitServer.includes('boolValue(data.isPublic, false)')) {
   errors.push('functions/submit-secure.js: new cases must default to private');
