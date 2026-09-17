@@ -52,10 +52,12 @@ for (const required of [
   "setDoc(doc(db, 'site_settings', 'config')",
   "setDoc(doc(db, 'site_public', 'config')",
   '서비스별 무료 한도 (익명 / 회원)',
+  'svc-submit-anon',
   'svc-advice-anon',
   'svc-advice-user',
   'svc-translate-anon',
   'svc-translate-user',
+  'submitAnonDailyLimit:',
   'adviceAnonDailyLimit:',
   'adviceUserDailyLimit:',
   'translateAnonDailyLimit:',
@@ -65,7 +67,7 @@ for (const required of [
 }
 
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-daily-limit.js?v=20260911-service-limits-1')) {
+if (!adminIndex.includes('/admin/admin-daily-limit.js?v=20260917-anon-submit-1')) {
   errors.push('public/admin/index.html: configurable limit helper is not loaded');
 }
 

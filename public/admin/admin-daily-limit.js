@@ -88,8 +88,10 @@ async function enhanceSiteSettings(root) {
     serviceAnchor.insertAdjacentHTML('afterend', `
       <div data-service-limits class="card" style="padding:15px 16px;margin:0 0 18px;background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.28);">
         <div style="font-size:13px;font-weight:800;color:var(--gold);margin-bottom:3px;">서비스별 무료 한도 (익명 / 회원)</div>
-        <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-bottom:12px;">상담소·번역소의 하루 사용 횟수입니다. 익명은 로그인 유도용, 회원은 상한. 판결소는 위 접수 제한을 따릅니다.</div>
+        <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-bottom:12px;">상담소·번역소·판결소의 하루 사용 횟수입니다. 익명은 로그인 유도용, 회원은 상한. 판결소 회원 한도는 위 접수 제한을 따릅니다.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label class="form-label" style="font-size:12px;">⚖️ 판결소 익명<input type="number" id="svc-submit-anon" class="form-input" min="1" max="20" value="${clampRange(settings.submitAnonDailyLimit, 2, 1, 20)}"></label>
+          <div></div>
           <label class="form-label" style="font-size:12px;">🔮 상담소 익명<input type="number" id="svc-advice-anon" class="form-input" min="1" max="100" value="${clampRange(settings.adviceAnonDailyLimit, 3, 1, 100)}"></label>
           <label class="form-label" style="font-size:12px;">🔮 상담소 회원<input type="number" id="svc-advice-user" class="form-input" min="1" max="1000" value="${clampRange(settings.adviceUserDailyLimit, 10, 1, 1000)}"></label>
           <label class="form-label" style="font-size:12px;">💥 번역소 익명<input type="number" id="svc-translate-anon" class="form-input" min="1" max="100" value="${clampRange(settings.translateAnonDailyLimit, 5, 1, 100)}"></label>
@@ -103,12 +105,14 @@ async function enhanceSiteSettings(root) {
     const dailyLimit = clampLimit(limitInput.value);
     limitInput.value = String(dailyLimit);
     const serviceLimits = {
+      submitAnonDailyLimit: clampRange(form.querySelector('#svc-submit-anon')?.value, 2, 1, 20),
       adviceAnonDailyLimit: clampRange(form.querySelector('#svc-advice-anon')?.value, 3, 1, 100),
       adviceUserDailyLimit: clampRange(form.querySelector('#svc-advice-user')?.value, 10, 1, 1000),
       translateAnonDailyLimit: clampRange(form.querySelector('#svc-translate-anon')?.value, 5, 1, 100),
       translateUserDailyLimit: clampRange(form.querySelector('#svc-translate-user')?.value, 20, 1, 1000)
     };
     for (const [key, id] of [
+      ['submitAnonDailyLimit', '#svc-submit-anon'],
       ['adviceAnonDailyLimit', '#svc-advice-anon'],
       ['adviceUserDailyLimit', '#svc-advice-user'],
       ['translateAnonDailyLimit', '#svc-translate-anon'],
