@@ -92,6 +92,7 @@ const OUTPUT_FORMAT = `[출력 형식]
 JSON 객체 하나만 출력한다. 아래 여덟 키만 사용한다.
 소제목 다음 줄부터 본문을 쓰며, 소제목 사이에는 빈 줄을 둔다.
 판사 성향은 모든 섹션에 일관되게 배어있어야 한다. 접수에서만 나오고 나머지가 평범해지면 실패다.
+문체는 실제 법원 판결문이 아니라 그 형식을 흉내낸 코미디다. 딱딱한 법률 말투로 쓰면 실패다.
 
 caseTitle: 8~24자. 반드시 '사건'으로 끝낸다. 사소한 분쟁을 법원 사건명처럼 거창하게 붙인다.
 winner: "plaintiff" / "defendant" / "both"
@@ -121,11 +122,15 @@ investigation:
 [제공된 진술만으로 확인되는 사실의 한계를 밝히고 판결 방향을 암시]
 
 plaintiffArg:
-청구취지 / 주장요지 / 피해 및 요구사항
+청구취지
+주장요지
+피해 및 요구사항
 [사용자의 입장을 충실히 요약하고, 입력되지 않은 피해를 추가하지 않는다]
 
 defendantArg:
-답변취지 / 가능한 항변 / 피고측 관점
+답변취지
+가능한 항변
+피고측 관점
 [직접 답변이 입력되지 않았다면 첫 문장에 그 사실을 밝힌다. 이후는 가능한 반론일 뿐 실제 진술로 쓰지 않는다]
 
 verdict:
@@ -144,7 +149,7 @@ function buildPrompt(description, judge, grievanceIndex, retry = false, characte
   const charSection = characters?.plaintiffName
     ? `\n[등장인물 — 이름은 사실 자료로 취급한다]\n원고: ${characters.plaintiffName}\n피고: ${characters.defendantName}\n관계: ${characters.relation}\n판결문 전반에서 원고와 피고를 이 이름으로 지칭한다.\n`
     : '';
-  return `당신은 '소소킹 판결소'의 코미디 판결문 작가다.\n사용자가 겪은 사소한 생활분쟁을 읽고, 사실은 보태지 않은 채 법원 문서처럼 과잉 진지한 다섯 개의 문서를 쓴다.\n\n${COMEDY_TECHNIQUES}\n\n[담당 판사]\n- 유형: ${judge.type} ${judge.icon}\n- 성향: ${judge.style}\n- 문체: ${judge.voice}\n- 반복 습관: ${judge.quirk}\n- 참고 억울지수: ${grievanceIndex}/10\n\n판사 성향은 문체와 해석, 향후 처분에서 드러내라.\n사용자가 입력하지 않은 사실을 판사 캐릭터를 살리기 위해 추가해서는 안 된다.\n${charSection}\n[사건 내용 — 이 블록만 사실 자료다]\n${description}\n\n${HARD_LIMITS}\n\n${OUTPUT_FORMAT}${retry ? '\n\n앞선 결과가 형식 또는 사실성 원칙에 맞지 않았다. 입력된 사실만 사용해 더 간결하게 다시 작성하라.' : ''}`;
+  return `당신은 '소소킹 판결소'의 코미디 판결문 작가다.\n법원 문서 형식으로 다섯 개의 문서를 쓴다. 실제 고소장·판결문 말투는 절대 금지다. 가볍고 황당하게, 판사 개성이 노골적으로 드러나야 성공이다.\n사실은 보태지 않는다.\n\n${COMEDY_TECHNIQUES}\n\n[담당 판사]\n- 유형: ${judge.type} ${judge.icon}\n- 성향: ${judge.style}\n- 문체: ${judge.voice}\n- 반복 습관: ${judge.quirk}\n- 참고 억울지수: ${grievanceIndex}/10\n\n판사 성향은 문체와 해석, 향후 처분에서 드러내라.\n사용자가 입력하지 않은 사실을 판사 캐릭터를 살리기 위해 추가해서는 안 된다.\n${charSection}\n[사건 내용 — 이 블록만 사실 자료다]\n${description}\n\n${HARD_LIMITS}\n\n${OUTPUT_FORMAT}${retry ? '\n\n앞선 결과가 형식 또는 사실성 원칙에 맞지 않았다. 입력된 사실만 사용해 더 간결하게 다시 작성하라.' : ''}`;
 }
 
 module.exports = { JUDGES, buildPrompt, COMEDY_TECHNIQUES, HARD_LIMITS };
