@@ -63,7 +63,7 @@ for (const value of ['jury-debate', 'addDiscussionComment', 'court_comments']) {
 }
 
 const app = read('public/js/app.js');
-for (const value of ['renderDiscussion', "path.startsWith('/discussion/')", "hash.startsWith('#/discussion/')", "./pages/discussion.js?v=20260830-final-blind-1"]) {
+for (const value of ['renderDiscussion', "path.startsWith('/discussion/')", "hash.startsWith('#/discussion/')", "./pages/discussion.js?v=20260917-anon-vote-1"]) {
   need(app, value, 'discussion route');
 }
 if (app.includes("from './pages/board")) {
@@ -94,7 +94,7 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('discussion cache: active application versions differ');
 }
 for (const value of [
-  '/js/pages/discussion.js?v=20260830-final-blind-1',
+  '/js/pages/discussion.js?v=20260917-anon-vote-1',
   '/js/pages/result-comments.js?v=20260917-document-style-1',
   '/js/pages/jury.js?v=20260917-jury-voted-badge-1'
 ]) need(worker, value, 'discussion cache');
