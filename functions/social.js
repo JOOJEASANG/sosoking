@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { enforceActionRateLimit, requireVerifiedUser, reserveAiRequest } = require('./security');
+const { enforceActionRateLimit, requireVerifiedUser, requireAnyAuth, reserveAiRequest } = require('./security');
 const { inspectContent } = require('./content-safety');
 
 const db = getFirestore();
@@ -182,7 +182,7 @@ exports.voteResult = onCall({
   timeoutSeconds: 30,
   memory: '256MiB'
 }, async request => {
-  requireVerifiedUser(request);
+  requireAnyAuth(request);
 
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);

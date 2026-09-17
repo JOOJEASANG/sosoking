@@ -247,9 +247,8 @@ export async function renderDiscussion(container, caseId) {
 
   target.querySelectorAll('[data-discussion-stance]').forEach(button => {
     button.addEventListener('click', async () => {
-      if (!participantReady()) {
-        showToast('로그인한 회원만 토론 입장을 선택할 수 있습니다.', 'error');
-        location.hash = '#/auth';
+      if (!auth.currentUser) {
+        showToast('잠시 후 다시 시도해주세요.', 'error');
         return;
       }
       const stance = button.dataset.discussionStance || '';
