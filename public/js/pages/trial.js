@@ -179,6 +179,15 @@ function ensureTrialAnimationStyle() {
     @keyframes trial-complete-pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
     @keyframes trial-seal{from{opacity:0;transform:scale(1.65) rotate(-20deg)}to{opacity:1;transform:scale(1) rotate(-8deg)}}
     @keyframes trial-document-reveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .trial-stage-page .doc-subheading{position:relative;margin:18px 0 6px;padding-left:11px;font-size:13px;font-weight:900;color:var(--gold);}
+    .trial-stage-page .doc-subheading::before{content:'';position:absolute;left:0;top:.3em;width:3px;height:1.1em;border-radius:2px;background:var(--gold);}
+    .trial-stage-page .doc-subheading:first-child{margin-top:0;}
+    .trial-stage-page .doc-paragraph{margin:0 0 10px;line-height:1.9;word-break:keep-all;}
+    .trial-stage-page .doc-paragraph:last-child{margin-bottom:0;}
+    .trial-stage-page .doc-order-item{display:grid;grid-template-columns:24px minmax(0,1fr);gap:6px;margin:0 0 10px;padding:10px 12px;border-left:3px solid rgba(201,168,76,.7);background:rgba(201,168,76,.06);border-radius:0 8px 8px 0;line-height:1.8;}
+    .trial-stage-page .doc-order-item span{font-weight:900;color:var(--gold);}
+    .trial-stage-page .doc-order-item p{margin:0;}
+    .trial-stage-page .doc-order-item:last-child{margin-bottom:0;}
     @media(min-width:620px){.trial-stage-page .trial-step-sub{display:block}.trial-stage-page .trial-court-scene{padding-left:32px;padding-right:32px}.trial-stage-page .trial-parties{gap:22px}}
     @media(max-width:390px){.trial-stage-page .trial-step-orb{width:36px;height:36px;font-size:15px}.trial-stage-page .trial-timeline::before{top:18px}.trial-stage-page .trial-step-title{font-size:9px}.trial-stage-page .trial-court-scene{min-height:226px}}
     @media(prefers-reduced-motion:reduce){.trial-stage-page *,.trial-stage-page *::before,.trial-stage-page *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}.trial-stage-page .trial-progress-bar{transition:none}}
@@ -493,30 +502,82 @@ function renderSteps(data) {
   const dName = caseData?.defendantName || null;
 
   const sections = [
-    ['01', '사건접수', '사건접수보고서', data.reception, false, null],
+    ['01', '사건접수', '사건접수보고서', data.reception, false, null, 'reception'],
     ['02', '수사보고', '정황 및 증거 검토', data.investigation, false,
-      { icon: '🔍', name: '수사관', role: '수사보고' }],
+      { icon: '🔍', name: '수사관', role: '수사보고' }, 'investigation'],
     ['03', '원고측 변론', '청구취지 및 주장요지', data.plaintiffArg, false,
-      pName ? { icon: '🗣️', name: pName, role: '원고' } : null],
+      pName ? { icon: '🗣️', name: pName, role: '원고' } : null, 'plaintiffArg'],
     ['04', '피고측 변론', '답변취지 및 항변요지', data.defendantArg, false,
-      dName ? { icon: '🛡️', name: dName, role: '피고' } : null],
+      dName ? { icon: '🛡️', name: dName, role: '피고' } : null, 'defendantArg'],
     ['05', '재판부 판결', '주문 및 판단이유', data.verdict, true,
-      judgeEntry ? { icon: judgeEntry[1], name: `${judgeType} 판사`, role: '재판부 판결' } : null]
+      judgeEntry ? { icon: judgeEntry[1], name: `${judgeType} 판사`, role: '재판부 판결' } : null, 'verdict']
   ];
 
   target.innerHTML = sections
     .filter(([, , , content]) => content)
-    .map(([number, title, subtitle, content, verdict, character]) =>
-      documentCard(number, title, subtitle, content, verdict, character))
+    .map(([number, title, subtitle, content, verdict, character, sectionKey]) =>
+      documentCard(number, title, subtitle, content, verdict, character, sectionKey))
     .join('');
 }
 
-function formatListContent(text) {
-  // Insert newline before inline numbered items (e.g. "text 2. next" → "text\n2. next")
-  return text.replace(/([^\n])\s+(\d+\.\s)/g, '$1\n$2');
+const TRIAL_SECTION_LABELS = {
+  reception: ['접수취지', '사건개요', '접수의견'],
+  investigation: ['확인 정황', '정황 검토', '주요 쟁점', '주요 증거', '확인되지 않은 사항', '검토 소견'],
+  plaintiffArg: ['청구취지', '주장요지', '피해 및 요구사항', '원고측 최종의견'],
+  defendantArg: ['답변취지', '항변요지', '피고측 최종의견'],
+  verdict: ['주문', '판단이유', '재판부 의견', '결론']
+};
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function documentCard(number, title, subtitle, content, verdict = false, character = null) {
+function normalizeContent(value) {
+  return String(value || '')
+    .replace(/\\n/g, '\n')
+    .replace(/([^\n])\s+(\d+\.\s)/g, '$1\n$2')
+    .replace(/\r/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function renderTrialParagraph(value) {
+  const text = value.trim();
+  const order = text.match(/^(\d+)\.\s*(.+)$/s);
+  if (order) {
+    return `<div class="doc-order-item"><span>${escapeHtml(order[1])}.</span><p>${escapeHtml(order[2])}</p></div>`;
+  }
+  return `<p class="doc-paragraph">${escapeHtml(text)}</p>`;
+}
+
+function renderTrialStructuredText(content, sectionKey) {
+  let text = normalizeContent(content)
+    .replace(/^(사건접수보고서|수사보고서|수사보고|원고측 변론|피고측 변론|재판부 판결|판결문)\s*/i, '');
+
+  const headings = TRIAL_SECTION_LABELS[sectionKey] || [];
+  [...headings].sort((a, b) => b.length - a.length).forEach(heading => {
+    const pattern = new RegExp(`${escapeRegex(heading)}\\s*[:：]?\\s*`, 'g');
+    text = text.replace(pattern, `\n@@${heading}@@\n`);
+  });
+
+  const chunks = text.split(/\n+/).map(c => c.trim()).filter(Boolean);
+  const html = [];
+
+  chunks.forEach(chunk => {
+    const marker = chunk.match(/^@@(.+)@@$/);
+    if (marker) {
+      html.push(`<h3 class="doc-subheading">${escapeHtml(marker[1])}</h3>`);
+      return;
+    }
+    // Split by double newlines within the chunk if present
+    chunk.split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
+      .forEach(paragraph => html.push(renderTrialParagraph(paragraph)));
+  });
+
+  return html.join('') || `<p class="doc-paragraph">기록된 내용이 없습니다.</p>`;
+}
+
+function documentCard(number, title, subtitle, content, verdict = false, character = null, sectionKey = '') {
   const charBadge = character?.name
     ? `<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 7px;border-radius:999px;border:1px solid rgba(201,168,76,.32);background:rgba(201,168,76,.08);font-size:10px;font-weight:900;color:var(--gold);margin-bottom:10px;">${escapeHtml(character.icon)} ${escapeHtml(character.name)}<span style="opacity:.6;font-weight:700;margin-left:2px;">· ${escapeHtml(character.role)}</span></div>`
     : '';
@@ -530,6 +591,6 @@ function documentCard(number, title, subtitle, content, verdict = false, charact
       </div>
       <span class="badge badge-gold">${escapeHtml(subtitle)}</span>
     </div>
-    <div class="step-content" style="white-space:pre-line;line-height:1.9;">${escapeHtml(formatListContent(content))}</div>
+    <div class="step-content">${renderTrialStructuredText(content, sectionKey)}</div>
   </section>`;
 }
