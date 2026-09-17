@@ -11,7 +11,9 @@ const sharedRules = {
   // no-unreachable, no-fallthrough, valid-typeof, ...): those are real bugs.
   // The rules below are downgraded to warnings so pre-existing, intentional
   // patterns don't block CI, while still surfacing for gradual cleanup.
-  'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+  // Catching an error without using it is a deliberate "swallow" pattern here
+  // (e.g. best-effort localStorage), so caught bindings are not flagged.
+  'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
   'no-empty': ['warn', { allowEmptyCatch: true }],
   'no-constant-condition': ['error', { checkLoops: false }],
   eqeqeq: ['warn', 'smart'],
