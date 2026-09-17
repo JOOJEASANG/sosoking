@@ -23,3 +23,4 @@ Object.assign(exports, require('./translate'));
 Object.assign(exports, require('./like'));
 Object.assign(exports, require('./admin-actions'));
 Object.assign(exports, require('./admin-visibility'));
+Object.assign(exports, require('./auto-limits'));

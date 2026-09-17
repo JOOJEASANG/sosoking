@@ -109,7 +109,7 @@ function renderLoginRequired(container) {
 
 export async function renderSubmit(container) {
   const user = auth.currentUser;
-  if (!user || user.isAnonymous) {
+  if (!user) {
     renderLoginRequired(container);
     return;
   }

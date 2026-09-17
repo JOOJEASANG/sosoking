@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { requireVerifiedUser } = require('./security');
+const { requireAnyAuth } = require('./security');
 const { inspectContent } = require('./content-safety');
 
 const db = getFirestore();
@@ -91,7 +91,7 @@ exports.submitCase = onCall({
   timeoutSeconds: 30,
   memory: '256MiB'
 }, async request => {
-  requireVerifiedUser(request);
+  requireAnyAuth(request);
 
   const uid = request.auth.uid;
   const data = request.data || {};
@@ -113,7 +113,11 @@ exports.submitCase = onCall({
   const settings = await loadSettings();
   // 기존 설정에는 dailyLimitEnabled가 없으므로 배포 직후에는 제한 없이 테스트할 수 있다.
   const dailyLimitEnabled = settings.dailyLimitEnabled === true;
-  const dailyLimit = clampNumber(settings.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 1000);
+  const provider = request.auth.token?.firebase?.sign_in_provider || '';
+  const isAnonymous = provider === 'anonymous';
+  const memberLimit = clampNumber(settings.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 1000);
+  const anonLimit = clampNumber(settings.submitAnonDailyLimit, 2, 1, 100);
+  const dailyLimit = isAnonymous ? anonLimit : memberLimit;
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
   const bannedWords = Array.isArray(settings.bannedWords) ? settings.bannedWords : [];
 

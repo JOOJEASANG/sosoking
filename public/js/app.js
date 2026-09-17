@@ -3,7 +3,7 @@ import { signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/1
 import { startIdleSessionTimeout } from './session-timeout.js?v=20260831-idle-timeout-1';
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
 import { renderHome } from './pages/home.js?v=20260911-home-plus1-1';
-import { renderSubmit } from './pages/submit.js?v=20260906-list-fix-1';
+import { renderSubmit } from './pages/submit.js?v=20260917-anon-submit-1';
 import { renderTrial } from './pages/trial.js?v=20260906-trial-flow-2';
 import { renderResult } from './pages/result-comments.js?v=20260917-document-style-1';
 import { renderDebate } from './pages/debate.js?v=20260907-debate-2';

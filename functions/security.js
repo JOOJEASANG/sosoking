@@ -58,6 +58,12 @@ function requireVerifiedUser(request) {
   }
 }
 
+function requireAnyAuth(request) {
+  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireAppCheck(request);
+  return request.auth;
+}
+
 async function enforceActionRateLimit(uid, action, options = {}) {
   const safeUid = String(uid || '').trim();
   const safeAction = String(action || '').trim().toLowerCase();
@@ -153,6 +159,7 @@ async function reserveAiRequest(uid, kind, settings = {}) {
 module.exports = {
   enforceActionRateLimit,
   requireAccountUser,
+  requireAnyAuth,
   requireAppCheck,
   requireVerifiedUser,
   reserveAiRequest
