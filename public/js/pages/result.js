@@ -243,19 +243,26 @@ export async function renderResult(container, caseId) {
     ['05', '재판부 판결', '주문 및 판단이유', 'verdict', r.verdict]
   ];
 
+  const certInfo = { date, judgeType, judgeIcon: r.judgeIcon || judge.icon };
+
   container.innerHTML = `
     <div class="result-document-page">
       <div class="page-header"><span class="logo">⚖️ 판결문</span></div>
       <div class="container result-document-container">
         <header class="card court-document result-cover">
+          <div class="result-seal" aria-hidden="true">
+            <div class="result-seal-inner">⚖</div>
+            <div class="result-seal-label">소소킹</div>
+          </div>
           <div class="result-court-name">소소킹 판결소 제3생활부</div>
           <div class="result-title-rule"></div>
-          <h1>판 결 문</h1>
+          <h1 class="result-doc-main-title">판&nbsp;&nbsp;&nbsp;결&nbsp;&nbsp;&nbsp;문</h1>
           <h2>${escapeHtml(title)}</h2>
-          <div class="result-case-meta">
-            사건번호 ${escapeHtml(docket)}${date ? ` · ${escapeHtml(date)}` : ''}<br>
-            원고 ${escapeHtml(c.nickname || r.nickname || '익명')}
-          </div>
+          <dl class="result-party-dl">
+            <div><dt>사&nbsp;&nbsp;&nbsp;건</dt><dd>${escapeHtml(docket)}</dd></div>
+            <div><dt>원&nbsp;&nbsp;&nbsp;고</dt><dd>${escapeHtml(c.nickname || r.nickname || '익명')}</dd></div>
+            ${date ? `<div><dt>선 고 일</dt><dd>${escapeHtml(date)}</dd></div>` : ''}
+          </dl>
           <div class="judge-summary">
             <div class="judge-character" aria-hidden="true">${escapeHtml(r.judgeIcon || judge.icon)}</div>
             <div class="judge-copy">
@@ -275,7 +282,7 @@ export async function renderResult(container, caseId) {
 
         <main class="result-document-stack">
           ${sections.map(([number, sectionTitle, subtitle, key, content], index) =>
-            documentSection(number, sectionTitle, subtitle, key, content, index === 4)
+            documentSection(number, sectionTitle, subtitle, key, content, index === 4, index === 4 ? certInfo : null)
           ).join('')}
         </main>
 
@@ -303,17 +310,24 @@ export async function renderResult(container, caseId) {
   bindResultActions(container, caseId, c, r, isOwner, isPublic);
 }
 
-function documentSection(number, title, subtitle, key, content, verdict = false) {
+function documentSection(number, title, subtitle, key, content, verdict = false, certInfo = null) {
   return `<section class="card court-document result-paper ${verdict ? 'verdict-card' : ''}">
-    ${verdict ? '<div class="verdict-stamp">판결</div>' : ''}
+    ${verdict ? '<div class="verdict-stamp" aria-hidden="true">판결</div>' : ''}
     <div class="result-paper-header">
       <div>
-        <div class="result-paper-number">DOCUMENT ${number}</div>
+        <div class="result-paper-number">제&nbsp;${number}&nbsp;조</div>
         <div class="result-paper-title">${escapeHtml(title)}</div>
       </div>
       <span class="result-paper-badge">${escapeHtml(subtitle)}</span>
     </div>
     <div class="result-paper-body">${renderStructuredText(content, key)}</div>
+    ${verdict && certInfo ? `<footer class="result-cert">
+      <div class="result-cert-rule"></div>
+      <div class="result-cert-text">위 판결이 정본임을 인증합니다</div>
+      ${certInfo.date ? `<div class="result-cert-date">${escapeHtml(certInfo.date)}</div>` : ''}
+      <div class="result-cert-court">소소킹 판결소 제3생활부</div>
+      <div class="result-cert-judge">${escapeHtml(certInfo.judgeIcon)}&nbsp;${escapeHtml(certInfo.judgeType)}&nbsp;판사&emsp;&emsp;[인]</div>
+    </footer>` : ''}
   </section>`;
 }
 

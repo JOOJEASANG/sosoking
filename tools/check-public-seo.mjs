@@ -112,7 +112,7 @@ if (homeSummary.includes('record.verdict') || homeSummary.includes('record.sente
 }
 
 const resultComments = read('public/js/pages/result-comments.js');
-if (!resultComments.includes("./result-court.js?v=20260906-result-clean-1")) {
+if (!resultComments.includes("./result-court.js?v=20260917-document-style-1")) {
   errors.push('public/js/pages/result-comments.js: styled full verdict renderer is missing');
 }
 
