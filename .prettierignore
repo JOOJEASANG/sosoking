@@ -1,0 +1,12 @@
+# Dependencies and lockfiles
+node_modules
+functions/node_modules
+package-lock.json
+functions/package-lock.json
+
+# Generated / binary-ish assets
+assets
+public/data
+public/*.png
+public/**/*.png
+**/*.min.js

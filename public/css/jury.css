@@ -372,11 +372,27 @@
 }
 
 .jury-list-card.judged {
-  opacity: 0.72;
+  opacity: 0.62;
+  border-color: rgba(39, 174, 96, 0.35);
+}
+
+.jury-list-card.judged .jury-list-title {
+  color: var(--cream-dim);
 }
 
 .jury-list-card.judged .jury-list-cta {
   color: var(--cream-dim);
+}
+
+.jury-list-done {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(39, 174, 96, 0.14);
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
 }
 
 [data-theme='light'] .jury-list-card {
@@ -385,6 +401,20 @@
 
 [data-theme='light'] .jury-list-title {
   color: #241a0f;
+}
+
+[data-theme='light'] .jury-list-card.judged {
+  background: #f4f9f4;
+  border-color: rgba(39, 174, 96, 0.4);
+}
+
+[data-theme='light'] .jury-list-card.judged .jury-list-title {
+  color: #5a6a5a;
+}
+
+[data-theme='light'] .jury-list-done {
+  color: #2e7d32;
+  background: rgba(46, 125, 50, 0.12);
 }
 
 /* 목록으로 돌아가는 상단 바 */

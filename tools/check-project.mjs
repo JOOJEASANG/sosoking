@@ -195,7 +195,7 @@ if (!/match \/cases\/\{caseId\}[\s\S]*?allow update:\s*if isAdmin\(\);/.test(rul
   || !/match \/results\/\{caseId\}[\s\S]*?allow update:\s*if isAdmin\(\);/.test(rules)) {
   errors.push('firestore.rules: visibility updates must remain server-only');
 }
-const caseRules = rules.match(/match \/cases\/\{caseId\}[\s\S]*?(?=\n    match \/results\/)/)?.[0] || '';
+const caseRules = rules.match(/match \/cases\/\{caseId\}[\s\S]*?(?=\n {4}match \/results\/)/)?.[0] || '';
 if (caseRules.includes('resource.data.isPublic == true')) {
   errors.push('firestore.rules: public users must not read private case documents');
 }

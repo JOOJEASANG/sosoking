@@ -120,7 +120,7 @@ for (const moduleUrl of [
   "./pages/home.js?v=20260911-home-plus1-1",
   "./pages/discussion.js?v=20260830-final-blind-1",
   "./pages/hall.js?v=20260911-likes-1",
-  "./pages/jury.js?v=20260901-daily-vote-feedback-1"
+  "./pages/jury.js?v=20260917-jury-voted-badge-1"
 ]) {
   expect(app.includes(moduleUrl), `public/js/app.js: final blind module cache is missing ${moduleUrl}`);
 }
@@ -134,7 +134,7 @@ expect(sw.includes('/js/pages/result-court.js?v=20260906-result-clean-1')
   && sw.includes('/js/pages/discussion.js?v=20260830-final-blind-1')
   && sw.includes('/js/pages/home.js?v=20260911-home-plus1-1')
   && sw.includes('/js/pages/hall.js?v=20260911-likes-1')
-  && sw.includes('/js/pages/jury.js?v=20260901-daily-vote-feedback-1')
+  && sw.includes('/js/pages/jury.js?v=20260917-jury-voted-badge-1')
   && !sw.includes('/js/pages/participation.js')
   && !sw.includes('/js/pages/board.js'),
   'public/sw.js: canonical verdict/blind jury/discussion modules or retired-board cleanup are inconsistent');

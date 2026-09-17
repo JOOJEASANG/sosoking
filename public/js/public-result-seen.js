@@ -12,14 +12,14 @@
 (function () {
   'use strict';
 
-  var SEEN_KEY = 'sosoking-jury-seen';
-  var SEEN_LIMIT = 400;
-  var ID_PATTERN = /^[A-Za-z0-9_-]{1,180}$/;
+  const SEEN_KEY = 'sosoking-jury-seen';
+  const SEEN_LIMIT = 400;
+  const ID_PATTERN = /^[A-Za-z0-9_-]{1,180}$/;
 
   function currentCaseId() {
-    var match = String(location.pathname || '').match(/\/result\/([^/?#]+)/);
+    const match = String(location.pathname || '').match(/\/result\/([^/?#]+)/);
     if (!match) return '';
-    var decoded;
+    let decoded;
     try {
       decoded = decodeURIComponent(match[1]);
     } catch (error) {
@@ -31,7 +31,7 @@
   function markSeen(caseId) {
     if (!caseId) return;
     try {
-      var seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+      let seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
       if (!Array.isArray(seen)) seen = [];
       if (seen.indexOf(caseId) !== -1) return;
       seen.push(caseId);

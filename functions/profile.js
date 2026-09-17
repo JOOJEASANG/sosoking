@@ -31,10 +31,6 @@ function photoDataError(value) {
   return '';
 }
 
-function cleanRoomId(value) {
-  return String(value || '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
-}
-
 function nicknameError(value) {
   const n = cleanNickname(value);
   if (n.length < 2) return '닉네임은 2자 이상 입력해주세요.';

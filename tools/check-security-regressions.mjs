@@ -235,7 +235,7 @@ const home = read('public/js/pages/home.js');
 if (!home.includes("doc(db, 'site_public', 'statistics')")) {
   errors.push('public/js/pages/home.js: authoritative public statistics document is not used');
 }
-if (!home.includes('id=\"stat-count\">—') || home.includes('847+')) {
+if (!home.includes('id="stat-count">—') || home.includes('847+')) {
   errors.push('public/js/pages/home.js: public count must start unknown instead of showing a fake statistic');
 }
 if (!home.includes('loadSafePublicResults')) {
@@ -277,7 +277,7 @@ const adminIndex = read('public/admin/index.html');
 if (!adminIndex.includes('/admin/admin-bootstrap.js')) {
   errors.push('public/admin/index.html: strict admin bootstrap is not loaded');
 }
-if (adminIndex.includes('src=\"/admin/admin.js')) {
+if (adminIndex.includes('src="/admin/admin.js')) {
   errors.push('public/admin/index.html: legacy admin module bypasses the strict bootstrap');
 }
 

@@ -110,13 +110,6 @@ function cleanDocument(value, maxLen = 2400) {
     .slice(0, maxLen);
 }
 
-function clampNumber(value, fallback, min, max) {
-  const number = Number(value);
-  return Number.isFinite(number)
-    ? Math.max(min, Math.min(max, Math.floor(number)))
-    : fallback;
-}
-
 function hashString(value) {
   let hash = 2166136261;
   for (const char of String(value || '')) {

@@ -109,9 +109,10 @@ function juryListCard(caseId, data, judged) {
         <div class="jury-list-title">${escapeHtml(data.caseTitle || '생활분쟁 사건')}</div>
         <div class="jury-list-meta">
           <span class="jury-list-judge">${escapeHtml(data.judgeIcon || '⚖️')} ${escapeHtml(data.judgeType || '소소킹 AI 재판부')} 판사</span>
+          ${judged ? '<span class="jury-list-done">✓ 판정 완료</span>' : ''}
         </div>
       </div>
-      <span class="jury-list-cta">${judged ? '판정 완료 · 다시 보기' : '판정하기 ›'}</span>
+      <span class="jury-list-cta">${judged ? '다시 보기 ›' : '판정하기 ›'}</span>
     </button>`;
 }
 
@@ -176,11 +177,17 @@ async function loadJuryList(container, requestedCaseId = '') {
   }
 
   const seen = jurySeenSet();
-  slot.innerHTML = `<div class="jury-list-head">공개 사건 ${rows.length}건 · 판결은 투표 전까지 가려집니다</div><div class="jury-list">${rows.map(([caseId, data]) => juryListCard(caseId, data, seen.has(caseId))).join('')}</div>`;
+  const sortedRows = [...rows].sort(([aId], [bId]) => {
+    const aJudged = seen.has(aId);
+    const bJudged = seen.has(bId);
+    if (aJudged === bJudged) return 0;
+    return aJudged ? 1 : -1;
+  });
+  slot.innerHTML = `<div class="jury-list-head">공개 사건 ${rows.length}건 · 판결은 투표 전까지 가려집니다</div><div class="jury-list">${sortedRows.map(([caseId, data]) => juryListCard(caseId, data, seen.has(caseId))).join('')}</div>`;
   slot.querySelectorAll('.jury-list-card').forEach(button => {
     button.addEventListener('click', () => {
       const caseId = String(button.dataset.caseId || '');
-      const row = rows.find(([id]) => id === caseId);
+      const row = sortedRows.find(([id]) => id === caseId);
       if (row) void openCase(container, row[0], row[1]);
     });
   });
