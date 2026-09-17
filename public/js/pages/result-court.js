@@ -1,4 +1,4 @@
-import { renderResult as renderBaseResult } from './result.js?v=20260906-result-clean-1';
+import { renderResult as renderBaseResult } from './result.js?v=20260917-document-style-1';
 import { functions } from '../firebase.js?v=20260729-auth-session-1';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
@@ -80,6 +80,22 @@ function ensureResultDocumentStyle() {
     .result-paper.verdict-card{border-color:#c9ad74!important;}
     .result-paper.verdict-card .result-paper-header{padding-right:68px;}
     .result-paper .verdict-stamp{right:18px;top:18px;opacity:.2;color:#9f241b!important;border-color:#9f241b!important;}
+    .result-doc-main-title{margin:6px 0 8px;font-family:var(--font-serif);font-size:28px;font-weight:900;letter-spacing:.08em;color:#1c1814!important;}
+    .result-seal{margin:0 auto 16px;width:78px;height:78px;border-radius:50%;border:2.5px solid #a97927;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(169,121,39,.07);gap:2px;}
+    .result-seal-inner{font-size:26px;line-height:1;}
+    .result-seal-label{font-size:8px;letter-spacing:.2em;font-weight:900;color:#856225;text-transform:uppercase;}
+    .result-party-dl{margin:14px auto 4px;text-align:left;width:100%;max-width:340px;}
+    .result-party-dl > div{display:grid;grid-template-columns:70px 1fr;gap:10px;padding:5px 0;border-bottom:1px solid rgba(169,121,39,.15);}
+    .result-party-dl > div:last-child{border-bottom:none;}
+    .result-party-dl dt{font-size:11.5px;font-weight:900;color:#856225;letter-spacing:.04em;}
+    .result-party-dl dd{font-size:11.5px;color:#2b251f;margin:0;font-weight:500;}
+    .result-cert{margin-top:28px;padding-top:4px;text-align:right;}
+    .result-cert-rule{height:1px;background:linear-gradient(90deg,transparent,#d8d0c3 20%,#d8d0c3 80%,transparent);margin-bottom:16px;}
+    .result-cert-text{font-size:11px;color:#856225;font-weight:900;letter-spacing:.08em;margin-bottom:8px;}
+    .result-cert-date{font-size:12px;color:#62584d;margin-bottom:3px;}
+    .result-cert-court{font-size:12px;color:#62584d;margin-bottom:10px;}
+    .result-cert-judge{font-size:14px;font-weight:900;color:#34291d;font-family:var(--font-serif);}
+    .result-paper .verdict-stamp{opacity:.38;}
     .result-disclaimer{text-align:center;margin:20px 0;padding:12px 14px;background:rgba(255,255,255,.04);border-radius:9px;font-size:11px;color:var(--cream-dim);line-height:1.7;}
     .result-audience{margin-top:26px;padding-top:20px;border-top:1px solid var(--border);}
     .result-audience-title{font-family:var(--font-serif);font-size:18px;font-weight:900;color:var(--gold);margin-bottom:12px;}
@@ -126,6 +142,16 @@ function ensureResultDocumentStyle() {
     }
     [data-theme='dark'] .result-document-page .grievance-meter i{background:rgba(255,255,255,.13);}
     [data-theme='dark'] .result-document-page .result-disclaimer{background:rgba(255,255,255,.035)!important;color:rgba(255,249,239,.68)!important;}
+    [data-theme='dark'] .result-document-page .result-seal{border-color:rgba(209,173,80,.55);background:rgba(209,173,80,.06);}
+    [data-theme='dark'] .result-document-page .result-seal-label{color:rgba(209,173,80,.75);}
+    [data-theme='dark'] .result-document-page .result-doc-main-title{color:#fff9ef!important;}
+    [data-theme='dark'] .result-document-page .result-party-dl > div{border-bottom-color:rgba(255,255,255,.08);}
+    [data-theme='dark'] .result-document-page .result-party-dl dt{color:rgba(209,173,80,.8);}
+    [data-theme='dark'] .result-document-page .result-party-dl dd{color:rgba(255,249,239,.82);}
+    [data-theme='dark'] .result-document-page .result-cert-rule{background:linear-gradient(90deg,transparent,rgba(255,255,255,.12) 20%,rgba(255,255,255,.12) 80%,transparent);}
+    [data-theme='dark'] .result-document-page .result-cert-text{color:rgba(209,173,80,.8);}
+    [data-theme='dark'] .result-document-page .result-cert-date,[data-theme='dark'] .result-document-page .result-cert-court{color:rgba(255,249,239,.6);}
+    [data-theme='dark'] .result-document-page .result-cert-judge{color:rgba(255,249,239,.9);}
 
     @media (max-width:640px){
       .result-document-container{padding-left:14px;padding-right:14px;}
