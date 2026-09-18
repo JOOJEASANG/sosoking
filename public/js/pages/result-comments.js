@@ -98,6 +98,10 @@ function ensureAddonStyles() {
     .owner-verdict-once{margin-top:13px;font-size:10.5px;color:var(--cream-dim)}
     .owner-verdict-reveal{margin:0 0 16px;padding:14px 16px;border:1px solid rgba(201,168,76,.45);border-radius:13px;background:rgba(201,168,76,.09);text-align:center;font-size:12.5px;line-height:1.7;color:var(--cream-dim)}
     .owner-verdict-reveal strong{color:var(--gold)}
+    .owner-verdict-reveal.is-hit{border-color:rgba(74,190,116,.6);background:rgba(74,190,116,.13);color:var(--cream)}
+    .owner-verdict-reveal.is-hit strong{color:#6fdc97}
+    .owner-verdict-reveal.is-miss{border-color:rgba(231,111,81,.55);background:rgba(231,111,81,.13);color:var(--cream)}
+    .owner-verdict-reveal.is-miss strong{color:#f4a08a}
     .result-original-accordion{margin:17px 0 0;border:1px solid #d8cfbf;border-radius:14px;background:#faf6ee;color:#302b25;overflow:hidden;text-align:left}
     .result-original-accordion-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 15px;border:0;background:transparent;color:#654b24;font:inherit;font-size:13px;font-weight:900;cursor:pointer;text-align:left}
     .result-original-accordion-trigger:disabled{opacity:.65;cursor:wait}.result-original-accordion-panel[hidden]{display:none!important}.result-original-accordion-panel{border-top:1px solid #ddd2c0;padding:15px 16px 17px;background:#fffdf7}
@@ -157,7 +161,7 @@ function addOwnerBlindGate(container, caseId) {
   });
 }
 
-function addOwnerRevealNotice(container, vote) {
+function addOwnerRevealNotice(container, vote, winner) {
   if (!validOwnerVote(vote) || container.querySelector('[data-owner-verdict-reveal]')) return;
   const verdictCard = container.querySelector('.verdict-card');
   if (!verdictCard) return;
@@ -165,7 +169,15 @@ function addOwnerRevealNotice(container, vote) {
   const notice = document.createElement('div');
   notice.className = 'owner-verdict-reveal';
   notice.dataset.ownerVerdictReveal = 'true';
-  notice.innerHTML = `내 예상은 <strong>${OWNER_VERDICT_LABEL[vote]}</strong>이었습니다. 🔓 이제 AI 재판부의 판단과 비교해보세요.`;
+  if (validOwnerVote(winner)) {
+    const matched = vote === winner;
+    notice.classList.add(matched ? 'is-hit' : 'is-miss');
+    notice.innerHTML = matched
+      ? `🎯 <strong>적중!</strong> 내 예상 <strong>${OWNER_VERDICT_LABEL[vote]}</strong>이 AI 재판부 판결 <strong>${OWNER_VERDICT_LABEL[winner]}</strong>과 일치했습니다. 재판장 감각이 있으시네요!`
+      : `🙃 <strong>빗나감!</strong> 내 예상은 <strong>${OWNER_VERDICT_LABEL[vote]}</strong>, AI 재판부 판결은 <strong>${OWNER_VERDICT_LABEL[winner]}</strong> — 이번엔 재판부와 생각이 달랐네요.`;
+  } else {
+    notice.innerHTML = `내 예상은 <strong>${OWNER_VERDICT_LABEL[vote]}</strong>이었습니다. 🔓 이제 AI 재판부의 판단과 비교해보세요.`;
+  }
   verdictCard.insertAdjacentElement('beforebegin', notice);
 }
 
@@ -277,6 +289,15 @@ export async function renderResult(container, caseId) {
     return;
   }
 
-  if (ownerState.isOwner) addOwnerRevealNotice(container, ownerState.vote);
+  if (ownerState.isOwner) {
+    let winner = '';
+    try {
+      const resultSnap = await getDoc(doc(db, 'results', caseId));
+      if (resultSnap.exists()) winner = String(resultSnap.data().winner || '');
+    } catch (error) {
+      console.warn('verdict winner load for owner reveal failed:', error?.code || error);
+    }
+    addOwnerRevealNotice(container, ownerState.vote, winner);
+  }
   addDiscussionLink(container, caseId);
 }
