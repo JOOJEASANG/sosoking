@@ -1,4 +1,4 @@
-import { renderResult as renderBaseResult } from './result.js?v=20260917-document-style-1';
+import { renderResult as renderBaseResult } from './result.js?v=20260918-verdict-order-1';
 import { functions } from '../firebase.js?v=20260729-auth-session-1';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
