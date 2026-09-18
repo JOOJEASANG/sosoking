@@ -20,7 +20,7 @@ const submitPage = read('public/js/pages/submit.js');
 for (const required of [
   '새 사건은 항상 비공개로 시작합니다.',
   '비공개 생성 → 내 예상 판정 → AI 판결 공개',
-  'await submitCase({ caseDescription: desc, isPublic: false });',
+  'isPublic: false,',
   '그 후 원하는 경우에만 공개 판결기록으로 전환할 수 있습니다.'
 ]) {
   if (!submitPage.includes(required)) {
@@ -32,7 +32,7 @@ if (submitPage.includes('id="is-public"') || submitPage.includes("document.getEl
 }
 
 const app = read('public/js/app.js');
-if (!app.includes("import { renderSubmit } from './pages/submit.js?v=20260917-anon-submit-1';")) {
+if (!app.includes("import { renderSubmit } from './pages/submit.js?v=20260918-judge-picker-1';")) {
   errors.push('public/js/app.js: canonical private-first submit page is not active');
 }
 for (const retired of ['submit-guard.js', 'submit-court.js']) {
@@ -48,7 +48,7 @@ if (!appVersion) {
 const worker = read('public/sw.js');
 for (const required of [
   `/js/app.js?v=${appVersion}`,
-  '/js/pages/submit.js?v=20260917-anon-submit-1'
+  '/js/pages/submit.js?v=20260918-judge-picker-1'
 ]) {
   if (!worker.includes(required)) {
     errors.push(`public/sw.js: private-first canonical cache graph missing ${required}`);

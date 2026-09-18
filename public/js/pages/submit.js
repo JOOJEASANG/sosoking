@@ -117,6 +117,8 @@ export async function renderSubmit(container) {
   // Render immediately with defaults — no await before innerHTML to avoid blank screen
   const settingsPromise = loadSubmitSettings();
   const defaults = { dailyLimitEnabled: false, dailyLimit: DEFAULT_DAILY_LIMIT, cooldownSec: 45 };
+  let selectedJudge = '';
+  let selectedGrievance = 5;
 
   container.innerHTML = `
     <div>
@@ -139,6 +141,26 @@ export async function renderSubmit(container) {
             <textarea id="case-desc" class="form-textarea" style="min-height:190px;line-height:1.75;" maxlength="${MAX_DESC}" aria-describedby="desc-help desc-counter" placeholder="예: 남편이 마지막으로 남겨둔 치킨 한 조각을 말도 없이 먹고, 자기는 날개인 줄 알았다고 주장했습니다. CCTV는 없지만 빈 접시와 태연한 표정이 남아 있습니다." required></textarea>
             <div id="desc-help" style="font-size:11px;color:var(--cream-dim);margin-top:6px;">실명·연락처·주소·계좌번호 등 개인정보는 빼고 상황만 적어주세요.</div>
             <div id="desc-counter" class="char-counter" aria-live="polite"><span id="desc-count">0</span>/${MAX_DESC}</div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:18px;">
+            <div class="form-label" style="margin-bottom:9px;">담당 판사 유형 <span style="font-size:11px;font-weight:400;color:var(--cream-dim);">선택 안 하면 자동 배정</span></div>
+            <div id="judge-picker" role="group" aria-label="판사 유형 선택" style="display:flex;flex-wrap:wrap;gap:7px;">
+              <button type="button" class="judge-chip" data-judge="" aria-pressed="true" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(201,168,76,.8);background:rgba(201,168,76,.2);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;">🎲 랜덤</button>
+              <button type="button" class="judge-chip" data-judge="꼰대형" aria-pressed="false" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;">🧓 꼰대형</button>
+              <button type="button" class="judge-chip" data-judge="냉혈형" aria-pressed="false" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;">🧊 냉혈형</button>
+              <button type="button" class="judge-chip" data-judge="회피형" aria-pressed="false" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;">🏃 회피형</button>
+              <button type="button" class="judge-chip" data-judge="추궁형" aria-pressed="false" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;">🔎 추궁형</button>
+              <button type="button" class="judge-chip" data-judge="오버형" aria-pressed="false" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;">🚨 오버형</button>
+              <button type="button" class="judge-chip" data-judge="드립형" aria-pressed="false" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;">🎭 드립형</button>
+              <button type="button" class="judge-chip" data-judge="빙의형" aria-pressed="false" style="padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;">🌀 빙의형</button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:18px;">
+            <label class="form-label" for="grievance-slider" style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">억울지수 <span id="grievance-value" style="color:var(--gold);font-size:16px;font-weight:900;">5</span><span style="font-size:11px;font-weight:400;color:var(--cream-dim);">/10 — 판사가 이 억울함을 얼마나 심각하게 다룰지 결정합니다</span></label>
+            <input type="range" id="grievance-slider" min="1" max="10" value="5" step="1" style="width:100%;accent-color:var(--gold);cursor:pointer;" aria-valuemin="1" aria-valuemax="10" aria-valuenow="5">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--cream-dim);margin-top:4px;"><span>소소한 억울함</span><span>극도의 억울함</span></div>
           </div>
 
           <div class="card" style="padding:14px;margin-bottom:14px;background:rgba(255,255,255,.025);">
@@ -185,6 +207,32 @@ export async function renderSubmit(container) {
     if (counter) counter.textContent = String(descInput.value.length);
   });
 
+  const CHIP_SEL = 'padding:8px 13px;border-radius:20px;border:1.5px solid rgba(201,168,76,.8);background:rgba(201,168,76,.2);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;';
+  const CHIP_OFF = 'padding:8px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:13px;font-weight:700;cursor:pointer;';
+  const pickerEl = container.querySelector('#judge-picker');
+  if (pickerEl) {
+    pickerEl.addEventListener('click', event => {
+      const chip = event.target.closest('.judge-chip');
+      if (!chip) return;
+      selectedJudge = chip.dataset.judge;
+      pickerEl.querySelectorAll('.judge-chip').forEach(c => {
+        const sel = c.dataset.judge === selectedJudge;
+        c.setAttribute('aria-pressed', String(sel));
+        c.style.cssText = sel ? CHIP_SEL : CHIP_OFF;
+      });
+    });
+  }
+
+  const grievanceSlider = container.querySelector('#grievance-slider');
+  const grievanceValueEl = container.querySelector('#grievance-value');
+  if (grievanceSlider) {
+    grievanceSlider.addEventListener('input', () => {
+      selectedGrievance = Number(grievanceSlider.value);
+      if (grievanceValueEl) grievanceValueEl.textContent = String(selectedGrievance);
+      grievanceSlider.setAttribute('aria-valuenow', String(selectedGrievance));
+    });
+  }
+
   container.querySelector('#submit-form')?.addEventListener('submit', async event => {
     event.preventDefault();
     const desc = descInput?.value.trim() || '';
@@ -208,7 +256,12 @@ export async function renderSubmit(container) {
 
     try {
       const submitCase = httpsCallable(functions, 'submitCase');
-      const response = await submitCase({ caseDescription: desc, isPublic: false });
+      const response = await submitCase({
+        caseDescription: desc,
+        isPublic: false,
+        judgeType: selectedJudge,
+        grievanceIndex: selectedGrievance
+      });
       const caseId = response.data?.caseId;
       if (!caseId) throw new Error('사건번호를 받지 못했습니다.');
       location.hash = `#/trial/${encodeURIComponent(caseId)}`;
