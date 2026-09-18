@@ -83,6 +83,9 @@ async function callGemini(apiKey, modelName, prompt) {
       );
     }
     const finishReason = clean(payload?.candidates?.[0]?.finishReason, 40);
+    if (finishReason === 'MAX_TOKENS') {
+      throw Object.assign(new Error('응답이 잘렸습니다.'), { code: 'OUTPUT_TRUNCATED' });
+    }
     const text = extractText(payload);
     if (!text) {
       const blocked = clean(payload?.promptFeedback?.blockReason, 80);
