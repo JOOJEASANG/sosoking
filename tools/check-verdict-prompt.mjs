@@ -27,25 +27,29 @@ for (const technique of ['사실 그대로의 정밀함', '과잉 문서화', '�
   if (!prompt.includes(technique)) errors.push(`필수 판결 기법이 프롬프트에서 사라졌습니다: ${technique}`);
 }
 
-// 4. 입력에 없는 사실을 만들라는 과거 지시가 다시 들어오면 안 된다.
+// 4. 핵심 사실을 통째로 지어내라는 지시가 다시 들어오면 안 된다.
+//    (수사 연출 자체는 이제 허용한다 — CCTV·잠복·국과수 등은 소소킹식 코미디 장치다.)
 for (const forbidden of [
   '적극적으로 지어내라',
   '지어낸 날짜와 시각',
-  '뜬금없는 목격자',
-  'CCTV 분석·잠복 수사·국과수 의뢰',
   '지어낸 법령과 판례'
 ]) {
   if (prompt.includes(forbidden)) errors.push(`비정상적인 사실 생성 지시가 다시 들어왔습니다: ${forbidden}`);
 }
 
+// 4-2. 새 방향의 보호 지시가 유지되어야 한다: 핵심 사실 그라운딩 + 실존 인물 보호 + 피고 가정 표기.
 for (const required of [
-  '사용자가 입력하지 않은 사실',
-  '입력에 없는 CCTV',
+  '핵심 사실은 지어내지 않는다',
+  '실존 인물',
   '직접 답변은 제출되지 않았다',
-  '기재 없음',
-  '확인할 자료 없음'
+  '가능한 항변'
 ]) {
-  if (!prompt.includes(required)) errors.push(`사실성 보호 지시가 누락되었습니다: ${required}`);
+  if (!prompt.includes(required)) errors.push(`사실성·안전 보호 지시가 누락되었습니다: ${required}`);
+}
+
+// 4-3. 어떤 사연이든 성립시키는 역할 지정과 과잉 수사극이 프롬프트에 있어야 한다.
+for (const required of ['역할 지정', '피고', '수사반', '과잉 수사극']) {
+  if (!prompt.includes(required)) errors.push(`핵심 코미디 장치가 프롬프트에서 사라졌습니다: ${required}`);
 }
 
 // 5. 민심소 비교용 승패와 출력 구조가 유지되어야 한다.
@@ -54,16 +58,13 @@ if (!generator.includes('normalizeWinner') || !generator.includes("winner: { typ
   errors.push('generate-trial-lite.js에 winner 필드가 없습니다.');
 }
 
-// 6. AI가 입력에 없는 수사·증거를 만들어도 저장되지 않도록 서버 검사가 있어야 한다.
+// 6. 생성물 안전검사(실명·PII·혐오 등)와 결과 계약이 유지되어야 한다.
+//    수사 연출은 허용하므로 키워드 기반 수사-증거 차단(GROUNDING_GUARDS)은 더 이상 요구하지 않는다.
 for (const required of [
-  'GROUNDING_GUARDS',
-  'ungroundedOutputCode',
-  'UNSUPPORTED_CCTV',
-  'UNSUPPORTED_FORENSICS',
-  'UNSUPPORTED_WITNESS',
+  'generatedSafety = inspectContent',
   "groundingStatus: 'input-grounded'"
 ]) {
-  if (!generator.includes(required)) errors.push(`generate-trial-lite.js 사실성 가드가 누락되었습니다: ${required}`);
+  if (!generator.includes(required)) errors.push(`generate-trial-lite.js 안전 검사가 누락되었습니다: ${required}`);
 }
 
 // 7. 예전의 조작된 로컬 대체 판결 문구가 남아 있으면 안 된다.
