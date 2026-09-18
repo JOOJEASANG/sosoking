@@ -356,7 +356,7 @@ export async function renderTrial(container, caseId) {
     window._pageCleanup = null;
   };
 
-  const showError = (message = '') => {
+  const showError = (message = '', code = '') => {
     stop();
     const la = document.getElementById('loading-area');
     if (la) {
@@ -364,6 +364,7 @@ export async function renderTrial(container, caseId) {
         <div class="card" style="border-color:rgba(231,76,60,.55);padding:18px;text-align:left;">
           <div style="font-size:17px;color:var(--red);font-weight:900;margin-bottom:8px;">⚠️ 판결문 작성 중 오류</div>
           <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">${escapeHtml(message || 'AI 재판부가 판결문을 완성하지 못했습니다.')}</div>
+          ${code ? `<div style="font-size:10px;color:var(--cream-dim);opacity:.5;margin-top:8px;">오류코드: ${escapeHtml(code)}</div>` : ''}
           <button type="button" class="btn btn-primary" id="retry-current-case" style="margin-top:14px;">같은 사건 다시 작성</button>
           <a href="#/submit" class="btn btn-secondary" style="margin-top:8px;">새 사건 접수하기</a>
         </div>`;
@@ -395,10 +396,8 @@ export async function renderTrial(container, caseId) {
     }
 
     if (caseData.status === 'error') {
-      visualStepIndex = 0;
-      showVisualStage('filed', true);
-      const el = document.getElementById('loading-text');
-      if (el) el.textContent = '이전 작성 오류를 정리하고 같은 사건으로 다시 작성하는 중입니다... ♻️';
+      showError(caseData.errorMessage || 'AI 재판부가 판결문을 완성하지 못했습니다.', caseData.aiErrorCode || '');
+      return;
     }
   }, err => showError(err.message));
 
