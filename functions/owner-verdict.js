@@ -2,7 +2,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { enforceActionRateLimit, requireVerifiedUser, requireAnyAuth } = require('./security');
+const { enforceActionRateLimit, requireAnyAuth } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
