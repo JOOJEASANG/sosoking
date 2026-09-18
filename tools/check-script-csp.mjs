@@ -84,7 +84,7 @@ const app = fs.readFileSync('public/js/app.js', 'utf8');
 for (const specifier of [
   "./pages/home.js?v=20260911-home-plus1-1",
   "./pages/submit.js?v=20260917-anon-submit-1",
-  "./pages/result-comments.js?v=20260917-document-style-1",
+  "./pages/result-comments.js?v=20260918-verdict-match-1",
   "./pages/policy.js?v=20260830-final-audit-1",
   "./pages/hall.js?v=20260911-likes-1",
   "./pages/jury.js?v=20260917-jury-voted-badge-1"

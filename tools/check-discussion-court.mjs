@@ -95,7 +95,7 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
 }
 for (const value of [
   '/js/pages/discussion.js?v=20260917-anon-vote-1',
-  '/js/pages/result-comments.js?v=20260917-document-style-1',
+  '/js/pages/result-comments.js?v=20260918-verdict-match-1',
   '/js/pages/jury.js?v=20260917-jury-voted-badge-1'
 ]) need(worker, value, 'discussion cache');
 if (worker.includes('/js/pages/board.js')) {
