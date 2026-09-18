@@ -75,7 +75,7 @@ function regexEscape(value) {
 function normalizeReadableText(value) {
   return String(value || '')
     .replace(/\\n/g, '\n')
-    .replace(/([^\n])\s+(\d+\.\s)/g, '$1\n$2')
+    .replace(/([^\n])\s+(\d+\.\s)/g, '$1\n\n$2')
     .replace(/\r/g, '')
     .replace(/([.!?])(?=[가-힣A-Za-z0-9])/g, '$1 ')
     .replace(/[ \t]+/g, ' ')
