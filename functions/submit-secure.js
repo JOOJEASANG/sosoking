@@ -10,6 +10,7 @@ const DEFAULT_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
+const JUDGE_TYPES = ['꼰대형','냉혈형','회피형','추궁형','오버형','드립형','빙의형'];
 
 function textValue(value, maxLen) {
   return String(value || '')
@@ -86,6 +87,10 @@ exports.submitCase = onCall({
   const uid = request.auth.uid;
   const data = request.data || {};
   const desc = textValue(data.caseDescription, MAX_DESC);
+  const rawJudgeType = textValue(data.judgeType, 10);
+  const judgeType = JUDGE_TYPES.includes(rawJudgeType) ? rawJudgeType : '';
+  const rawGrievance = Number(data.grievanceIndex);
+  const grievanceIndex = Number.isInteger(rawGrievance) && rawGrievance >= 1 && rawGrievance <= 10 ? rawGrievance : 0;
   // 과거 클라이언트 입력 형식은 해석하되, 접수 단계 공개 요청은 의도적으로 적용하지 않는다.
   const requestedPublic = boolValue(data.isPublic, false);
   const isPublic = false;
@@ -150,6 +155,8 @@ exports.submitCase = onCall({
       courtStage: 'filed',
       caseTitle: 'AI 사건명 작성 중',
       caseDescription: desc,
+      judgeType,
+      grievanceIndex,
       nickname: profileNickname || randomNickname(),
       status: 'pending',
       // 공개는 AI 판결문을 확인한 뒤 setResultVisibility에서만 허용한다.
