@@ -48,7 +48,7 @@ async function generate(description, judge, grievance) {
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: buildPrompt(description, judge, grievance) }] }],
         generationConfig: {
-          temperature: 0.9,
+          temperature: 0.95,
           topP: 0.95,
           maxOutputTokens: 4096,
           responseMimeType: 'application/json',
