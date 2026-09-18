@@ -96,42 +96,47 @@ function setBusy(button, busyText) {
   };
 }
 
+function badge(text, cls) {
+  return `<span class="badge badge-${escapeAttr(cls)}">${escapeHtml(text)}</span>`;
+}
+
 function mini(label, value, sub = '') {
-  return `<div style="text-align:center;padding:15px 8px;background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:12px;">
-    <div style="font-size:18px;font-weight:900;color:var(--cream);">${escapeHtml(String(value))}</div>
-    ${sub ? `<div style="font-size:10px;color:var(--gold);margin-top:2px;">${escapeHtml(String(sub))}</div>` : ''}
-    <div style="font-size:10px;color:var(--cream-dim);margin-top:3px;">${escapeHtml(label)}</div>
+  return `<div style="padding:14px 12px 12px;background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;">
+    <div style="font-size:22px;font-weight:900;color:var(--cream);line-height:1.1;">${escapeHtml(String(value))}</div>
+    ${sub ? `<div style="font-size:10px;color:var(--gold);margin-top:4px;font-weight:600;">${escapeHtml(String(sub))}</div>` : ''}
+    <div style="font-size:11px;color:var(--cream-dim);margin-top:5px;">${escapeHtml(label)}</div>
   </div>`;
 }
 
 function tableWrap(headers, rows) {
-  return `<div style="overflow-x:auto;"><table class="admin-table"><thead><tr>${headers.map(header => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead><tbody>${rows.join('') || `<tr><td colspan="${headers.length}" style="text-align:center;padding:32px;color:var(--cream-dim);">데이터 없음</td></tr>`}</tbody></table></div>`;
+  const empty = `<tr><td colspan="${headers.length}" style="text-align:center;padding:36px;color:var(--cream-dim);">데이터 없음</td></tr>`;
+  return `<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;"><table class="admin-table"><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('') || empty}</tbody></table></div>`;
 }
 
 function simpleList(title, rows) {
-  return `<div class="card"><div style="font-weight:800;color:var(--gold);margin-bottom:10px;">${escapeHtml(title)}</div>${rows.map(([a, b, c]) => `<div style="padding:8px 0;border-top:1px solid var(--border);font-size:12px;"><div style="font-weight:700;">${escapeHtml(a || '-')}</div><div style="color:var(--cream-dim);margin-top:2px;">${escapeHtml(b || '-')} · ${escapeHtml(c || '-')}</div></div>`).join('') || '<div style="color:var(--cream-dim);font-size:12px;">데이터 없음</div>'}</div>`;
+  return `<div class="card"><div style="font-weight:800;color:var(--gold);margin-bottom:10px;font-size:13px;">${escapeHtml(title)}</div>${rows.map(([a, b, c]) => `<div style="padding:8px 0;border-top:1px solid var(--border);font-size:12px;"><div style="font-weight:700;">${escapeHtml(a || '-')}</div><div style="color:var(--cream-dim);margin-top:2px;">${escapeHtml(b || '-')} · ${escapeHtml(c || '-')}</div></div>`).join('') || '<div style="color:var(--cream-dim);font-size:12px;">데이터 없음</div>'}</div>`;
 }
 
 function renderDashboard() {
   const container = root();
   if (!container || !currentUser) return;
   container.innerHTML = `
-    <div>
+    <div class="admin-layout">
       <div class="admin-header">
         <span class="logo">⚖️ 관리자 대시보드</span>
-        <div style="display:flex;gap:10px;align-items:center;">
-          <a href="/#/" style="font-size:12px;color:var(--cream-dim);text-decoration:none;">사이트 보기</a>
-          <button type="button" id="admin-logout" style="background:none;border:none;color:var(--cream-dim);font-size:12px;cursor:pointer;">로그아웃</button>
-        </div>
+        <div class="admin-header-actions"></div>
       </div>
-      <div class="admin-shell">
-        <div style="font-size:12px;color:var(--cream-dim);">관리자: ${escapeHtml(currentUser.email || currentUser.uid || '-')}</div>
-        <div class="admin-nav">${TABS.map(([id, label]) => `<button type="button" class="admin-tab${currentTab === id ? ' active' : ''}" data-admin-tab="${escapeAttr(id)}">${escapeHtml(label)}</button>`).join('')}</div>
-        <div id="tab-content"></div>
+      <div class="admin-body">
+        <aside class="admin-sidebar">
+          <nav class="admin-nav">${TABS.map(([id, label]) => `<button type="button" class="admin-tab${currentTab === id ? ' active' : ''}" data-admin-tab="${escapeAttr(id)}">${escapeHtml(label)}</button>`).join('')}</nav>
+        </aside>
+        <main class="admin-main">
+          <div style="font-size:11px;color:var(--cream-dim);margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);">관리자: ${escapeHtml(currentUser.email || currentUser.uid || '-')}</div>
+          <div id="tab-content"></div>
+        </main>
       </div>
     </div>`;
 
-  container.querySelector('#admin-logout')?.addEventListener('click', () => signOut(auth));
   container.querySelectorAll('[data-admin-tab]').forEach(button => {
     button.addEventListener('click', () => {
       currentTab = button.dataset.adminTab || 'overview';
@@ -183,14 +188,15 @@ async function tabOverview(target) {
       ${mini('회원', `${users.size}명`)}
       ${mini('AI 자동 생성', settings.dailyAiEnabled === false ? '꺼짐' : '켜짐')}
     </div>
-    <div class="card" style="font-size:13px;color:var(--cream-dim);line-height:1.8;margin-bottom:16px;">
-      <strong style="color:var(--gold);">AI 자동 사건</strong>: ${settings.dailyAiEnabled === false ? '꺼짐' : '켜짐'} · 매일 오전 9시 기준 생성<br>
-      <strong style="color:var(--gold);">접수 제한</strong>: 일 ${settings.dailyLimit || 3}건 · 쿨다운 ${settings.cooldownSec || 45}초
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-        <button type="button" class="admin-btn gold" id="sync-public-stats">공개 통계 지금 갱신</button>
+    <div class="card" style="font-size:13px;color:var(--cream-dim);line-height:1.9;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <strong style="color:var(--gold);font-size:14px;">운영 현황</strong>
+        <button type="button" class="admin-btn gold" id="sync-public-stats">공개 통계 갱신</button>
       </div>
+      AI 자동 사건: ${settings.dailyAiEnabled === false ? badge('꺼짐', 'hidden') : badge('켜짐', 'completed')} · 매일 오전 9시 기준 생성<br>
+      접수 제한: 일 ${escapeHtml(String(settings.dailyLimit || 3))}건 · 쿨다운 ${escapeHtml(String(settings.cooldownSec || 45))}초
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
       <div>${simpleList('최근 사건', cases.docs.slice(0, 6).map(document => [document.data().caseTitle, document.data().status, fmtDate(document.data().createdAt)]))}</div>
       <div>${simpleList('최근 공개 판결기록', publicResults.slice(0, 6).map(document => [document.data().caseTitle, document.data().source === 'daily_ai' ? 'AI 자동' : '사용자', fmtDate(document.data().createdAt)]))}</div>
     </div>`;
@@ -218,21 +224,26 @@ async function tabRecords(target) {
     const caseData = document.data();
     const resultData = results.get(document.id) || {};
     const isPublic = resultData.isPublic === true;
-    const source = resultData.source === 'daily_ai' || caseData.source === 'daily_ai' ? 'AI 자동' : '사용자';
+    const isAi = resultData.source === 'daily_ai' || caseData.source === 'daily_ai';
+    const publicBadge = isPublic ? badge('공개', 'public') : badge('비공개', 'private');
+    const sourceBadge = isAi ? badge('AI 자동', 'ai') : badge('사용자', 'user-src');
     return `<tr>
-      <td><b>${escapeHtml(caseData.caseTitle || resultData.caseTitle || '-')}</b><div style="font-size:11px;color:var(--cream-dim);">${escapeHtml(caseData.nickname || resultData.nickname || '익명')} · ${escapeHtml(fmtDate(caseData.createdAt || resultData.createdAt))}</div></td>
-      <td>${escapeHtml(compactText(caseData.caseDescription || resultData.caseDescription || resultData.sentence || '', 86))}</td>
-      <td>${escapeHtml(caseData.status || resultData.courtStage || '-')}<div style="font-size:10px;color:var(--cream-dim);margin-top:3px;">${escapeHtml(source)} · ${escapeHtml(resultData.judgeType || caseData.judgeType || '-')}</div></td>
-      <td>${isPublic ? '공개' : '비공개'}</td>
+      <td>
+        <div style="font-weight:700;font-size:12px;">${escapeHtml(caseData.caseTitle || resultData.caseTitle || '-')}</div>
+        <div style="font-size:10px;color:var(--cream-dim);margin-top:2px;">${escapeHtml(caseData.nickname || resultData.nickname || '익명')} · ${escapeHtml(fmtDate(caseData.createdAt || resultData.createdAt))}</div>
+      </td>
+      <td style="max-width:180px;color:var(--cream-dim);">${escapeHtml(compactText(caseData.caseDescription || resultData.caseDescription || resultData.sentence || '', 80))}</td>
+      <td><div style="margin-bottom:4px;">${escapeHtml(caseData.status || resultData.courtStage || '-')}</div>${sourceBadge}</td>
+      <td>${publicBadge}</td>
       <td><div class="admin-actions">
-        <a class="admin-btn gold" href="/#/result/${encodeURIComponent(document.id)}" style="text-decoration:none;">보기</a>
+        <a class="admin-btn gold" href="/#/result/${encodeURIComponent(document.id)}" target="_blank" style="text-decoration:none;">보기</a>
         <button type="button" class="admin-btn" data-record-action="visibility" data-case-id="${escapeAttr(document.id)}" data-next-public="${isPublic ? 'false' : 'true'}">${isPublic ? '비공개' : '공개'}</button>
         <button type="button" class="admin-btn red" data-record-action="delete" data-case-id="${escapeAttr(document.id)}">삭제</button>
       </div></td>
     </tr>`;
   });
 
-  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">공개 상태와 삭제는 관리자 서버 함수에서 권한·안전성·연관 데이터를 확인한 뒤 처리합니다.</div>${tableWrap(['사건·판결기록', '내용', '상태', '공개', '관리'], rows)}`;
+  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:14px;">공개 상태와 삭제는 관리자 서버 함수에서 권한·안전성·연관 데이터를 확인한 뒤 처리합니다.</div>${tableWrap(['사건·판결기록', '내용', '상태', '공개', '관리'], rows)}`;
 
   target.querySelectorAll('[data-record-action]').forEach(button => {
     button.addEventListener('click', async () => {
@@ -278,18 +289,29 @@ async function tabReports(target) {
     const caseId = String(report.caseId || '');
     const result = resultSnaps[index]?.exists() ? resultSnaps[index].data() : {};
     const pending = report.status === 'pending';
+    const statusBadge = report.status === 'pending'
+      ? badge('미처리', 'pending')
+      : report.status === 'hidden'
+        ? badge('숨김', 'hidden')
+        : badge('기각', 'dismissed');
     return `<tr>
-      <td><b>${escapeHtml(result.caseTitle || caseId || '-')}</b><div style="font-size:10px;color:var(--cream-dim);">${escapeHtml(fmtDate(report.createdAt))}</div></td>
-      <td>${escapeHtml(report.reason || '-')}</td>
-      <td>${escapeHtml(report.status || 'pending')}<div style="font-size:10px;color:var(--cream-dim);">신고자 ${escapeHtml(String(report.userId || '').slice(0, 16))}</div></td>
+      <td>
+        <div style="font-weight:700;font-size:12px;">${escapeHtml(result.caseTitle || caseId || '-')}</div>
+        <div style="font-size:10px;color:var(--cream-dim);margin-top:2px;">${escapeHtml(fmtDate(report.createdAt))}</div>
+      </td>
+      <td style="color:var(--cream-dim);">${escapeHtml(report.reason || '-')}</td>
+      <td>
+        ${statusBadge}
+        <div style="font-size:10px;color:var(--cream-dim);margin-top:4px;">신고자 ${escapeHtml(String(report.userId || '').slice(0, 16))}</div>
+      </td>
       <td><div class="admin-actions">
-        ${caseId ? `<a class="admin-btn gold" href="/#/result/${encodeURIComponent(caseId)}" style="text-decoration:none;">보기</a>` : ''}
+        ${caseId ? `<a class="admin-btn gold" href="/#/result/${encodeURIComponent(caseId)}" target="_blank" style="text-decoration:none;">보기</a>` : ''}
         ${pending ? `<button type="button" class="admin-btn red" data-report-action="hide" data-report-id="${escapeAttr(reportDocument.id)}">숨김 처리</button><button type="button" class="admin-btn" data-report-action="dismiss" data-report-id="${escapeAttr(reportDocument.id)}">기각</button>` : ''}
       </div></td>
     </tr>`;
   });
 
-  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">숨김 처리는 신고 대상 사건과 판결문을 동시에 비공개로 전환합니다. 기각은 공개 상태를 유지하고 신고만 종결합니다.</div>${tableWrap(['신고 대상', '신고 사유', '상태', '처리'], rows)}`;
+  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:14px;">숨김 처리는 신고 대상 사건과 판결문을 동시에 비공개로 전환합니다. 기각은 공개 상태를 유지하고 신고만 종결합니다.</div>${tableWrap(['신고 대상', '신고 사유', '상태', '처리'], rows)}`;
   target.querySelectorAll('[data-report-action]').forEach(button => {
     button.addEventListener('click', async () => {
       const reportId = button.dataset.reportId || '';
@@ -314,10 +336,26 @@ async function tabReports(target) {
 
 async function tabUsers(target) {
   const snap = await getDocs(query(collection(db, 'users'), orderBy('updatedAt', 'desc'), limit(100)));
-  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">프로필 삭제 시 해당 사용자가 소유한 닉네임 예약도 서버 트랜잭션으로 함께 해제됩니다. Firebase Authentication 계정 자체는 삭제되지 않습니다.</div>${tableWrap(['닉네임', '이메일', '가입방식', '관리'], snap.docs.map(document => {
+  const rows = snap.docs.map(document => {
     const user = document.data();
-    return `<tr><td><b>${escapeHtml(user.nickname || '-')}</b><div style="font-size:10px;color:var(--cream-dim);">${escapeHtml(document.id)}</div></td><td>${escapeHtml(user.email || '-')}</td><td>${escapeHtml(user.provider || '-')}</td><td><button type="button" class="admin-btn red" data-delete-user="${escapeAttr(document.id)}">프로필 삭제</button></td></tr>`;
-  }))}`;
+    const initial = (user.nickname || '?').charAt(0).toUpperCase();
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div class="admin-avatar">${escapeHtml(initial)}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px;">${escapeHtml(user.nickname || '-')}</div>
+            <div style="font-size:10px;color:var(--cream-dim);margin-top:1px;">${escapeHtml(document.id.slice(0, 20))}…</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:12px;">${escapeHtml(user.email || '-')}</td>
+      <td>${badge(user.provider || '-', 'user-src')}</td>
+      <td><button type="button" class="admin-btn red" data-delete-user="${escapeAttr(document.id)}">프로필 삭제</button></td>
+    </tr>`;
+  });
+
+  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:14px;">프로필 삭제 시 해당 사용자가 소유한 닉네임 예약도 서버 트랜잭션으로 함께 해제됩니다. Firebase Authentication 계정 자체는 삭제되지 않습니다.</div>${tableWrap(['회원', '이메일', '가입방식', '관리'], rows)}`;
 
   target.querySelectorAll('[data-delete-user]').forEach(button => {
     button.addEventListener('click', async () => {
@@ -445,7 +483,7 @@ async function tabUsage(target) {
     ${mini('Gemini 시도/성공', `${total.requests} / ${total.successful}`)}
     ${mini('토큰 입/출', `${num(total.input)} / ${num(total.output)}`)}
     ${mini('예상 AI 비용', money(total.costKrw), monthlyBudgetKrw ? `${(total.costKrw / monthlyBudgetKrw * 100).toFixed(1)}%` : '')}
-  </div>${tableWrap(['날짜', '사건', 'Gemini 시도/성공', '토큰', 'Firestore', 'Functions', '예상비용'], rows.filter(row => row.cases || row.requests).slice(0, 40).map(row => `<tr><td>${row.date}</td><td>${row.cases}</td><td>${row.requests} / ${row.successful}</td><td>${num(row.input)} / ${num(row.output)}</td><td>R ${num(row.reads)} / W ${num(row.writes)}</td><td>${row.invocations}</td><td>${money(row.costKrw)}</td></tr>`))}`;
+  </div>${tableWrap(['날짜', '사건', 'Gemini 시도/성공', '토큰', 'Firestore', 'Functions', '예상비용'], rows.filter(row => row.cases || row.requests).slice(0, 40).map(row => `<tr><td>${escapeHtml(row.date)}</td><td>${row.cases}</td><td>${row.requests} / ${row.successful}</td><td>${num(row.input)} / ${num(row.output)}</td><td>R ${num(row.reads)} / W ${num(row.writes)}</td><td>${row.invocations}</td><td>${money(row.costKrw)}</td></tr>`))}`;
 }
 
 async function tabSite(target) {
@@ -453,14 +491,23 @@ async function tabSite(target) {
   const data = snap.exists() ? snap.data() : {};
   target.innerHTML = `
     <form id="site-form">
-      <div class="form-group"><label class="form-label">일일 접수 한도</label><input type="number" id="dl" class="form-input" value="${escapeAttr(data.dailyLimit || 3)}" min="1" max="20"></div>
-      <div class="form-group"><label class="form-label">재접수 대기시간(초)</label><input type="number" id="cd" class="form-input" value="${escapeAttr(data.cooldownSec || 45)}" min="0" max="300"></div>
-      <div class="form-group"><label class="form-label">전체 Gemini 일일 요청 한도</label><input type="number" id="gdl" class="form-input" value="${escapeAttr(data.globalAiDailyLimit ?? 100)}" min="1" max="10000"></div>
-      <div class="form-group"><label class="form-label">계정당 Gemini 일일 요청 한도</label><input type="number" id="udl" class="form-input" value="${escapeAttr(data.userAiDailyLimit ?? 12)}" min="1" max="100"></div>
-      <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${escapeAttr(data.geminiInputPricePerM ?? 0.075)}"></div>
-      <div class="form-group"><label class="form-label">Gemini 출력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gop" class="form-input" value="${escapeAttr(data.geminiOutputPricePerM ?? 0.30)}"></div>
-      <div class="form-group"><label class="form-label">원-달러 환율</label><input type="number" id="krw" class="form-input" value="${escapeAttr(data.krwUsdRate ?? 1400)}"></div>
-      <div class="form-group"><label class="form-label">월 예산 기준(원)</label><input type="number" id="budget" class="form-input" value="${escapeAttr(data.monthlyBudgetKrw ?? 50000)}"></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-weight:900;color:var(--gold);margin-bottom:14px;">⚙️ 접수 설정</div>
+        <div class="form-group"><label class="form-label">일일 접수 한도</label><input type="number" id="dl" class="form-input" value="${escapeAttr(data.dailyLimit || 3)}" min="1" max="20"></div>
+        <div class="form-group"><label class="form-label">재접수 대기시간(초)</label><input type="number" id="cd" class="form-input" value="${escapeAttr(data.cooldownSec || 45)}" min="0" max="300"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-weight:900;color:var(--gold);margin-bottom:14px;">📊 AI 사용량 한도</div>
+        <div class="form-group"><label class="form-label">전체 Gemini 일일 요청 한도</label><input type="number" id="gdl" class="form-input" value="${escapeAttr(data.globalAiDailyLimit ?? 100)}" min="1" max="10000"></div>
+        <div class="form-group"><label class="form-label">계정당 Gemini 일일 요청 한도</label><input type="number" id="udl" class="form-input" value="${escapeAttr(data.userAiDailyLimit ?? 12)}" min="1" max="100"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-weight:900;color:var(--gold);margin-bottom:14px;">💰 비용 계산 기준</div>
+        <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${escapeAttr(data.geminiInputPricePerM ?? 0.075)}"></div>
+        <div class="form-group"><label class="form-label">Gemini 출력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gop" class="form-input" value="${escapeAttr(data.geminiOutputPricePerM ?? 0.30)}"></div>
+        <div class="form-group"><label class="form-label">원-달러 환율</label><input type="number" id="krw" class="form-input" value="${escapeAttr(data.krwUsdRate ?? 1400)}"></div>
+        <div class="form-group"><label class="form-label">월 예산 기준(원)</label><input type="number" id="budget" class="form-input" value="${escapeAttr(data.monthlyBudgetKrw ?? 50000)}"></div>
+      </div>
       <button type="submit" class="btn btn-primary">사이트 설정 저장</button>
     </form>`;
 
@@ -508,7 +555,7 @@ async function tabBiz(target) {
     ['email', '이메일'],
     ['address', '주소']
   ];
-  target.innerHTML = `<form id="biz-form">${fields.map(([key, label]) => `<div class="form-group"><label class="form-label">${escapeHtml(label)}</label><input type="text" id="b_${escapeAttr(key)}" class="form-input" value="${escapeAttr(business[key] || '')}"></div>`).join('')}<button type="submit" class="btn btn-primary">저장</button></form>`;
+  target.innerHTML = `<form id="biz-form"><div class="card" style="margin-bottom:16px;"><div style="font-weight:900;color:var(--gold);margin-bottom:14px;">🏢 사업자 정보</div>${fields.map(([key, label]) => `<div class="form-group"><label class="form-label">${escapeHtml(label)}</label><input type="text" id="b_${escapeAttr(key)}" class="form-input" value="${escapeAttr(business[key] || '')}"></div>`).join('')}</div><button type="submit" class="btn btn-primary">저장</button></form>`;
 
   target.querySelector('#biz-form')?.addEventListener('submit', async event => {
     event.preventDefault();
@@ -544,8 +591,8 @@ async function tabPolicy(target) {
   const render = () => {
     const label = types.find(([type]) => type === active)?.[1] || active;
     target.innerHTML = `
-      <div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">저장된 정책 문서가 없으면 이용자 화면의 최신 기본 고지가 사용됩니다.</div>
-      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">${types.map(([type, typeLabel]) => `<button type="button" class="admin-tab${active === type ? ' active' : ''}" data-policy-type="${escapeAttr(type)}">${escapeHtml(typeLabel)}</button>`).join('')}</div>
+      <div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:14px;">저장된 정책 문서가 없으면 이용자 화면의 최신 기본 고지가 사용됩니다.</div>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">${types.map(([type, typeLabel]) => `<button type="button" class="admin-tab${active === type ? ' active' : ''}" style="width:auto;" data-policy-type="${escapeAttr(type)}">${escapeHtml(typeLabel)}</button>`).join('')}</div>
       <form id="policy-form">
         <div class="form-group"><label class="form-label">${escapeHtml(label)}</label><textarea id="policy-content" class="form-textarea" style="min-height:420px;" placeholder="비어 있으면 기본 고지를 사용합니다.">${escapeHtml(values.get(active) || '')}</textarea></div>
         <button type="submit" class="btn btn-primary">저장</button>
