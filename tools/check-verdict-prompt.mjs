@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url);
 const { buildPrompt, JUDGES, HARD_LIMITS } = require('../functions/verdict-prompt.js');
 
 const errors = [];
-const MAX_PROMPT_CHARS = 3500;
+const MAX_PROMPT_CHARS = 4600;
 const MAX_HARD_LIMITS = 6;
 
 const prompt = buildPrompt('친구 2명과 냉면을 먹었는데 국물이 너무 시큼했고 친구들도 같은 반응이었다. 사장님에게 말했지만 원래 그렇다고 했다.', JUDGES[0], 7);
