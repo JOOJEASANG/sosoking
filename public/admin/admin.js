@@ -340,22 +340,21 @@ async function tabUsers(target) {
     const user = document.data();
     const initial = (user.nickname || '?').charAt(0).toUpperCase();
     return `<tr>
-      <td>
+      <td style="white-space:nowrap;">
         <div style="display:flex;align-items:center;gap:9px;">
           <div class="admin-avatar">${escapeHtml(initial)}</div>
-          <div>
-            <div style="font-weight:700;font-size:13px;">${escapeHtml(user.nickname || '-')}</div>
-            <div style="font-size:10px;color:var(--cream-dim);margin-top:1px;">${escapeHtml(document.id.slice(0, 20))}…</div>
-          </div>
+          <div style="font-weight:700;font-size:13px;">${escapeHtml(user.nickname || '-')}</div>
         </div>
       </td>
-      <td style="font-size:12px;">${escapeHtml(user.email || '-')}</td>
-      <td>${badge(user.provider || '-', 'user-src')}</td>
-      <td><button type="button" class="admin-btn red" data-delete-user="${escapeAttr(document.id)}">프로필 삭제</button></td>
+      <td style="font-size:11px;white-space:nowrap;color:var(--cream-dim);font-family:monospace;">${escapeHtml(document.id)}</td>
+      <td style="font-size:12px;white-space:nowrap;">${escapeHtml(user.email || '-')}</td>
+      <td style="white-space:nowrap;">${badge(user.provider || '-', 'user-src')}</td>
+      <td style="white-space:nowrap;">${escapeHtml(fmtDate(user.updatedAt || user.createdAt))}</td>
+      <td style="white-space:nowrap;"><button type="button" class="admin-btn red" data-delete-user="${escapeAttr(document.id)}">프로필 삭제</button></td>
     </tr>`;
   });
 
-  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:14px;">프로필 삭제 시 해당 사용자가 소유한 닉네임 예약도 서버 트랜잭션으로 함께 해제됩니다. Firebase Authentication 계정 자체는 삭제되지 않습니다.</div>${tableWrap(['회원', '이메일', '가입방식', '관리'], rows)}`;
+  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:14px;">프로필 삭제 시 해당 사용자가 소유한 닉네임 예약도 서버 트랜잭션으로 함께 해제됩니다. Firebase Authentication 계정 자체는 삭제되지 않습니다.</div>${tableWrap(['닉네임', 'UID', '이메일', '가입방식', '최근 활동', '관리'], rows)}`;
 
   target.querySelectorAll('[data-delete-user]').forEach(button => {
     button.addEventListener('click', async () => {
@@ -459,8 +458,10 @@ async function tabUsage(target) {
     return {
       date,
       cases: data.caseCount || 0,
-      requests: data.geminiRequests || 0,
-      successful: data.geminiSuccessfulResponses || 0,
+      verdictReq: data.geminiRequests || 0,
+      verdictOk: data.geminiSuccessfulResponses || 0,
+      adviceReq: data.adviceRequests || 0,
+      adviceOk: data.adviceSuccesses || 0,
       input: data.geminiInputTokens || 0,
       output: data.geminiOutputTokens || 0,
       writes: data.firestoreWrites || 0,
@@ -471,19 +472,37 @@ async function tabUsage(target) {
   });
   const total = rows.reduce((acc, row) => ({
     cases: acc.cases + row.cases,
-    requests: acc.requests + row.requests,
-    successful: acc.successful + row.successful,
+    verdictReq: acc.verdictReq + row.verdictReq,
+    verdictOk: acc.verdictOk + row.verdictOk,
+    adviceReq: acc.adviceReq + row.adviceReq,
+    adviceOk: acc.adviceOk + row.adviceOk,
     input: acc.input + row.input,
     output: acc.output + row.output,
     costKrw: acc.costKrw + row.costKrw
-  }), { cases: 0, requests: 0, successful: 0, input: 0, output: 0, costKrw: 0 });
+  }), { cases: 0, verdictReq: 0, verdictOk: 0, adviceReq: 0, adviceOk: 0, input: 0, output: 0, costKrw: 0 });
 
   target.innerHTML = `<div class="admin-grid">
     ${mini('60일 사건', `${total.cases}건`)}
-    ${mini('Gemini 시도/성공', `${total.requests} / ${total.successful}`)}
-    ${mini('토큰 입/출', `${num(total.input)} / ${num(total.output)}`)}
+    ${mini('판결 요청/성공', `${total.verdictReq} / ${total.verdictOk}`)}
+    ${mini('상담 요청/성공', `${total.adviceReq} / ${total.adviceOk}`)}
     ${mini('예상 AI 비용', money(total.costKrw), monthlyBudgetKrw ? `${(total.costKrw / monthlyBudgetKrw * 100).toFixed(1)}%` : '')}
-  </div>${tableWrap(['날짜', '사건', 'Gemini 시도/성공', '토큰', 'Firestore', 'Functions', '예상비용'], rows.filter(row => row.cases || row.requests).slice(0, 40).map(row => `<tr><td>${escapeHtml(row.date)}</td><td>${row.cases}</td><td>${row.requests} / ${row.successful}</td><td>${num(row.input)} / ${num(row.output)}</td><td>R ${num(row.reads)} / W ${num(row.writes)}</td><td>${row.invocations}</td><td>${money(row.costKrw)}</td></tr>`))}`;
+  </div>
+  <div class="card" style="font-size:11px;color:var(--cream-dim);margin-bottom:14px;line-height:1.8;">
+    토큰·비용은 판결 + 상담 합산 기준 · Firestore 수치는 판결 요청 기준만 기록됨 · 번역 사용량은 별도 문서에 보관
+  </div>
+  ${tableWrap(['날짜', '사건', '판결 요청/성공', '상담 요청/성공', '토큰 (입/출)', 'Firestore', 'Functions', '예상비용'],
+    rows.filter(row => row.cases || row.verdictReq || row.adviceReq).slice(0, 40).map(row =>
+      `<tr>
+        <td style="white-space:nowrap;">${escapeHtml(row.date)}</td>
+        <td>${row.cases}</td>
+        <td style="white-space:nowrap;">${row.verdictReq} / ${row.verdictOk}</td>
+        <td style="white-space:nowrap;">${row.adviceReq} / ${row.adviceOk}</td>
+        <td style="white-space:nowrap;">${num(row.input)} / ${num(row.output)}</td>
+        <td style="white-space:nowrap;">R ${num(row.reads)} / W ${num(row.writes)}</td>
+        <td>${row.invocations}</td>
+        <td style="white-space:nowrap;">${money(row.costKrw)}</td>
+      </tr>`)
+  )}`;
 }
 
 async function tabSite(target) {
