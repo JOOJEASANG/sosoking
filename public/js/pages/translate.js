@@ -131,6 +131,8 @@ function resultHtml(mode, result) {
     <p style="text-align:center;font-size:11.5px;color:var(--cream-dim);margin-top:10px;line-height:1.6;">
       이 번역은 공개 게시판에 올라갑니다 ·
       <a href="#/translate-list" style="color:var(--gold);font-weight:700;">게시판 보기 →</a>
+      &nbsp;·&nbsp;
+      <a href="#/my-records" style="color:var(--gold);font-weight:700;">내 기록 →</a>
     </p>`;
 }
 

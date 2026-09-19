@@ -12,6 +12,7 @@ import { renderTranslate } from './pages/translate.js?v=20260911-result-seo-1';
 import { renderServices } from './pages/services.js?v=20260911-likes-1';
 import { renderClinicList } from './pages/clinic-list.js?v=20260911-likes-1';
 import { renderTranslateList } from './pages/translate-list.js?v=20260911-likes-1';
+import { renderMyRecords } from './pages/my-records.js?v=20260919-my-records-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260917-anon-vote-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
@@ -70,6 +71,7 @@ function normalizedRoute() {
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
+    if (path === '/my-records') return '#/my-records';
     if (path === '/debate') return '#/debate';
     if (path.startsWith('/debate/')) {
       const debateId = decodeRouteValue(path.replace('/debate/', ''));
@@ -177,6 +179,7 @@ async function route() {
     else if (hash === '#/services') renderTask = renderServices(content);
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
+    else if (hash === '#/my-records') renderTask = renderMyRecords(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
     else if (hash === '#/auth') renderTask = renderAuth(content);
     else if (hash === '#/board') renderTask = renderHall(content);
