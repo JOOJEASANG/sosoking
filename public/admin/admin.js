@@ -196,10 +196,26 @@ async function tabOverview(target) {
       AI 자동 사건: ${settings.dailyAiEnabled === false ? badge('꺼짐', 'hidden') : badge('켜짐', 'completed')} · 매일 오전 9시 기준 생성<br>
       접수 제한: 일 ${escapeHtml(String(settings.dailyLimit || 3))}건 · 쿨다운 ${escapeHtml(String(settings.cooldownSec || 45))}초
     </div>
+    <div class="card" style="font-size:13px;color:var(--cream-dim);line-height:1.9;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <strong style="color:var(--gold);font-size:14px;">서비스별 사용횟수 (일일 한도)</strong>
+        <button type="button" class="admin-btn gold" id="goto-site-settings">설정 변경</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px 16px;font-size:12px;">
+        <div>⚖️ 판결소 익명 <strong style="color:var(--cream);">${escapeHtml(String(settings.submitAnonDailyLimit ?? 2))}회</strong> / 회원 <strong style="color:var(--cream);">${escapeHtml(String(settings.dailyLimit ?? 3))}회</strong></div>
+        <div>🔮 상담소 익명 <strong style="color:var(--cream);">${escapeHtml(String(settings.adviceAnonDailyLimit ?? 3))}회</strong> / 회원 <strong style="color:var(--cream);">${escapeHtml(String(settings.adviceUserDailyLimit ?? 10))}회</strong></div>
+        <div>💥 번역소 익명 <strong style="color:var(--cream);">${escapeHtml(String(settings.translateAnonDailyLimit ?? 5))}회</strong> / 회원 <strong style="color:var(--cream);">${escapeHtml(String(settings.translateUserDailyLimit ?? 20))}회</strong></div>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
       <div>${simpleList('최근 사건', cases.docs.slice(0, 6).map(document => [document.data().caseTitle, document.data().status, fmtDate(document.data().createdAt)]))}</div>
       <div>${simpleList('최근 공개 판결기록', publicResults.slice(0, 6).map(document => [document.data().caseTitle, document.data().source === 'daily_ai' ? 'AI 자동' : '사용자', fmtDate(document.data().createdAt)]))}</div>
     </div>`;
+
+  target.querySelector('#goto-site-settings')?.addEventListener('click', () => {
+    currentTab = 'site';
+    renderDashboard();
+  });
 
   target.querySelector('#sync-public-stats')?.addEventListener('click', async event => {
     const restore = setBusy(event.currentTarget, '갱신 중...');
