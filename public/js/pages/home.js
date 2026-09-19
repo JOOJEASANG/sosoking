@@ -8,7 +8,7 @@ const HOME_PUBLIC_RECORD_LIMIT = 5;
 const JURY_TARGET_KEY = 'sosoking-jury-target-case';
 const HOME_SERVICES = [
   { href: '#/submit',    emoji: '⚖️', title: '판결소', tag: 'AI 생활법정',   desc: '억울한 일 접수 → 7명 판사가 판결문 작성', accent: 'var(--gold)' },
-  { href: '#/clinic',    emoji: '🔮', title: '상담소', tag: '병맛 고민상담', desc: '고민 한 줄 넣으면 미친 처방전이 나옵니다', accent: '#ff4d3d' },
+  { href: '#/clinic',    emoji: '🔮', title: '상담소', tag: '병맛 진단서', desc: '증상 한 줄 넣으면 즉석 진단서가 발급됩니다', accent: '#ff4d3d' },
   { href: '#/translate', emoji: '💥', title: '번역소', tag: '광기의 번역기', desc: '평범한 말을 12가지 병맛 말투로 번역',     accent: '#e07b00' }
 ];
 const JUDGES = [

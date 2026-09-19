@@ -18,10 +18,10 @@ const EMOJI = Object.fromEntries(COUNSELORS.map(c => [c.id, c.emoji]));
 const RANDOM_ID = 'random';
 
 const SAMPLES = [
-  '썸녀가 카톡 1을 3시간째 안 읽어요',
-  '회사 때려치우고 싶은데 통장이 웁니다',
-  '다이어트 3일째인데 치킨이 자꾸 말을 걸어요',
-  '친구가 5만원 빌려가고 잠수 탔어요'
+  '썸녀 카톡 읽씹 3시간째, 심박 불규칙',
+  '통장 잔액 조회 시 현기증 및 무기력증 유발',
+  '다이어트 3일차, 치킨 냄새에 침 분비 과다',
+  '친구에게 5만원 대출 후 잠수 중, 신뢰 손상'
 ];
 
 const HALL = [
@@ -116,27 +116,27 @@ export async function renderClinic(container) {
   picked = null;
   container.innerHTML = `
     <div class="clinic-page">
-      <div class="page-header"><span class="logo">🔮 미친 상담소</span></div>
+      <div class="page-header"><span class="logo">🔮 병맛 클리닉</span></div>
       <div class="clinic-wrap">
-        <div class="clinic-kicker">접수 · INTAKE</div>
-        <h1 class="clinic-head">무슨 고민이든<br><em>정신 나간 처방</em>을 내려드림</h1>
-        <p class="clinic-sub">진지한 상담은 다른 데서, 여긴 병맛 전문입니다.</p>
+        <div class="clinic-kicker">초진 접수 · DIAGNOSIS</div>
+        <h1 class="clinic-head">증상만 말해봐<br><em>즉석 진단서</em> 써드림</h1>
+        <p class="clinic-sub">진지한 병원은 다른 데서. 여긴 병맛 진단서 전문 AI 클리닉입니다.</p>
 
         <section class="clinic-intake">
-          <div class="clinic-intake-label"><span>▓ 고민 접수증</span><span id="clinic-count">0 / 200</span></div>
-          <textarea id="clinic-worry" maxlength="200" placeholder="예: 썸녀가 카톡 1을 3시간째 안 읽어요… 저 차인 건가요?"></textarea>
+          <div class="clinic-intake-label"><span>📋 초진 문진표</span><span id="clinic-count">0 / 200</span></div>
+          <textarea id="clinic-worry" maxlength="200" placeholder="증상을 말씀해 주세요. 예: 썸녀 카톡 읽씹 3시간째라 심박 불규칙, 손 떨림 동반"></textarea>
           <div class="clinic-samples" id="clinic-samples"></div>
         </section>
 
-        <div class="clinic-sec">담당 상담사 지정 · 원하는 미친놈을 고르세요</div>
+        <div class="clinic-sec">담당 의사 선택 · 원하는 의사에게 걸려보세요</div>
         <div class="clinic-docs" id="clinic-docs"></div>
 
-        <button class="clinic-cta" id="clinic-go" type="button">🩺 진료 시작 · 처방전 받기</button>
+        <button class="clinic-cta" id="clinic-go" type="button">🏥 진료 접수 · 진단서 발급받기</button>
 
         <section class="clinic-result" id="clinic-result" hidden aria-live="polite"></section>
 
         <div class="clinic-hall">
-          <div class="clinic-sec">🏆 오늘의 미친 처방 명예의전당</div>
+          <div class="clinic-sec">🏆 오늘의 병맛 진단서 명예의전당</div>
           <div id="clinic-hall"></div>
         </div>
 
@@ -202,7 +202,7 @@ async function callAdvice(container, worry, counselorId) {
   if (go) { go.disabled = true; }
   if (result) {
     result.hidden = false;
-    result.innerHTML = `<div class="clinic-loading"><div class="big" aria-hidden="true">${counselor.emoji}</div><div style="margin-top:10px;font-weight:700;">${escapeHtml(counselor.name)}님이 처방전을 쓰는 중…</div><div style="font-size:12px;margin-top:4px;">뇌지컬을 쥐어짜고 있습니다</div></div>`;
+    result.innerHTML = `<div class="clinic-loading"><div class="big" aria-hidden="true">${counselor.emoji}</div><div style="margin-top:10px;font-weight:700;">${escapeHtml(counselor.name)} 의사가 차트 검토 중…</div><div style="font-size:12px;margin-top:4px;">진단명 작성 중입니다. 잠시 대기해 주세요</div></div>`;
     result.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -247,7 +247,7 @@ function renderResult(container, worry, data) {
   result.innerHTML = `
     <div class="rx-card">
       <div class="rx-top">
-        <div><div class="rx-clinic-name">미친 고민상담소</div><div class="rx-no">처방전 No. ${no} · ${new Date().toLocaleDateString('ko-KR')}</div></div>
+        <div><div class="rx-clinic-name">소소 병맛 클리닉</div><div class="rx-no">진단서 No. ${no} · ${new Date().toLocaleDateString('ko-KR')}</div></div>
         <div class="rx-symbol" aria-hidden="true">℞</div>
       </div>
       <div class="rx-doc"><span class="f">${emoji}</span><div><div class="n">${escapeHtml(data.counselorName || '상담사')}</div><div class="t">${escapeHtml(data.counselorTag || '')}</div></div></div>
@@ -255,11 +255,11 @@ function renderResult(container, worry, data) {
       <div class="rx-row"><span class="rx-key">처방</span><div class="rx-val">${escapeHtml(a.prescription || '')}</div></div>
       ${a.dosage ? `<div class="rx-row"><span class="rx-key">복용법</span><div class="rx-val">${escapeHtml(a.dosage)}</div></div>` : ''}
       ${a.caution ? `<div class="rx-row"><span class="rx-key warn">주의</span><div class="rx-val">${escapeHtml(a.caution)}</div></div>` : ''}
-      <div class="rx-stamp" aria-hidden="true">미친처방<small>승인 · APPROVED</small></div>
-      <div class="rx-foot">본 처방전은 오락용이며 효력이 없습니다 · 미친 고민상담소 제3진료실</div>
+      <div class="rx-stamp" aria-hidden="true">진단완료<small>발급 · ISSUED</small></div>
+      <div class="rx-foot">본 진단서는 오락용이며 효력이 없습니다 · 소소 병맛 클리닉 제3진료실</div>
     </div>
     <div class="clinic-actions">
-      <button type="button" id="clinic-again">🔀 다른 상담사에게</button>
+      <button type="button" id="clinic-again">🔀 다른 과 전원</button>
       <button type="button" class="share" id="clinic-share">📤 처방전 공유</button>
     </div>`;
 
@@ -270,7 +270,7 @@ function renderResult(container, worry, data) {
     callAdvice(container, lastWorry, picked);
   });
   result.querySelector('#clinic-share')?.addEventListener('click', () => {
-    const text = `😵‍💫 미친 고민상담소 처방전\n고민: ${worry}\n${data.counselorName} 왈: ${a.prescription}`;
+    const text = `🏥 소소 병맛 클리닉 진단서\n증상: ${worry}\n진단명: ${a.diagnosis || ''} · ${data.counselorName} 처방: ${a.prescription}`;
     const url = a.resultId ? `${location.origin}/advice/${encodeURIComponent(a.resultId)}` : `${location.origin}/#/clinic`;
     if (navigator.share) navigator.share({ title: '미친 고민상담소', text, url }).catch(() => {});
     else if (navigator.clipboard?.writeText) navigator.clipboard.writeText(`${text}\n${url}`).then(() => showToast('처방전을 복사했어요 📋', 'success')).catch(() => {});
