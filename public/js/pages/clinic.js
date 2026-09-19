@@ -261,7 +261,11 @@ function renderResult(container, worry, data) {
     <div class="clinic-actions">
       <button type="button" id="clinic-again">🔀 다른 과 전원</button>
       <button type="button" class="share" id="clinic-share">📤 처방전 공유</button>
-    </div>`;
+    </div>
+    <p style="text-align:center;font-size:11.5px;color:var(--cream-dim);margin-top:10px;line-height:1.6;">
+      이 진단서는 공개 게시판에 올라갑니다 ·
+      <a href="#/clinic-list" style="color:var(--gold);font-weight:700;">게시판 보기 →</a>
+    </p>`;
 
   result.querySelector('#clinic-again')?.addEventListener('click', () => {
     const others = COUNSELORS.filter(c => c.id !== data.counselorId);
