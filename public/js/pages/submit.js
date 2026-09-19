@@ -6,6 +6,13 @@ import { showToast } from '../components/toast.js?v=20260630-3';
 const MAX_DESC = 600;
 const DEFAULT_DAILY_LIMIT = 3;
 
+const EXAMPLE_CASES = [
+  { label: '🍗 치킨 도둑', text: '남편이 냉장고에 아껴둔 치킨 마지막 날개를 말도 없이 먹었습니다. 저는 퇴근 내내 그 치킨을 생각하며 버텼는데 집에 오니 빈 접시만 남아 있었습니다. 남편은 "날개가 두 개인 줄 알았는데 한 개밖에 없었다"고 주장하지만, 분명히 제가 아껴둔 걸 알고 먹은 것이 확실합니다.' },
+  { label: '❄️ 에어컨 분쟁', text: '룸메이트가 제가 퇴근하기 30분 전부터 에어컨을 18도로 맞춰두고 정작 본인은 긴 팔을 입고 있습니다. 전기요금은 반반씩 내지만 에어컨 사용 시간은 룸메이트가 압도적으로 많습니다. 추위를 타는 저는 매일 밤 이불을 뒤집어쓰고 자는데, 룸메이트는 "방이 안 더우면 못 잔다"며 양보할 생각이 없습니다.' },
+  { label: '💬 카톡 읽씹', text: '친한 친구에게 중요한 부탁을 카톡으로 보냈는데 2시간째 읽고 답장이 없습니다. 그런데 공동 단톡방에서는 이모지를 달았고 인스타 스토리도 올렸습니다. 읽씹이 명백한 상황에서 본인은 "못 봤다"고 주장할 것이 뻔해 미리 증거를 확보해뒀습니다.' },
+  { label: '🧮 더치페이 계산기', text: '우리 모임에서 저만 항상 더치페이 계산을 합니다. 6개월째 이 상황인데 아무도 고맙다는 말이 없습니다. 지난주에는 제가 화장실에 다녀왔더니 계산 앱이 제 핸드폰 위에 올려져 있었습니다. 이번에 모임 나가기 전에 이 억울함을 법정에서 정리하고 싶습니다.' }
+];
+
 const SERIOUS_KEYWORDS = [
   '폭행','폭력','상해','살인','강도','절도','사기','협박','스토킹','납치','감금',
   '성범죄','성폭력','성추행','성희롱','강간','강제추행',
@@ -138,6 +145,10 @@ export async function renderSubmit(container) {
         <form id="submit-form">
           <div class="form-group">
             <label class="form-label" for="case-desc">사건 내용 <span style="color:var(--red)">*</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:8px;">
+              <span style="font-size:11px;color:var(--cream-dim);white-space:nowrap;flex-shrink:0;">이런 사건 어때요?</span>
+              ${EXAMPLE_CASES.map((c, i) => `<button type="button" class="example-case-chip" data-idx="${i}" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--cream-dim);font-size:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;">${c.label}</button>`).join('')}
+            </div>
             <textarea id="case-desc" class="form-textarea" style="min-height:190px;line-height:1.75;" maxlength="${MAX_DESC}" aria-describedby="desc-help desc-counter" placeholder="예: 남편이 마지막으로 남겨둔 치킨 한 조각을 말도 없이 먹고, 자기는 날개인 줄 알았다고 주장했습니다. CCTV는 없지만 빈 접시와 태연한 표정이 남아 있습니다." required></textarea>
             <div id="desc-help" style="font-size:11px;color:var(--cream-dim);margin-top:6px;">실명·연락처·주소·계좌번호 등 개인정보는 빼고 상황만 적어주세요.</div>
             <div id="desc-counter" class="char-counter" aria-live="polite"><span id="desc-count">0</span>/${MAX_DESC}</div>
@@ -205,6 +216,17 @@ export async function renderSubmit(container) {
   const counter = container.querySelector('#desc-count');
   descInput?.addEventListener('input', () => {
     if (counter) counter.textContent = String(descInput.value.length);
+  });
+
+  container.querySelectorAll('.example-case-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const example = EXAMPLE_CASES[Number(chip.dataset.idx)];
+      if (descInput && example) {
+        descInput.value = example.text;
+        if (counter) counter.textContent = String(example.text.length);
+        descInput.focus();
+      }
+    });
   });
 
   const CHIP_SEL = 'padding:8px 13px;border-radius:20px;border:1.5px solid rgba(201,168,76,.8);background:rgba(201,168,76,.2);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;';
