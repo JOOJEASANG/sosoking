@@ -23,7 +23,9 @@ const SAMPLES = [
   '야 나 오늘 지각했는데 과장이 또 뭐라 함',
   '사랑한다고 말하고 싶은데 용기가 안 나',
   '치킨이랑 피자 중에 뭐 시킬지 고민됨',
-  '월요일 아침은 진짜 사람이 살 곳이 못 된다'
+  '월요일 아침은 진짜 사람이 살 곳이 못 된다',
+  '배고픈데 귀찮아서 못 먹겠음',
+  '그냥 다 때려치우고 싶다'
 ];
 
 let selectedModeId = 'bukhan';
@@ -119,12 +121,12 @@ function resultHtml(mode, result) {
       <div class="tl-tagline">${escapeHtml(result.tagline || '번역 완료')}</div>
       <div class="tl-translated">${escapeHtml(result.translated)}</div>
       <div class="tl-style-note">📌 ${escapeHtml(result.style_note || '')}</div>
-      <div class="tl-stamp" aria-hidden="true">미친<br>번역소<br><small>인증</small></div>
+      <div class="tl-stamp" aria-hidden="true">소소<br>번역소<br><small>인증</small></div>
     </div>
     <div class="tl-actions">
       <button type="button" id="tl-copy">📋 복사</button>
       <button type="button" id="tl-share" class="share">🔗 공유</button>
-      <button type="button" id="tl-again">🔄 다시</button>
+      <button type="button" id="tl-again">🔄 다시 박살</button>
     </div>`;
 }
 
@@ -132,22 +134,22 @@ export async function renderTranslate(container) {
   ensureStyle();
   container.innerHTML = `
     <div class="tl-page">
-      <div class="page-header"><span class="logo">💥 미친 번역소</span></div>
+      <div class="page-header"><span class="logo">💥 소소 번역소</span></div>
       <div class="tl-wrap">
-        <div class="tl-kicker">번역 · TRANSLATE</div>
-        <h1 class="tl-head">뭐든 집어넣으면<br><em>미치게 번역</em>해드립니다</h1>
-        <p class="tl-sub">북한말·사투리·꼰대체·급식체·판사체… 병맛 번역 12종 세트</p>
+        <div class="tl-kicker">번역소 · LANGUAGE MELTDOWN</div>
+        <h1 class="tl-head">한 줄 넣으면<br><em>12가지로 박살</em>내드림</h1>
+        <p class="tl-sub">북한말·사투리·꼰대체·급식체·판사체… 12종 병맛으로 원문 개조 — 결과 책임은 거부</p>
 
         <section class="tl-intake">
-          <div class="tl-intake-label"><span>▓ 번역할 내용</span><span id="tl-count">0 / 200</span></div>
-          <textarea id="tl-text" maxlength="200" placeholder="번역할 내용을 입력하세요. 짧을수록 더 미쳐요 ^^"></textarea>
+          <div class="tl-intake-label"><span>▓ 원문 투입</span><span id="tl-count">0 / 200</span></div>
+          <textarea id="tl-text" maxlength="200" placeholder="뭐든 넣어보세요. 짧으면 짧을수록 더 이상해집니다"></textarea>
           <div class="tl-samples" id="tl-samples"></div>
         </section>
 
-        <div class="tl-sec">번역 모드 선택 · 뭘로 미칠까?</div>
+        <div class="tl-sec">어떻게 망가뜨릴까 · 모드 선택</div>
         <div class="tl-modes" id="tl-modes">${buildModePicker()}</div>
 
-        <button class="tl-cta" id="tl-go" type="button">💥 번역 시작 · 미치게 바꿔줘</button>
+        <button class="tl-cta" id="tl-go" type="button">💥 번역 개시 · 원문 박살내기</button>
 
         <section class="tl-result" id="tl-result" hidden aria-live="polite"></section>
 
@@ -180,7 +182,7 @@ export async function renderTranslate(container) {
 
     goBtn.disabled = true;
     resultEl.hidden = false;
-    resultEl.innerHTML = `<div class="tl-loading"><div class="big">🌀</div><p>번역 중… 병맛 회로 가동 중</p></div>`;
+    resultEl.innerHTML = `<div class="tl-loading"><div class="big">🌀</div><p>원문 분해 중… 언어 회로 과부하 중</p></div>`;
 
     try {
       const modeId = selectedModeId;
@@ -197,15 +199,15 @@ export async function renderTranslate(container) {
       resultEl.innerHTML = resultHtml(modeObj, data.result);
 
       resultEl.querySelector('#tl-copy')?.addEventListener('click', () => {
-        const txt = `${data.modeEmoji} ${data.modeLabel} 번역\n\n${data.result.translated}\n\n— 미친 번역소`;
+        const txt = `${data.modeEmoji} ${data.modeLabel} 번역\n\n${data.result.translated}\n\n— 소소 번역소`;
         navigator.clipboard.writeText(txt).then(() => showToast('복사됨!'), () => showToast('복사 실패'));
       });
       resultEl.querySelector('#tl-share')?.addEventListener('click', () => {
         const rid = data.result.resultId;
         const url = rid ? `${location.origin}/translate/${encodeURIComponent(rid)}` : `${location.origin}/#/translate`;
-        const txt = `${data.modeEmoji} 미친 번역소 — ${data.modeLabel}\n\n${data.result.translated}\n\n${url}`;
+        const txt = `${data.modeEmoji} 소소 번역소 — ${data.modeLabel}\n\n${data.result.translated}\n\n${url}`;
         if (navigator.share) {
-          navigator.share({ title: '미친 번역소', text: txt, url }).catch(() => {});
+          navigator.share({ title: '소소 번역소', text: txt, url }).catch(() => {});
         } else {
           navigator.clipboard.writeText(txt).then(() => showToast('링크 복사됨!'), () => showToast('복사 실패'));
         }
