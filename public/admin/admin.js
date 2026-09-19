@@ -131,7 +131,7 @@ function renderDashboard() {
           <nav class="admin-nav">${TABS.map(([id, label]) => `<button type="button" class="admin-tab${currentTab === id ? ' active' : ''}" data-admin-tab="${escapeAttr(id)}">${escapeHtml(label)}</button>`).join('')}</nav>
         </aside>
         <main class="admin-main">
-          <div style="font-size:11px;color:var(--cream-dim);margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);">관리자: ${escapeHtml(currentUser.email || currentUser.uid || '-')}</div>
+          <div style="font-size:11px;color:var(--cream-dim);margin-top:8px;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);">관리자: ${escapeHtml(currentUser.email || currentUser.uid || '-')}</div>
           <div id="tab-content"></div>
         </main>
       </div>
