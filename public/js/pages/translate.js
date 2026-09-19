@@ -127,7 +127,11 @@ function resultHtml(mode, result) {
       <button type="button" id="tl-copy">📋 복사</button>
       <button type="button" id="tl-share" class="share">🔗 공유</button>
       <button type="button" id="tl-again">🔄 다시 박살</button>
-    </div>`;
+    </div>
+    <p style="text-align:center;font-size:11.5px;color:var(--cream-dim);margin-top:10px;line-height:1.6;">
+      이 번역은 공개 게시판에 올라갑니다 ·
+      <a href="#/translate-list" style="color:var(--gold);font-weight:700;">게시판 보기 →</a>
+    </p>`;
 }
 
 export async function renderTranslate(container) {

@@ -21,9 +21,24 @@ function ensureStyle() {
     .tll-translated{font-size:13.5px;color:var(--cream);line-height:1.65;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);}
     .tll-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
     .tll-time{font-size:10px;color:var(--cream-dim);}
+    .tll-social{display:flex;gap:6px;align-items:center;}
     .tll-like{display:flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:5px 11px;background:transparent;color:var(--cream-dim);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:border-color .15s,color .15s;}
     .tll-like:hover,.tll-like.liked{border-color:#e07b00;color:#e07b00;}
     .tll-like:disabled{opacity:.5;cursor:default;}
+    .tll-comment-btn{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:5px 10px;background:transparent;color:var(--cream-dim);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:border-color .15s,color .15s;}
+    .tll-comment-btn:hover,.tll-comment-btn.open{border-color:#e07b00;color:#e07b00;}
+    .tll-comments{border-top:1px dashed var(--border);padding-top:10px;margin-top:4px;}
+    .tll-comment-item{padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+    .tll-comment-item:last-of-type{border-bottom:0;}
+    .tll-comment-nick{font-size:11px;font-weight:800;color:var(--gold);margin-bottom:2px;}
+    .tll-comment-body{font-size:13px;color:var(--cream);line-height:1.55;}
+    .tll-comment-ts{font-size:10px;color:var(--cream-dim);margin-top:2px;}
+    .tll-comment-empty{font-size:12px;color:var(--cream-dim);text-align:center;padding:10px 0;}
+    .tll-comment-form{margin-top:10px;display:flex;flex-direction:column;gap:7px;}
+    .tll-comment-textarea{width:100%;resize:none;min-height:52px;border:1px dashed var(--border);border-radius:10px;padding:8px 10px;font-family:var(--font-sans);font-size:13px;line-height:1.55;color:var(--cream);background:rgba(255,255,255,.03);box-sizing:border-box;}
+    .tll-comment-textarea:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+    .tll-comment-submit{align-self:flex-end;cursor:pointer;font-family:inherit;font-weight:800;font-size:12px;color:#241a05;background:var(--gold);border:0;border-radius:999px;padding:7px 18px;transition:opacity .12s;}
+    .tll-comment-submit:disabled{opacity:.5;cursor:progress;}
     .tll-more{display:block;width:100%;margin:16px 0 20px;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--cream-dim);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:border-color .15s;}
     .tll-more:hover{border-color:var(--gold);}
     .tll-empty{padding:28px;text-align:center;font-size:13px;color:var(--cream-dim);border:1px dashed var(--border);border-radius:12px;line-height:1.75;}
@@ -45,15 +60,28 @@ function timeLabel(ts) {
 function cardHtml(id, d, likedSet) {
   const liked = likedSet.has(id);
   const modeEmoji = d.modeEmoji || '💥';
+  const commentCount = d.commentCount || 0;
   return `<div class="tll-card" data-doc-id="${escapeHtml(id)}">
     <div><span class="tll-mode">${modeEmoji} ${escapeHtml(d.modeLabel || '번역')}</span></div>
     <div class="tll-original">원문: ${escapeHtml(d.originalText || '')}</div>
     <div class="tll-translated">${escapeHtml(d.translated || '')}</div>
     <div class="tll-footer">
       <span class="tll-time">${timeLabel(d.createdAt)}</span>
-      <button type="button" class="tll-like${liked ? ' liked' : ''}" data-like-id="${escapeHtml(id)}" aria-label="좋아요 ${d.likeCount || 0}개">
-        ❤️ <span class="tll-like-count">${d.likeCount || 0}</span>
-      </button>
+      <div class="tll-social">
+        <button type="button" class="tll-comment-btn" data-comment-id="${escapeHtml(id)}" aria-label="댓글 ${commentCount}개">
+          💬 <span class="tll-comment-count">${commentCount}</span>
+        </button>
+        <button type="button" class="tll-like${liked ? ' liked' : ''}" data-like-id="${escapeHtml(id)}" aria-label="좋아요 ${d.likeCount || 0}개">
+          ❤️ <span class="tll-like-count">${d.likeCount || 0}</span>
+        </button>
+      </div>
+    </div>
+    <div class="tll-comments" hidden data-comments-for="${escapeHtml(id)}">
+      <div class="tll-comment-list"></div>
+      <div class="tll-comment-form">
+        <textarea class="tll-comment-textarea" maxlength="300" placeholder="댓글을 남겨보세요 (300자 이내)"></textarea>
+        <button type="button" class="tll-comment-submit">등록</button>
+      </div>
     </div>
   </div>`;
 }
@@ -66,14 +94,24 @@ async function fetchLiked(ids, uid) {
   return new Set(snaps.map((s, i) => s.exists ? ids[i] : null).filter(Boolean));
 }
 
+async function loadComments(resultId) {
+  const q = query(
+    collection(db, `translation_results_comments/${resultId}/items`),
+    orderBy('createdAt', 'asc'),
+    limit(30)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 export async function renderTranslateList(container) {
   ensureStyle();
   container.innerHTML = `
     <div class="tll-page">
-      <div class="page-header"><a href="#/translate" class="back-btn" aria-label="번역소로 돌아가기">‹</a><span class="logo">번역 명작 모음</span></div>
+      <div class="page-header"><a href="#/translate" class="back-btn" aria-label="번역소로 돌아가기">‹</a><span class="logo">번역 게시판</span></div>
       <div class="container" style="padding-top:18px;">
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">💥 번역 명작 모음</div>
-        <p style="font-size:12.5px;color:var(--cream-dim);margin:0 0 16px;line-height:1.65;">좋아요 많이 받은 번역을 먼저 보여드립니다.</p>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">💥 병맛 번역 게시판</div>
+        <p style="font-size:12.5px;color:var(--cream-dim);margin:0 0 16px;line-height:1.65;">모든 번역 결과는 공개됩니다. 좋아요·댓글로 반응해 보세요.</p>
         <div id="tll-grid" class="tll-grid"><div class="loading-dots"><span></span><span></span><span></span></div></div>
         <div id="tll-more-wrap"></div>
       </div>
@@ -85,6 +123,7 @@ export async function renderTranslateList(container) {
   let loading = false;
 
   const toggleLike = httpsCallable(functions, 'toggleLike');
+  const addComment = httpsCallable(functions, 'addComment', { timeout: 30000 });
 
   async function load(append = false) {
     if (loading) return;
@@ -124,6 +163,7 @@ export async function renderTranslateList(container) {
       }
 
       bindLikes(grid, uid);
+      bindComments(grid, uid);
     } catch (err) {
       console.error('translate list load failed:', err);
       if (!append) grid.innerHTML = '<div class="tll-empty">목록을 불러오지 못했습니다.<br><button class="btn btn-secondary" id="tll-retry" style="margin-top:8px;">다시 시도</button></div>';
@@ -151,6 +191,83 @@ export async function renderTranslateList(container) {
         }
       });
     });
+  }
+
+  function bindComments(root, uid) {
+    root.querySelectorAll('.tll-comment-btn:not([data-bound])').forEach(btn => {
+      btn.dataset.bound = '1';
+      const resultId = btn.dataset.commentId;
+      const card = btn.closest('.tll-card');
+      const section = card?.querySelector('.tll-comments');
+      if (!card || !section) return;
+
+      btn.addEventListener('click', async () => {
+        const isOpen = !section.hidden;
+        section.hidden = isOpen;
+        btn.classList.toggle('open', !isOpen);
+        if (!isOpen && !section.dataset.loaded) {
+          section.dataset.loaded = '1';
+          const list = section.querySelector('.tll-comment-list');
+          list.innerHTML = '<div style="font-size:11px;color:var(--cream-dim);padding:6px 0;">댓글 불러오는 중…</div>';
+          try {
+            const comments = await loadComments(resultId);
+            renderCommentList(list, comments);
+          } catch {
+            list.innerHTML = '<div class="tll-comment-empty">댓글을 불러오지 못했습니다.</div>';
+          }
+        }
+      });
+
+      const textarea = section.querySelector('.tll-comment-textarea');
+      const submitBtn = section.querySelector('.tll-comment-submit');
+      if (!textarea || !submitBtn) return;
+
+      submitBtn.addEventListener('click', async () => {
+        const text = (textarea.value || '').trim();
+        if (!uid) { showToast('댓글은 로그인 후 작성 가능합니다.', 'info'); return; }
+        if (text.length < 1) { showToast('댓글을 입력해주세요.', 'warn'); return; }
+        submitBtn.disabled = true;
+        try {
+          const { data } = await addComment({ collection: 'translation_results', resultId, text });
+          textarea.value = '';
+          const list = section.querySelector('.tll-comment-list');
+          appendComment(list, { nickname: data.nickname, text, createdAt: null });
+          const countSpan = btn.querySelector('.tll-comment-count');
+          if (countSpan) countSpan.textContent = String(Number(countSpan.textContent) + 1);
+          showToast('댓글이 등록됐습니다!', 'success');
+        } catch (err) {
+          const msg = String(err?.message || '').replace('FirebaseError: ', '');
+          showToast(msg || '잠시 후 다시 시도해주세요.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    });
+  }
+
+  function renderCommentList(list, comments) {
+    if (!comments.length) {
+      list.innerHTML = '<div class="tll-comment-empty">첫 댓글을 남겨보세요 👋</div>';
+      return;
+    }
+    list.innerHTML = comments.map(c => commentItemHtml(c)).join('');
+  }
+
+  function appendComment(list, c) {
+    const empty = list.querySelector('.tll-comment-empty');
+    if (empty) empty.remove();
+    const el = document.createElement('div');
+    el.innerHTML = commentItemHtml(c);
+    list.appendChild(el.firstElementChild);
+  }
+
+  function commentItemHtml(c) {
+    const ts = c.createdAt?.toDate ? timeLabel(c.createdAt) : '방금';
+    return `<div class="tll-comment-item">
+      <div class="tll-comment-nick">${escapeHtml(c.nickname || '익명')}</div>
+      <div class="tll-comment-body">${escapeHtml(c.text || '')}</div>
+      <div class="tll-comment-ts">${ts}</div>
+    </div>`;
   }
 
   await load();
