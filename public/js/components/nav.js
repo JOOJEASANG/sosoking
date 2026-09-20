@@ -37,7 +37,7 @@ export function renderNav(activeRoute = '') {
   const isHome = hash === '#/' || hash === '#' || hash === '';
   const isBoard = hash.startsWith('#/board');
   const isSubmit = hash.startsWith('#/submit');
-  const isAccount = hash.startsWith('#/auth') || hash.startsWith('#/my-cases');
+  const isAccount = hash.startsWith('#/auth') || hash.startsWith('#/my-cases') || hash.startsWith('#/my-records');
   const isServices = hash.startsWith('#/services') || hash.startsWith('#/clinic') || hash.startsWith('#/translate') || hash.startsWith('#/debate') || hash.startsWith('#/jury');
   const user = auth.currentUser;
   const isLoggedIn = Boolean(user && !user.isAnonymous);
