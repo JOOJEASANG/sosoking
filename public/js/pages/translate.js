@@ -130,7 +130,7 @@ function resultHtml(mode, result) {
     </div>
     <p style="text-align:center;font-size:11.5px;color:var(--cream-dim);margin-top:10px;line-height:1.6;">
       이 번역은 공개 게시판에 올라갑니다 ·
-      <a href="#/translate-list" style="color:var(--gold);font-weight:700;">게시판 보기 →</a>
+      <a href="#/translate" style="color:var(--gold);font-weight:700;">게시판 보기 →</a>
       &nbsp;·&nbsp;
       <a href="#/my-records" style="color:var(--gold);font-weight:700;">내 기록 →</a>
     </p>`;
@@ -140,7 +140,7 @@ export async function renderTranslate(container) {
   ensureStyle();
   container.innerHTML = `
     <div class="tl-page">
-      <div class="page-header"><span class="logo">💥 소소 번역소</span></div>
+      <div class="page-header"><a href="#/translate" class="back-btn" aria-label="번역소 게시판으로 돌아가기">‹</a><span class="logo">💥 소소 번역소</span></div>
       <div class="tl-wrap">
         <div class="tl-kicker">번역소 · LANGUAGE MELTDOWN</div>
         <h1 class="tl-head">한 줄 넣으면<br><em>12가지로 박살</em>내드림</h1>

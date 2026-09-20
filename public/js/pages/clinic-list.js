@@ -122,10 +122,15 @@ export async function renderClinicList(container) {
   ensureStyle();
   container.innerHTML = `
     <div class="cl-page">
-      <div class="page-header"><a href="#/clinic" class="back-btn" aria-label="상담소로 돌아가기">‹</a><span class="logo">진단서 게시판</span></div>
+      <div class="page-header"><span class="logo">🔮 미친 상담소</span></div>
       <div class="container" style="padding-top:18px;">
-        <div class="hall-intro-title" style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">🏥 병맛 진단서 게시판</div>
-        <p style="font-size:12.5px;color:var(--cream-dim);margin:0 0 16px;line-height:1.65;">모든 진단서는 공개됩니다. 좋아요·댓글로 반응해 보세요.</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:2px;">🏥 병맛 진단서 게시판</div>
+            <p style="font-size:12.5px;color:var(--cream-dim);margin:0;line-height:1.65;">좋아요·댓글로 반응해 보세요.</p>
+          </div>
+          <a href="#/clinic-new" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap;">+ 상담받기</a>
+        </div>
         <div id="cl-grid" class="cl-grid"><div class="loading-dots"><span></span><span></span><span></span></div></div>
         <div id="cl-more-wrap"></div>
       </div>
@@ -161,7 +166,7 @@ export async function renderClinicList(container) {
 
       if (!append) grid.innerHTML = '';
       if (snap.empty && !append) {
-        grid.innerHTML = '<div class="cl-empty">아직 공개 진단서가 없습니다.<br><a href="#/clinic" style="color:var(--gold);">병맛 클리닉에서 첫 진단 받기 →</a></div>';
+        grid.innerHTML = '<div class="cl-empty">아직 공개 진단서가 없습니다.<br><a href="#/clinic-new" style="color:var(--gold);">병맛 클리닉에서 첫 진단 받기 →</a></div>';
       } else {
         snap.docs.forEach(d => {
           const el = document.createElement('div');

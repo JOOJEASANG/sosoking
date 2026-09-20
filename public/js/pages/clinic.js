@@ -116,7 +116,7 @@ export async function renderClinic(container) {
   picked = null;
   container.innerHTML = `
     <div class="clinic-page">
-      <div class="page-header"><span class="logo">🔮 병맛 클리닉</span></div>
+      <div class="page-header"><a href="#/clinic" class="back-btn" aria-label="상담소 게시판으로 돌아가기">‹</a><span class="logo">🔮 병맛 클리닉</span></div>
       <div class="clinic-wrap">
         <div class="clinic-kicker">초진 접수 · DIAGNOSIS</div>
         <h1 class="clinic-head">증상만 말해봐<br><em>즉석 진단서</em> 써드림</h1>
@@ -264,7 +264,7 @@ function renderResult(container, worry, data) {
     </div>
     <p style="text-align:center;font-size:11.5px;color:var(--cream-dim);margin-top:10px;line-height:1.6;">
       이 진단서는 공개 게시판에 올라갑니다 ·
-      <a href="#/clinic-list" style="color:var(--gold);font-weight:700;">게시판 보기 →</a>
+      <a href="#/clinic" style="color:var(--gold);font-weight:700;">게시판 보기 →</a>
       &nbsp;·&nbsp;
       <a href="#/my-records" style="color:var(--gold);font-weight:700;">내 기록 →</a>
     </p>`;
