@@ -110,12 +110,12 @@ export async function renderTranslateList(container) {
     <div class="tll-page">
       <div class="page-header"><span class="logo">💥 미친 번역소</span></div>
       <div class="container" style="padding-top:18px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-          <div>
-            <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:2px;">💥 병맛 번역 게시판</div>
-            <p style="font-size:12.5px;color:var(--cream-dim);margin:0;line-height:1.65;">좋아요·댓글로 반응해 보세요.</p>
+        <div style="margin-bottom:14px;">
+          <div style="font-family:var(--font-serif);font-size:19px;font-weight:900;color:var(--gold);margin-bottom:6px;">💥 병맛 번역 게시판</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <p style="font-size:12.5px;color:var(--cream-dim);margin:0;line-height:1.5;">좋아요·댓글로 반응해 보세요.</p>
+            <a href="#/translate-new" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap;">+ 번역하기</a>
           </div>
-          <a href="#/translate-new" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap;">+ 번역하기</a>
         </div>
         <div id="tll-grid" class="tll-grid"><div class="loading-dots"><span></span><span></span><span></span></div></div>
         <div id="tll-more-wrap"></div>
