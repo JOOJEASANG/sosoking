@@ -17,8 +17,8 @@ function ensureStyle() {
     .tll-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding-bottom:90px;}
     .tll-card{background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:15px 14px 12px;display:flex;flex-direction:column;gap:8px;}
     .tll-mode{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--gold);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:3px 10px;}
-    .tll-original{font-size:12px;color:var(--cream-dim);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-    .tll-translated{font-size:13.5px;color:var(--cream);line-height:1.65;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);}
+    .tll-original{font-size:12px;color:var(--cream-dim);line-height:1.5;}
+    .tll-translated{font-size:13.5px;color:var(--cream);line-height:1.65;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);}
     .tll-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
     .tll-time{font-size:10px;color:var(--cream-dim);}
     .tll-social{display:flex;gap:6px;align-items:center;}

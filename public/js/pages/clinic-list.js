@@ -27,8 +27,8 @@ function ensureStyle() {
     .cl-doc-face{font-size:22px;line-height:1;flex-shrink:0;}
     .cl-doc-info{min-width:0;}
     .cl-doc-name{font-weight:900;font-size:12.5px;color:var(--cream);line-height:1.3;}
-    .cl-worry{font-size:13.5px;color:var(--cream-dim);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-    .cl-rx{font-size:12.5px;color:var(--cream);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);}
+    .cl-worry{font-size:13.5px;color:var(--cream-dim);line-height:1.55;}
+    .cl-rx{font-size:12.5px;color:var(--cream);line-height:1.6;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);}
     .cl-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
     .cl-time{font-size:10px;color:var(--cream-dim);}
     .cl-social{display:flex;gap:6px;align-items:center;}
