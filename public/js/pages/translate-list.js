@@ -108,10 +108,15 @@ export async function renderTranslateList(container) {
   ensureStyle();
   container.innerHTML = `
     <div class="tll-page">
-      <div class="page-header"><a href="#/translate" class="back-btn" aria-label="번역소로 돌아가기">‹</a><span class="logo">번역 게시판</span></div>
+      <div class="page-header"><span class="logo">💥 미친 번역소</span></div>
       <div class="container" style="padding-top:18px;">
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">💥 병맛 번역 게시판</div>
-        <p style="font-size:12.5px;color:var(--cream-dim);margin:0 0 16px;line-height:1.65;">모든 번역 결과는 공개됩니다. 좋아요·댓글로 반응해 보세요.</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:2px;">💥 병맛 번역 게시판</div>
+            <p style="font-size:12.5px;color:var(--cream-dim);margin:0;line-height:1.65;">좋아요·댓글로 반응해 보세요.</p>
+          </div>
+          <a href="#/translate-new" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap;">+ 번역하기</a>
+        </div>
         <div id="tll-grid" class="tll-grid"><div class="loading-dots"><span></span><span></span><span></span></div></div>
         <div id="tll-more-wrap"></div>
       </div>
@@ -147,7 +152,7 @@ export async function renderTranslateList(container) {
 
       if (!append) grid.innerHTML = '';
       if (snap.empty && !append) {
-        grid.innerHTML = '<div class="tll-empty">아직 공개 번역이 없습니다.<br><a href="#/translate" style="color:var(--gold);">번역소에서 첫 번역 시도 →</a></div>';
+        grid.innerHTML = '<div class="tll-empty">아직 공개 번역이 없습니다.<br><a href="#/translate-new" style="color:var(--gold);">번역소에서 첫 번역 시도 →</a></div>';
       } else {
         snap.docs.forEach(d => {
           const el = document.createElement('div');

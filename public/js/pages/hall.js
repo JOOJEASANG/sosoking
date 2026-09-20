@@ -191,7 +191,7 @@ function adviceCards(items) {
     title: d.worry || '',
     sub: `${COUNSELOR_EMOJI[d.counselorId] || '🔮'} ${d.counselorName || ''}`,
     likes: d.likeCount || 0
-  }, '#/clinic-list')).join('');
+  }, '#/clinic')).join('');
 }
 
 function translateCards(items) {
@@ -200,7 +200,7 @@ function translateCards(items) {
     title: d.translated || '',
     sub: `${d.modeEmoji || '💥'} ${d.modeLabel || ''} — 원문: ${(d.originalText || '').slice(0, 30)}`,
     likes: d.likeCount || 0
-  }, '#/translate-list')).join('');
+  }, '#/translate')).join('');
 }
 
 function bindJuryLinks(container) {
@@ -244,12 +244,12 @@ export async function renderHall(container) {
         <div id="hall-clinic-panel" hidden>
           <p class="hall-intro-copy" style="margin-bottom:14px;">좋아요가 많이 쌓인 처방전 TOP ${LIKE_TOP}</p>
           <div id="hall-clinic-slot"><div class="loading-dots"><span></span><span></span><span></span></div></div>
-          <div style="margin-top:14px;text-align:right;"><a href="#/clinic-list" style="font-size:12px;color:var(--gold);">전체 처방전 보기 →</a></div>
+          <div style="margin-top:14px;text-align:right;"><a href="#/clinic" style="font-size:12px;color:var(--gold);">전체 처방전 보기 →</a></div>
         </div>
         <div id="hall-translate-panel" hidden>
           <p class="hall-intro-copy" style="margin-bottom:14px;">좋아요가 많이 쌓인 번역 명작 TOP ${LIKE_TOP}</p>
           <div id="hall-translate-slot"><div class="loading-dots"><span></span><span></span><span></span></div></div>
-          <div style="margin-top:14px;text-align:right;"><a href="#/translate-list" style="font-size:12px;color:var(--gold);">전체 번역 보기 →</a></div>
+          <div style="margin-top:14px;text-align:right;"><a href="#/translate" style="font-size:12px;color:var(--gold);">전체 번역 보기 →</a></div>
         </div>
       </div>
     </div>`;

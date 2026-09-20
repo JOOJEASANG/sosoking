@@ -7,11 +7,11 @@ import { renderSubmit } from './pages/submit.js?v=20260918-judge-picker-1';
 import { renderTrial } from './pages/trial.js?v=20260918-verdict-theater-1';
 import { renderResult } from './pages/result-comments.js?v=20260918-verdict-match-1';
 import { renderDebate } from './pages/debate.js?v=20260907-debate-2';
-import { renderClinic } from './pages/clinic.js?v=20260911-result-seo-1';
-import { renderTranslate } from './pages/translate.js?v=20260911-result-seo-1';
-import { renderServices } from './pages/services.js?v=20260911-likes-1';
-import { renderClinicList } from './pages/clinic-list.js?v=20260911-likes-1';
-import { renderTranslateList } from './pages/translate-list.js?v=20260911-likes-1';
+import { renderClinic } from './pages/clinic.js?v=20260920-list-landing-1';
+import { renderTranslate } from './pages/translate.js?v=20260920-list-landing-1';
+import { renderServices } from './pages/services.js?v=20260920-list-landing-1';
+import { renderClinicList } from './pages/clinic-list.js?v=20260920-list-landing-1';
+import { renderTranslateList } from './pages/translate-list.js?v=20260920-list-landing-1';
 import { renderMyRecords } from './pages/my-records.js?v=20260919-my-records-1';
 import { renderDiscussion } from './pages/discussion.js?v=20260917-anon-vote-1';
 import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
@@ -78,8 +78,10 @@ function normalizedRoute() {
       return debateId ? `#/debate/${encodeURIComponent(debateId)}` : '#/debate';
     }
     if (path === '/clinic') return '#/clinic';
+    if (path === '/clinic-new') return '#/clinic-new';
     if (path === '/clinic-list') return '#/clinic-list';
     if (path === '/translate') return '#/translate';
+    if (path === '/translate-new') return '#/translate-new';
     if (path === '/translate-list') return '#/translate-list';
     if (path === '/services') return '#/services';
     if (path.startsWith('/result/')) {
@@ -172,9 +174,11 @@ async function route() {
       const debateId = decodeRouteValue(hash.replace('#/debate/', ''));
       renderTask = renderDebate(content, debateId);
     } else if (hash === '#/debate') renderTask = renderDebate(content);
-    else if (hash === '#/clinic') renderTask = renderClinic(content);
+    else if (hash === '#/clinic') renderTask = renderClinicList(content);
+    else if (hash === '#/clinic-new') renderTask = renderClinic(content);
     else if (hash === '#/clinic-list') renderTask = renderClinicList(content);
-    else if (hash === '#/translate') renderTask = renderTranslate(content);
+    else if (hash === '#/translate') renderTask = renderTranslateList(content);
+    else if (hash === '#/translate-new') renderTask = renderTranslate(content);
     else if (hash === '#/translate-list') renderTask = renderTranslateList(content);
     else if (hash === '#/services') renderTask = renderServices(content);
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
