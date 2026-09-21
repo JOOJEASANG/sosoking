@@ -102,6 +102,11 @@ jobs:
           firebase functions:list --project sosoking-481e6 --json > "$RUNNER_TEMP/functions-list.json"
           node tools/check-deployed-functions.mjs "$RUNNER_TEMP/functions-list.json"
 
+      - name: Clean up old Cloud Run revisions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: node tools/cleanup-cloud-run-revisions.mjs
+
       - name: Sanitize existing public results
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
