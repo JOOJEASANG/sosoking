@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260920-list-landing-1';
+const CACHE_NAME = 'sosoking-app-v20260921-translate-btn-1';
 
 const APP_SHELL = [
   '/',
@@ -17,7 +17,7 @@ const APP_SHELL = [
   '/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1',
   '/js/document-display-guard.js?v=20260802-original-button-layout-1',
   '/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2',
-  '/js/app.js?v=20260920-list-landing-1',
+  '/js/app.js?v=20260921-translate-btn-1',
   '/js/session-timeout.js?v=20260831-idle-timeout-1',
   '/js/result-link-share.js?v=20260906-result-clean-1',
   '/js/submit-draft-guard.js?v=20260807-submit-draft-1',
@@ -25,7 +25,7 @@ const APP_SHELL = [
   '/js/debate-entry.js?v=20260910-services-1',
   '/js/pages/services.js?v=20260920-list-landing-1',
   '/js/pages/clinic-list.js?v=20260920-list-content-2',
-  '/js/pages/translate-list.js?v=20260920-list-content-2',
+  '/js/pages/translate-list.js?v=20260921-translate-btn-1',
   '/js/avatar-fallback.js?v=20260917-avatar-photo-2',
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/firebase-config.js',
