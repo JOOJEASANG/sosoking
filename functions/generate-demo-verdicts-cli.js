@@ -329,6 +329,12 @@ async function main() {
     } catch (err) {
       failed++;
       console.error(`  [FAIL] ${data.caseTitle}: ${err.message}`);
+      await db.doc(`cases/${id}`).update({
+        status: 'error',
+        courtStage: 'error',
+        errorMessage: err.message.slice(0, 200),
+        updatedAt: FieldValue.serverTimestamp()
+      }).catch(() => null);
     }
   }
 
@@ -337,7 +343,7 @@ async function main() {
   }
 
   console.log(`\nDone: ${done} succeeded, ${failed} failed out of ${docs.length} total.`);
-  if (failed > 0) process.exit(1);
+  if (failed > 0) console.warn(`Warning: ${failed} case(s) failed — check Firestore for status=error entries.`);
 }
 
 main().catch(err => {
