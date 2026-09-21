@@ -128,7 +128,7 @@ export async function renderClinicList(container) {
           <div style="font-family:var(--font-serif);font-size:19px;font-weight:900;color:var(--gold);margin-bottom:6px;">🏥 병맛 진단서 게시판</div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <p style="font-size:12.5px;color:var(--cream-dim);margin:0;line-height:1.5;">좋아요·댓글로 반응해 보세요.</p>
-            <a href="#/clinic-new" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap;">+ 상담받기</a>
+            <a href="#/clinic-new" class="btn btn-primary" style="flex-shrink:0;white-space:nowrap;width:auto;padding:10px 18px;font-size:14px;">+ 상담받기</a>
           </div>
         </div>
         <div id="cl-grid" class="cl-grid"><div class="loading-dots"><span></span><span></span><span></span></div></div>
