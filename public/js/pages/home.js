@@ -1,3 +1,4 @@
+import { mountQuickCourt } from '../components/quick-court.js?v=20261006-play-1';
 import { db } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { compactText, escapeHtml } from '../utils/sanitize.js?v=20260630-3';
@@ -194,8 +195,10 @@ export async function renderHome(container) {
       <section class="hero-section">
         <img src="${BRAND_LOGO}" alt="소소킹 로고" width="132" height="132" decoding="async" fetchpriority="high" style="width:132px;height:132px;margin:0 auto 14px;display:block;animation:wiggle 3.5s ease-in-out infinite;">
         <div class="hero-badge">✨ 판결·상담·번역, 3대 과몰입 놀이터</div>
-        <h1 class="hero-h1">사소한 일상<br><span style="font-size:.58em;color:var(--gold);font-style:italic;">어디에 맡겨볼까요?</span></h1>
+        <h1 class="hero-h1">사소해서 더 진지한<br><span style="font-size:.58em;color:var(--gold);font-style:italic;">우리들의 과몰입 놀이터</span></h1>
         <p class="hero-sub">억울하면 <strong>판결소</strong>, 답답하면 <strong>상담소</strong>, 심심하면 <strong>번역소</strong>.<br><span style="font-size:11px;opacity:.62;">한 줄만 던지면 AI가 알아서 과몰입해 드립니다.</span></p>
+
+        <section class="quick-court" id="quick-court" aria-label="30초 과몰입 재판"></section>
 
         <div class="home-service-grid" style="display:flex;flex-direction:column;gap:11px;width:min(420px,92vw);margin:6px auto 22px;">
           ${HOME_SERVICES.slice(0, 2).map(serviceHeroCard).join('')}
@@ -306,8 +309,10 @@ export async function renderHome(container) {
       </section>
     </div>`;
 
+  mountQuickCourt(container.querySelector('#quick-court'));
   startTypewriter(container);
-  await Promise.all([
+  // Let the local game appear immediately while remote sections load.
+  void Promise.all([
     loadPublicSettings(container),
     loadPublicStatistics(container),
     loadPublicFeed(container)

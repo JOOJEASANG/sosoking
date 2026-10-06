@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260921-clinic-btn-1';
+const CACHE_NAME = 'sosoking-app-v20261006-play-1';
 
 const APP_SHELL = [
   '/',
@@ -12,12 +12,14 @@ const APP_SHELL = [
   '/css/sans-font.css?v=20260729-sans-font-1',
   '/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1',
   '/css/jury.css?v=20260917-jury-voted-badge-1',
+  '/css/quick-court.css?v=20261006-play-1',
+  '/js/components/quick-court.js?v=20261006-play-1',
   '/css/animations.css?v=20260906-anim-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
   '/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1',
   '/js/document-display-guard.js?v=20260802-original-button-layout-1',
   '/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2',
-  '/js/app.js?v=20260921-clinic-btn-1',
+  '/js/app.js?v=20261006-play-1',
   '/js/session-timeout.js?v=20260831-idle-timeout-1',
   '/js/result-link-share.js?v=20260906-result-clean-1',
   '/js/submit-draft-guard.js?v=20260807-submit-draft-1',
@@ -30,7 +32,7 @@ const APP_SHELL = [
   '/js/firebase.js?v=20260729-auth-session-1',
   '/js/firebase-config.js',
   '/js/admin-access.js?v=20260730-admin-redirect-1',
-  '/js/pages/home.js?v=20260911-home-plus1-1',
+  '/js/pages/home.js?v=20261006-play-1',
   '/js/pages/submit.js?v=20260918-judge-picker-1',
   '/js/pages/trial.js?v=20260918-verdict-theater-1',
   '/js/pages/result-comments.js?v=20260918-verdict-match-1',

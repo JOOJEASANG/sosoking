@@ -2,7 +2,7 @@ import { initAuth, auth } from './firebase.js?v=20260729-auth-session-1';
 import { signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { startIdleSessionTimeout } from './session-timeout.js?v=20260831-idle-timeout-1';
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
-import { renderHome } from './pages/home.js?v=20260911-home-plus1-1';
+import { renderHome } from './pages/home.js?v=20261006-play-1';
 import { renderSubmit } from './pages/submit.js?v=20260918-judge-picker-1';
 import { renderTrial } from './pages/trial.js?v=20260918-verdict-theater-1';
 import { renderResult } from './pages/result-comments.js?v=20260918-verdict-match-1';
