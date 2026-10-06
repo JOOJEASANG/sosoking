@@ -117,7 +117,7 @@ expect(myCases.includes('`#/verdict/${encodeURIComponent(id)}`'),
   'public/js/pages/my-cases.js: owned completed cases must open the owned verdict route');
 
 for (const moduleUrl of [
-  "./pages/home.js?v=20260911-home-plus1-1",
+  "./pages/home.js?v=20261006-play-1",
   "./pages/discussion.js?v=20260917-anon-vote-1",
   "./pages/hall.js?v=20260920-list-landing-1",
   "./pages/jury.js?v=20260917-jury-voted-badge-1"
@@ -132,7 +132,7 @@ expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
 expect(sw.includes('/js/pages/result-court.js?v=20260917-document-style-1')
   && sw.includes('/js/pages/discussion.js?v=20260917-anon-vote-1')
-  && sw.includes('/js/pages/home.js?v=20260911-home-plus1-1')
+  && sw.includes('/js/pages/home.js?v=20261006-play-1')
   && sw.includes('/js/pages/hall.js?v=20260920-list-landing-1')
   && sw.includes('/js/pages/jury.js?v=20260917-jury-voted-badge-1')
   && !sw.includes('/js/pages/participation.js')

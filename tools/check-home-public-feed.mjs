@@ -85,7 +85,7 @@ if (hall.includes('grievanceSection') || hall.includes('억울지수 TOP') || ha
 
 const app = read('public/js/app.js');
 for (const moduleUrl of [
-  "./pages/home.js?v=20260911-home-plus1-1",
+  "./pages/home.js?v=20261006-play-1",
   "./pages/hall.js?v=20260920-list-landing-1",
   "./pages/jury.js?v=20260917-jury-voted-badge-1"
 ]) {
@@ -102,7 +102,7 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active app cache versions are inconsistent');
 }
 for (const required of [
-  '/js/pages/home.js?v=20260911-home-plus1-1',
+  '/js/pages/home.js?v=20261006-play-1',
   '/js/pages/hall.js?v=20260920-list-landing-1',
   '/js/pages/jury.js?v=20260917-jury-voted-badge-1',
   '/js/utils/public-results.js?v=20260730-public-records-2'
