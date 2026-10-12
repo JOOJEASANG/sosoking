@@ -1,2 +1,4 @@
 const origins=['https://sosoking.co.kr','https://www.sosoking.co.kr','https://sosoking-481e6.web.app'];
 for(const origin of origins){const r=await fetch(`${origin}/?verify=${Date.now()}`,{signal:AbortSignal.timeout(20000)});if(!r.ok||!(await r.text()).includes('play-20261013-v2'))throw new Error(`Hosting version mismatch: ${origin}`);const data=await fetch(`${origin}/data/games.json`,{signal:AbortSignal.timeout(15000)});if(!data.ok||(await data.json()).length<9)throw new Error(`Starter missions unavailable: ${origin}`);console.log(`Verified ${origin}: new app and 9 starter missions`);}
+
+const api=await fetch('https://sosoking.co.kr/api/games?verify='+Date.now(),{signal:AbortSignal.timeout(20000)});if(!api.ok||!Array.isArray((await api.json()).games))throw new Error('Public mission API is unavailable');console.log('Verified public mission API');
