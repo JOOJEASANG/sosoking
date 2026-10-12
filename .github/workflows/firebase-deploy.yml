@@ -46,6 +46,14 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: node tools/retire-legacy.mjs
+      - name: Initialize daily news and report configuration
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          NEWS_AUTO_PUBLISH: ${{ vars.NEWS_AUTO_PUBLISH || 'true' }}
+        run: node tools/daily-news.cjs
       - name: Remove local credential
         if: always()
         run: rm -f "$RUNNER_TEMP/firebase-service-account.json"
