@@ -1,232 +1,55 @@
-# 소소킹 판결소
+# 소소킹 · Daily Play
 
-사소한 생활 사건을 생성형 AI가 지나치게 진지한 재판·판결문 형식으로 처리하는 Firebase 기반 오락 서비스입니다.
+기존 Firebase 계정과 배포 프로젝트를 재사용한 한국어 게임 사이트입니다. 생활·경제의 배송 경로, 스포츠의 페이스 전략, 과학·기술의 탐사 명령을 플레이합니다. 기본 미션은 9개이며 실제 뉴스로 표시하지 않습니다.
 
-> 실제 법률 자문이나 법원 판결이 아니며 법적 효력이 없습니다. 범죄 피해, 폭력, 의료·정신건강 문제 등 중대한 사안은 관련 기관이나 전문가의 도움을 받아야 합니다.
+## 실행과 검사
 
-## 현재 서비스 흐름
+Node.js 22를 사용합니다.
 
-1. Google 또는 이메일 계정으로 로그인합니다. 이메일 계정은 이메일 인증까지 완료해야 합니다.
-2. 개인정보를 제외한 사소한 생활분쟁을 한 칸에 입력합니다.
-3. 7명의 AI 판사 중 한 명이 자동 배정되어 사건접수·수사보고·원고측 변론·피고측 변론·판결문을 생성합니다.
-4. 접수한 본인도 AI 판결을 보기 전에 `원고 승 / 피고 승 / 쌍방 과실` 중 하나를 먼저 선택합니다.
-5. 선택 후 AI 판결을 열어 내 예상과 비교합니다.
-6. 사건은 기본 비공개입니다. 작성자가 공개를 선택하면 공개용 사건 정보와 AI 판결이 판결기록에 노출되고 민심소의 블라인드 투표·토론 대상이 됩니다.
-7. 실제 접수 원문은 작성자 본인에게만 제공됩니다.
-
-## 주요 기능
-
-- Firebase Auth 기반 Google·이메일 계정 및 내부 익명 세션
-- 계정별 사건 접수 한도와 재접수 쿨다운을 운영 설정으로 제어
-- Gemini 기반 생활형 AI 판결 생성과 장애 시 로컬 대체 판결
-- 꼰대형·냉혈형·회피형·추궁형·오버형·드립형·빙의형 판사 자동 배정
-- 본인 사건 AI 판결 사전 예상 투표
-- 공개 판결기록 및 안전한 공개용 사건 정보
-- 민심소: 판결을 가린 채 사건을 먼저 읽고 투표한 뒤 AI 판결·전체 민심과 비교
-- 민심소 댓글 토론, 판결 반응, 신고
-- 명예의 전당: 투표·댓글·실제 억울지수 데이터 기반 블라인드 랭킹
-- 내 사건 조회·삭제 및 항소심 판결 생성
-- 관리자 페이지: 사건/판결 공개관리, 신고, 회원 프로필, AI 샘플 수동 생성, 사용량, 접수 제한, 사업자 정보, 정책 관리
-- 공개 통계와 PWA/서비스워커 지원
-
-관리자 AI 샘플 사건 생성은 예약 작업이 아닙니다. 관리자가 관리자 화면에서 생성 버튼을 직접 누른 경우에만 실행됩니다.
-
-## 공개 데이터 경계
-
-현재 공개 판결기록과 민심소는 `results` 컬렉션의 기존 직접 Firestore 쿼리 구조를 유지합니다.
-
-공개 목록 쿼리는 다음 조건을 사용합니다.
-
-```text
-isPublic == true
-publicDataVersion == 1
-```
-
-Firestore `list` 규칙 역시 쿼리가 증명 가능한 두 필드 조건을 사용합니다. `userId`, 실제 `caseDescription`, 내부 `nickname` 같은 민감 필드 제거는 공개 처리 서버 함수와 배포 전 sanitation에서 강제합니다.
-
-이 구조를 임의로 별도 공개 컬렉션이나 Callable API로 교체하면 기존 판결기록·민심소가 보이지 않는 호환성 회귀가 생길 수 있으므로, 공개 데이터 구조 변경은 별도의 데이터 마이그레이션과 실서비스 검증 없이 진행하지 않습니다.
-
-공개 판결에서도 실제 접수 원문은 `cases/{caseId}.caseDescription`에서 직접 노출하지 않습니다. 작성자만 원문을 받을 수 있고, 다른 이용자는 안전검사를 통과한 `publicCaseDescription` 또는 개인정보 보호 안내만 받습니다.
-
-## 기술 구성
-
-- 프론트엔드: 정적 HTML, CSS, JavaScript ES Modules
-- Hosting/Auth/Database: Firebase Hosting, Authentication, Firestore
-- 서버: Firebase Cloud Functions v2, Node.js 22
-- AI: Google Gemini API
-- 배포/검증: GitHub Actions
-
-## 저장소 구조
-
-```text
-.
-├─ public/
-│  ├─ admin/                     관리자 화면
-│  ├─ css/                       공통/페이지 스타일
-│  ├─ js/
-│  │  ├─ app.js                  사용자 화면 라우터
-│  │  ├─ pages/                  실제 활성 페이지 모듈
-│  │  ├─ components/             공통 UI·테마·신고·내비게이션
-│  │  └─ utils/                  출력 정리·공개결과·아바타 유틸
-│  └─ sw.js                      PWA 서비스워커
-├─ functions/
-│  ├─ main.js                    Cloud Functions 진입점
-│  ├─ submit-secure.js           사건 접수
-│  ├─ generate-trial-lite.js     AI 판결 생성
-│  ├─ owner-verdict.js           본인 판결 사전 선택
-│  ├─ social.js                  반응·공개설정·항소 등
-│  ├─ discussion.js              공개 판결 토론
-│  ├─ public-original.js         접수 원문/공개용 정보 권한 경계
-│  ├─ public-result-sanitizer.js 공개 결과 민감 필드 정리
-│  ├─ reports.js                 신고 처리
-│  ├─ public-stats.js            공개 통계 집계
-│  ├─ daily.js                   관리자 수동 AI 샘플 생성
-│  ├─ profile.js                 닉네임·프로필
-│  ├─ case-aliases.js            과거 사건 주소 해석
-│  └─ admin-actions.js           관리자 서버 작업
-├─ tools/                        정적/보안/회귀 검사
-├─ firestore.rules               Firestore 접근 규칙
-├─ firestore.indexes.json        Firestore 인덱스
-└─ firebase.json                 Firebase 배포 설정
-```
-
-오래된 페이지를 런타임에서 다시 덮어쓰기 위한 홈/접수/정책/board/judge 래퍼는 사용하지 않습니다. 남아 있는 `*-guard.js`는 로그인 리디렉션, 입력 임시저장, 문서 표시 호환처럼 독립적인 기능을 담당하는 경우에만 유지합니다.
-
-## 로컬 준비
-
-Node.js 22 이상, Java 21 이상, Firebase CLI 15.24.0이 필요합니다.
-
-```bash
-npm install -g firebase-tools@15.24.0
+```sh
 npm ci
 npm ci --prefix functions
-```
-
-Firebase 프로젝트는 `.firebaserc`의 `sosoking-481e6`을 기본값으로 사용합니다.
-
-## 저장소 검사
-
-```bash
 npm test
 ```
 
-검사 범위는 다음을 포함합니다.
+`functions/game-engine.cjs`가 브라우저와 서버의 공통 규칙입니다. `npm run prepare`가 브라우저 엔진과 서버용 기본 미션을 동기화합니다. AI가 실행 코드를 작성하지 않습니다. 날짜별 규칙 변형을 만들고 해결 가능성을 검사한 뒤 AI가 제목과 도입 문구만 작성합니다. 로그인 없는 플레이는 localStorage, 로그인 후 완료한 플레이는 서버가 행동을 다시 계산해 Firestore에 저장합니다. 과거 비회원 기록을 신뢰된 서버 점수로 업로드하지 않습니다.
 
-- Firestore 에뮬레이터 기반 권한 허용·거부 시나리오
-- 공개 판결 목록 직접 조회 호환성
-- 개인정보·고위험 콘텐츠 필터 회귀검사
-- 공개 결과 민감 필드 sanitation
-- 순수 로직 동작 단위 테스트 (`node --test`): 콘텐츠 안전검사, 공개 결과 sanitizer, 판결 번호줄 정규화
-- 본인 판결 사전 선택 및 공개 흐름
-- UID 비노출 사건 ID와 과거 주소 마이그레이션
-- Functions 및 브라우저 JavaScript 문법
-- 로컬 모듈 import/require 경로
-- HTML 정적 자산 및 서비스워커 캐시 경로
-- 제거된 레거시 파일 재유입
-- Functions 내보내기와 배포 목록 일치 여부
+## 뉴스 자동 운영
 
-### 린트·포맷·단위 테스트
+GitHub Actions `Daily news missions`는 매일 한국 시간 07:20에 실행하도록 설정했습니다. GitHub 스케줄은 지연될 수 있습니다.
 
-```bash
-npm run lint          # ESLint (실제 버그 규칙은 error, 스타일은 warning)
-npm run test:unit     # node --test 기반 동작 단위 테스트
-npm run format:check  # Prettier 포맷 검사(선택)
-npm run format        # Prettier 자동 포맷(선택, 변경 파일 중심 사용 권장)
-```
+1. GitHub 저장소 Settings → Secrets and variables → Actions에 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`을 등록합니다. 네이버 검색 API용 키입니다.
+2. 기존 `FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6`과 Firebase Secret Manager의 `GEMINI_API_KEY`를 사용합니다. 일일 작업 서비스 계정에는 해당 Gemini 비밀의 Secret Accessor 권한이 필요합니다.
+3. 수집은 네이버 검색 API의 제목·원문 링크·검색 제공일 메타데이터만 사용합니다. 본문은 크롤링하거나 저장하지 않습니다. 검색 제공일은 기사 최초 발행일을 보장하지 않으며 UI에서도 구분합니다.
+4. 전날 한국 날짜의 적합한 배송·달리기·로봇 주제 한 개를 선택합니다. 정치·사망·사고·범죄 등 제외 단어를 거릅니다. 검색 결과 제목만 착안한 **가상 게임**이며 기사 요약 또는 사건 재현이 아님을 표시합니다.
+5. AI 호출은 전체 관리자·자동 작업 합산 하루 1회, 월 31회입니다. 출력 800토큰 제한, 실패 자동 재시도 없음, 중복 생성 잠금이 있습니다. 생성 비용은 요청 전에 한도에 반영하므로 실패해도 소모됩니다. 실제 청구액의 상한을 보증하는 설정은 아닙니다.
+6. 해결 가능성과 최고 보상 도달 여부를 검증하고 자동 모드의 미션을 하루 하나 공개합니다. 미션 데이터는 Firestore에 계속 저장합니다. 적합한 후보나 API 키가 없으면 새 뉴스 미션을 만들지 않고 오리지널 추천을 유지합니다.
+7. 자동 공개를 끄려면 Actions 변수 `NEWS_AUTO_PUBLISH=false`를 설정합니다. 초안은 운영실 검수함에 남습니다. 운영실에서 직접 원문을 확인한 요약을 입력하면 검수 후 공개하는 수동 제작도 가능합니다.
 
-- ESLint는 `eslint.config.js` flat config로 구성합니다. `no-undef`처럼 실제 버그를 잡는 규칙은 error, `no-var`·`no-unused-vars`처럼 기존 코드에 남은 스타일 항목은 warning으로 두어 점진적으로 정리합니다. 서버 입력 새니타이저의 제어문자 정규식은 의도된 패턴이므로 `no-control-regex`는 끕니다.
-- `npm test`에는 `test:unit`이 포함되어 PR 검증과 배포 파이프라인 모두에서 실행됩니다. `npm run lint`는 배포를 막지 않도록 PR 검증(`validate-pr.yml`)에서만 게이트로 실행합니다.
-- Prettier는 기존 코드를 일괄 재포맷하지 않습니다. 문자열 매칭 회귀검사가 깨지는 것을 피하기 위해 신규·수정 파일 위주로 사용합니다.
+기본 모델은 `gemini-3.1-flash-lite`입니다. 변경은 `functions/news-generator.cjs`의 MODEL에서 합니다. 공식 종료 일정 확인: https://ai.google.dev/gemini-api/docs/deprecations/
 
-### 의존성 자동 업데이트
+## 운영실
 
-`.github/dependabot.yml`이 루트 npm, `functions/` npm, GitHub Actions 의존성을 매주 점검해 업데이트 PR을 생성합니다.
+`https://sosoking.co.kr/#/studio`로 접속합니다. 기존 `admins/{uid}` 또는 인증된 이메일의 `admins/{email}` 관리자를 재사용합니다. 일반 회원은 권한이 없습니다. 후보 가져오기, 사실 확인 입력, 초안 생성, 생성 예약, 기록 없는 직접 플레이, 해결 예시 검사, 공개 승인·중단 기능을 제공합니다. 자동 생성 콘텐츠도 공개 중단할 수 있습니다. 공개 캐시로 인해 중단 반영에 최대 약 5분 걸릴 수 있습니다.
 
-## Firebase 설정
+기본 사용자 데이터 경로:
+- `game_editions`: 공개 및 예약 미션
+- `game_drafts`: 생성·검수·중단 기록
+- `game_days`: 하루 한 미션 예약 잠금
+- `news_candidates`, `news_queue`: 검색 후보와 생성 예약
+- `game_operations`: 수집 상태 및 AI 호출 한도
+- `game_players/{uid}/runs`: 비공개 계정 최고 기록
 
-Gemini API 키는 Functions Secret으로 등록합니다.
+브라우저는 Firestore에 점수나 초안을 직접 쓸 수 없습니다. 관리자 작업과 점수 저장은 서버 함수로 검증합니다. 이메일은 공개 순위에 표시하지 않으며 현재 공개 순위표는 없습니다. 기기 기록은 공용 기기의 다른 이용자에게 보일 수 있으므로 내 기록에서 초기화할 수 있습니다. 계정 게임 기록은 내 계정에서 별도로 삭제합니다.
 
-```bash
-firebase functions:secrets:set GEMINI_API_KEY
-```
+## 배포와 복구
 
-관리자 권한은 Firestore에 아래 문서 중 하나를 생성해 부여합니다.
+main 변경 시 `Deploy Firebase`가 테스트 → 새 함수 → 규칙·인덱스 → Hosting → 실제 URL 검사 → 기존 서비스 함수 정리 순으로 진행합니다. 구 번역·상담·판결 함수와 스케줄은 명시한 목록만 삭제하며, 기존 계정·Firestore 문서는 삭제하지 않습니다. 새 앱은 구 서비스 워커의 캐시를 비우고 해제합니다.
 
-```text
-admins/{Firebase Auth UID}
-admins/{로그인 이메일}
-```
+수동 배포 시 동일한 순서와 선택 함수 목록을 `.github/workflows/firebase-deploy.yml`에서 확인하세요. 새 함수 배포 전에 전체 `firebase deploy --only functions --force`를 실행하지 마세요.
 
-클라이언트의 이메일 문자열이 아니라 Firestore 관리자 문서, 보안 규칙, 서버 Callable 권한검사가 실제 관리자 권한 기준입니다.
+원본은 `backup/pre-playground-20261012` 브랜치와 별도로 전달한 전체 ZIP에 보존했습니다. 복구하려면 해당 브랜치의 소스를 별도 복구 브랜치로 가져와 기존 워크플로와 규칙·함수를 함께 복원합니다. 게임 관련 Firestore 자료는 삭제하지 않아도 됩니다.
 
-### App Check
+## 검증 범위
 
-웹 App Check 사이트 키는 `public/js/firebase-config.js`의 `appCheckSiteKey`에 설정합니다. 이후 GitHub Actions 변수 `ENFORCE_APP_CHECK=true`를 적용할 수 있습니다.
-
-사이트 키가 비어 있는 상태에서 강제 옵션만 켜면 배포 검증이 실패하도록 되어 있습니다. 사이트 키가 비어 있고 `ENFORCE_APP_CHECK=false`이면 기존 브라우저 호환 모드로 동작합니다.
-
-## 배포
-
-`main`에 병합되면 `.github/workflows/firebase-deploy.yml`이 다음 순서로 실행됩니다.
-
-1. Node.js/Java와 의존성 준비
-2. `npm test`
-3. 현재 Functions 우선 배포
-4. 알려진 구형 Functions 정리 및 배포 함수 일치 검사
-5. 기존 공개 결과 sanitation
-6. 기존 판결 표시 마이그레이션
-7. Firestore 규칙·인덱스 배포
-8. 공개 통계 초기화 및 공개 설정 동기화
-9. Hosting 배포
-10. 별도 실서비스 호스트 검증
-
-GitHub Actions 배포에는 현재 다음 secret이 사용됩니다.
-
-```text
-FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6
-```
-
-직접 배포할 때는 다음과 같이 실행할 수 있습니다.
-
-```bash
-firebase deploy --only functions
-firebase deploy --only firestore:indexes,firestore:rules,hosting
-```
-
-## 과거 UID 포함 사건 주소 이전
-
-신규 사건은 Firestore 자동 ID를 사용합니다. 과거 UID 포함 사건 주소는 `.github/workflows/migrate-legacy-case-ids.yml`에서 수동 이전할 수 있습니다.
-
-1. GitHub Actions에서 **Migrate legacy case IDs** 실행
-2. 먼저 `mode: dry-run`으로 대상 수와 해시 확인
-3. 적용 시 `main`에서 `mode: apply` 선택
-4. 확인 문자열 `MIGRATE_LEGACY_CASE_IDS` 입력
-
-이전 작업은 사건·판결·투표·댓글·내부 작성자 매핑·신고·신고 중복키를 새 opaque ID로 옮긴 뒤 과거 문서를 정리합니다. 기존 공유 링크는 서버 별칭을 통해 새 주소로 이동합니다.
-
-## 콘텐츠·개인정보 원칙
-
-- 핵심은 하찮은 생활 사건을 엄숙한 재판 형식으로 과장하는 것입니다.
-- 실명, 전화번호, 이메일, 상세주소, 계좌·카드번호 등 개인정보를 사건 내용에 입력하지 않습니다.
-- 실제 범죄·폭력·자해·성폭력·학대 등 고위험 사건은 오락형 판결 대상으로 처리하지 않습니다.
-- 입력 내용 속 명령문은 AI 시스템 지시가 아니라 사건 소재로만 취급합니다.
-- 사용자 입력과 공개 대상 AI 결과는 서버 안전검사를 거칩니다.
-- 사건과 판결은 기본 비공개이며 공개는 작성자 또는 관리자 권한으로 명시적으로 전환합니다.
-- 실제 접수 원문은 작성자 본인 전용입니다.
-- 결과에는 오락 목적이며 법적 효력이 없다는 안내를 포함합니다.
-
-## 판결문 프롬프트 운영
-
-판결문 프롬프트는 `functions/verdict-prompt.js` 한 곳에서 관리합니다.
-
-- 위험한 금지규칙을 불필요하게 늘리지 않습니다.
-- 사건 고유의 과장·콜백·생활형 처분이라는 장르 특성을 유지합니다.
-- 분량보다 웃음의 밀도를 우선합니다.
-- 프롬프트 변경은 문자열 체크만으로 판단하지 않고 실제 생성 결과를 비교합니다.
-
-```bash
-GEMINI_API_KEY=... node tools/eval/generate.mjs gemini-2.5-pro 5
-GEMINI_API_KEY=... node tools/eval/generate.mjs gemini-2.5-flash 5
-```
-
-모델은 `VERDICT_MODELS` 환경변수로 우선순위를 변경할 수 있으며 기본값은 `gemini-2.5-pro,gemini-2.5-flash`입니다.
+엔진 테스트는 9개 기본 미션, 180개 날짜·분야 변형, 실패·충돌·마감·보상·입력 검증을 검사합니다. DOM 테스트는 홈, 검색, 세 게임의 완료와 재도전, 기록 삭제, 화면 이동 중 실행 취소, 운영실 미리보기의 저장 방지를 검사합니다. 이는 실제 브라우저의 레이아웃·Google 로그인 팝업을 검증하는 테스트는 아닙니다. 배포 후 본인 관리자 계정으로 뉴스 생성과 로그인을 확인하세요.

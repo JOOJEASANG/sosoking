@@ -1,0 +1,18 @@
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js';
+import {getAuth,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,signOut} from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+import {getFunctions,httpsCallable} from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js';
+import {firebaseConfig} from './firebase-config.js';
+const app=initializeApp(firebaseConfig),auth=getAuth(app),functions=getFunctions(app,'asia-northeast3');
+const settled=new Promise(resolve=>{const off=onAuthStateChanged(auth,()=>{off();resolve();});});
+const call=async(name,data)=>(await httpsCallable(functions,name,{timeout:90000})(data)).data;
+export const ready=()=>settled;
+export const watch=fn=>onAuthStateChanged(auth,fn);
+export const google=()=>signInWithPopup(auth,new GoogleAuthProvider());
+export const email=(kind,email,password)=>(kind==='signup'?createUserWithEmailAndPassword:signInWithEmailAndPassword)(auth,email,password);
+export const reset=email=>sendPasswordResetEmail(auth,email);
+export const logout=()=>signOut(auth);
+export const saveRun=(g,input,assisted)=>call('saveGameRun',{id:g.id,version:g.version,input,assisted});
+export const loadRecords=async()=>(await call('getGameRuns',{})).runs;
+export const clearRecords=()=>call('clearGameRuns',{confirm:true});
+export const studio=(action,data={})=>call('gameStudio',{action,...data});
+export const generate=item=>call('generateNewsGame',{item});

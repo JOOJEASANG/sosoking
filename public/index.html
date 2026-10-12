@@ -1,63 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>소소킹 판결소 - 소소한 일상을 판결하는 AI 생활법정</title>
-  <meta name="description" content="사소한 생활분쟁을 AI 판사에게 접수하고, 판결을 보기 전에 직접 예상한 뒤 AI 결과와 비교해보세요. 공개 판결은 민심소의 블라인드 투표와 토론으로 즐기는 오락형 생활법정입니다. 법적 효력은 없습니다.">
-  <meta name="sosoking-deploy-version" content="sosoking-home-plus1-20260911-1">
-
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://sosoking.co.kr">
-  <meta property="og:title" content="소소킹 판결소 ⚖️ AI 생활법정">
-  <meta property="og:description" content="내 사건도 판결을 보기 전에 먼저 찍고, 공개 사건은 민심소에서 블라인드 판정하는 오락형 AI 생활법정입니다.">
-  <meta property="og:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:locale" content="ko_KR">
-  <meta property="og:site_name" content="소소킹 판결소">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="소소킹 판결소 ⚖️">
-  <meta name="twitter:description" content="내 사건을 먼저 예상 판정하고 AI 판결과 비교하는 오락형 생활법정입니다.">
-  <meta name="twitter:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
-
-  <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
-
-  <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png" sizes="32x32">
-  <link rel="icon" href="/icons/favicon-48.png?v=20260729-brand-unified-1" type="image/png" sizes="48x48">
-  <link rel="shortcut icon" href="/icons/favicon-48.png?v=20260729-brand-unified-1" type="image/png">
-  <link rel="apple-touch-icon" href="/icons/sosoking-192.png?v=20260729-pwa-icon-center-1" sizes="192x192">
-  <link rel="manifest" href="/site.webmanifest?v=20260729-pwa-icon-center-1">
-  <meta name="theme-color" content="#0b0f16">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/main.css?v=20260829-tags-1">
-  <link rel="stylesheet" href="/css/brand-logo.css?v=20260802-remove-daily-court-2">
-  <link rel="stylesheet" href="/css/game-entry.css?v=20260811-game-hub-1">
-  <link id="home-light-theme-css" rel="stylesheet" href="/css/home-light.css?v=20260729-light-home-1">
-  <link rel="stylesheet" href="/css/layout-spacing.css?v=20260729-spacing-flow-2">
-  <link rel="stylesheet" href="/css/sans-font.css?v=20260729-sans-font-1">
-  <link rel="stylesheet" href="/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1">
-  <link rel="stylesheet" href="/css/jury.css?v=20260917-jury-voted-badge-1">
-  <link rel="stylesheet" href="/css/animations.css?v=20260906-anim-1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>소소킹 — 작게 시작해, 멋지게 해결해</title>
+<meta name="description" content="배송 경로를 설계하고, 레이스를 뒤집고, 탐사 로봇을 귀환시키세요. 생활·스포츠·과학을 즐기는 소소킹의 작은 도전.">
+<meta name="theme-color" content="#f7f7f2"><meta name="sosoking-deploy-version" content="play-20261013-v2">
+<meta property="og:title" content="소소킹 — 세상을 한 판, 나답게"><meta property="og:description" content="작은 선택이 멋진 해결이 되는 곳. 배송·레이스·로봇 탐사에 도전하세요."><meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="/mark.svg"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/css/play.css">
+<script defer src="/js/game-engine.js"></script><script type="module" src="/js/app.js"></script>
 </head>
 <body>
-  <div id="app">
-    <div id="page-content"></div>
-    <footer id="site-footer"></footer>
-  </div>
-  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1"></script>
-  <script type="module" src="/js/document-display-guard.js?v=20260802-original-button-layout-1"></script>
-  <script type="module" src="/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2"></script>
-  <script type="module" src="/js/app.js?v=20260921-clinic-btn-1"></script>
-  <script type="module" src="/js/result-link-share.js?v=20260906-result-clean-1"></script>
-  <script type="module" src="/js/submit-draft-guard.js?v=20260807-submit-draft-1"></script>
-  <script type="module" src="/js/service-hub-guard.js?v=20260829-jury-1"></script>
-  <script type="module" src="/js/debate-entry.js?v=20260910-services-1"></script>
-  <script type="module" src="/js/avatar-fallback.js?v=20260917-avatar-photo-2"></script>
-</body>
-</html>
+<a href="#main" class="skip">본문으로 이동</a>
+<header class="header"><div class="header-inner"><a class="brand" href="#/" aria-label="소소킹 홈"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M5 11l7 5 6-10 6 10 7-5-4 18H9z" fill="currentColor"/><circle cx="13" cy="22" r="1.4" fill="#fff"/><circle cx="23" cy="22" r="1.4" fill="#fff"/></svg>소소킹<span class="brand-dot">.</span></a><nav aria-label="주 메뉴"><a href="#/" data-nav="home">오늘의 플레이</a><a href="#/archive" data-nav="archive">미션 보관함</a><a href="#/records" data-nav="records">나의 기록</a></nav><button class="account-btn" id="account-button">로그인 <span aria-hidden="true">↗</span></button></div></header>
+<main id="main" tabindex="-1"><div class="loading"><span class="loader"></span><p>작은 도전을 준비하고 있어요.</p></div></main>
+<footer class="footer"><a class="brand" href="#/">소소킹<span class="brand-dot">.</span></a><p>작은 도전, 생각보다 큰 재미.</p><div><button data-dialog="about">소소킹 소개</button><button data-dialog="privacy">개인정보 안내</button><button data-dialog="terms">이용 안내</button><a href="#/studio">운영실</a></div><small>© 2026 SOSOKING. 게임의 가상 규칙은 현실의 예측이나 전문적인 판단을 대신하지 않습니다.</small></footer>
+<dialog id="dialog"><button class="dialog-close icon-btn" aria-label="닫기">×</button><div id="dialog-body"></div></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<noscript><p class="loading">소소킹의 게임을 실행하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
+</body></html>

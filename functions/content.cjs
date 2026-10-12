@@ -1,0 +1,12 @@
+'use strict';
+const E=require('./game-engine.cjs');
+const categories=['life','sports','science'];
+const dateKey=(date=new Date())=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(date);
+function text(value,min,max,name){if(typeof value!=='string'||value.trim().length<min||value.length>max)throw new Error(`${name} 내용을 확인해 주세요.`);return value.trim();}
+function day(value){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value)||Number.isNaN(Date.parse(value+'T00:00:00Z'))||new Date(value+'T00:00:00Z').toISOString().slice(0,10)!==value)throw new Error('날짜를 확인해 주세요.');return value;}
+function source(value){if(!value||(value.mode!=='metadata'&&value.verified!==true))throw new Error('원문 확인이 필요합니다.');const u=new URL(value.url);if(u.protocol!=='https:'||u.username||u.password||u.href.length>1000)throw new Error('HTTPS 출처 주소가 필요합니다.');return {mode:value.mode==='metadata'?'metadata':'verified',url:u.href,title:text(value.title,2,160,'원문 제목'),publisher:text(value.publisher,1,80,'출처'),publishedAt:day(value.publishedAt),summary:text(value.summary,30,1200,'확인한 사실 요약'),verified:value.mode!=='metadata',disclaimer:'뉴스에서 착안한 창작 미션입니다. 지도·수치·게임 규칙은 모두 가상 조건입니다.'};}
+function candidate(value){if(!categories.includes(value.category))throw new Error('분야를 선택해 주세요.');return {category:value.category,publishDate:day(value.publishDate),source:source(value.source)};}
+function validateEdition(g){E.validate(g);if(!Number.isInteger(g.version)||g.version<1||g.version>100||!Number.isInteger(g.difficulty)||g.difficulty<1||g.difficulty>3||!Number.isInteger(g.minutes)||g.minutes<1||g.minutes>20)throw new Error('미션 표시 정보 오류');if(g.source)source(g.source);if(g.publishDate)day(g.publishDate);if(JSON.stringify(g).length>30000)throw new Error('미션이 너무 큽니다.');return g;}
+function canonicalInput(g,input){if(!input||JSON.stringify(input).length>2000)throw new Error('잘못된 플레이 기록입니다.');const r=g.type==='route'?{order:input.order}:g.type==='pace'?{plan:input.plan}:{program:input.program?.map(c=>({op:c.op,count:c.count}))};E.evaluate(g,r);return r;}
+function bestRun(old,g,result,assisted,now=new Date().toISOString()){const best=!old||result.stars>old.stars||(result.stars===old.stars&&result.metric<old.metric);return {...(best?{stars:result.stars,score:result.score,metric:result.metric,assisted:!!assisted}:old),id:g.id,version:g.version,title:g.title,type:g.type,attempts:(old?.attempts||0)+1,lastPlayed:now,completed:!!(old?.completed||result.complete)};}
+module.exports={dateKey,day,source,candidate,validateEdition,canonicalInput,bestRun};

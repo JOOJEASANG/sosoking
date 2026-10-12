@@ -1,255 +1,73 @@
-import { initAuth, auth } from './firebase.js?v=20260729-auth-session-1';
-import { signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { startIdleSessionTimeout } from './session-timeout.js?v=20260831-idle-timeout-1';
-import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
-import { renderHome } from './pages/home.js?v=20260911-home-plus1-1';
-import { renderSubmit } from './pages/submit.js?v=20260918-judge-picker-1';
-import { renderTrial } from './pages/trial.js?v=20260918-verdict-theater-1';
-import { renderResult } from './pages/result-comments.js?v=20260918-verdict-match-1';
-import { renderDebate } from './pages/debate.js?v=20260907-debate-2';
-import { renderClinic } from './pages/clinic.js?v=20260920-list-landing-1';
-import { renderTranslate } from './pages/translate.js?v=20260920-list-landing-1';
-import { renderServices } from './pages/services.js?v=20260920-list-landing-1';
-import { renderClinicList } from './pages/clinic-list.js?v=20260921-clinic-btn-1';
-import { renderTranslateList } from './pages/translate-list.js?v=20260921-translate-btn-1';
-import { renderMyRecords } from './pages/my-records.js?v=20260920-list-landing-1';
-import { renderDiscussion } from './pages/discussion.js?v=20260917-anon-vote-1';
-import { renderPolicy } from './pages/policy.js?v=20260830-final-audit-1';
-import { renderMyCases } from './pages/my-cases-game.js?v=20260810-mycase-light-1';
-import { renderGuide } from './pages/guide.js?v=20260830-final-audit-1';
-import { renderAuth } from './pages/auth2.js?v=20260920-list-landing-1';
-import { renderHall } from './pages/hall.js?v=20260920-list-landing-1';
-import { renderJury } from './pages/jury.js?v=20260917-jury-voted-badge-1';
-import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
-import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
-import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
-import { initNavAuthSync, renderNav } from './components/nav.js?v=20260920-list-landing-1';
-import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260829-arena-1';
-import { showToast } from './components/toast.js?v=20260630-3';
-
-let routeSequence = 0;
-let routeQueued = false;
-
-let _cardObserver = null;
-function initCardObserver() {
-  if (_cardObserver) _cardObserver.disconnect();
-  _cardObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
-      if (!entry.isIntersecting) return;
-      const el = entry.target;
-      el.style.transitionDelay = `${i * 55}ms`;
-      el.classList.add('anim-card-in');
-      _cardObserver.unobserve(el);
-    });
-  }, { threshold: 0.08 });
+import {art} from './art.js';
+import * as store from './store.js';
+const E=globalThis.SosoEngine,main=document.querySelector('#main'),dialog=document.querySelector('#dialog'),dialogBody=document.querySelector('#dialog-body');
+const CAT={life:{name:'생활·경제',short:'생활',tag:'일상을 설계하는 작은 전략',color:'life'},sports:{name:'스포츠',short:'스포츠',tag:'한 수 앞서는 페이스',color:'sports'},science:{name:'과학·기술',short:'과학',tag:'생각을 움직이는 탐사',color:'science'}};
+const SYMBOL={F:'↑',L:'↶',R:'↷'};
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeURL=x=>{try{const u=new URL(x);return u.protocol==='https:'?u.href:'';}catch{return '';}};
+let games=[],remoteState='loading',active=null,timers=[],pageToken=0,user=null,cloud=null,toastTimer;
+const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
+const dayIndex=()=>Math.floor(Date.parse(`${today()}T00:00:00+09:00`)/86400000);
+const stars=n=>'★'.repeat(n||0)+'☆'.repeat(3-(n||0));
+function toast(s){const el=document.querySelector('#toast');el.textContent=s;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+function later(fn,ms){const t=setTimeout(fn,ms);timers.push(t);return t;}
+function cancel(){timers.forEach(clearTimeout);timers=[];active=null;}
+function openDialog(html){dialogBody.innerHTML=html;if(!dialog.open)dialog.showModal();}
+document.querySelector('.skip').onclick=e=>{e.preventDefault();main.focus();main.scrollIntoView({block:'start'});};
+document.querySelector('.dialog-close').onclick=()=>dialog.close();
+dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
+function sourceLabel(g){return g.source?'뉴스 모티브':'오리지널 미션';}
+function card(g,i=0){const r=store.getRun(g);return `<a class="game-card" href="#/play/${esc(g.id)}"><div class="card-art ${g.category}"><span class="card-index">MISSION ${String(i+1).padStart(2,'0')}</span><span class="card-badge">${sourceLabel(g)}</span>${art(g.type)}</div><div class="card-info"><div class="card-category"><span>${CAT[g.category].name.toUpperCase()}</span><span>${'●'.repeat(g.difficulty)}${'○'.repeat(3-g.difficulty)}</span></div><h3>${esc(g.title)}</h3><p>${esc(g.subtitle)}</p><div class="card-bottom"><span>약 ${g.minutes}분 ${r?` · <span class="stars">${stars(r.stars)}</span>`:''}</span><span class="arrow-circle" aria-hidden="true">↗</span></div></div></a>`;}
+function featured(){const current=games.find(g=>g.publishDate===today()&&g.source);return current||games.filter(g=>g.difficulty===1)[dayIndex()%3]||games[0];}
+function home(){const g=featured();const featuredGames=['life','sports','science'].map(c=>games.find(x=>x.category===c&&x.difficulty===1)).filter(Boolean);main.innerHTML=`<div class="top-note"><strong><i class="live-dot"></i>SMALL PLAY. BIG THINK.</strong><span>${today().replaceAll('-','.')} · 오늘은 어떤 도전을 할까요?</span></div><section class="hero"><div class="hero-copy"><div class="eyebrow">TODAY'S PICK <span class="tiny-pill">${sourceLabel(g)}</span></div><h1>작게 시작해,<br><em>멋지게 해결해.</em></h1><p>${esc(g.subtitle)}<br>오늘의 추천, <strong>${esc(g.title)}</strong></p><div class="hero-actions"><a class="button lime" href="#/play/${g.id}">지금 한 판 시작 <span>↗</span></a><span class="hero-time">약 ${g.minutes}분 · 로그인 없이</span></div></div><div class="hero-art">${art(g.type)}<div class="hero-sticker"><span>한 번 더, 다른 방법으로.</span><strong>작은 선택의 큰 반전 ↗</strong></div></div></section><div class="intro-strip"><p><b>오늘은 해결사, 내일은 전략가.</b> 정답을 외우는 대신 직접 해보세요.</p><div class="chip-row"><a class="chip" href="#/archive/life">생활·경제</a><a class="chip" href="#/archive/sports">스포츠</a><a class="chip" href="#/archive/science">과학·기술</a></div></div><section><div class="section-head"><div><h2>어떤 방식으로 풀어볼까요?</h2><p>세 가지 다른 플레이. 당신의 방법을 찾아보세요.</p></div><a class="text-link" href="#/archive">전체 ${games.length}개 보기 ↗</a></div><div class="games-grid featured">${featuredGames.map(card).join('')}</div></section><section class="features"><div class="feature-note"><div class="feature-icon" aria-hidden="true">✳</div><div><h3>실패해도 괜찮아요. 다음 수가 보이니까.</h3><p>다시 도전할 때마다 조금씩 더 나은 해결.<br>금메달, 정시 배송, 완벽한 귀환을 모아보세요.</p></div></div><a class="feature-note dark" href="#/records"><div class="feature-icon" aria-hidden="true">♛</div><div><h3>소소한 도전이 모여, 나의 기록.</h3><p>세 분야의 별을 모으고 내 최고 기록을 확인하세요. ↗</p></div></a></section><p class="status-note">${remoteState==='loaded'?'공개 미션을 불러왔습니다.':'오리지널 미션은 바로 플레이할 수 있어요.'} 뉴스 모티브 미션에는 출처와 가상 조건을 따로 표시합니다.</p>`;}
+function archive(category='all'){main.innerHTML=`<div class="page-heading"><span class="eyebrow muted">MISSION ARCHIVE</span><h1>하고 싶은 도전, 여기 다 있어요.</h1><p>오늘 놓쳤어도 괜찮아요. 모든 미션은 이곳에 남습니다.</p></div><div class="toolbar"><div class="chip-row">${[['all','전체'],...Object.entries(CAT).map(([k,v])=>[k,v.name])].map(([k,n])=>`<button class="chip ${category===k?'active':''}" data-filter="${k}">${n}</button>`).join('')}</div><input class="search" id="search" placeholder="미션 이름으로 찾아보기" aria-label="미션 검색"><select id="difficulty" class="search" aria-label="난이도"><option value="all">모든 난이도</option><option value="1">가볍게 시작</option><option value="2">조금 더 생각</option><option value="3">끝까지 도전</option></select></div><div class="games-grid" id="archive-grid"></div>`;
+ const render=()=>{const q=document.querySelector('#search').value.trim().toLowerCase(),d=document.querySelector('#difficulty').value;const list=games.filter(g=>(category==='all'||g.category===category)&&(d==='all'||String(g.difficulty)===d)&&`${g.title} ${g.subtitle}`.toLowerCase().includes(q));document.querySelector('#archive-grid').innerHTML=list.map(card).join('')||'<div class="empty">조건에 맞는 미션이 없어요. 다른 분야나 검색어를 골라 주세요.</div>';};
+ document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{category=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));render();});document.querySelector('#search').oninput=render;document.querySelector('#difficulty').onchange=render;render();}
+function recordPage(){const records=Object.values(store.runs()).filter(r=>games.some(g=>g.id===r.id&&g.version===r.version));const sum=records.reduce((s,r)=>s+(r.stars||0),0),completed=records.filter(r=>r.completed).length,title=sum>=24?'소소킹':sum>=15?'반전의 전략가':sum>=6?'해결의 감각':'호기심 탐험가';main.innerHTML=`<div class="page-heading"><span class="eyebrow muted">MY SMALL WINS</span><h1>한 판씩, 나만의 성장.</h1><p>다른 사람의 속도보다 어제의 나보다 나은 한 수.</p></div><section class="records-hero"><div class="level-icon">♛</div><div><span class="eyebrow muted">MY TITLE</span><h2>${title}</h2><p>누적 별 6개 · 15개 · 24개에서 새 칭호를 얻어요.</p></div></section><div class="record-stats"><div class="metric"><b>${sum}</b><small>모은 별</small></div><div class="metric"><b>${completed}</b><small>완료한 미션</small></div><div class="metric"><b>${records.filter(r=>r.stars===3).length}</b><small>완벽하게 해결</small></div></div><div class="section-head"><div><h2>내가 남긴 기록</h2><p>${user?'현재 기기 기록 · 로그인 상태에서 완료한 플레이는 계정에도 저장됩니다.':'이 기기에 저장됩니다. 로그인하면 이후 플레이를 계정에도 저장할 수 있어요.'}</p></div><button id="sync-records" class="small-btn">${user?'계정 기록 불러오기':'로그인'}</button></div>${records.length?records.sort((a,b)=>b.lastPlayed.localeCompare(a.lastPlayed)).map(r=>`<a class="record-row" href="#/play/${esc(r.id)}"><div><h3>${esc(r.title)}</h3><small>${r.attempts}번 도전 · ${r.metric}${r.type==='route'?'분':r.type==='pace'?'초':'배터리 사용'}${r.assisted?' · 도움 사용':''}</small></div><div><span class="stars">${stars(r.stars)}</span> ↗</div></a>`).join(''):'<div class="empty">아직 첫 도전을 기다리고 있어요.<br><br><a class="button" href="#/">첫 미션 시작 ↗</a></div>'}<p class="status-note">${store.persistent?'브라우저 데이터를 지우면 기기 기록은 사라집니다.':'이 브라우저에서는 저장 공간을 사용할 수 없어 현재 실행 중에만 기록을 보관합니다.'} 동일 미션 재도전으로 별이 중복 지급되지는 않습니다.</p><button id="clear-records" class="small-btn">이 기기 기록 초기화</button>`;
+ document.querySelector('#clear-records').onclick=()=>{openDialog('<h2>기기 기록을 초기화할까요?</h2><p>이 기기의 별·최고 기록·저장한 계획이 사라집니다. 계정에 저장된 기록에는 영향을 주지 않습니다.</p><button class="button orange" id="confirm-clear">기기 기록 초기화</button>');document.querySelector('#confirm-clear').onclick=()=>{store.clear();dialog.close();recordPage();};};document.querySelector('#sync-records').onclick=async()=>{if(!user)return login();try{const c=await getCloud();const rows=await c.loadRecords();for(const r of rows){const g=games.find(g=>g.id===r.id&&g.version===r.version);if(g)store.merge(r);}recordPage();toast('계정 기록을 불러왔어요.');}catch{toast('계정 기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');}};
 }
-
-function observeCards(container) {
-  if (!_cardObserver) initCardObserver();
-  container.querySelectorAll('.card:not(.anim-card-in)').forEach(el => {
-    el.classList.add('anim-card');
-    _cardObserver.observe(el);
-  });
+function sourceBox(g){if(!g.source)return `<h3>이 미션은 오리지널입니다</h3><p>현실에서 만날 수 있는 문제를 바탕으로 만든 창작 미션입니다. 실제 전날 뉴스나 실제 인물의 사건으로 소개하지 않습니다.</p>`;return `<h3>이 미션의 출발점</h3><p><strong>${esc(g.source.title||'')}</strong><br>${esc(g.source.summary)}<br><a href="${esc(safeURL(g.source.url))}" target="_blank" rel="noopener noreferrer">${esc(g.source.publisher||'출처')} · 원문 읽기 ↗</a><br>${g.source.mode==='metadata'?'검색 제공일':'원문 발행일'} ${esc(g.source.publishedAt||'')} · ${esc(g.source.disclaimer||'지도·수치·게임 규칙은 원문과 구분되는 가상 조건입니다.')}</p>`;}
+function renderGame(g){const saved=store.draft(g);active={g,input:g.type==='route'?{order:[]}:g.type==='pace'?{plan:g.segments.map(()=> 'cruise')}:{program:[]},assisted:false,running:false};
+ if(saved&&saved.input){try{const candidate=saved.input;if(g.type==='route'&&Array.isArray(candidate.order)&&candidate.order.length<g.nodes.length&&candidate.order.every(n=>Number.isInteger(n)&&n>0&&n<g.nodes.length)&&new Set(candidate.order).size===candidate.order.length)active.input=candidate;if(g.type==='pace'){E.evaluate(g,candidate);active.input=candidate;}if(g.type==='robot'&&Array.isArray(candidate.program)&&candidate.program.length<=g.slots&&candidate.program.every(c=>['F','L','R'].includes(c.op)&&Number.isInteger(c.count)&&c.count>=1&&c.count<=3))active.input=candidate;active.assisted=!!saved.assisted;}catch{}}
+ main.innerHTML=`<div class="breadcrumb"><a href="#/archive">← 미션 보관함</a><span>${sourceLabel(g)} · 약 ${g.minutes}분 · 난이도 ${g.difficulty}</span></div><div class="game-heading"><div><div class="meta-badges"><span class="badge ${g.category}">${CAT[g.category].name}</span><span class="source-badge">${g.type==='route'?'경로 전략':g.type==='pace'?'페이스 전략':'명령 퍼즐'}</span></div><h1>${esc(g.title)}</h1><p>${esc(g.brief)}</p></div><button class="icon-btn" id="sound-button" aria-label="효과음 ${store.sound()?'끄기':'켜기'}">${store.sound()?'♪':'♩'}</button></div><div class="game-layout"><section class="board-panel" id="board"></section><aside><section class="control-panel" id="controls"></section><section class="result-panel" id="result" hidden aria-live="polite"></section></aside></div><div class="below-game"><section class="info-box"><h3>작은 선택, 다시 해보는 재미</h3><p>계획은 이 기기에 자동 저장돼요. 실행 후에는 결과를 살펴보고 다른 방법으로 다시 도전할 수 있습니다. 세 별을 얻어도 기록은 더 줄일 수 있어요.</p></section><section class="info-box">${sourceBox(g)}</section></div>`;
+ document.querySelector('#sound-button').onclick=e=>{store.sound(!store.sound());e.currentTarget.textContent=store.sound()?'♪':'♩';e.currentTarget.setAttribute('aria-label',`효과음 ${store.sound()?'끄기':'켜기'}`);if(store.sound())beep();};
+ refreshGame();}
+function persist(){if(active&&!active.preview)store.draft(active.g,{input:active.input,assisted:active.assisted});}
+function commonControls(){return `<button class="button orange full" id="run-game">계획 실행하기 <span>▶</span></button><div class="hint-line"><button id="show-hint">막혔나요? 힌트 보기</button><button id="show-solution">해결 예시 보기</button></div><div id="hint-box" class="hint-box" ${active.assisted?'':'hidden'}>${active.assisted?esc(active.g.hint):''}</div>`;}
+function bindCommon(){document.querySelector('#run-game').onclick=runGame;document.querySelector('#show-hint').onclick=()=>{active.assisted=true;persist();document.querySelector('#hint-box').hidden=false;document.querySelector('#hint-box').textContent=active.g.hint;};document.querySelector('#show-solution').onclick=()=>{const solved=E.solve(active.g);if(!solved)return toast('해결 예시를 찾지 못했어요.');const text=active.g.type==='route'?['기지',...solved.input.order.map(i=>active.g.nodes[i].label),'기지'].join(' → '):active.g.type==='pace'?solved.input.plan.map(a=>E.ACTIONS[a].label).join(' → '):solved.input.program.map(c=>`${SYMBOL[c.op]} ×${c.count}`).join(' · ');openDialog(`<h2>한 가지 해결 방법</h2><p>${esc(text)}</p><p>직접 적용해 보고 왜 성공하는지 확인해 보세요. 이 시도에는 도움 사용 표시가 남습니다.</p><button class="button" id="apply-solution">내 계획에 적용하기</button>`);document.querySelector('#apply-solution').onclick=()=>{active.assisted=true;active.input=structuredClone(solved.input);persist();dialog.close();refreshGame();};};}
+function refreshGame(){if(!active)return;const g=active.g;if(g.type==='route')renderRoute();if(g.type==='pace')renderPace();if(g.type==='robot')renderRobot();bindCommon();}
+function renderRoute(){const {g,input}=active;const edges=g.edges.map(([a,b,w])=>{const p=g.nodes[a],q=g.nodes[b];return `<line class="road" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/><rect x="${(p.x+q.x)/2-3}" y="${(p.y+q.y)/2-2}" width="6" height="4" rx="1" fill="#eef3e3"/><text class="road-number" x="${(p.x+q.x)/2}" y="${(p.y+q.y)/2+1}">${w}분</text>`;}).join('');
+ document.querySelector('#board').innerHTML=`<div class="board-top">DELIVERY MAP <span>선택한 배송지 사이 최단도로로 이동</span></div><div class="route-board"><svg viewBox="0 0 100 95" role="img" aria-label="배송 지도, 도로별 이동 시간과 배송지 마감 표시"><defs><pattern id="map-grid" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M8 0H0V8" fill="none" stroke="#dee6d0" stroke-width=".25"/></pattern></defs><rect width="100" height="95" fill="url(#map-grid)"/>${edges}${g.nodes.map((n,i)=>`<g class="node-button ${input.order.includes(i)?'selected':''}" data-node="${i}" ${i?`role="button" tabindex="0" aria-label="${esc(n.label)} 선택, ${n.deadline}분 마감"`:''}><circle class="node-circle" cx="${n.x}" cy="${n.y}" r="6"/><text class="node-label" x="${n.x}" y="${n.y+1.4}">${esc(n.label)}</text><text class="node-deadline" x="${n.x}" y="${n.y+10}">${i?`${n.deadline}분까지 완료`:'출발 / 복귀'}</text></g>`).join('')}</svg></div><div class="board-legend"><span>● 한 집 전달 ${g.service}분</span><span>● 도로는 양방향</span><span>● 경유만 하면 배송되지 않아요</span></div>`;
+ document.querySelector('#controls').innerHTML=`<div class="metrics"><div class="metric"><b>${input.order.length}/${g.nodes.length-1}</b><small>계획한 배송지</small></div><div class="metric"><b>${g.limit}분</b><small>복귀 제한</small></div><div class="metric"><b>${store.getRun(g)?.stars||0}★</b><small>내 최고 별</small></div></div><h2>어떤 순서로 갈까요?</h2><p>집을 눌러 순서를 정하세요. 지도 숫자는 이동 시간, 집 아래 숫자는 전달 완료 마감입니다.</p><div class="stop-buttons">${g.nodes.slice(1).map((n,j)=>`<button class="stop-btn ${input.order.includes(j+1)?'selected':''}" data-stop="${j+1}" ${input.order.includes(j+1)?'disabled':''}>${esc(n.label)}<small>${n.deadline}분</small></button>`).join('')}</div><div class="sequence" aria-live="polite">기지 ${input.order.map(i=>' → '+esc(g.nodes[i].label)).join('')}${input.order.length===g.nodes.length-1?' → 기지':''}</div><div class="control-actions"><button class="small-btn" id="undo">↶ 한 단계 취소</button><button class="small-btn" id="reset">처음부터</button></div>${commonControls()}`;
+ const add=i=>{if(active.running||!i||input.order.includes(i))return;input.order.push(i);persist();refreshGame();};document.querySelectorAll('[data-stop]').forEach(b=>b.onclick=()=>add(Number(b.dataset.stop)));document.querySelectorAll('[data-node]').forEach(n=>{n.onclick=()=>add(Number(n.dataset.node));n.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();add(Number(n.dataset.node));}};});document.querySelector('#undo').onclick=()=>{input.order.pop();persist();refreshGame();};document.querySelector('#reset').onclick=()=>{input.order=[];persist();refreshGame();};
 }
-
-function decodeRouteValue(value) {
-  try {
-    return decodeURIComponent(String(value || ''));
-  } catch {
-    return '';
-  }
+function renderPace(){const {g,input}=active;document.querySelector('#board').innerHTML=`<div class="board-top">PACE LAB <span>금 ${g.gold}초 · 은 ${g.silver}초</span></div><div class="pace-track"><svg viewBox="0 0 420 135" aria-label="6구간 레이스 트랙" role="img"><rect x="10" y="16" width="400" height="100" rx="49" fill="#b4a1d2"/><rect x="29" y="35" width="362" height="62" rx="31" fill="#eee8f4"/><path d="M20 89h380" stroke="white" stroke-width="2" stroke-dasharray="6 6"/><path d="M379 73v39" stroke="#fff" stroke-width="8"/><g id="runner" class="runner" transform="translate(30 86)"><circle cy="-13" r="6" fill="#253c37"/><path d="M0-5l-4 14 12 7m-12-7-11 12M-1-2l12 7" stroke="#fa623c" stroke-width="5" fill="none" stroke-linecap="round"/></g><text x="210" y="72" font-size="13" fill="#6d5689" text-anchor="middle" font-family="sans-serif">PLAN YOUR COMEBACK</text></svg><p class="race-caption" id="race-caption">빠른 출발보다, 끝까지 가는 계획.</p></div><div class="pace-rows">${g.segments.map((s,i)=>`<div class="pace-row"><div><b>${i+1}. ${esc(s.label)}</b><small>남길 체력을 생각하세요</small></div><div class="pace-options">${Object.entries(E.ACTIONS).map(([k,a])=>{const cost=a.cost+(k==='sprint'?(s.sprintCost||0):0);return `<button class="pace-option ${input.plan[i]===k?'selected':''}" data-segment="${i}" data-action="${k}" aria-pressed="${input.plan[i]===k}">${a.label}<small>${a.time+(s.time?.[k]||0)}초 / ${cost<0?'+':'−'}${Math.abs(cost)}체력</small></button>`;}).join('')}</div></div>`).join('')}</div>`;
+ const prediction=E.evaluate(g,input);document.querySelector('#controls').innerHTML=`<div class="metrics"><div class="metric"><b>${g.energy}</b><small>시작 체력</small></div><div class="metric"><b>${g.capacity}</b><small>최대 체력</small></div><div class="metric"><b>${g.gold}초</b><small>금메달 목표</small></div></div><h2>힘을 쓸 순간을 고르세요.</h2><p>각 구간에서 페이스를 선택하세요. 회복은 느리지만 체력을 채웁니다. 최대치를 넘는 회복은 사라집니다.</p><div class="pace-preview" id="pace-preview">${prediction.complete?`현재 계획: ${prediction.metric}초 완주 예상`:`현재 계획: ${prediction.failedAt+1}구간 체력 부족`}<br>계획을 실행하면 구간별 결과를 볼 수 있어요.</div><div class="energy-list">${Array.from({length:g.capacity},(_,i)=>`<span class="energy-bar ${i<g.energy?'on':''}"></span>`).join('')}</div><div class="control-actions"><button class="small-btn" id="reset">모두 유지로 초기화</button></div>${commonControls()}`;
+ document.querySelectorAll('[data-segment]').forEach(b=>b.onclick=()=>{if(active.running)return;input.plan[Number(b.dataset.segment)]=b.dataset.action;persist();refreshGame();});document.querySelector('#reset').onclick=()=>{input.plan=g.segments.map(()=> 'cruise');persist();refreshGame();};}
+function renderRobot(){const {g,input}=active;const walls=new Set(g.walls.map(p=>p.join(',')));document.querySelector('#board').innerHTML=`<div class="board-top">ROVER CONTROL <span>표본 ${g.samples.length}개 수집 → 기지 도착</span></div><div class="robot-board"><div class="robot-grid" style="grid-template-columns:repeat(${g.width},1fr)" role="img" aria-label="로봇 탐사 지도. 화살표는 로봇 방향, 다이아몬드는 표본, 깃발은 기지입니다.">${Array.from({length:g.width*g.height},(_,i)=>{const x=i%g.width,y=Math.floor(i/g.width),sample=g.samples.some(p=>p[0]===x&&p[1]===y),goal=g.goal[0]===x&&g.goal[1]===y,start=g.start[0]===x&&g.start[1]===y;return `<div class="cell ${walls.has(`${x},${y}`)?'wall':''} ${sample?'sample':''} ${goal?'goal':''}" data-cell="${x},${y}" title="${x+1}열 ${y+1}행 ${sample?'표본':goal?'기지':walls.has(`${x},${y}`)?'장애물':''}"><span class="cell-item">${sample?'◆':goal?'⚑':''}</span>${start?`<span class="rover" style="transform:rotate(${g.start[2]*90}deg)">↑</span>`:''}</div>`;}).join('')}</div></div><div class="board-legend"><span>◆ 표본</span><span>⚑ 기지</span><span>↑ 로봇의 앞 방향</span><span>▧ 장애물</span></div>`;
+ const used=input.program.reduce((s,c)=>s+c.count,0);document.querySelector('#controls').innerHTML=`<div class="metrics"><div class="metric"><b>${input.program.length}/${g.slots}</b><small>명령 슬롯</small></div><div class="metric"><b>${used}/${g.energy}</b><small>예상 배터리 사용</small></div><div class="metric"><b>${g.goldSlots}칸</b><small>3별 목표</small></div></div><h2>작은 로봇에게 길을 알려주세요.</h2><p>명령을 누르면 순서대로 추가됩니다. 명령 아래 ×숫자를 누르면 1~3회 반복합니다. 회전도 배터리 1을 씁니다.</p><div class="command-keys">${[['L','좌회전'],['F','앞으로'],['R','우회전']].map(([op,n])=>`<button class="command-key" data-op="${op}" ${input.program.length>=g.slots?'disabled':''}><b>${SYMBOL[op]}</b>${n}</button>`).join('')}</div><div class="program">${Array.from({length:g.slots},(_,i)=>{const c=input.program[i];return c?`<div class="command"><span class="command-symbol">${SYMBOL[c.op]}</span><button data-repeat="${i}" aria-label="${i+1}번째 명령 반복 횟수 변경">×${c.count}</button><button class="remove" data-remove="${i}" aria-label="${i+1}번째 명령 삭제">×</button></div>`:`<div class="command empty" aria-label="빈 슬롯 ${i+1}">${i+1}</div>`;}).join('')}</div><div class="control-actions"><button class="small-btn" id="undo">↶ 마지막 명령 취소</button><button class="small-btn" id="reset">전체 지우기</button></div>${commonControls()}`;
+ document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{if(active.running||input.program.length>=g.slots)return;input.program.push({op:b.dataset.op,count:1});persist();refreshGame();});document.querySelectorAll('[data-repeat]').forEach(b=>b.onclick=()=>{const c=input.program[Number(b.dataset.repeat)];c.count=c.count%3+1;persist();refreshGame();});document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{input.program.splice(Number(b.dataset.remove),1);persist();refreshGame();});document.querySelector('#undo').onclick=()=>{input.program.pop();persist();refreshGame();};document.querySelector('#reset').onclick=()=>{input.program=[];persist();refreshGame();};}
+function beep(){if(!store.sound())return;try{const ctx=new (window.AudioContext||window.webkitAudioContext)(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.setValueAtTime(620,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(940,ctx.currentTime+.12);gain.gain.setValueAtTime(.05,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);osc.start();osc.stop(ctx.currentTime+.2);osc.onended=()=>ctx.close();}catch{}}
+function runGame(){if(!active||active.running)return;let r;try{r=E.evaluate(active.g,active.input);}catch(e){return toast(e.message);}const state=active;state.running=true;document.querySelector('#result').hidden=true;document.querySelectorAll('#controls button, #board button').forEach(b=>b.disabled=true);document.querySelector('#run-game').textContent='실행 중…';const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,delay=reduced?20:active.g.type==='robot'?330:550;
+ r.trace.forEach((step,i)=>later(()=>{if(active!==state)return;if(state.g.type==='route'){document.querySelectorAll('[data-node]').forEach(n=>n.classList.toggle('current',Number(n.dataset.node)===step.to));}if(state.g.type==='pace'){document.querySelector('#runner')?.setAttribute('transform',`translate(${30+(i+1)*56} 86)`);document.querySelector('#race-caption').textContent=`${i+1}구간 ${state.g.segments[i].label} · ${step.time}초 · 체력 ${step.energy}`;document.querySelectorAll('.energy-bar').forEach((b,j)=>b.classList.toggle('on',j<step.energy));}if(state.g.type==='robot'){document.querySelectorAll('.rover').forEach(n=>n.remove());const cell=document.querySelector(`[data-cell="${step.x},${step.y}"]`);if(cell){cell.classList.add('visited');cell.insertAdjacentHTML('beforeend',`<span class="rover ${step.collision?'crash':''}" style="transform:rotate(${step.dir*90}deg)">↑</span>`);}state.g.samples.forEach((p,j)=>{if(step.mask&(1<<j)){const el=document.querySelector(`[data-cell="${p.join(',')}"] .cell-item`);if(el)el.textContent='✓';}});}},delay*(i+1)));
+ later(()=>{if(active!==state)return;state.running=false;persist();if(!state.preview)store.record(state.g,r,state.assisted);showResult(state.g,r);beep();document.querySelectorAll('#controls button, #board button').forEach(b=>b.disabled=false);document.querySelector('#run-game').textContent='같은 계획 다시 실행 ▶';if(user&&!state.preview)saveCloud(state.g,state.input,r,state.assisted);},delay*(r.trace.length+1));}
+function showResult(g,r){const result=document.querySelector('#result');result.hidden=false;const detail=g.type==='route'?r.trace.map(t=>t.to===0?`기지 복귀 ${t.time}분 ${t.ok?'✓':'제한 초과'}`:`${g.nodes[t.to].label}: ${t.time}분 완료 / ${g.nodes[t.to].deadline}분 마감 ${t.ok?'✓':'지연'}`).join('\n'):g.type==='pace'?r.trace.map(t=>`${t.segment+1}구간 ${E.ACTIONS[t.action].label} → 누적 ${t.time}초 · 체력 ${t.energy}`).join('\n'):`사용한 배터리 ${r.metric} · 수집한 표본 ${r.collected}/${g.samples.length}`;
+ result.innerHTML=`<span class="eyebrow">YOUR RESULT</span><div class="stars" style="font-size:27px;margin-top:10px">${stars(r.stars)}</div><h2>${r.complete?'한 수, 잘 풀었어요.':'다음 수가 보이나요?'}</h2><p>${esc(r.summary)}</p><div class="result-detail">${esc(detail)}</div><p style="margin-top:14px">${esc(g.explanation)}</p><div class="result-actions"><button class="small-btn" id="edit-plan">계획 고쳐보기 ↶</button><button class="small-btn" id="share-result">도전장 공유 ↗</button><a class="small-btn" href="#/archive/${g.category}">다음 미션</a></div><div class="save-note" id="save-note">${active.preview?'운영실 미리보기 · 기록은 저장되지 않습니다.':store.persistent?'기기 기록에 저장했어요.':'현재 세션에 기록했어요. 브라우저 저장 공간이 차단돼 있습니다.'}${active.assisted?' · 도움 사용':''}</div>`;
+ document.querySelector('#edit-plan').onclick=()=>{result.hidden=true;refreshGame();document.querySelector('#controls').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});};document.querySelector('#share-result').onclick=()=>share(g,r);}
+async function share(g,r){const url=`${location.origin}/#/play/${g.id}`,text=`[소소킹] ${g.title}\n${stars(r.stars)} ${r.summary}\n같은 조건으로 한 판 도전해볼래요?`;try{if(navigator.share)await navigator.share({title:g.title,text,url});else{await navigator.clipboard.writeText(`${text}\n${url}`);toast('도전장 링크를 복사했어요.');}}catch(e){if(e.name==='AbortError')return;openDialog(`<h2>도전장 링크</h2><p>아래 링크를 복사해서 보내주세요.</p><input class="search" style="width:100%" readonly value="${esc(url)}" aria-label="공유 링크">`);dialogBody.querySelector('input').select();}}
+async function getCloud(){if(!cloud){cloud=await import('./cloud.js');cloud.watch(u=>{user=u&&!u.isAnonymous?u:null;document.querySelector('#account-button').textContent=user?'내 계정 ↗':'로그인 ↗';});await cloud.ready();}return cloud;}
+async function saveCloud(g,input,r,assisted){try{const c=await getCloud();await c.saveRun(g,input,assisted);const el=document.querySelector('#save-note');if(el&&active?.g.id===g.id)el.textContent='기기와 계정에 기록을 저장했어요.';}catch{const el=document.querySelector('#save-note');if(el&&active?.g.id===g.id)el.textContent='기기에는 저장했지만 계정 저장에 실패했어요. 연결 상태를 확인해 주세요.';}}
+async function login(){openDialog('<h2>나의 도전을 이어가세요.</h2><p class="dialog-note">로그인 없이도 모든 게임을 즐길 수 있어요. 계정으로 로그인하면 이후 플레이 기록을 다른 기기에서도 불러올 수 있습니다.</p><button class="button secondary full" id="google-login">Google로 계속하기</button><div class="divider">또는 이메일</div><form class="auth-form" id="auth-form"><label>이메일<input type="email" id="email" autocomplete="email" required></label><label>비밀번호<input type="password" id="password" minlength="6" autocomplete="current-password" required></label><p class="auth-error" id="auth-error" role="alert"></p><button class="button full" type="submit">로그인</button><button class="small-btn" id="signup" type="button">새 계정 만들기</button><button class="small-btn" id="reset-password" type="button">비밀번호 재설정 메일 보내기</button></form>');
+ const act=async(kind)=>{const err=document.querySelector('#auth-error');err.textContent='연결 중…';try{const c=await getCloud();if(kind==='google')await c.google();else{const email=document.querySelector('#email').value.trim(),password=document.querySelector('#password').value;if(!email)return err.textContent='이메일을 입력해 주세요.';if(kind==='reset'){await c.reset(email);err.textContent='재설정 메일을 요청했어요. 받은편지함을 확인해 주세요.';return;}await c.email(kind,email,password);}dialog.close();toast('로그인했어요. 이후 기록을 계정에도 저장합니다.');}catch(e){err.textContent=({'auth/popup-closed-by-user':'로그인 창이 닫혔어요. 다시 시도해 주세요.','auth/popup-blocked':'팝업이 차단됐어요. 팝업을 허용하거나 이메일로 로그인해 주세요.','auth/invalid-credential':'이메일 또는 비밀번호를 확인해 주세요.','auth/email-already-in-use':'이미 가입된 이메일입니다. 로그인을 이용해 주세요.','auth/weak-password':'비밀번호는 6자 이상 입력해 주세요.','auth/too-many-requests':'요청이 많습니다. 잠시 후 다시 시도해 주세요.'})[e.code]||'로그인을 완료하지 못했어요. 네트워크 또는 입력 내용을 확인해 주세요.';}};
+ document.querySelector('#google-login').onclick=()=>act('google');document.querySelector('#auth-form').onsubmit=e=>{e.preventDefault();act('login');};document.querySelector('#signup').onclick=()=>act('signup');document.querySelector('#reset-password').onclick=()=>act('reset');}
+document.querySelector('#account-button').onclick=async()=>{try{await getCloud();if(user){openDialog(`<h2>내 계정</h2><p>${esc(user.email||'로그인 사용자')}</p><a href="#/records" class="button full" id="account-records">나의 기록</a><button class="small-btn full" style="margin-top:14px" id="delete-cloud">계정 게임 기록 삭제</button><button class="small-btn full" style="margin-top:14px" id="logout">로그아웃</button>`);document.querySelector('#account-records').onclick=()=>dialog.close();document.querySelector('#delete-cloud').onclick=async()=>{if(!confirm('계정에 저장된 게임 기록을 삭제할까요? 계정 자체와 기기 기록은 유지됩니다.'))return;try{await cloud.clearRecords();toast('계정 게임 기록을 삭제했어요.');dialog.close();}catch{toast('삭제하지 못했어요. 다시 시도해 주세요.');}};document.querySelector('#logout').onclick=async()=>{await cloud.logout();dialog.close();toast('로그아웃했어요. 기기 기록은 유지됩니다.');};}else login();}catch{toast('로그인 서버에 연결하지 못했어요. 게임은 계속 즐길 수 있습니다.');}};
+const legal={about:'<h2>작게 시작해, 멋지게 해결해.</h2><p>소소킹은 생활·경제, 스포츠, 과학·기술의 문제를 직접 풀어보는 작은 게임 공간입니다. 정답을 외우기보다 시도하고 고치며 나만의 방법을 발견합니다.</p><p>오리지널 미션은 창작입니다. 뉴스 모티브 미션은 확인한 출처를 표시하며, 실제 사실과 게임의 가상 수치·규칙을 구분합니다.</p>',privacy:'<h2>개인정보 안내</h2><p>비회원 게임 기록과 작성 중인 계획은 브라우저 저장 공간에 보관합니다. 나의 기록 화면에서 기기 기록을 초기화할 수 있습니다.</p><p>로그인하면 Firebase 인증을 이용하며 이메일과 계정 식별자로 본인 기록을 구분합니다. 로그인 상태에서 완료한 게임의 미션 ID·점수·도움 사용 여부·기록 시각을 계정에 보관합니다. 공개 순위표에 이메일이나 계정 정보가 노출되지 않습니다.</p><p>로그인 후 내 계정의 ‘계정 게임 기록 삭제’로 서버의 게임 기록을 지울 수 있습니다. 기기 기록은 나의 기록 화면에서 별도로 초기화합니다.</p>',terms:'<h2>이용 안내</h2><p>게임은 오락과 문제 해결 연습을 위한 가상 환경입니다. 실제 가격, 스포츠 성적, 교통 시간, 과학적 결과를 예측하거나 보증하지 않습니다.</p><p>뉴스 모티브에는 원문 링크와 출처를 표시합니다. 사실 오류가 확인된 미션은 정정하거나 공개를 중단할 수 있으며, 규칙이 바뀌면 기록 버전을 구분합니다.</p><p>동일한 미션은 누구나 같은 조건으로 즐깁니다. 기록은 금전이나 상품으로 교환되지 않습니다.</p>'};
+document.querySelectorAll('[data-dialog]').forEach(b=>b.onclick=()=>openDialog(legal[b.dataset.dialog]));
+async function route(){pageToken++;cancel();const token=pageToken;const parts=location.hash.replace(/^#\/?/,'').split('/');const page=parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('active',a.dataset.nav===(page==='play'?'archive':page)));if(page==='home')home();else if(page==='archive')archive(CAT[parts[1]]?parts[1]:'all');else if(page==='records')recordPage();else if(page==='play'){const g=games.find(x=>x.id===parts[1]);if(g)renderGame(g);else main.innerHTML='<div class="empty">미션을 찾지 못했어요. 공개가 중단되었거나 주소가 바뀌었을 수 있습니다.<br><br><a href="#/archive" class="button">미션 보관함</a></div>';}else if(page==='preview'){try{const g=JSON.parse(sessionStorage.getItem('sosoking.preview'));E.validate(g);if(g.id!==parts[1])throw new Error();renderGame(g);active.preview=true;document.querySelector('.breadcrumb').innerHTML='<a href="#/studio">← 운영실로 돌아가기</a><strong>검수용 미리보기 · 기록 저장 안 함</strong>';}catch{main.innerHTML='<div class="empty">미리보기를 다시 열어 주세요. <a href="#/studio">운영실</a></div>';}}else if(page==='studio'){main.innerHTML='<div class="loading">운영실에 연결하고 있어요.</div>';try{const c=await getCloud();const studio=await import('./studio.js');if(token===pageToken)await studio.render({main,cloud:c,toast,esc,login,games,engine:E});}catch{if(token===pageToken)main.innerHTML='<div class="empty">운영실 연결에 실패했습니다. 로그인 상태와 서버 연결을 확인해 주세요.<br><br><button class="button" id="studio-login">로그인</button></div>';document.querySelector('#studio-login')?.addEventListener('click',login);}}else{location.hash='#/';return;}window.scrollTo({top:0,behavior:'instant'});document.title=page==='play'&&active?`${active.g.title} | 소소킹`:'소소킹 — 작게 시작해, 멋지게 해결해';}
+window.addEventListener('hashchange',()=>{if(games.length)route();});
+async function boot(){try{const response=await fetch('/data/games.json');if(!response.ok)throw new Error();const list=await response.json();games=list.filter(g=>{try{E.validate(g);return true;}catch{return false;}});if(!games.length)throw new Error();await route();}catch{main.innerHTML='<div class="empty">미션을 불러오지 못했습니다.<br><br><button class="button" id="reload">다시 시도</button></div>';document.querySelector('#reload').onclick=()=>location.reload();return;}
+ try{const response=await fetch('/api/games',{signal:AbortSignal.timeout(7000)});if(!response.ok)throw new Error();const data=await response.json();if(!Array.isArray(data.games))throw new Error();for(const g of data.games){try{E.validate(g);const i=games.findIndex(x=>x.id===g.id);if(i>=0)games[i]=g;else games.unshift(g);}catch{}}remoteState='loaded';if(!active&&location.hash!=='#/studio')route();}catch{remoteState='offline';}
+ if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js').then(r=>r.update()).catch(()=>{});}
 }
-
-function normalizedRoute() {
-  const hash = location.hash || '';
-  if (hash === '' || hash === '#') {
-    const path = location.pathname.replace(/\/$/, '') || '/';
-    if (path === '/') return '#/';
-    if (path === '/board') return '#/board';
-    if (path === '/jury') return '#/jury';
-    if (path === '/submit') return '#/submit';
-    if (path === '/guide') return '#/guide';
-    if (path === '/auth') return '#/auth';
-    if (path === '/my-cases') return '#/my-cases';
-    if (path === '/my-records') return '#/my-records';
-    if (path === '/debate') return '#/debate';
-    if (path.startsWith('/debate/')) {
-      const debateId = decodeRouteValue(path.replace('/debate/', ''));
-      return debateId ? `#/debate/${encodeURIComponent(debateId)}` : '#/debate';
-    }
-    if (path === '/clinic') return '#/clinic';
-    if (path === '/clinic-new') return '#/clinic-new';
-    if (path === '/clinic-list') return '#/clinic-list';
-    if (path === '/translate') return '#/translate';
-    if (path === '/translate-new') return '#/translate-new';
-    if (path === '/translate-list') return '#/translate-list';
-    if (path === '/services') return '#/services';
-    if (path.startsWith('/result/')) {
-      const caseId = decodeRouteValue(path.replace('/result/', ''));
-      return caseId ? `#/result/${encodeURIComponent(caseId)}` : '#/';
-    }
-    if (path.startsWith('/discussion/')) {
-      const caseId = decodeRouteValue(path.replace('/discussion/', ''));
-      return caseId ? `#/discussion/${encodeURIComponent(caseId)}` : '#/';
-    }
-    if (path.startsWith('/verdict/')) {
-      const caseId = decodeRouteValue(path.replace('/verdict/', ''));
-      return caseId ? `#/verdict/${encodeURIComponent(caseId)}` : '#/';
-    }
-    if (path.startsWith('/trial/')) {
-      const caseId = decodeRouteValue(path.replace('/trial/', ''));
-      return caseId ? `#/trial/${encodeURIComponent(caseId)}` : '#/';
-    }
-  }
-  return hash || '#/';
-}
-
-function freshContentHost() {
-  const current = document.getElementById('page-content');
-  if (!current) return null;
-  const next = current.cloneNode(false);
-  current.replaceWith(next);
-  return next;
-}
-
-function renderRouteError(content) {
-  content.innerHTML = `
-    <div class="page-header"><span class="logo">⚠️ 화면 오류</span></div>
-    <div class="container" style="padding-top:56px;padding-bottom:90px;text-align:center;">
-      <div class="card" style="padding:24px;">
-        <div style="font-size:40px;margin-bottom:10px;" aria-hidden="true">🛠️</div>
-        <div style="font-family:var(--font-serif);font-size:19px;font-weight:900;color:var(--gold);margin-bottom:8px;">화면을 불러오지 못했습니다</div>
-        <div style="font-size:13px;color:var(--cream-dim);line-height:1.75;margin-bottom:18px;">네트워크 상태를 확인한 뒤 다시 시도해주세요.</div>
-        <button type="button" class="btn btn-primary" id="route-reload-btn">새로고침</button>
-        <a href="#/" class="btn btn-ghost" style="margin-top:10px;">홈으로 이동</a>
-      </div>
-    </div>`;
-  content.querySelector('#route-reload-btn')?.addEventListener('click', () => location.reload());
-}
-
-async function route() {
-  const sequence = ++routeSequence;
-  if (window._pageCleanup) {
-    try { window._pageCleanup(); }
-    catch (error) { console.warn('page cleanup failed:', error); }
-    window._pageCleanup = null;
-  }
-
-  const hash = normalizedRoute();
-  if (hash === '#/auth' && await redirectAdminAccountRoute()) return;
-
-  // 나가는 페이지 fade-out
-  const outgoing = document.getElementById('page-content');
-  if (outgoing && outgoing.firstChild) {
-    outgoing.style.opacity = '0';
-    outgoing.style.transform = 'translateY(-6px)';
-    await new Promise(r => setTimeout(r, 190));
-    if (sequence !== routeSequence) return;
-  }
-
-  const content = freshContentHost();
-  if (!content) return;
-  // 들어오는 페이지 초기 상태 (숨김)
-  content.style.opacity = '0';
-  content.style.transform = 'translateY(10px)';
-  window.scrollTo(0, 0);
-
-  try {
-    let renderTask;
-    if (hash === '#/' || hash === '' || hash === '#') renderTask = renderHome(content);
-    else if (hash === '#/submit') renderTask = renderSubmit(content);
-    else if (hash.startsWith('#/trial/')) {
-      const caseId = decodeRouteValue(hash.replace('#/trial/', ''));
-      renderTask = caseId ? renderTrial(content, caseId) : renderHome(content);
-    } else if (hash.startsWith('#/verdict/')) {
-      const caseId = decodeRouteValue(hash.replace('#/verdict/', ''));
-      renderTask = caseId ? renderResult(content, caseId) : renderHome(content);
-    } else if (hash.startsWith('#/result/')) {
-      const caseId = decodeRouteValue(hash.replace('#/result/', ''));
-      renderTask = caseId ? renderResult(content, caseId) : renderHome(content);
-    } else if (hash.startsWith('#/discussion/')) {
-      const caseId = decodeRouteValue(hash.replace('#/discussion/', ''));
-      renderTask = caseId ? renderDiscussion(content, caseId) : renderHall(content);
-    } else if (hash.startsWith('#/debate/')) {
-      const debateId = decodeRouteValue(hash.replace('#/debate/', ''));
-      renderTask = renderDebate(content, debateId);
-    } else if (hash === '#/debate') renderTask = renderDebate(content);
-    else if (hash === '#/clinic') renderTask = renderClinicList(content);
-    else if (hash === '#/clinic-new') renderTask = renderClinic(content);
-    else if (hash === '#/clinic-list') renderTask = renderClinicList(content);
-    else if (hash === '#/translate') renderTask = renderTranslateList(content);
-    else if (hash === '#/translate-new') renderTask = renderTranslate(content);
-    else if (hash === '#/translate-list') renderTask = renderTranslateList(content);
-    else if (hash === '#/services') renderTask = renderServices(content);
-    else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
-    else if (hash === '#/my-cases') renderTask = renderMyCases(content);
-    else if (hash === '#/my-records') renderTask = renderMyRecords(content);
-    else if (hash === '#/guide') renderTask = renderGuide(content);
-    else if (hash === '#/auth') renderTask = renderAuth(content);
-    else if (hash === '#/board') renderTask = renderHall(content);
-    else if (hash === '#/jury') renderTask = renderJury(content);
-    else renderTask = renderHome(content);
-
-    renderNav(hash);
-    await renderTask;
-    if (sequence !== routeSequence || !content.isConnected) return;
-    normalizePageHeaderIcons(content, hash);
-    renderThemeToggle();
-    // 들어오는 페이지 fade-in + 카드 입장
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        content.style.opacity = '';
-        content.style.transform = '';
-        observeCards(content);
-      });
-    });
-  } catch (error) {
-    console.error('route render failed:', { hash, error });
-    if (sequence === routeSequence && content.isConnected) {
-      renderRouteError(content);
-      renderNav(hash);
-      normalizePageHeaderIcons(content, hash);
-      renderThemeToggle();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          content.style.opacity = '';
-          content.style.transform = '';
-        });
-      });
-    }
-  }
-}
-
-function scheduleRoute() {
-  if (routeQueued) return;
-  routeQueued = true;
-  queueMicrotask(() => {
-    routeQueued = false;
-    void route();
-  });
-}
-
-async function autoLogoutInactiveUser() {
-  await signOut(auth);
-  await signInAnonymously(auth).catch(error => {
-    console.warn('anonymous session restore after idle logout failed:', error?.code || error);
-  });
-  showToast('30분 동안 활동이 없어 자동 로그아웃되었습니다.', 'info');
-  if (location.hash === '#/auth') scheduleRoute();
-  else location.hash = '#/auth';
-}
-
-window.addEventListener('hashchange', scheduleRoute);
-window.addEventListener('popstate', scheduleRoute);
-
-(async () => {
-  initTheme();
-  initCourtDesign();
-  try { await initAuth(); }
-  catch (error) { console.error('initial authentication failed:', error); }
-  startIdleSessionTimeout({ auth, onTimeout: autoLogoutInactiveUser });
-  initAdminLoginRedirect();
-  initNavAuthSync();
-  renderFooter();
-  await route();
-})();
+boot();
+getCloud().catch(()=>{});

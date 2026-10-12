@@ -1,0 +1,38 @@
+name: Daily news missions
+on:
+  schedule:
+    - cron: '20 22 * * *' # 07:20 Asia/Seoul; GitHub schedules may be delayed
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sosoking-daily-news
+  cancel-in-progress: false
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+      - run: npm ci --prefix functions --no-audit --no-fund
+      - run: npm run prepare
+      - name: Prepare service account
+        env:
+          SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+        run: |
+          test -n "$SERVICE_ACCOUNT_JSON"
+          printf '%s' "$SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+          chmod 600 "$RUNNER_TEMP/firebase-service-account.json"
+      - name: Collect candidates, create one verified draft, publish approved missions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          NEWS_AUTO_PUBLISH: ${{ vars.NEWS_AUTO_PUBLISH || 'true' }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: node tools/daily-news.cjs
+      - name: Remove local credential
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-service-account.json"
