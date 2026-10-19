@@ -1,0 +1,188 @@
+import fs from 'node:fs';
+
+const errors = [];
+const read = file => fs.readFileSync(file, 'utf8');
+
+const renderer = read('functions/public-seo.js');
+for (const required of [
+  'renderPublicResultHtml',
+  'renderStructuredDocument',
+  'document-subheading',
+  'document-subheading::before',
+  'document-order',
+  'renderSitemapXml',
+  'rel="canonical"',
+  'name="description"',
+  'name="robots"',
+  'application/ld+json',
+  "'@type': 'CreativeWork'"
+]) {
+  if (!renderer.includes(required)) errors.push(`functions/public-seo.js: missing ${required}`);
+}
+if (renderer.includes("collection('cases')")) {
+  errors.push('functions/public-seo.js: public SEO rendering must not read private case documents');
+}
+if (!renderer.includes('/js/public-result-seen.js')) {
+  errors.push('functions/public-seo.js: server-rendered verdict page must mark the case seen for 민심소');
+}
+if (fs.existsSync('public/js/public-result-seen.js')) {
+  const seenMarker = read('public/js/public-result-seen.js');
+  if (!seenMarker.includes("'sosoking-jury-seen'")) {
+    errors.push('public/js/public-result-seen.js: shared 민심소 seen key is missing');
+  }
+} else {
+  errors.push('public/js/public-result-seen.js: cross-surface seen marker script is missing');
+}
+
+const gate = read('functions/public-seo-safe.js');
+for (const required of [
+  'exports.publicResultPage',
+  'exports.publicTagPage',
+  'exports.publicSitemap',
+  'isSanitizedPublicResult',
+  'publicDataVersion',
+  "hasOwnProperty.call(raw, 'userId')",
+  "hasOwnProperty.call(raw, 'caseDescription')",
+  "hasOwnProperty.call(raw, 'nickname')",
+  'loadSafePublicResult',
+  'listSafePublicResultEntries',
+  'loadSafeTaggedResults',
+  'listSafePublicTagEntries',
+  'renderPublicResultHtml',
+  'renderTagPageHtml',
+  'renderSitemapXml',
+  'X-Robots-Tag',
+  'noindex, nofollow',
+  "where('isPublic', '==', true)",
+  "where('publicDataVersion', '==', 1)",
+  'SITEMAP_RESULT_LIMIT'
+]) {
+  if (!gate.includes(required)) errors.push(`functions/public-seo-safe.js: missing ${required}`);
+}
+if (gate.includes("collection('cases')")) {
+  errors.push('functions/public-seo-safe.js: safe SEO gate must not read private case documents');
+}
+if (gate.includes('loadTaggedResults(tag)') || gate.includes('listPublicTagEntries().catch')) {
+  errors.push('functions/public-seo-safe.js: unsafe legacy tag loaders remain active');
+}
+
+const main = read('functions/main.js');
+if (!main.includes("require('./public-seo-safe')")) {
+  errors.push('functions/main.js: sanitized public SEO functions are not exported');
+}
+if (main.includes("Object.assign(exports, require('./public-seo'))")) {
+  errors.push('functions/main.js: unsafe direct public SEO handlers remain exported');
+}
+if (main.includes("require('./public-result-sanitizer')")) {
+  errors.push('functions/main.js: deploy-time sanitation utility must not become an Eventarc function');
+}
+
+const firebase = JSON.parse(read('firebase.json'));
+const rewrites = firebase.hosting?.rewrites || [];
+const sitemapRewrite = rewrites.find(item => item.source === '/sitemap.xml');
+const resultRewrite = rewrites.find(item => item.source === '/result/**');
+const tagRewrite = rewrites.find(item => item.source === '/tag/**');
+if (sitemapRewrite?.function?.functionId !== 'publicSitemap' || sitemapRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /sitemap.xml is not routed to publicSitemap in asia-northeast3');
+}
+if (resultRewrite?.function?.functionId !== 'publicResultPage' || resultRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /result/** is not routed to publicResultPage in asia-northeast3');
+}
+if (tagRewrite?.function?.functionId !== 'publicTagPage' || tagRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /tag/** is not routed to publicTagPage in asia-northeast3');
+}
+if (fs.existsSync('public/sitemap.xml')) {
+  errors.push('public/sitemap.xml: static file would override the dynamic sitemap rewrite');
+}
+
+const robots = read('public/robots.txt');
+if (!robots.includes('Sitemap: https://sosoking.co.kr/sitemap.xml')) {
+  errors.push('public/robots.txt: dynamic sitemap URL is missing');
+}
+
+const home = read('public/js/pages/home.js');
+if (!home.includes('href="#/jury"')
+  || !home.includes('data-public-jury-case-id=')
+  || !home.includes('sessionStorage.setItem(JURY_TARGET_KEY, caseId)')) {
+  errors.push('public/js/pages/home.js: recent public cards do not enter the blind jury route');
+}
+const homeSummary = home.split('function publicSummary(record = {}) {')[1]?.split('\n}')[0] || '';
+if (homeSummary.includes('record.verdict') || homeSummary.includes('record.sentence')) {
+  errors.push('public/js/pages/home.js: home summary leaks verdict content before voting');
+}
+
+const resultComments = read('public/js/pages/result-comments.js');
+if (!resultComments.includes("./result-court.js?v=20260917-document-style-1")) {
+  errors.push('public/js/pages/result-comments.js: styled full verdict renderer is missing');
+}
+
+const resultCourt = read('public/js/pages/result-court.js');
+if (!resultCourt.includes('`${location.origin}/result/${encodeURIComponent(caseId)}`')) {
+  errors.push('public/js/pages/result-court.js: shared public URL is not canonical');
+}
+
+const serviceWorker = read('public/sw.js');
+if (!serviceWorker.includes("url.pathname.startsWith('/result/')")
+  || !serviceWorker.includes('event.respondWith(fetch(request))')) {
+  errors.push('public/sw.js: server-rendered public result navigations are intercepted by the app shell');
+}
+if (!/await\s+putCache\(request,\s*response\)/.test(serviceWorker)) {
+  errors.push('public/sw.js: network navigation responses can overwrite the index fallback cache');
+}
+if (serviceWorker.includes('/js/pages/board.js')) {
+  errors.push('public/sw.js: retired board module remains in the public SEO cache graph');
+}
+
+const services = read('functions/public-seo-services.js');
+for (const required of [
+  'exports.publicAdvicePage',
+  'exports.publicTranslatePage',
+  'listPublicServiceSitemapUrls',
+  "raw.isPublic !== true",
+  'rel="canonical"',
+  'name="robots"',
+  'index, follow',
+  'application/ld+json',
+  "'advice_results'",
+  "'translation_results'"
+]) {
+  if (!services.includes(required)) errors.push(`functions/public-seo-services.js: missing ${required}`);
+}
+if (!main.includes("require('./public-seo-services')")) {
+  errors.push('functions/main.js: advice/translation SEO functions are not exported');
+}
+const adviceRewrite = rewrites.find(item => item.source === '/advice/**');
+const translateRewrite = rewrites.find(item => item.source === '/translate/**');
+if (adviceRewrite?.function?.functionId !== 'publicAdvicePage' || adviceRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /advice/** is not routed to publicAdvicePage in asia-northeast3');
+}
+if (translateRewrite?.function?.functionId !== 'publicTranslatePage' || translateRewrite.function.region !== 'asia-northeast3') {
+  errors.push('firebase.json: /translate/** is not routed to publicTranslatePage in asia-northeast3');
+}
+
+const deploy = read('.github/workflows/firebase-deploy.yml');
+for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap', 'functions:publicTagPage', 'functions:publicAdvicePage', 'functions:publicTranslatePage']) {
+  if (!deploy.includes(functionName)) errors.push(`firebase-deploy.yml: ${functionName} is not deployed`);
+}
+if (deploy.includes('functions:sanitizePublicResult')) {
+  errors.push('firebase-deploy.yml: Eventarc sanitizer trigger must not block the hosting deployment');
+}
+if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
+  errors.push('firebase-deploy.yml: existing public result sanitation is missing');
+}
+
+const packageJson = read('package.json');
+if (!packageJson.includes('node tools/check-public-seo.mjs')) {
+  errors.push('package.json: public SEO static validation is not in the check chain');
+}
+if (!packageJson.includes('node functions/check-public-seo.js')) {
+  errors.push('package.json: public SEO emulator validation is not in the test chain');
+}
+
+if (errors.length) {
+  console.error(`Public SEO validation failed (${errors.length})`);
+  errors.forEach(error => console.error(`- ${error}`));
+  process.exit(1);
+}
+
+console.log('Public SEO validation passed: result and tag SEO use the sanitized public contract while the normal home entry remains blind.');

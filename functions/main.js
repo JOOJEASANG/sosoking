@@ -1,24 +1,28 @@
 'use strict';
-const {getApps,initializeApp}=require('firebase-admin/app');if(!getApps().length)initializeApp();
-const {getFirestore}=require('firebase-admin/firestore');
-const {onCall,onRequest,HttpsError}=require('firebase-functions/v2/https');
-const {defineSecret}=require('firebase-functions/params');
-const {isAdminAuth}=require('./admin-utils');
-const E=require('./game-engine.cjs'),C=require('./content.cjs'),N=require('./news-generator.cjs');
-const seeds=require('./starter-games.json'),db=getFirestore(),region='asia-northeast3';
-const gemini=defineSecret('GEMINI_API_KEY');
-const options={region,maxInstances:3,memory:'256MiB',timeoutSeconds:60};
-const checked=fn=>async req=>{try{return await fn(req);}catch(e){if(e instanceof HttpsError)throw e;console.error('game operation',e.name,String(e.message).slice(0,250));throw new HttpsError('failed-precondition',String(e.message).slice(0,250));}};
-function auth(req){if(!req.auth||req.auth.token.firebase?.sign_in_provider==='anonymous')throw new HttpsError('unauthenticated','로그인해 주세요.');return req.auth.uid;}
-async function admin(req){auth(req);if(!await isAdminAuth(req.auth))throw new HttpsError('permission-denied','관리자 전용 운영실입니다.');}
-exports.gameLibrary=onRequest({...options,cors:true},async(req,res)=>{if(req.method!=='GET')return res.status(405).send('Method not allowed');try{let query=db.collection('game_editions').orderBy('publishDate','desc');if(req.query.before)query=query.startAfter(C.day(req.query.before));const rows=await query.limit(200).get();const games=rows.docs.map(r=>r.data()).filter(g=>g.status==='published'&&g.publishDate<=C.dateKey());res.set('Cache-Control','public, max-age=60, s-maxage=300').json({games,nextBefore:rows.size===200?rows.docs.at(-1).data().publishDate:null});}catch(e){console.error('gameLibrary read failed',{code:e.code,message:e.message});res.status(503).json({error:'library_unavailable'});}});
-exports.saveGameRun=onCall(options,checked(async req=>{const uid=auth(req),{id,version,input,assisted}=req.data||{};if(typeof id!=='string'||!/^[a-z0-9-]{3,80}$/.test(id))throw new HttpsError('invalid-argument','미션 ID 오류');let g=seeds.find(g=>g.id===id);if(!g){const snap=await db.doc(`game_editions/${id}`).get();g=snap.data();if(!g||g.status!=='published'||g.publishDate>C.dateKey())throw new HttpsError('not-found','공개 미션을 찾지 못했습니다.');}if(version!==g.version)throw new HttpsError('failed-precondition','미션 버전이 변경됐어요. 새로고침해 주세요.');const safe=C.canonicalInput(g,input),result=E.evaluate(g,safe),ref=db.doc(`game_players/${uid}/runs/${id}@${version}`);return db.runTransaction(async tx=>{const snap=await tx.get(ref),old=snap.data();if(old&&Date.now()-Date.parse(old.lastPlayed)<2000)throw new HttpsError('resource-exhausted','잠시 후 다시 시도하세요.');const run=C.bestRun(old,g,result,assisted);tx.set(ref,run);return run;});}));
-exports.getGameRuns=onCall(options,checked(async req=>{const rows=await db.collection(`game_players/${auth(req)}/runs`).orderBy('lastPlayed','desc').limit(500).get();return {runs:rows.docs.map(r=>r.data())};}));
-exports.clearGameRuns=onCall(options,checked(async req=>{const uid=auth(req);if(req.data?.confirm!==true)throw new HttpsError('invalid-argument','삭제 확인이 필요합니다.');await db.recursiveDelete(db.collection(`game_players/${uid}/runs`));return {ok:true};}));
-exports.gameStudio=onCall(options,checked(async req=>{await admin(req);const {action,...data}=req.data||{};if(['approve','reject'].includes(action)&&(typeof data.id!=='string'||!/^news-[a-z0-9-]{3,80}$/.test(data.id)))throw new Error('미션 ID 오류');
- if(action==='overview'){const [drafts,candidates,ops]=await Promise.all([db.collection('game_drafts').orderBy('createdAt','desc').limit(60).get(),db.collection('news_candidates').orderBy('collectedAt','desc').limit(30).get(),db.doc('game_operations/feed').get()]);return {drafts:drafts.docs.map(r=>({id:r.id,...r.data()})),candidates:candidates.docs.map(r=>({id:r.id,...r.data()})),feed:ops.data()||{status:'not_run'},today:C.dateKey()};}
- if(action==='queue'){const item=C.candidate(data.item);if(item.publishDate<C.dateKey())throw new Error('오늘 이후 공개 날짜를 선택하세요.');const id=`news-${item.publishDate}-${item.category}`;const ref=db.doc(`news_queue/${id}`);if((await db.doc(`game_drafts/${id}`).get()).exists)throw new Error('이 날짜와 분야는 이미 생성 요청됐습니다.');await ref.set({...item,status:'ready',createdAt:new Date().toISOString(),verifiedBy:req.auth.uid});return {id};}
- if(action==='approve'){const ref=db.doc(`game_drafts/${data.id}`);await db.runTransaction(async tx=>{const d=(await tx.get(ref)).data();if(!d||d.status!=='review')throw new Error('검수 대기 상태에서만 승인할 수 있습니다.');C.validateEdition(d.game);const slot=db.doc(`game_days/${d.game.publishDate}`),existing=await tx.get(slot);if(existing.exists&&existing.data().id!==data.id)throw new Error('해당 날짜에 다른 미션이 예약되어 있습니다.');tx.set(slot,{id:data.id});tx.update(ref,{status:'approved',approvedBy:req.auth.uid,approvedAt:new Date().toISOString()});});await N.publishDue(db);return {ok:true};}
- if(action==='reject'){const ref=db.doc(`game_drafts/${data.id}`);await db.runTransaction(async tx=>{const d=(await tx.get(ref)).data();if(!d||!['review','approved','published'].includes(d.status))throw new Error('처리할 미션이 없습니다.');tx.update(ref,{status:'withdrawn'});tx.delete(db.doc(`game_editions/${data.id}`));});return {ok:true};}
- throw new HttpsError('invalid-argument','알 수 없는 작업');}));
-exports.generateNewsGame=onCall({...options,secrets:[gemini],timeoutSeconds:90,maxInstances:1},checked(async req=>{await admin(req);const item=C.candidate(req.data?.item);if(item.publishDate<C.dateKey())throw new Error('오늘 이후 공개 날짜를 선택하세요.');const id=`news-${item.publishDate}-${item.category}`;return N.generateDraft({db,apiKey:gemini.value(),item,id});}));
+
+const { getApps, initializeApp } = require('firebase-admin/app');
+
+if (!getApps().length) initializeApp();
+
+Object.assign(exports, require('./daily'));
+Object.assign(exports, require('./profile'));
+Object.assign(exports, require('./social'));
+Object.assign(exports, require('./owner-verdict'));
+Object.assign(exports, require('./discussion'));
+Object.assign(exports, require('./reports'));
+Object.assign(exports, require('./public-stats'));
+Object.assign(exports, require('./public-seo-safe'));
+Object.assign(exports, require('./public-seo-services'));
+Object.assign(exports, require('./public-original'));
+Object.assign(exports, require('./case-aliases'));
+Object.assign(exports, require('./submit-secure'));
+Object.assign(exports, require('./generate-trial-lite'));
+Object.assign(exports, require('./debate'));
+Object.assign(exports, require('./advice'));
+Object.assign(exports, require('./translate'));
+Object.assign(exports, require('./like'));
+Object.assign(exports, require('./comment'));
+Object.assign(exports, require('./my-results'));
+Object.assign(exports, require('./admin-actions'));
+Object.assign(exports, require('./admin-visibility'));
+Object.assign(exports, require('./auto-limits'));

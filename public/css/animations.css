@@ -1,0 +1,160 @@
+/* ============================================================
+   소소킹 애니메이션 시스템  v1
+   ============================================================ */
+
+/* ── 페이지 전환 ─────────────────────────────────────────── */
+#page-content {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+/* ── 카드 입장 (Intersection Observer로 제어) ─────────────── */
+.anim-card {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.anim-card.anim-card-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── 판결 섹션 순차 등장 ───────────────────────────────────── */
+@keyframes section-slide-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.result-document-stack .result-paper:nth-child(1) { animation: section-slide-in 0.42s ease both 0.05s; }
+.result-document-stack .result-paper:nth-child(2) { animation: section-slide-in 0.42s ease both 0.13s; }
+.result-document-stack .result-paper:nth-child(3) { animation: section-slide-in 0.42s ease both 0.21s; }
+.result-document-stack .result-paper:nth-child(4) { animation: section-slide-in 0.42s ease both 0.29s; }
+.result-document-stack .result-paper:nth-child(5) { animation: section-slide-in 0.42s ease both 0.37s; }
+.result-cover { animation: section-slide-in 0.42s ease both 0s; }
+
+/* ── 판사 아바타 등장 ─────────────────────────────────────── */
+@keyframes judge-char-enter {
+  0%   { opacity: 0; transform: scale(0.35) rotate(-20deg); }
+  65%  { transform: scale(1.12) rotate(5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.judge-character {
+  animation: judge-char-enter 0.65s cubic-bezier(0.2, 1.2, 0.4, 1) both 0.2s;
+}
+
+/* ── 억울지수 미터 막대 순차 등장 ────────────────────────── */
+@keyframes meter-bar-in {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+.grievance-meter i {
+  transform-origin: bottom;
+  animation: meter-bar-in 0.28s ease both;
+}
+.grievance-meter i:nth-child(1)  { animation-delay: 0.55s; }
+.grievance-meter i:nth-child(2)  { animation-delay: 0.62s; }
+.grievance-meter i:nth-child(3)  { animation-delay: 0.69s; }
+.grievance-meter i:nth-child(4)  { animation-delay: 0.76s; }
+.grievance-meter i:nth-child(5)  { animation-delay: 0.83s; }
+.grievance-meter i:nth-child(6)  { animation-delay: 0.90s; }
+.grievance-meter i:nth-child(7)  { animation-delay: 0.97s; }
+.grievance-meter i:nth-child(8)  { animation-delay: 1.04s; }
+.grievance-meter i:nth-child(9)  { animation-delay: 1.11s; }
+.grievance-meter i:nth-child(10) { animation-delay: 1.18s; }
+
+/* ── 민심소 투표 바 ────────────────────────────────────────── */
+@keyframes tally-bar-fill {
+  from { width: 0 !important; }
+}
+.jury-tally-bar {
+  animation: tally-bar-fill 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jury-tally-row:nth-child(1) .jury-tally-bar { animation-delay: 0.15s; }
+.jury-tally-row:nth-child(2) .jury-tally-bar { animation-delay: 0.25s; }
+.jury-tally-row:nth-child(3) .jury-tally-bar { animation-delay: 0.35s; }
+
+/* ── 민심 일치 배지 팝 ─────────────────────────────────────── */
+@keyframes verdict-badge-pop {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.22); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.jury-verdict-agree {
+  animation: verdict-badge-pop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both 0.1s;
+}
+
+/* ── 민심 불일치 흔들림 ─────────────────────────────────────── */
+@keyframes miss-shake {
+  0%, 100% { transform: translateX(0); }
+  20%  { transform: translateX(-9px); }
+  40%  { transform: translateX(9px); }
+  60%  { transform: translateX(-5px); }
+  80%  { transform: translateX(5px); }
+}
+.jury-verdict-miss {
+  animation: miss-shake 0.5s ease both 0.1s;
+}
+
+/* ── 판결 공개 배지 전체 등장 ──────────────────────────────── */
+@keyframes reveal-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.jury-verdict-badge {
+  animation: reveal-fade-in 0.4s ease both 0.05s;
+}
+.jury-reveal-line {
+  animation: reveal-fade-in 0.38s ease both 0.12s;
+}
+.jury-verdict-excerpt {
+  animation: reveal-fade-in 0.4s ease both 0.2s;
+}
+.jury-tally {
+  animation: reveal-fade-in 0.38s ease both 0.3s;
+}
+
+/* ── 판결 완료 씰 추가 펄스 ──────────────────────────────── */
+@keyframes seal-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(201,168,76,0); }
+}
+.trial-complete-seal {
+  animation: trial-seal .55s cubic-bezier(.2,1.4,.4,1) both,
+             seal-pulse 1.8s ease 0.8s 3;
+}
+
+/* ── 스텝 카드 (trial 단계) 애니메이션 강화 ─────────────── */
+@keyframes step-card-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.step-card.visible {
+  animation: step-card-in 0.4s ease both;
+}
+
+/* ── 네비 아이템 active 전환 부드럽게 ────────────────────── */
+.nav-item { transition: color 0.22s ease; }
+
+/* ── 홈 예시 카드 hover 강화 ─────────────────────────────── */
+.example-card {
+  transition: transform 0.22s ease, border-left-color 0.22s ease,
+              background 0.22s ease, box-shadow 0.22s ease;
+}
+
+/* ── 버튼 press 효과 ─────────────────────────────────────── */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* (토스트 애니메이션은 main.css의 slideUp 사용) */
+
+/* ── prefers-reduced-motion 접근성 ─────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
