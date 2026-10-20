@@ -1,6 +1,10 @@
 name: Deploy Hosting Only
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hosting-only-deploy.yml'
   workflow_dispatch:
 
 jobs:
