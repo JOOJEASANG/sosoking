@@ -1,63 +1,56 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>소소킹 판결소 - 소소한 일상을 판결하는 AI 생활법정</title>
-  <meta name="description" content="사소한 생활분쟁을 AI 판사에게 접수하고, 판결을 보기 전에 직접 예상한 뒤 AI 결과와 비교해보세요. 공개 판결은 민심소의 블라인드 투표와 토론으로 즐기는 오락형 생활법정입니다. 법적 효력은 없습니다.">
-  <meta name="sosoking-deploy-version" content="sosoking-home-plus1-20260911-1">
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080f18">
+  <meta name="description" content="소소킹 사건파일: 증거를 찾고, 거짓말을 파헤치고, 법정에서 진실을 밝혀내는 무료 수사 추리 게임.">
   <meta property="og:type" content="website">
+  <meta property="og:title" content="소소킹 사건파일 | 직접 해결하는 수사 게임">
+  <meta property="og:description" content="진실은 언제나 증거 속에 숨어 있다. 현장수사, 증인신문, 법정공방에 도전하세요.">
   <meta property="og:url" content="https://sosoking.co.kr">
-  <meta property="og:title" content="소소킹 판결소 ⚖️ AI 생활법정">
-  <meta property="og:description" content="내 사건도 판결을 보기 전에 먼저 찍고, 공개 사건은 민심소에서 블라인드 판정하는 오락형 AI 생활법정입니다.">
-  <meta property="og:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:locale" content="ko_KR">
-  <meta property="og:site_name" content="소소킹 판결소">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="소소킹 판결소 ⚖️">
-  <meta name="twitter:description" content="내 사건을 먼저 예상 판정하고 AI 판결과 비교하는 오락형 생활법정입니다.">
-  <meta name="twitter:image" content="https://sosoking.co.kr/og-image.png?v=20260729-brand-unified-1">
-
-  <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
-
-  <link rel="icon" href="/icons/favicon-32.png?v=20260729-brand-unified-1" type="image/png" sizes="32x32">
-  <link rel="icon" href="/icons/favicon-48.png?v=20260729-brand-unified-1" type="image/png" sizes="48x48">
-  <link rel="shortcut icon" href="/icons/favicon-48.png?v=20260729-brand-unified-1" type="image/png">
-  <link rel="apple-touch-icon" href="/icons/sosoking-192.png?v=20260729-pwa-icon-center-1" sizes="192x192">
-  <link rel="manifest" href="/site.webmanifest?v=20260729-pwa-icon-center-1">
-  <meta name="theme-color" content="#0b0f16">
-
+  <title>소소킹 사건파일 | 직접 풀어내는 수사·법정 게임</title>
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/icons/sosoking-192.png">
+  <link rel="stylesheet" href="/css/casefiles.css?v=1">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/main.css?v=20260829-tags-1">
-  <link rel="stylesheet" href="/css/brand-logo.css?v=20260802-remove-daily-court-2">
-  <link rel="stylesheet" href="/css/game-entry.css?v=20260811-game-hub-1">
-  <link id="home-light-theme-css" rel="stylesheet" href="/css/home-light.css?v=20260729-light-home-1">
-  <link rel="stylesheet" href="/css/layout-spacing.css?v=20260729-spacing-flow-2">
-  <link rel="stylesheet" href="/css/sans-font.css?v=20260729-sans-font-1">
-  <link rel="stylesheet" href="/css/result-dark-contrast.css?v=20260731-dark-verdict-stamp-1">
-  <link rel="stylesheet" href="/css/jury.css?v=20260917-jury-voted-badge-1">
-  <link rel="stylesheet" href="/css/animations.css?v=20260906-anim-1">
 </head>
 <body>
-  <div id="app">
-    <div id="page-content"></div>
-    <footer id="site-footer"></footer>
-  </div>
-  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/js/auth-google-login-state-guard.js?v=20260731-google-login-message-1"></script>
-  <script type="module" src="/js/document-display-guard.js?v=20260802-original-button-layout-1"></script>
-  <script type="module" src="/js/verdict-number-line-guard.js?v=20260801-verdict-number-lines-2"></script>
-  <script type="module" src="/js/app.js?v=20260921-clinic-btn-1"></script>
-  <script type="module" src="/js/result-link-share.js?v=20260906-result-clean-1"></script>
-  <script type="module" src="/js/submit-draft-guard.js?v=20260807-submit-draft-1"></script>
-  <script type="module" src="/js/service-hub-guard.js?v=20260829-jury-1"></script>
-  <script type="module" src="/js/debate-entry.js?v=20260910-services-1"></script>
-  <script type="module" src="/js/avatar-fallback.js?v=20260917-avatar-photo-2"></script>
+  <div class="topline" aria-hidden="true"></div>
+  <header class="site-header">
+    <div class="shell nav-inner">
+      <a class="brand" href="#/" aria-label="소소킹 사건파일 홈">
+        <span class="brand-icon" aria-hidden="true">⌕</span>
+        <span class="brand-text"><strong>소소킹 사건파일</strong><small>SOSOKING CASEFILES</small></span>
+      </a>
+      <nav class="navlinks" id="site-nav" aria-label="주 메뉴">
+        <a href="#/" data-nav="home">홈</a>
+        <a href="#/archive" data-nav="archive">사건 보관소</a>
+        <a href="#/records" data-nav="records">나의 수사 기록</a>
+        <a href="#/guide" data-nav="guide">수사 가이드</a>
+      </nav>
+      <div class="header-right"><span class="live-indicator"><span class="pulse-dot"></span> CASEFILES ONLINE</span></div>
+      <button type="button" id="menu-toggle" class="menu-toggle" aria-label="모바일 메뉴 열기" aria-controls="site-nav">☰ 메뉴</button>
+    </div>
+  </header>
+  <main id="view" class="shell" tabindex="-1">
+    <div class="empty-panel" style="margin-top:40px"><h1>사건 파일을 불러오는 중</h1><p>JavaScript를 사용할 수 있어야 게임을 플레이할 수 있습니다.</p></div>
+  </main>
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <div><div class="footer-brand"><span>⌕</span> 소소킹 사건파일</div><p>직접 수사하고 증거로 입증하는 오락용 미스터리 게임.<br>모든 사건은 허구이며 실제 법률 판단·수사와 관계없습니다.</p></div>
+      <div><a href="#/guide">이용 안내</a><p>© 2026 SOSOKING · AI 실시간 호출 없는 게임</p></div>
+    </div>
+  </footer>
+  <dialog id="evidence-dialog" aria-labelledby="evidence-modal-title">
+    <button type="button" class="modal-close" aria-label="창 닫기">×</button>
+    <span class="modal-label"></span>
+    <h2 class="modal-title" id="evidence-modal-title"></h2>
+    <p class="modal-copy"></p>
+    <div class="modal-footer">수집한 증거는 수사 기록에 추가됩니다.</div>
+  </dialog>
+  <script type="module" src="/js/casefiles-app.js?v=1"></script>
 </body>
 </html>

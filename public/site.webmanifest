@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "소소킹 판결소",
+  "name": "소소킹 사건파일",
   "short_name": "소소킹",
-  "description": "사소한 억울함을 AI 판사단이 과하게 진지하게 판결해주는 생활법정",
+  "description": "증거를 수집하고 증인을 신문하며 법정에서 진실을 밝히는 수사 추리 게임",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -10,11 +10,11 @@
     "standalone"
   ],
   "orientation": "portrait-primary",
-  "background_color": "#0b0f16",
-  "theme_color": "#0b0f16",
+  "background_color": "#080f18",
+  "theme_color": "#080f18",
   "categories": [
-    "entertainment",
-    "lifestyle"
+    "games",
+    "entertainment"
   ],
   "prefer_related_applications": false,
   "icons": [
