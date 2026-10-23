@@ -1,18 +1,47 @@
-# 소소킹 — 새 프로젝트 시작점
+# 소소킹 LIVE
 
-사이트를 완전히 다시 구상할 수 있도록 기존 화면과 GitHub 기본 브랜치의 앱 코드를 초기화했습니다.
+필요한 프로그램을 골라서 행사방을 만들고, QR코드 하나로 참가자가 입장하는 웹 행사 플랫폼입니다.
 
-- 공개 화면: `public/index.html`
-- 기존 서비스 오프라인 캐시 정리: `public/reset.js`
-- Firebase Hosting 설정: `firebase.json`
-- 자동 배포: `.github/workflows/deploy.yml`
+## 포함된 프로그램
 
-## 이전 버전 복구
+1. 행운권 추첨: 서버 무작위 추첨, 중복 당첨 제외
+2. 실시간 투표: 1인 1회 투표, 시작/마감, 득표 확인
+3. 룰렛: 상품 및 항목 선택, 추첨 기록
+4. 점수판: 팀/개인 점수 관리
+5. 랜덤 팀 나누기: 참가자 균등 배분
+6. 행사 타이머: 시간 설정, 시작/중지/초기화
+7. 대진표: 2~32팀 토너먼트, 부전승, 승리팀 자동 진출
 
-초기화 직전의 GitHub 전체 파일은 `backup/pre-clean-slate-20261023` 브랜치에 보존했습니다.
+OX 퀴즈는 제외했습니다.
 
-## 데이터 주의사항
+## 운영 방식
 
-이번 초기화는 `main` 브랜치의 사이트 소스와 Firebase Hosting의 공개 페이지를 교체합니다.
-Firebase Authentication 사용자, Firestore 데이터, 이미 운영 환경에 배포된 Cloud Functions 및 Firebase 프로젝트 자체를 삭제하지 않습니다.
-새 사이트 기획에 맞는 클라우드 데이터 정리는 별도 작업이 필요합니다.
+- 행사명과 사용할 프로그램을 선택해 행사방 생성
+- 공용 QR코드를 참가자에게 공유 (진행자 비밀키 노출 없음)
+- 참가자 닉네임으로 입장
+- 진행자: 필요한 프로그램 활성화 및 결과 발표
+- 참가자: 현재 진행 중인 프로그램만 참여
+- Firestore 및 Cloud Functions 서버에서 추첨/투표 결과 기록 및 참가자에게 공유
+- 약 6초 간격 갱신: 완전한 push 실시간은 아니므로 수 초 지연 가능
+- 행사 없이 프로그램을 바로 사용하는 로컬 모드 제공
+
+## 기술 구성
+
+Vite/Vanilla JS, qrcode, Firebase Functions v2 (Node 22), Firebase Admin SDK, Firestore, Firebase Hosting.
+
+설치: npm install
+웹 빌드: npm run build
+기본 검증: npm run check && node tools/check-site.mjs
+
+GitHub Actions는 sosokingEventApi 함수만 지정하여 배포한 뒤 Hosting을 배포합니다. 기존 Firebase Functions와 Firestore 규칙을 건드리지 않습니다.
+
+## 첫 버전 제한 사항
+
+- 행사당 최대 200명, 생성 후 7일간 이용
+- 행사 생성 IP당 하루 5회까지
+- 관리자 비밀키는 행사 생성 기기의 브라우저 로컬 저장소에 보관; 저장소를 지우면 관리 권한을 잃을 수 있음
+- 본인 인증 없는 닉네임 입장: 여러 기기를 이용한 중복 참여를 완벽히 차단할 수 없음
+- 대진표는 토너먼트 방식 우선 구현. 리그/조별리그 확장 예정
+- 고빈도 트래픽이 발생하면 Firebase 사용 요금 발생 가능
+- 기존 회원/Firestore 자료/이전 Functions는 삭제하지 않음
+- 기존 소스 백업: backup/pre-clean-slate-20261023

@@ -1,4 +1,4 @@
-name: Deploy Reset Site
+name: Deploy Sosoking Live
 
 on:
   push:
@@ -9,38 +9,59 @@ permissions:
   contents: read
 
 concurrency:
-  group: sosoking-clean-site
+  group: sosoking-live-deploy
   cancel-in-progress: false
 
 jobs:
-  hosting:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools@15.24.0 --no-audit --no-fund
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
 
-      - name: Validate reset page
+      - name: Install site dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install function dependencies
+        run: npm install --prefix functions --omit=dev --no-audit --no-fund
+
+      - name: Validate website and functions
         run: |
-          node --check public/reset.js
-          node -e "const fs=require('fs'); const h=fs.readFileSync('public/index.html','utf8'); if(!h.includes('새로운 사이트를')) process.exit(1); JSON.parse(fs.readFileSync('firebase.json'));"
+          npm run check
+          node tools/check-site.mjs
+          npm run build
+          test -f dist/index.html
+
+      - name: Set up Firebase CLI
+        run: npm install -g firebase-tools@15.24.0 --no-audit --no-fund
 
       - name: Prepare Firebase credentials
         env:
-          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
-          if [ -z "$SERVICE_ACCOUNT" ]; then
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "Firebase deployment credentials are missing" >&2
             exit 1
           fi
-          echo "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy blank site
+      - name: Deploy shared event API
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only functions:sosokingEventApi --project sosoking-481e6 --non-interactive
+
+      - name: Deploy website
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
+
+      - name: Deployment summary
+        run: echo "Sosoking Live hosting and event API deployed for $GITHUB_SHA"
