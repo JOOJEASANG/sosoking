@@ -17,7 +17,7 @@ const root=document.querySelector('#app');
 const load=()=>{try{return JSON.parse(localStorage.getItem(storageKey))||{}}catch{return {}}};
 let saved={hosts:{},members:{},recent:[],standalone:{},...load()};
 let activeEvent=null,activeId='',activeView='',loading=false,requesting=false,notice='',lastRoute='';
-let polling=null,ticking=null;
+let polling=null,ticking=null,lastRenderKey='';
 const save=()=>{try{localStorage.setItem(storageKey,JSON.stringify(saved))}catch{}};
 const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtTime=n=>{const s=Math.max(0,Math.floor(Number(n)||0));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
@@ -56,12 +56,12 @@ function button(text,action,extra='',attrs=''){return '<button class="btn '+extr
 function sectionHead(kicker,title,desc=''){return '<div class="section-heading"><div><span class="eyebrow">'+h(kicker)+'</span><h2>'+h(title)+'</h2></div><p>'+h(desc)+'</p></div>';}
 function moduleCard(m,context='tools'){
  const label=context==='create'?'추가할 프로그램 선택':'바로 사용하기';
- return '<article class="program-card tone-'+m.tone+'"><div class="program-top"><div class="program-symbol">'+m.symbol+'</div>'+badge(m.category)+'</div><h3>'+h(m.name)+'</h3><p>'+h(m.desc)+'</p>'+(context==='create'?'<label class="pick-choice"><input type="checkbox" name="modules" value="'+m.id+'" '+(window.picks?.includes(m.id)?'checked':'')+'> <span>행사에 추가</span></label>':'<a class="card-link" href="#/tool/'+m.id+'">'+label+' '+icon('arrow',17)+'</a>')+'</article>';
+ return '<article class="program-card tone-'+m.tone+'"><div class="program-top"><div class="program-symbol">'+m.symbol+'</div>'+badge(m.category)+'</div><h3>'+h(m.name)+'</h3><p>'+h(m.desc)+'</p>'+(context==='create'?'<label class="pick-choice"><input type="checkbox" name="modules" value="'+m.id+'" '+(window.picks?.includes(m.id)?'checked':'')+'> <span>행사에 추가</span></label>':'<a class="card-link" href="#/tool/'+m.id+'" target="_blank" rel="noopener noreferrer">'+label+' '+icon('external',17)+'</a>')+'</article>';
 }
 function home(){
  return '<div class="page-home"><section class="hero"><div class="shell hero-layout"><div class="hero-text"><div class="hero-pill"><span class="pulse"></span> 행사 진행이 쉬워지는 순간</div><h1>함께하는 시간이<br><em>더 즐거워지도록.</em></h1><p>행사 이름을 만들고 필요한 프로그램만 골라보세요.<br>QR코드나 초대 링크로 누구나 함께할 수 있어요.</p><div class="hero-actions"><a href="#/create" class="btn primary big">내 행사 만들기 '+icon('arrow',18)+'</a><a href="#/tools" class="btn pale big">프로그램 둘러보기</a></div><div class="hero-trust"><span>'+icon('check',16)+' 별도 앱 설치 없음</span><span>'+icon('check',16)+' 필요한 기능만 선택</span><span>'+icon('check',16)+' 모바일·대형 화면</span></div></div><div class="hero-art"><div class="art-glow"></div><div class="art-card art-main"><div class="art-card-head"><span class="art-mini-logo">S</span><div><b>가을 한마음 축제</b><small>행사 진행 중 · LIVE</small></div><span class="art-dot"></span></div><div class="art-qr">▦<small>QR 입장</small></div><div class="art-people"><span class="art-avatars">● ● ●</span><b>참가자 128명</b></div><div class="art-stat"><span>추첨</span><span>투표</span><span>대진표</span></div></div><div class="float-note note-top">✦ 당첨자를 발표했어요!</div><div class="float-note note-bottom">✓ 모두 입장 완료</div></div></div></section>'
  +'<section class="shell quick-play-section"><div class="quick-header"><div><span class="eyebrow">INSTANT PLAY · 설치 없이 시작</span><h2>모임 없이도, 바로 즐기는 미니게임</h2><p>프로그램 하나만 필요하다면 행사방을 만들지 마세요. 누르면 곧바로 시작!</p></div><a href="#/tools" class="quick-all">7개 전체 보기 →</a></div><div class="quick-grid">'
- +[{id:'wheel',title:'룰렛 돌리기',subtitle:'오늘의 운을 시험해요',symbol:'◉',color:'mint'},{id:'raffle',title:'랜덤 추첨',subtitle:'누가 당첨될까요?',symbol:'✦',color:'peach'},{id:'bracket',title:'대진표 만들기',subtitle:'순위와 우승자를 정해요',symbol:'⑂',color:'lilac'},{id:'teams',title:'랜덤 팀 나누기',subtitle:'공평하게 팀을 나눠요',symbol:'♟',color:'butter'}].map(m=>'<a href="#/tool/'+m.id+'" class="quick-card quick-'+m.color+'"><span class="quick-emoji">'+m.symbol+'</span><b>'+m.title+'</b><small>'+m.subtitle+'</small><span class="quick-arrow">↗</span></a>').join('')
+ +[{id:'wheel',title:'룰렛 돌리기',subtitle:'오늘의 운을 시험해요',symbol:'◉',color:'mint'},{id:'raffle',title:'랜덤 추첨',subtitle:'누가 당첨될까요?',symbol:'✦',color:'peach'},{id:'bracket',title:'대진표 만들기',subtitle:'순위와 우승자를 정해요',symbol:'⑂',color:'lilac'},{id:'teams',title:'랜덤 팀 나누기',subtitle:'공평하게 팀을 나눠요',symbol:'♟',color:'butter'}].map(m=>'<a href="#/tool/'+m.id+'" target="_blank" rel="noopener noreferrer" class="quick-card quick-'+m.color+'"><span class="quick-emoji">'+m.symbol+'</span><b>'+m.title+'</b><small>'+m.subtitle+'</small><span class="quick-arrow">↗</span></a>').join('')
  +'</div><div class="quick-help">같이 진행하고 싶나요? <a href="#/create">행사방 만들고 QR·링크로 함께 참여하기 →</a></div></section>'
 
  +'<section class="shell how-section">'+sectionHead('HOW IT WORKS','세 단계면 준비 끝','현장은 QR로, 온라인 모임은 링크로. 별도 앱 없이 시작하세요.')
@@ -71,7 +71,7 @@ function home(){
  +'<section class="shell close-cta"><div><span class="eyebrow">ONE EVENT, MANY MOMENTS</span><h2>우리 행사에 딱 맞게<br>구성해 보세요.</h2><p>바자회, 체육대회, 온라인 동창회, 가족 모임 어디서나.</p></div><a href="#/create" class="btn white big">행사 만들기 '+icon('arrow',17)+'</a></section></div>';
 }
 function tools(){
- return '<div class="shell inner-page"><div class="page-intro"><span class="eyebrow">PROGRAM LIBRARY</span><h1>행사가 없어도 좋아요.<br>골라서 바로 즐기세요.</h1><p>룰렛·대진표·추첨기까지, 클릭 한 번으로 바로 실행해요. 행사를 따로 만들 필요 없어요.</p></div><div class="direct-play-strip"><strong>지금 바로 사용 가능</strong><span>개별 도구는 회원가입·행사 생성·QR 없이 쓸 수 있어요.</span><a href="#/tool/bracket">대진표 바로 만들기 →</a></div><div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="bottom-hint">'+icon('users',23)+' <div><strong>여러 사람이 함께 참여하나요?</strong><p>행사방을 만들면 QR 입장, 진행자 제어, 실시간 결과 공유가 가능합니다.</p></div><a href="#/create" class="btn primary">행사 만들기</a></div></div>';
+ return '<div class="shell inner-page"><div class="page-intro"><span class="eyebrow">PROGRAM LIBRARY</span><h1>행사가 없어도 좋아요.<br>골라서 바로 즐기세요.</h1><p>룰렛·대진표·추첨기까지, 클릭 한 번으로 바로 실행해요. 행사를 따로 만들 필요 없어요.</p></div><div class="direct-play-strip"><strong>지금 바로 사용 가능</strong><span>개별 도구는 회원가입·행사 생성·QR 없이 쓸 수 있어요.</span><a href="#/tool/bracket" target="_blank" rel="noopener noreferrer">대진표 바로 만들기 ↗</a></div><div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="bottom-hint">'+icon('users',23)+' <div><strong>여러 사람이 함께 참여하나요?</strong><p>행사방을 만들면 QR 입장, 진행자 제어, 실시간 결과 공유가 가능합니다.</p></div><a href="#/create" class="btn primary">행사 만들기</a></div></div>';
 }
 function create(){
  const selected=window.picks||['raffle','poll','bracket'];window.picks=selected;
@@ -92,10 +92,19 @@ async function loadEvent(id,view,silent=false){
  const extra=view==='manage'?'&host=1':'';
  requesting=true;
  try{
-  const response=await api('event?id='+encodeURIComponent(id)+extra,null,token);
+  let response=await api('event?id='+encodeURIComponent(id)+extra,null,token);
   if(route()[1]!==id||routeMatch()!==view)return;
+  const selected=view==='manage'&&route()[2]==='tool'?route()[3]:null;
+  if(selected&&!response.event.modules.includes(selected))throw Error('이 행사에 선택되지 않은 프로그램입니다. 행사 관리실에서 추가해 주세요.');
+  if(selected&&!silent&&!activeEvent&&response.event.active!==selected){
+    await api('action',{id,op:'event.active',value:selected},token);
+    response=await api('event?id='+encodeURIComponent(id)+extra,null,token);
+    if(route()[1]!==id||routeMatch()!==view)return;
+  }
   activeEvent=response.event;activeId=id;activeView=view;
-  if(!silent||!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))renderEvent();
+  const currentKey=route().join('/')+'|'+String(activeEvent.revision||0);
+  const editing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+  if((!silent||currentKey!==lastRenderKey)&&(!silent||!editing))renderEvent();
   drawQr();
  }catch(error){
   if(!silent){root.innerHTML=shellNotice('행사에 연결할 수 없습니다.',error.message,'#/events');}
@@ -103,7 +112,6 @@ async function loadEvent(id,view,silent=false){
  }finally{requesting=false;}
 }
 function getMode(){return routeMatch()==='tool'?'local':routeMatch()==='manage'?'host':routeMatch()==='screen'?'screen':'participant';}
-function moduleNav(event,host){return '<div class="module-switcher">'+event.modules.map(id=>'<button type="button" class="module-tab '+(event.active===id?'selected':'')+'" data-do="activate" data-id="'+id+'" '+(!host?'disabled':'')+'><span>'+byId[id].symbol+'</span>'+byId[id].name+(event.active===id?'<i>진행 중</i>':'')+'</button>').join('')+'</div>';}
 function localDemoBanner(id){
  const text={raffle:'8명으로 추첨 연습하기',poll:'가상 투표 바로 해보기',wheel:'랜덤 선물 룰렛 해보기',score:'청팀·홍팀 점수판 만들기',teams:'8명 랜덤 팀 나누기',timer:'1분 타이머 준비하기',bracket:'8팀 토너먼트 대진표 만들기'};
  return '<div class="demo-strip"><div><span>QUICK START · 한 번에 체험하기</span><strong>'+h(text[id]||'바로 시작하기')+'</strong></div>'+button('샘플로 시작 →','demo-setup','btn primary','data-id="'+id+'"')+'</div>';
@@ -123,15 +131,39 @@ function loadLocalDemo(id){
  save();renderEvent();
 }
 
-function hostPanel(event,local=false){
- const head=event.active&&byId[event.active];
- return '<div class="shell live-page"><a class="back-link" href="'+(local?'#/tools':'#/events')+'">'+icon('back',16)+' '+(local?'프로그램 목록':'내 행사')+'</a><div class="event-heading"><div>'+badge(local?'바로 사용 모드':'진행자 관리 화면','live-badge')+'<h1>'+h(event.title)+'</h1><p>'+h(local?'브라우저에서 혼자 바로 이용할 수 있어요. 함께 사용하려면 행사방을 만들어 주세요.':'프로그램을 선택하여 진행하고, QR코드로 참가자를 초대하세요.')+'</p></div><div class="event-heading-right"><span class="people-count">'+icon('users',19)+' 참가자 '+(local?(event.people?.length||0):event.peopleCount)+'명</span></div></div>'
- +(local?'<div class="local-banner">'+icon('spark',19)+' <span>미니게임 모드 · 행사 없이 바로 시작할 수 있어요. 결과는 현재 브라우저에 저장됩니다.</span><a href="#/create">행사 만들기 →</a></div>':sharePanel(event)+editModules(event))
- +'<div class="workspace-grid"><div class="workspace-main"><div class="workspace-head"><div><span class="eyebrow">EVENT PROGRAMS</span><h2>프로그램 진행</h2></div>'+(!local?'<span class="mini-hint">버튼으로 참가자 화면 전환</span>':'')+'</div>'
- +(local?localDemoBanner(event.active):'')
- +moduleNav(event,true)
- +(head?'<div class="running-label"><span class="pulse"></span> '+h(head.name)+' 실행 중</div>'+renderModule(event,head.id,true,local):'<div class="select-prompt"><div>'+icon('play',32)+'</div><h3>시작할 프로그램을 선택하세요</h3><p>선택한 프로그램이 참가자 휴대전화에 표시됩니다.</p></div>')+'</div>'
- +(!local?'<aside class="workspace-aside"><div class="side-card"><h3>행사 상태</h3><div class="side-stat"><span>입장 인원</span><b>'+event.peopleCount+'명</b></div><div class="side-stat"><span>등록 프로그램</span><b>'+event.modules.length+'개</b></div><div class="side-stat"><span>입장 상태</span>'+badge(event.status==='open'?'입장 가능':'입장 마감',event.status==='open'?'success':'')+'</div>'+button(event.status==='open'?'참가자 입장 마감':'참가자 입장 열기','door','btn subtle full')+'</div><div class="side-card"><h3>참가자</h3><div class="small-list">'+(event.people?.length?event.people.map((p,i)=>'<div><span>'+String(i+1).padStart(2,'0')+'</span>'+h(p.name)+'</div>').join(''):'<p>참가자가 입장하면 이곳에 표시됩니다.</p>')+'</div></div></aside>':'')+'</div></div>';
+function eventProgramCard(event,m){
+ const running=event.active===m.id;
+ const url='#/manage/'+event.id+'/tool/'+m.id;
+ return '<a class="event-program-card tone-'+m.tone+(running?' is-running':'')+'" href="'+url+'" target="_blank" rel="noopener noreferrer" aria-label="'+h(m.name)+' 전용 진행 페이지 새 탭에서 열기">'
+ +'<div class="program-top"><span class="program-symbol">'+m.symbol+'</span>'+(running?badge('진행 중','success'):badge(m.category))+'</div>'
+ +'<h3>'+h(m.name)+'</h3><p>'+h(m.desc)+'</p><span class="event-program-open">'+(running?'진행 화면 다시 열기':'프로그램 페이지 열기')+' '+icon('external',16)+'</span>'
+ +'</a>';
+}
+function hostPanel(event){
+ const current=event.active&&byId[event.active];
+ return '<div class="shell live-page"><a class="back-link" href="#/events">'+icon('back',16)+' 내 행사</a>'
+ +'<div class="event-heading"><div>'+badge('행사 관리실','live-badge')+'<h1>'+h(event.title)+'</h1><p>필요한 프로그램을 선택하세요. 각 프로그램은 새 탭의 독립 페이지에서 실행됩니다.</p></div><div class="event-heading-right"><span class="people-count">'+icon('users',19)+' 참가자 '+event.peopleCount+'명</span></div></div>'
+ +sharePanel(event)+editModules(event)
+ +'<div class="event-control-area"><div class="workspace-head"><div><span class="eyebrow">MY EVENT PROGRAMS</span><h2>실행할 프로그램 선택</h2><p class="event-control-caption">클릭하면 해당 프로그램 전용 페이지가 새 탭에서 열립니다. 참가자와 행사 기록은 그대로 연결됩니다.</p></div><div class="event-control-now">'+(current?'<span class="pulse"></span> 진행 중: '+h(current.name):'아직 실행 중인 프로그램 없음')+'</div></div>'
+ +'<div class="event-program-grid">'+event.modules.filter(id=>byId[id]).map(id=>eventProgramCard(event,byId[id])).join('')+'</div>'
+ +'<div class="event-control-tip">'+icon('check',18)+' <span>이곳에서는 QR 초대·프로그램 선택·참가자 관리를 하고, 게임이나 점수판은 별도 페이지에서 운영하세요.</span></div>'
+ +'<div class="event-side-overview"><div class="side-card"><h3>행사 상태</h3><div class="side-stat"><span>입장 인원</span><b>'+event.peopleCount+'명</b></div><div class="side-stat"><span>등록 프로그램</span><b>'+event.modules.length+'개</b></div><div class="side-stat"><span>입장 상태</span>'+badge(event.status==='open'?'입장 가능':'입장 마감',event.status==='open'?'success':'')+'</div>'+button(event.status==='open'?'참가자 입장 마감':'참가자 입장 열기','door','btn subtle full')+'</div>'
+ +'<div class="side-card"><h3>참가자 명단</h3><div class="small-list">'+(event.people?.length?event.people.map((p,i)=>'<div><span>'+String(i+1).padStart(2,'0')+'</span>'+h(p.name)+'</div>').join(''):'<p>참가자가 QR·링크로 입장하면 표시됩니다.</p>')+'</div></div></div></div></div>';
+}
+function programPage(event,id,local=false){
+ const m=byId[id];
+ if(!m||(!local&&!event.modules.includes(id)))return shellNotice('이 프로그램은 사용할 수 없습니다.','행사 관리실에서 해당 프로그램을 추가해 주세요.',local?'#/tools':'#/manage/'+event.id);
+ const back=local?'#/tools':'#/manage/'+event.id;
+ const running=local||event.active===id;
+ return '<div class="shell single-program-page">'
+ +'<div class="single-program-back"><a class="back-link" href="'+back+'">'+icon('back',17)+' '+(local?'프로그램 목록':'행사 관리실')+'로 돌아가기</a><span class="single-program-mode">'+(local?'혼자 바로 사용':'행사 연결됨 · 참가자 '+event.peopleCount+'명')+'</span></div>'
+ +'<div class="single-program-title"><div class="single-program-symbol tone-'+m.tone+'"><span class="program-symbol">'+m.symbol+'</span></div><div><span class="eyebrow">'+(local?'JUST PLAY · NO EVENT NEEDED':'LIVE EVENT PROGRAM')+'</span><h1>'+h(m.name)+'</h1><p>'+h(m.desc)+'</p></div><div class="single-program-buttons">'+button(icon('external',16)+' 전체 화면','fullscreen','btn subtle')+(!local?button(icon('external',16)+' 발표 화면','open-screen','btn subtle'):'')+'</div></div>'
+ +(local?'<div class="local-banner">'+icon('spark',19)+' <span>행사 없이 이 페이지에서 바로 플레이하세요. 설정과 결과는 이 브라우저에만 저장됩니다.</span></div>':
+ '<div class="single-program-event"><div><span class="pulse"></span> <b>'+h(event.title)+'</b><small>'+(running?'현재 참가자 화면에도 이 프로그램이 표시됩니다.':'다른 프로그램이 현재 참가자에게 표시되고 있습니다.')+'</small></div>'
+ +(running?badge('진행 중','success'):button('참가자 화면에 표시하기','activate','btn primary','data-id="'+id+'"'))+'</div>')
+ +(local?localDemoBanner(id):'')
+ +'<div class="single-program-content">'+renderModule(event,id,true,local)+'</div>'
+ +'<div class="single-program-footer"><a href="'+back+'">'+icon('back',16)+' '+(local?'다른 프로그램 선택하기':'행사 관리실로 돌아가기')+'</a><span>소소킹 LIVE · '+h(m.name)+' 전용 페이지</span></div></div>';
 }
 function sharePanel(event){
  const modeName=event.mode==='online'?'온라인 모임':event.mode==='onsite'?'현장 행사':'현장 + 온라인';
@@ -237,8 +269,11 @@ function timerRemaining(t){return t.running?Math.max(0,Math.ceil((t.remaining*10
 function renderEvent(){
  const mode=getMode();
  if(!activeEvent)return;
- root.innerHTML=mode==='participant'?participantPanel(activeEvent):mode==='screen'?screenPanel(activeEvent):hostPanel(activeEvent,mode==='local');
+ root.innerHTML=mode==='participant'?participantPanel(activeEvent):mode==='screen'?screenPanel(activeEvent):mode==='host'&&route()[2]==='tool'?programPage(activeEvent,route()[3],false):mode==='local'?programPage(activeEvent,route()[1],true):hostPanel(activeEvent);
  drawQr();updateClock();
+ lastRenderKey=route().join('/')+'|'+String(activeEvent.revision||0);
+ const currentTool=getMode()==='host'&&route()[2]==='tool'?byId[route()[3]]:getMode()==='local'?byId[route()[1]]:null;
+ document.title=(currentTool?currentTool.name+' · '+(getMode()==='local'?'바로 사용':activeEvent.title):getMode()==='host'?activeEvent.title:'소소킹 LIVE')+' | 소소킹 LIVE';
 }
 function updateClock(){
  const el=document.querySelector('#time-digits');
@@ -250,11 +285,15 @@ function singleTool(id){
  if(!byId[id])return shellNotice('프로그램을 찾지 못했습니다.','다른 프로그램을 선택해 주세요.','#/tools');
  if(!saved.standalone[id]){saved.standalone[id]=localEvent(id);save()}
  activeEvent=saved.standalone[id];activeId=activeEvent.id;activeView='tool';
- return hostPanel(activeEvent,true);
+ document.title=byId[id].name+' | 소소킹 LIVE';
+ return programPage(activeEvent,id,true);
 }
 async function loadRoute(){
  const [type,id]=route(),current=type||'home';
- navUpdate();window.scrollTo({top:0,behavior:'instant'});
+ navUpdate();
+ document.title='소소킹 LIVE — 우리 행사를 더 즐겁게';
+ document.body.classList.toggle('dedicated-program',current==='tool'||(current==='manage'&&route()[2]==='tool'));
+ window.scrollTo({top:0,behavior:'instant'});
  if(current==='home'){root.innerHTML=home();}
  else if(current==='tools'){root.innerHTML=tools();}
  else if(current==='create'){root.innerHTML=create();}

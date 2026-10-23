@@ -16,7 +16,15 @@ assert.match(app,/function screenPanel/,'Online meeting presentation view missin
 assert.match(app,/function localDemoBanner/,'Standalone mini-game quickstart missing');
 assert.match(app,/data-form="event-modules"/,'Editable event module selection missing');
 assert.match(app,/\/tool\/bracket/,'Tournament quick launch missing');
-assert.match(app,/data-do="activate"/,'Event module launcher missing');
+assert.match(app,/function eventProgramCard/,'Event program cards missing');
+assert.match(app,/function programPage/,'Dedicated program page missing');
+assert.match(app,/target="_blank" rel="noopener noreferrer"/,'Program page should open a new tab');
+assert.match(app,/route\(\)\[2\]==='tool'/,'Event program route handling missing');
+assert.match(app,/programPage\(activeEvent,id,true\)/,'Standalone tool must use dedicated page');
+assert.match(app,/programPage\(activeEvent,route\(\)\[3\],false\)/,'Event tool must use dedicated page');
+assert.match(app,/op:'event.active',value:selected/,'Opening event tool must activate it for participants');
+assert.match(app,/button\('참가자 화면에 표시하기','activate'/,'Reactivation button missing');
+assert.doesNotMatch(app,/moduleNav\(event,true\)/,'Tool switcher must not be inside event dashboard');
 assert.match(api,/case 'event\.modules'/,'Module edit API missing');
 assert.match(api,/const mode=\['onsite','online','hybrid'\]/,'Meeting mode missing');
 const logo=read('public/brand-mark.svg');
