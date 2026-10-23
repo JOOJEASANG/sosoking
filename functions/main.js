@@ -70,6 +70,7 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
   if(method==='POST'&&path==='/create'){
    const name=clean(req.body?.title,65);
    const modules=list(req.body?.modules,7).filter(x=>MODULES.includes(x));
+   const mode=['onsite','online','hybrid'].includes(req.body?.mode)?req.body.mode:'hybrid';
    must(name.length>=2,'행사명을 두 글자 이상 입력하세요.');
    must(modules.length>0,'프로그램을 하나 이상 선택하세요.');
    const hostSecret=token(24),id=token(10),now=Date.now();
@@ -80,7 +81,7 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
     tx.set(limitRef,{count:count+1,expiresAt:now+2*864e5});
    });
    await db.collection('sosokingEvents').doc(id).create({
-     id,title:name,modules,status:'open',active:'',adminHash:digest(hostSecret),
+     id,title:name,mode,modules,status:'open',active:'',adminHash:digest(hostSecret),
      createdAt:now,expiresAt:now+7*864e5,peopleCount:0,state:initState(),revision:1
    });
    return res.status(201).json({id,adminToken:hostSecret});
@@ -143,6 +144,12 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
        const active=clean(val,25);
        must(active===''||cur.modules.includes(active),'선택하지 않은 프로그램입니다.');
        tx.update(ref,{active,revision:FieldValue.increment(1)});break;
+      }
+      case 'event.modules':{
+       const modules=list(val,7).filter(x=>MODULES.includes(x));
+       must(modules.length>=1,'프로그램은 최소 하나 이상 선택해야 합니다.');
+       const active=modules.includes(cur.active)?cur.active:'';
+       tx.update(ref,{modules,active,revision:FieldValue.increment(1)});break;
       }
       case 'event.status':{
        must(['open','closed'].includes(val),'잘못된 상태입니다.');

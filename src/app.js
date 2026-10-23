@@ -59,21 +59,25 @@ function moduleCard(m,context='tools'){
  return '<article class="program-card tone-'+m.tone+'"><div class="program-top"><div class="program-symbol">'+m.symbol+'</div>'+badge(m.category)+'</div><h3>'+h(m.name)+'</h3><p>'+h(m.desc)+'</p>'+(context==='create'?'<label class="pick-choice"><input type="checkbox" name="modules" value="'+m.id+'" '+(window.picks?.includes(m.id)?'checked':'')+'> <span>행사에 추가</span></label>':'<a class="card-link" href="#/tool/'+m.id+'">'+label+' '+icon('arrow',17)+'</a>')+'</article>';
 }
 function home(){
- return '<div class="page-home"><section class="hero"><div class="shell hero-layout"><div class="hero-text"><div class="hero-pill"><span class="pulse"></span> 행사 진행이 쉬워지는 순간</div><h1>함께하는 시간이<br><em>더 즐거워지도록.</em></h1><p>행사 이름을 만들고 필요한 프로그램만 골라보세요.<br>하나의 QR코드로 모두가 참여하는 우리만의 행사가 시작됩니다.</p><div class="hero-actions"><a href="#/create" class="btn primary big">내 행사 만들기 '+icon('arrow',18)+'</a><a href="#/tools" class="btn pale big">프로그램 둘러보기</a></div><div class="hero-trust"><span>'+icon('check',16)+' 별도 앱 설치 없음</span><span>'+icon('check',16)+' 필요한 기능만 선택</span><span>'+icon('check',16)+' 모바일·대형 화면</span></div></div><div class="hero-art"><div class="art-glow"></div><div class="art-card art-main"><div class="art-card-head"><span class="art-mini-logo">S</span><div><b>가을 한마음 축제</b><small>행사 진행 중 · LIVE</small></div><span class="art-dot"></span></div><div class="art-qr">▦<small>QR 입장</small></div><div class="art-people"><span class="art-avatars">● ● ●</span><b>참가자 128명</b></div><div class="art-stat"><span>추첨</span><span>투표</span><span>대진표</span></div></div><div class="float-note note-top">✦ 당첨자를 발표했어요!</div><div class="float-note note-bottom">✓ 모두 입장 완료</div></div></div></section>'
- +'<section class="shell how-section">'+sectionHead('HOW IT WORKS','세 단계면 준비 끝','복잡한 장비나 별도 앱 없이 행사를 시작하세요.')
- +'<div class="step-grid"><div class="step"><span>01</span><div class="step-icon">'+icon('plus',26)+'</div><h3>행사 만들기</h3><p>행사명을 입력하고 원하는 프로그램 선택</p></div><div class="step-arrow">→</div><div class="step"><span>02</span><div class="step-icon">'+icon('qr',26)+'</div><h3>QR코드 공유</h3><p>참가자는 닉네임만 입력하고 바로 입장</p></div><div class="step-arrow">→</div><div class="step"><span>03</span><div class="step-icon">'+icon('play',26)+'</div><h3>함께 즐기기</h3><p>진행자가 프로그램을 열면 함께 참여</p></div></div></section>'
- +'<section class="program-section"><div class="shell">'+sectionHead('PROGRAM LIBRARY','필요한 것만 쏙쏙','일상에서는 개별로, 행사에서는 함께 활용할 수 있는 7가지 프로그램.')
+ return '<div class="page-home"><section class="hero"><div class="shell hero-layout"><div class="hero-text"><div class="hero-pill"><span class="pulse"></span> 행사 진행이 쉬워지는 순간</div><h1>함께하는 시간이<br><em>더 즐거워지도록.</em></h1><p>행사 이름을 만들고 필요한 프로그램만 골라보세요.<br>QR코드나 초대 링크로 누구나 함께할 수 있어요.</p><div class="hero-actions"><a href="#/create" class="btn primary big">내 행사 만들기 '+icon('arrow',18)+'</a><a href="#/tools" class="btn pale big">프로그램 둘러보기</a></div><div class="hero-trust"><span>'+icon('check',16)+' 별도 앱 설치 없음</span><span>'+icon('check',16)+' 필요한 기능만 선택</span><span>'+icon('check',16)+' 모바일·대형 화면</span></div></div><div class="hero-art"><div class="art-glow"></div><div class="art-card art-main"><div class="art-card-head"><span class="art-mini-logo">S</span><div><b>가을 한마음 축제</b><small>행사 진행 중 · LIVE</small></div><span class="art-dot"></span></div><div class="art-qr">▦<small>QR 입장</small></div><div class="art-people"><span class="art-avatars">● ● ●</span><b>참가자 128명</b></div><div class="art-stat"><span>추첨</span><span>투표</span><span>대진표</span></div></div><div class="float-note note-top">✦ 당첨자를 발표했어요!</div><div class="float-note note-bottom">✓ 모두 입장 완료</div></div></div></section>'
+ +'<section class="shell quick-play-section"><div class="quick-header"><div><span class="eyebrow">INSTANT PLAY · 설치 없이 시작</span><h2>모임 없이도, 바로 즐기는 미니게임</h2><p>프로그램 하나만 필요하다면 행사방을 만들지 마세요. 누르면 곧바로 시작!</p></div><a href="#/tools" class="quick-all">7개 전체 보기 →</a></div><div class="quick-grid">'
+ +[{id:'wheel',title:'룰렛 돌리기',subtitle:'오늘의 운을 시험해요',symbol:'◉',color:'mint'},{id:'raffle',title:'랜덤 추첨',subtitle:'누가 당첨될까요?',symbol:'✦',color:'peach'},{id:'bracket',title:'대진표 만들기',subtitle:'순위와 우승자를 정해요',symbol:'⑂',color:'lilac'},{id:'teams',title:'랜덤 팀 나누기',subtitle:'공평하게 팀을 나눠요',symbol:'♟',color:'butter'}].map(m=>'<a href="#/tool/'+m.id+'" class="quick-card quick-'+m.color+'"><span class="quick-emoji">'+m.symbol+'</span><b>'+m.title+'</b><small>'+m.subtitle+'</small><span class="quick-arrow">↗</span></a>').join('')
+ +'</div><div class="quick-help">같이 진행하고 싶나요? <a href="#/create">행사방 만들고 QR·링크로 함께 참여하기 →</a></div></section>'
+
+ +'<section class="shell how-section">'+sectionHead('HOW IT WORKS','세 단계면 준비 끝','현장은 QR로, 온라인 모임은 링크로. 별도 앱 없이 시작하세요.')
+ +'<div class="step-grid"><div class="step"><span>01</span><div class="step-icon">'+icon('plus',26)+'</div><h3>행사 만들기</h3><p>행사명을 입력하고 원하는 프로그램 선택</p></div><div class="step-arrow">→</div><div class="step"><span>02</span><div class="step-icon">'+icon('qr',26)+'</div><h3>QR·링크 공유</h3><p>현장은 QR, 온라인은 링크로 입장</p></div><div class="step-arrow">→</div><div class="step"><span>03</span><div class="step-icon">'+icon('play',26)+'</div><h3>함께 즐기기</h3><p>진행자가 프로그램을 열면 함께 참여</p></div></div></section>'
+ +'<section class="program-section"><div class="shell">'+sectionHead('PROGRAM LIBRARY','필요한 것만 쏙쏙','행사가 없어도 바로 실행할 수 있는 7가지 프로그램. 대진표도 포함돼요.')
  +'<div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="section-actions"><a href="#/create" class="btn primary">이 프로그램으로 행사 만들기 '+icon('arrow',17)+'</a></div></div></section>'
- +'<section class="shell close-cta"><div><span class="eyebrow">ONE EVENT, MANY MOMENTS</span><h2>우리 행사에 딱 맞게<br>구성해 보세요.</h2><p>바자회, 체육대회, 동호회, 가족 모임 어디서나.</p></div><a href="#/create" class="btn white big">행사 만들기 '+icon('arrow',17)+'</a></section></div>';
+ +'<section class="shell close-cta"><div><span class="eyebrow">ONE EVENT, MANY MOMENTS</span><h2>우리 행사에 딱 맞게<br>구성해 보세요.</h2><p>바자회, 체육대회, 온라인 동창회, 가족 모임 어디서나.</p></div><a href="#/create" class="btn white big">행사 만들기 '+icon('arrow',17)+'</a></section></div>';
 }
 function tools(){
- return '<div class="shell inner-page"><div class="page-intro"><span class="eyebrow">PROGRAM LIBRARY</span><h1>필요한 프로그램을<br>바로 사용해 보세요.</h1><p>혼자 쓰는 간단한 도구는 바로 실행하고, 여러 사람이 함께할 때는 행사방을 만들어 연결하세요.</p></div><div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="bottom-hint">'+icon('users',23)+' <div><strong>여러 사람이 함께 참여하나요?</strong><p>행사방을 만들면 QR 입장, 진행자 제어, 실시간 결과 공유가 가능합니다.</p></div><a href="#/create" class="btn primary">행사 만들기</a></div></div>';
+ return '<div class="shell inner-page"><div class="page-intro"><span class="eyebrow">PROGRAM LIBRARY</span><h1>행사가 없어도 좋아요.<br>골라서 바로 즐기세요.</h1><p>룰렛·대진표·추첨기까지, 클릭 한 번으로 바로 실행해요. 행사를 따로 만들 필요 없어요.</p></div><div class="direct-play-strip"><strong>지금 바로 사용 가능</strong><span>개별 도구는 회원가입·행사 생성·QR 없이 쓸 수 있어요.</span><a href="#/tool/bracket">대진표 바로 만들기 →</a></div><div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="bottom-hint">'+icon('users',23)+' <div><strong>여러 사람이 함께 참여하나요?</strong><p>행사방을 만들면 QR 입장, 진행자 제어, 실시간 결과 공유가 가능합니다.</p></div><a href="#/create" class="btn primary">행사 만들기</a></div></div>';
 }
 function create(){
- const selected=window.picks||['raffle','poll','wheel'];window.picks=selected;
- return '<div class="shell inner-page"><a class="back-link" href="#/">'+icon('back',16)+' 처음으로</a><div class="page-intro compact"><span class="eyebrow">CREATE AN EVENT</span><h1>우리 행사 만들기</h1><p>행사 이름과 프로그램을 선택하면 QR코드가 자동으로 만들어집니다.</p></div>'
- +'<form id="create-form" data-form="create"><div class="form-section"><div class="form-title"><span class="step-index">01</span><div><h2>행사 이름</h2><p>참가자들에게 표시될 이름이에요.</p></div></div><input class="text-input large" type="text" name="title" maxlength="65" minlength="2" required placeholder="예: 2026 행복한 가을 운동회"></div>'
- +'<div class="form-section"><div class="form-title"><span class="step-index">02</span><div><h2>사용할 프로그램 선택</h2><p>필요한 것만 선택해 주세요. 선택한 프로그램은 하나의 행사방에서 운영됩니다.</p></div></div><div class="program-grid selector-grid">'+defs.map(m=>moduleCard(m,'create')).join('')+'</div></div>'
+ const selected=window.picks||['raffle','poll','bracket'];window.picks=selected;
+ return '<div class="shell inner-page"><a class="back-link" href="#/">'+icon('back',16)+' 처음으로</a><div class="page-intro compact"><span class="eyebrow">CREATE AN EVENT</span><h1>우리 행사 만들기</h1><p>현장 행사와 온라인 모임 모두 지원합니다. QR과 초대 링크가 함께 생성됩니다.</p></div>'
+ +'<form id="create-form" data-form="create"><div class="form-section"><div class="form-title"><span class="step-index">01</span><div><h2>행사 이름</h2><p>온라인 채팅방과 현장 QR에 함께 표시될 이름이에요.</p></div></div><input class="text-input large" type="text" name="title" maxlength="65" minlength="2" required placeholder="예: 2026 행복한 가을 운동회"></div>'
+ +'<div class="form-section"><div class="form-title"><span class="step-index">02</span><div><h2>모임 참여 방식</h2><p>참가자에게 맞는 초대 방식을 선택하세요.</p></div></div><div class="mode-options"><label class="mode-choice"><input type="radio" name="mode" value="hybrid" checked><strong>현장 + 온라인</strong><span>QR·초대 링크 모두 사용</span></label><label class="mode-choice"><input type="radio" name="mode" value="online"><strong>온라인 모임</strong><span>화상회의 채팅방에 링크 공유</span></label><label class="mode-choice"><input type="radio" name="mode" value="onsite"><strong>현장 행사</strong><span>대형 화면에 QR 표시</span></label></div></div><div class="form-section"><div class="form-title"><span class="step-index">03</span><div><h2>사용할 프로그램 선택</h2><p>필요한 것만 선택해 주세요. 선택한 프로그램은 하나의 행사방에서 운영됩니다.</p></div></div><div class="program-grid selector-grid">'+defs.map(m=>moduleCard(m,'create')).join('')+'</div></div>'
  +'<div class="create-bottom"><div><strong>프로그램 <span id="selected-count">'+selected.length+'</span>개 선택됨</strong><p>참가자는 QR코드로 입장하고 진행자는 프로그램을 제어합니다.</p></div><button class="btn primary big" type="submit" id="create-button">행사방 만들기 '+icon('arrow',18)+'</button></div></form></div>';
 }
 function events(){
@@ -84,7 +88,7 @@ function events(){
 function shellNotice(title,message,href='#/'){return '<div class="shell inner-page"><div class="empty-panel"><div class="empty-illustration">!</div><h2>'+h(title)+'</h2><p>'+h(message)+'</p><a class="btn primary" href="'+href+'">돌아가기</a></div></div>';}
 async function loadEvent(id,view,silent=false){
  if(requesting)return;
- const token=view==='manage'?saved.hosts[id]:saved.members[id]?.token;
+ const token=view==='manage'?saved.hosts[id]:view==='screen'?'':saved.members[id]?.token;
  const extra=view==='manage'?'&host=1':'';
  requesting=true;
  try{
@@ -98,19 +102,54 @@ async function loadEvent(id,view,silent=false){
   else{toast('행사 정보를 새로 불러오지 못했습니다.',true);}
  }finally{requesting=false;}
 }
-function getMode(){return routeMatch()==='tool'?'local':routeMatch()==='manage'?'host':'participant';}
+function getMode(){return routeMatch()==='tool'?'local':routeMatch()==='manage'?'host':routeMatch()==='screen'?'screen':'participant';}
 function moduleNav(event,host){return '<div class="module-switcher">'+event.modules.map(id=>'<button type="button" class="module-tab '+(event.active===id?'selected':'')+'" data-do="activate" data-id="'+id+'" '+(!host?'disabled':'')+'><span>'+byId[id].symbol+'</span>'+byId[id].name+(event.active===id?'<i>진행 중</i>':'')+'</button>').join('')+'</div>';}
+function localDemoBanner(id){
+ const text={raffle:'8명으로 추첨 연습하기',poll:'가상 투표 바로 해보기',wheel:'랜덤 선물 룰렛 해보기',score:'청팀·홍팀 점수판 만들기',teams:'8명 랜덤 팀 나누기',timer:'1분 타이머 준비하기',bracket:'8팀 토너먼트 대진표 만들기'};
+ return '<div class="demo-strip"><div><span>QUICK START · 한 번에 체험하기</span><strong>'+h(text[id]||'바로 시작하기')+'</strong></div>'+button('샘플로 시작 →','demo-setup','btn primary','data-id="'+id+'"')+'</div>';
+}
+function loadLocalDemo(id){
+ const names=['하늘','바다','바람','별빛','초록','달빛','구름','햇살'];
+ switch(id){
+  case 'raffle':localAction('local.people',names);break;
+  case 'poll':localAction('poll.set',{question:'오늘 가장 기대되는 것은?',options:['행운권 추첨','맛있는 간식','게임과 대결']});localAction('poll.open');break;
+  case 'wheel':localAction('wheel.set',['커피 쿠폰','꽝, 한 번 더!','간식 선물','축하 선물','오늘의 행운']);break;
+  case 'score':localAction('score.set',['청팀','홍팀']);break;
+  case 'teams':localAction('teams.make',{names,groupCount:2});break;
+  case 'timer':localAction('timer.set',60);break;
+  case 'bracket':localAction('bracket.set',names);break;
+  default:throw Error('지원하지 않는 프로그램입니다.');
+ }
+ save();renderEvent();
+}
+
 function hostPanel(event,local=false){
  const head=event.active&&byId[event.active];
- return '<div class="shell live-page"><a class="back-link" href="'+(local?'#/tools':'#/events')+'">'+icon('back',16)+' '+(local?'프로그램 목록':'내 행사')+'</a><div class="event-heading"><div>'+badge(local?'바로 사용 모드':'진행자 관리 화면','live-badge')+'<h1>'+h(event.title)+'</h1><p>'+h(local?'이 기기에서만 실행됩니다. 행사 QR 참여는 행사방을 만들어 주세요.':'프로그램을 선택하여 진행하고, QR코드로 참가자를 초대하세요.')+'</p></div><div class="event-heading-right"><span class="people-count">'+icon('users',19)+' 참가자 '+(local?(event.people?.length||0):event.peopleCount)+'명</span></div></div>'
- +(local?'<div class="local-banner">'+icon('spark',19)+' <span>개별 실행 모드 · 참가자 연결과 실시간 동기화는 지원하지 않습니다.</span><a href="#/create">행사 만들기 →</a></div>':sharePanel(event))
+ return '<div class="shell live-page"><a class="back-link" href="'+(local?'#/tools':'#/events')+'">'+icon('back',16)+' '+(local?'프로그램 목록':'내 행사')+'</a><div class="event-heading"><div>'+badge(local?'바로 사용 모드':'진행자 관리 화면','live-badge')+'<h1>'+h(event.title)+'</h1><p>'+h(local?'브라우저에서 혼자 바로 이용할 수 있어요. 함께 사용하려면 행사방을 만들어 주세요.':'프로그램을 선택하여 진행하고, QR코드로 참가자를 초대하세요.')+'</p></div><div class="event-heading-right"><span class="people-count">'+icon('users',19)+' 참가자 '+(local?(event.people?.length||0):event.peopleCount)+'명</span></div></div>'
+ +(local?'<div class="local-banner">'+icon('spark',19)+' <span>미니게임 모드 · 행사 없이 바로 시작할 수 있어요. 결과는 현재 브라우저에 저장됩니다.</span><a href="#/create">행사 만들기 →</a></div>':sharePanel(event)+editModules(event))
  +'<div class="workspace-grid"><div class="workspace-main"><div class="workspace-head"><div><span class="eyebrow">EVENT PROGRAMS</span><h2>프로그램 진행</h2></div>'+(!local?'<span class="mini-hint">버튼으로 참가자 화면 전환</span>':'')+'</div>'
+ +(local?localDemoBanner(event.active):'')
  +moduleNav(event,true)
  +(head?'<div class="running-label"><span class="pulse"></span> '+h(head.name)+' 실행 중</div>'+renderModule(event,head.id,true,local):'<div class="select-prompt"><div>'+icon('play',32)+'</div><h3>시작할 프로그램을 선택하세요</h3><p>선택한 프로그램이 참가자 휴대전화에 표시됩니다.</p></div>')+'</div>'
  +(!local?'<aside class="workspace-aside"><div class="side-card"><h3>행사 상태</h3><div class="side-stat"><span>입장 인원</span><b>'+event.peopleCount+'명</b></div><div class="side-stat"><span>등록 프로그램</span><b>'+event.modules.length+'개</b></div><div class="side-stat"><span>입장 상태</span>'+badge(event.status==='open'?'입장 가능':'입장 마감',event.status==='open'?'success':'')+'</div>'+button(event.status==='open'?'참가자 입장 마감':'참가자 입장 열기','door','btn subtle full')+'</div><div class="side-card"><h3>참가자</h3><div class="small-list">'+(event.people?.length?event.people.map((p,i)=>'<div><span>'+String(i+1).padStart(2,'0')+'</span>'+h(p.name)+'</div>').join(''):'<p>참가자가 입장하면 이곳에 표시됩니다.</p>')+'</div></div></aside>':'')+'</div></div>';
 }
 function sharePanel(event){
- return '<div class="share-panel"><div class="share-left"><span class="eyebrow">ONE QR FOR YOUR EVENT</span><h2>QR코드 하나로<br>함께 참여하세요.</h2><p>현장 스크린에 띄우거나 인쇄하여 공유하세요.<br>참가자는 이름만 입력하면 입장합니다.</p><div class="share-actions">'+button(icon('copy',16)+' 참여 링크 복사','copy-link','btn white')+button(icon('download',16)+' QR 저장','qr-download','btn white-outline')+button(icon('external',16)+' 참가자 화면','open-join','btn white-outline')+'</div></div><div class="qr-frame"><canvas id="event-qr" width="180" height="180" aria-label="행사 참가 QR코드"></canvas><small>스캔하고 바로 입장!</small></div></div>';
+ const modeName=event.mode==='online'?'온라인 모임':event.mode==='onsite'?'현장 행사':'현장 + 온라인';
+ return '<div class="share-panel"><div class="share-left"><span class="eyebrow">SHARE YOUR EVENT · '+h(modeName)+'</span><h2>온라인은 링크로,<br>현장은 QR코드로.</h2><p>화상회의 채팅방에 링크를 공유하세요. 현장에서는 QR코드를 스캔하면 돼요.<br>참가자는 앱 설치 없이 닉네임만 입력하고 들어옵니다.</p>'
+ +'<div class="event-url-bar"><span>'+h(urlFor(event.id))+'</span>'+button(icon('copy',15)+' 복사','copy-link','btn white')+'</div>'
+ +'<div class="share-actions">'+button(icon('link',16)+' 초대 링크 공유','share-link','btn white')+button(icon('download',16)+' QR 저장','qr-download','btn white-outline')+button(icon('external',16)+' 참가자 화면','open-join','btn white-outline')+button(icon('external',16)+' 발표 화면 열기','open-screen','btn white-outline')+'</div></div>'
+ +'<div class="qr-frame"><canvas id="event-qr" width="180" height="180" aria-label="행사 참가 QR코드"></canvas><small>현장에서 스캔하고 입장!</small></div></div>';
+}
+function editModules(event){
+ return '<details class="modules-manager"><summary>행사 프로그램 관리 · 선택한 '+event.modules.length+'개 <span>추가·제외 가능 ▼</span></summary><form data-form="event-modules"><p>행사 중에도 원하는 프로그램을 추가하거나 제외할 수 있어요. 진행 기록은 그대로 남습니다.</p><div class="manage-picks">'
+ +defs.map(m=>'<label><input type="checkbox" name="modules" value="'+m.id+'" '+(event.modules.includes(m.id)?'checked':'')+'><span>'+h(m.name)+'</span></label>').join('')
+ +'</div><button class="btn primary" type="submit">프로그램 구성 저장</button></form></details>';
+}
+function screenPanel(event){
+ const module=byId[event.active];
+ return '<div class="shell screen-page"><div class="screen-head"><div class="screen-event"><img src="/brand-mark.svg" alt="" width="42" height="42"><div><span>소소킹 LIVE · 온라인/현장 공유 화면</span><h1>'+h(event.title)+'</h1></div></div><div class="screen-tools"><span>'+icon('users',18)+' '+event.peopleCount+'명 참여</span>'+button('전체 화면','fullscreen','btn subtle')+'</div></div>'
+ +(module?'<div class="screen-active"><span class="pulse"></span> LIVE · '+h(module.name)+'</div>'+renderModule(event,module.id,false,false,true):'<div class="screen-wait"><div>✦</div><h2>함께하는 순간을 준비 중입니다</h2><p>진행자가 프로그램을 시작하면 화면이 바뀝니다.</p></div>')
+ +'<div class="screen-bottom">진행자는 별도 관리 화면에서 조작합니다. 이 화면을 화상회의에서 화면 공유하거나 행사장 스크린에 띄우세요.</div></div>';
 }
 function participantPanel(event){
  const person=saved.members[event.id];
@@ -136,7 +175,7 @@ function moduleBox(kicker,title,description,body){
 function inlineNames(placeholder='한 줄에 하나씩 입력',val=''){
  return '<textarea class="text-area" name="names" rows="5" placeholder="'+h(placeholder)+'" required>'+h(val)+'</textarea>';
 }
-function renderModule(ev,id,host,local=false){
+function renderModule(ev,id,host,local=false,screen=false){
  const s=ev.state?.[id]||initial()[id],people=ev.people||[];
  switch(id){
  case 'raffle':{
@@ -152,10 +191,10 @@ function renderModule(ev,id,host,local=false){
  const options=s.options||[],ready=!!s.id,open=s.open;
  const voted=saved.members[ev.id]?.voted?.includes(s.id);
  const total=(s.counts||[]).reduce((a,b)=>a+b,0);
- return moduleBox('LIVE VOTING','모두의 의견을 한눈에','참가자는 행사 QR로 입장한 뒤 한 번씩만 투표할 수 있습니다.',
+ return moduleBox('LIVE VOTING','모두의 의견을 한눈에','참가자는 QR 또는 초대 링크로 입장한 뒤 한 번씩 투표할 수 있습니다.',
  (host?'<div class="tool-form-block"><form data-form="poll"><label class="input-label">투표 질문</label><input class="text-input" name="question" maxlength="110" value="'+h(s.question)+'" placeholder="예: 오늘 가장 재미있었던 순서는?" required><label class="input-label">선택지 (한 줄에 하나씩 · 2~6개)</label><textarea class="text-area" rows="4" name="options" required placeholder="추첨\n게임\n공연">'+h(options.join('\n'))+'</textarea><button class="btn subtle" type="submit">투표 내용 저장 · 득표 초기화</button></form></div>'
  +(ready?'<div class="module-actions">'+button(open?'투표 마감하기':'투표 시작하기',open?'poll-close':'poll-open',open?'btn subtle':'btn primary')+'</div>':''):'')
-  +(ready?'<div class="poll-board"><h3>'+h(s.question)+'</h3>'+(local?'<div class="local-poll-votes"><p>개별 실행 모드 · 아래 항목을 누르면 해당 득표수가 올라갑니다.</p>'+options.map((x,i)=>button('+1표 · '+h(x),'local-vote','btn subtle','data-index="'+i+'"')).join('')+'</div>':'')+(!host&&open&&!voted?'<div class="poll-answers">'+options.map((x,i)=>button(h(x),'vote','btn vote-option','data-index="'+i+'"')).join('')+'</div>':!host&&open&&voted?'<div class="success-message">'+icon('check',20)+' 투표를 완료했어요. 발표를 기다려 주세요.</div>':!host&&open?'<div class="module-info">투표가 진행 중입니다.</div>':'')
+  +(ready?'<div class="poll-board"><h3>'+h(s.question)+'</h3>'+(local?'<div class="local-poll-votes"><p>개별 실행 모드 · 아래 항목을 누르면 해당 득표수가 올라갑니다.</p>'+options.map((x,i)=>button('+1표 · '+h(x),'local-vote','btn subtle','data-index="'+i+'"')).join('')+'</div>':'')+(!host&&!screen&&open&&!voted?'<div class="poll-answers">'+options.map((x,i)=>button(h(x),'vote','btn vote-option','data-index="'+i+'"')).join('')+'</div>':!host&&!screen&&open&&voted?'<div class="success-message">'+icon('check',20)+' 투표를 완료했어요. 발표를 기다려 주세요.</div>':!host&&open?'<div class="module-info">투표가 진행 중입니다.</div>':'')
  +((host||!open)?'<div class="poll-results">'+options.map((x,i)=>{const n=s.counts[i]||0,pct=total?Math.round(100*n/total):0;return '<div class="poll-row"><div><b>'+h(x)+'</b><span>'+n+'표 · '+pct+'%</span></div><div class="bar-track"><span style="width:'+pct+'%"></span></div></div>'}).join('')+'</div><small class="muted">총 '+(host?s.answered||0:total)+'명 참여</small>':'')
  +'</div>':'<div class="empty-message padded">진행자가 투표를 준비하고 있습니다.</div>'));
  }
@@ -198,7 +237,7 @@ function timerRemaining(t){return t.running?Math.max(0,Math.ceil((t.remaining*10
 function renderEvent(){
  const mode=getMode();
  if(!activeEvent)return;
- root.innerHTML=mode==='participant'?participantPanel(activeEvent):hostPanel(activeEvent,mode==='local');
+ root.innerHTML=mode==='participant'?participantPanel(activeEvent):mode==='screen'?screenPanel(activeEvent):hostPanel(activeEvent,mode==='local');
  drawQr();updateClock();
 }
 function updateClock(){
@@ -221,7 +260,7 @@ async function loadRoute(){
  else if(current==='create'){root.innerHTML=create();}
  else if(current==='events'){root.innerHTML=events();}
  else if(current==='tool'){root.innerHTML=singleTool(id);}
- else if(['manage','join'].includes(current)){
+ else if(['manage','join','screen'].includes(current)){
   root.innerHTML='<div class="shell loading-state"><span class="loading-spin"></span> 행사 정보를 불러오고 있어요...</div>';
   if(current==='manage'&&!saved.hosts[id])root.innerHTML=shellNotice('진행자 권한이 없습니다.','행사를 만든 브라우저에서 관리할 수 있습니다.','#/events');
   else await loadEvent(id,current);
@@ -291,11 +330,11 @@ document.addEventListener('submit',ev=>{
  if(requesting)return;
  postSafe(async()=>{
   if(kind==='create'){
-   const title=String(data.get('title')||'').trim(),modules=data.getAll('modules');
+   const title=String(data.get('title')||'').trim(),modules=data.getAll('modules'),mode=String(data.get('mode')||'hybrid');
    if(!title||modules.length===0)throw Error('행사명과 프로그램을 선택해 주세요.');
    const button=form.querySelector('[type="submit"]');button.disabled=true;button.textContent='행사방 생성 중...';
    try{
-    const result=await api('create',{title,modules});
+    const result=await api('create',{title,modules,mode});
     saved.hosts[result.id]=result.adminToken;
     saved.recent.unshift({id:result.id,title,date:Date.now()});save();
     toast('행사방을 만들었습니다.');
@@ -326,6 +365,10 @@ document.addEventListener('submit',ev=>{
    const total=Number(data.get('minutes'))*60+Number(data.get('seconds'));
    if(!(total>=5&&total<=7200))throw Error('5초에서 120분 사이로 설정하세요.');
    await sendAction('timer.set',total);toast('시간을 설정했습니다.');
+  }else if(kind==='event-modules'){
+   const modules=data.getAll('modules');
+   if(!modules.length)throw Error('하나 이상의 프로그램을 선택해 주세요.');
+   await sendAction('event.modules',modules);toast('프로그램 구성을 저장했습니다.');
   }else if(kind==='bracket'){
    const names=nonEmptyLines(data.get('names'),32);
    if(names.length<2)throw Error('2팀 이상 입력하세요.');
@@ -349,7 +392,15 @@ document.addEventListener('click',e=>{
    const canvas=document.querySelector('#event-qr');if(!canvas)throw Error('QR코드가 없습니다.');
    const a=document.createElement('a');a.download='sosoking-qr-'+activeEvent.id+'.png';a.href=canvas.toDataURL('image/png');a.click();
   }else if(act==='open-join'){window.open(urlFor(activeEvent.id),'_blank','noopener,noreferrer');}
-  else if(act==='activate'){if(getMode()==='participant')return;await sendAction('event.active',el.dataset.id);toast('프로그램 화면을 전환했습니다.');}
+  else if(act==='open-screen'){window.open(location.origin+'/#/screen/'+activeEvent.id,'_blank','noopener,noreferrer');}
+  else if(act==='share-link'){
+    const link=urlFor(activeEvent.id);
+    if(navigator.share)await navigator.share({title:activeEvent.title,text:'소소킹 LIVE 모임에 참여해 주세요!',url:link});
+    else {await navigator.clipboard.writeText(link);toast('온라인 모임 초대 링크를 복사했습니다.');}
+  }
+  else if(act==='fullscreen'){if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();}
+  else if(act==='demo-setup'){if(getMode()==='local'){loadLocalDemo(el.dataset.id);toast('샘플을 불러왔습니다. 바로 플레이해 보세요!');}}
+  else if(act==='activate'){if(getMode()==='participant'||getMode()==='screen')return;await sendAction('event.active',el.dataset.id);toast('프로그램 화면을 전환했습니다.');}
   else if(act==='door'){await sendAction('event.status',activeEvent.status==='open'?'closed':'open');}
   else if(act==='raffle-draw'){await sendAction('raffle.draw');}
   else if(act==='raffle-reset'){if(confirm('기존 당첨 기록을 모두 초기화할까요?'))await sendAction('raffle.reset');}
@@ -372,8 +423,8 @@ document.addEventListener('click',e=>{
  });
 });
 window.addEventListener('hashchange',()=>{activeEvent=null;loadRoute();});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&['join','manage'].includes(routeMatch()))loadEvent(route()[1],routeMatch(),true);});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&['join','manage','screen'].includes(routeMatch()))loadEvent(route()[1],routeMatch(),true);});
 setInterval(()=>{if(document.hidden)return;updateClock();},400);
-setInterval(()=>{const kind=routeMatch();if(!document.hidden&&['manage','join'].includes(kind))loadEvent(route()[1],kind,true);},6000);
+setInterval(()=>{const kind=routeMatch();if(!document.hidden&&['manage','join','screen'].includes(kind))loadEvent(route()[1],kind,true);},6000);
 window.addEventListener('storage',ev=>{if(ev.key===storageKey){saved={hosts:{},members:{},recent:[],standalone:{},...load()};if(routeMatch()==='tool')loadRoute();}});
 loadRoute();

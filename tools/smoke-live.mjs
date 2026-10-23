@@ -11,7 +11,7 @@ async function call(path,data=null,token='',personId=''){
 }
 const health=await call('health');
 assert.equal(health.ok,true,'Function Health OK');
-const created=await call('create',{title:'소소킹 배포 점검 행사',modules:['raffle','poll','wheel','score','teams','timer','bracket']});
+const created=await call('create',{title:'소소킹 온라인 모임 점검',mode:'online',modules:['raffle','poll','wheel','score','teams','timer','bracket']});
 assert.match(created.id,/^[a-f0-9]{20}$/);
 assert.ok(created.adminToken);
 const id=created.id,host=created.adminToken;
@@ -22,6 +22,15 @@ const manage=()=>call('event?id='+id+'&host=1',null,host);
 const action=(op,value=null)=>call('action',{id,op,value},host);
 let ev=(await manage()).event;
 assert.equal(ev.peopleCount,2);
+assert.equal(ev.mode,'online');
+const publicView=(await call('event?id='+id)).event;
+assert.equal(publicView.mode,'online');
+assert.ok(!('adminHash' in publicView),'private admin key must not leak');
+await action('event.modules',['raffle','poll','bracket']);
+ev=(await manage()).event;
+assert.deepEqual(ev.modules,['raffle','poll','bracket'],'host can modify enabled modules');
+await action('event.modules',['raffle','poll','wheel','score','teams','timer','bracket']);
+ev=(await manage()).event;
 assert.equal(ev.people.length,2);
 await action('event.active','poll');
 await action('poll.set',{question:'어떤 색을 선택할까요?',options:['빨강','파랑']});
@@ -56,4 +65,4 @@ await action('bracket.win',{round:0,match,winner:ev.state.bracket.rounds[0][matc
 ev=(await manage()).event;
 assert.ok(ev.state.bracket.rounds.length>=2,'winner advances');
 await action('event.status','closed');
-console.log('LIVE SMOKE PASS: health, create, join, read, poll anti-double-vote, raffle anti-repeat, wheel, score, teams, timer, tournament.');
+console.log('LIVE SMOKE PASS: online meeting mode, QR/link room, module editing, poll anti-double-vote, raffle anti-repeat, wheel, score, teams, timer, tournament.');

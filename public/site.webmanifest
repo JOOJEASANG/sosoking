@@ -1,0 +1,31 @@
+{
+  "name": "소소킹 LIVE - 행사 프로그램 플랫폼",
+  "short_name": "소소킹 LIVE",
+  "description": "행사 만들기, 온라인 링크 입장, QR 입장, 추첨, 투표, 대진표, 점수판",
+  "start_url": "/#/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFD",
+  "theme_color": "#4358CE",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
