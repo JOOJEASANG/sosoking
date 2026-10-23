@@ -155,7 +155,7 @@ function renderModule(ev,id,host,local=false){
  return moduleBox('LIVE VOTING','모두의 의견을 한눈에','참가자는 행사 QR로 입장한 뒤 한 번씩만 투표할 수 있습니다.',
  (host?'<div class="tool-form-block"><form data-form="poll"><label class="input-label">투표 질문</label><input class="text-input" name="question" maxlength="110" value="'+h(s.question)+'" placeholder="예: 오늘 가장 재미있었던 순서는?" required><label class="input-label">선택지 (한 줄에 하나씩 · 2~6개)</label><textarea class="text-area" rows="4" name="options" required placeholder="추첨\n게임\n공연">'+h(options.join('\n'))+'</textarea><button class="btn subtle" type="submit">투표 내용 저장 · 득표 초기화</button></form></div>'
  +(ready?'<div class="module-actions">'+button(open?'투표 마감하기':'투표 시작하기',open?'poll-close':'poll-open',open?'btn subtle':'btn primary')+'</div>':''):'')
- +(ready?'<div class="poll-board"><h3>'+h(s.question)+'</h3>'+(!host&&open&&!voted?'<div class="poll-answers">'+options.map((x,i)=>button(h(x),'vote','btn vote-option','data-index="'+i+'"')).join('')+'</div>':!host&&open&&voted?'<div class="success-message">'+icon('check',20)+' 투표를 완료했어요. 발표를 기다려 주세요.</div>':!host&&open?'<div class="module-info">투표가 진행 중입니다.</div>':'')
+  +(ready?'<div class="poll-board"><h3>'+h(s.question)+'</h3>'+(local?'<div class="local-poll-votes"><p>개별 실행 모드 · 아래 항목을 누르면 해당 득표수가 올라갑니다.</p>'+options.map((x,i)=>button('+1표 · '+h(x),'local-vote','btn subtle','data-index="'+i+'"')).join('')+'</div>':'')+(!host&&open&&!voted?'<div class="poll-answers">'+options.map((x,i)=>button(h(x),'vote','btn vote-option','data-index="'+i+'"')).join('')+'</div>':!host&&open&&voted?'<div class="success-message">'+icon('check',20)+' 투표를 완료했어요. 발표를 기다려 주세요.</div>':!host&&open?'<div class="module-info">투표가 진행 중입니다.</div>':'')
  +((host||!open)?'<div class="poll-results">'+options.map((x,i)=>{const n=s.counts[i]||0,pct=total?Math.round(100*n/total):0;return '<div class="poll-row"><div><b>'+h(x)+'</b><span>'+n+'표 · '+pct+'%</span></div><div class="bar-track"><span style="width:'+pct+'%"></span></div></div>'}).join('')+'</div><small class="muted">총 '+(host?s.answered||0:total)+'명 참여</small>':'')
  +'</div>':'<div class="empty-message padded">진행자가 투표를 준비하고 있습니다.</div>'));
  }
@@ -355,6 +355,7 @@ document.addEventListener('click',e=>{
   else if(act==='raffle-reset'){if(confirm('기존 당첨 기록을 모두 초기화할까요?'))await sendAction('raffle.reset');}
   else if(act==='poll-open'){await sendAction('poll.open');}
   else if(act==='poll-close'){await sendAction('poll.close');}
+  else if(act==='local-vote'){if(getMode()==='local')await sendAction('poll.vote',Number(el.dataset.index));}
   else if(act==='vote'){
    const index=Number(el.dataset.index),id=activeEvent.id;
    if(getMode()==='local'){await sendAction('poll.vote',index);return;}

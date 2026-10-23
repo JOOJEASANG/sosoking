@@ -63,5 +63,8 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
 
+      - name: Smoke test live events
+        run: node tools/smoke-live.mjs
+
       - name: Deployment summary
-        run: echo "Sosoking Live hosting and event API deployed for $GITHUB_SHA"
+        run: echo "Sosoking Live hosting and event API deployed and smoke-tested for $GITHUB_SHA"
