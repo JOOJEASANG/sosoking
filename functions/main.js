@@ -18,7 +18,7 @@ function fail(msg,status=400){throw Object.assign(new Error(msg),{status});}
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=crypto.randomInt(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
 function safeEvent(doc){const {adminHash, ...publicDoc}=doc;return publicDoc;}
 function initState(){return {
- raffle:{winners:[],last:null},
+ raffle:{winners:[],last:null,lastBatch:[]},
  poll:{id:'',question:'',options:[],counts:[],open:false,answered:0},
  wheel:{items:['1번','2번','3번','4번'],last:null,history:[]},
  score:{rows:[]},
@@ -157,15 +157,23 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
       }
       case 'raffle.draw':{
        must(people?.length,'추첨할 참가자가 없습니다.');
+       const count=val===null||val===undefined?1:Number(val);
+       must(Number.isInteger(count)&&count>=1&&count<=10,'한 번에 1~10명까지 추첨할 수 있습니다.');
        const seen=new Set(state.raffle.winners.map(w=>w.id));
        const eligible=people.filter(p=>!seen.has(p.id));
-       must(eligible.length>0,'모든 참가자가 이미 당첨되었습니다.');
-       const picked=eligible[crypto.randomInt(eligible.length)];
-       const winner={id:picked.id,name:picked.name,at:now};
-       tx.update(ref,{'state.raffle.winners':[...state.raffle.winners,winner],'state.raffle.last':winner,revision:FieldValue.increment(1)});break;
+       must(eligible.length>=count,'남은 추첨 대상자가 '+eligible.length+'명입니다.');
+       const picked=[];
+       for(let i=0;i<count;i++){
+         const index=crypto.randomInt(eligible.length);
+         const p=eligible.splice(index,1)[0];
+         picked.push({id:p.id,name:p.name,at:now});
+       }
+       tx.update(ref,{'state.raffle.winners':[...state.raffle.winners,...picked],
+         'state.raffle.last':picked[picked.length-1],'state.raffle.lastBatch':picked,
+         revision:FieldValue.increment(1)});break;
       }
       case 'raffle.reset':{
-       tx.update(ref,{'state.raffle':{winners:[],last:null},revision:FieldValue.increment(1)});break;
+       tx.update(ref,{'state.raffle':{winners:[],last:null,lastBatch:[]},revision:FieldValue.increment(1)});break;
       }
       case 'poll.set':{
        const question=clean(val?.question,110),options=list(val?.options,6);

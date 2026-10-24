@@ -18,6 +18,16 @@ assert.match(app,/data-form="event-modules"/,'Editable event module selection mi
 assert.match(app,/\/tool\/bracket/,'Tournament quick launch missing');
 assert.match(app,/function eventProgramCard/,'Event program cards missing');
 assert.match(app,/function programPage/,'Dedicated program page missing');
+assert.match(app,/function programGuide/,'Tool instructions missing');
+assert.match(app,/function exportCsv/,'Program CSV export missing');
+assert.match(app,/program-export-bar/,'Print and export toolbar missing');
+assert.match(app,/data-seconds/,'Timer presets missing');
+assert.match(app,/score-plus5/,'Score plus five missing');
+assert.match(app,/raffle-count/,'Multiple winner control missing');
+assert.match(app,/wheel-slice-label/,'Wheel segment labels missing');
+assert.match(app,/crypto\.getRandomValues/,'Local random should use secure entropy');
+assert.match(api,/const count=val===null\|\|val===undefined\?1:Number\(val\)/,'Server multi draw missing');
+assert.match(css,/\@media print/,'Print stylesheet missing');
 assert.match(app,/target="_blank" rel="noopener noreferrer"/,'Program page should open a new tab');
 assert.match(app,/route\(\)\[2\]==='tool'/,'Event program route handling missing');
 assert.match(app,/programPage\(activeEvent,id,true\)/,'Standalone tool must use dedicated page');

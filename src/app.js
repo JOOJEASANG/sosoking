@@ -150,6 +150,39 @@ function hostPanel(event){
  +'<div class="event-side-overview"><div class="side-card"><h3>행사 상태</h3><div class="side-stat"><span>입장 인원</span><b>'+event.peopleCount+'명</b></div><div class="side-stat"><span>등록 프로그램</span><b>'+event.modules.length+'개</b></div><div class="side-stat"><span>입장 상태</span>'+badge(event.status==='open'?'입장 가능':'입장 마감',event.status==='open'?'success':'')+'</div>'+button(event.status==='open'?'참가자 입장 마감':'참가자 입장 열기','door','btn subtle full')+'</div>'
  +'<div class="side-card"><h3>참가자 명단</h3><div class="small-list">'+(event.people?.length?event.people.map((p,i)=>'<div><span>'+String(i+1).padStart(2,'0')+'</span>'+h(p.name)+'</div>').join(''):'<p>참가자가 QR·링크로 입장하면 표시됩니다.</p>')+'</div></div></div></div></div>';
 }
+const programGuides={
+ raffle:{step:['참가자 명단 준비','당첨 인원 선택','무작위 추첨 · 기록 저장'],tip:'이미 당첨된 참가자는 다음 추첨에서 자동으로 제외됩니다.'},
+ poll:{step:['질문과 선택지 작성','투표 시작 · 응답 접수','투표 마감 · 결과 확인'],tip:'행사방에서는 참가자 한 명당 한 번만 응답할 수 있습니다.'},
+ wheel:{step:['룰렛 항목 작성','돌림판 회전','선정 결과 확인'],tip:'룰렛은 항목별 동일한 확률로 선택됩니다.'},
+ score:{step:['팀 또는 선수 등록','버튼으로 점수 기록','최종 순위 확인'],tip:'+1, +5 버튼으로 점수를 더하고 − 버튼으로 수정할 수 있습니다.'},
+ teams:{step:['참가자 명단 준비','팀 개수 선택','무작위 편성 결과 확인'],tip:'팀 인원 차이가 최대 1명 나도록 배정합니다.'},
+ timer:{step:['제한 시간 정하기','시작 또는 일시정지','종료 확인'],tip:'타이머가 종료되면 화면 색상이 바뀌어 종료를 알려줍니다.'},
+ bracket:{step:['2~32팀 명단 작성','대진표 무작위 생성','승리 팀 선택 · 우승 결정'],tip:'인원이 2의 거듭제곱이 아니어도 부전승이 자동 배정됩니다.'}
+};
+function programGuide(id){
+ const guide=programGuides[id];if(!guide)return '';
+ return '<div class="program-guide"><div class="guide-heading"><span>이 프로그램 사용법</span><small>3 STEPS</small></div><div class="guide-steps">'+guide.step.map((step,i)=>'<span><b>0'+(i+1)+'</b>'+h(step)+'</span>').join('')+'</div><p>'+icon('check',15)+' '+h(guide.tip)+'</p></div>';
+}
+function exportRows(id,event){
+ const s=event.state?.[id]||{},name=event.title||'소소킹';
+ if(id==='raffle')return {filename:'추첨결과',rows:[['번호','참가자','추첨시간'],...(s.winners||[]).map((w,i)=>[i+1,w.name,new Date(w.at||Date.now()).toLocaleString('ko-KR')])]};
+ if(id==='poll')return {filename:'투표결과',rows:[['질문',s.question||''],['선택지','득표수','득표율'],...(s.options||[]).map((x,i)=>[x,s.counts?.[i]||0,(s.answered?Math.round(100*(s.counts?.[i]||0)/s.answered):0)+'%'])]};
+ if(id==='wheel')return {filename:'룰렛결과',rows:[['순서','항목','선정시간'],...(s.history||[]).map((x,i)=>[i+1,x.name,new Date(x.at||Date.now()).toLocaleString('ko-KR')])]};
+ if(id==='score')return {filename:'점수판',rows:[['순위','팀/선수','점수'],...(s.rows||[]).map(x=>({...x})).sort((a,b)=>b.points-a.points).map((x,i)=>[i+1,x.name,x.points])]};
+ if(id==='teams')return {filename:'팀편성',rows:[['팀','참가자'],...(s.groups||[]).flatMap(g=>g.members.map(m=>[g.name,m]))]};
+ if(id==='bracket')return {filename:'대진표',rows:[['라운드','경기','선수1','선수2','승자'],...(s.rounds||[]).flatMap((matches,r)=>matches.map((m,i)=>[r+1,i+1,m.a||'',m.b||'부전승',m.winner||'미정']))]};
+ if(id==='timer')return {filename:'타이머',rows:[['설정 시간','남은 시간'],[fmtTime(s.duration||0),fmtTime(timerRemaining(s))]]};
+ return {filename:name,rows:[]};
+}
+function exportCsv(id,event){
+ const data=exportRows(id,event);if(data.rows.length<=1)throw Error('저장할 결과가 없습니다. 먼저 프로그램을 진행해 주세요.');
+ const safe=v=>{let x=String(v??'');if(/^[\s]*[=+\-@\t\r]/.test(x))x="'"+x;return '"'+x.replace(/"/g,'""')+'"';};
+ const out='\ufeff'+data.rows.map(row=>row.map(safe).join(',')).join('\r\n');
+ const blob=new Blob([out],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob);
+ const anchor=document.createElement('a');anchor.href=url;anchor.download='소소킹_'+data.filename+'_'+new Date().toISOString().slice(0,10)+'.csv';anchor.click();
+ setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+
 function programPage(event,id,local=false){
  const m=byId[id];
  if(!m||(!local&&!event.modules.includes(id)))return shellNotice('이 프로그램은 사용할 수 없습니다.','행사 관리실에서 해당 프로그램을 추가해 주세요.',local?'#/tools':'#/manage/'+event.id);
@@ -162,7 +195,9 @@ function programPage(event,id,local=false){
  '<div class="single-program-event"><div><span class="pulse"></span> <b>'+h(event.title)+'</b><small>'+(running?'현재 참가자 화면에도 이 프로그램이 표시됩니다.':'다른 프로그램이 현재 참가자에게 표시되고 있습니다.')+'</small></div>'
  +(running?badge('진행 중','success'):button('참가자 화면에 표시하기','activate','btn primary','data-id="'+id+'"'))+'</div>')
  +(local?localDemoBanner(id):'')
+ +programGuide(id)
  +'<div class="single-program-content">'+renderModule(event,id,true,local)+'</div>'
+ +'<div class="program-export-bar"><span>진행 결과를 보관하거나 다른 사람에게 공유하세요.</span><div>'+button(icon('download',16)+' 결과 CSV 저장','export-csv','btn subtle')+button('인쇄하기','print-result','btn subtle')+'</div></div>'
  +'<div class="single-program-footer"><a href="'+back+'">'+icon('back',16)+' '+(local?'다른 프로그램 선택하기':'행사 관리실로 돌아가기')+'</a><span>소소킹 LIVE · '+h(m.name)+' 전용 페이지</span></div></div>';
 }
 function sharePanel(event){
@@ -211,13 +246,14 @@ function renderModule(ev,id,host,local=false,screen=false){
  const s=ev.state?.[id]||initial()[id],people=ev.people||[];
  switch(id){
  case 'raffle':{
- const winners=s.winners||[];
- const win=s.last;
- return moduleBox('LUCKY DRAW','오늘의 행운은 누구에게?','입장한 참가자 중 아직 당첨되지 않은 사람만 추첨합니다.',
- '<div class="draw-area"><div class="draw-display">'+(win?'<span class="draw-star">✦</span><small>CONGRATULATIONS!</small><strong>'+h(win.name)+'</strong><span>축하합니다!</span>':'<div class="draw-await"><span>✦</span><b>행운의 주인공을 기다립니다</b><small>추첨을 시작해 보세요.</small></div>')+'</div>'+
- (host?(local?'<form data-form="local-people"><label class="input-label">추첨 대상 이름 (한 줄에 하나씩)</label>'+inlineNames('김하나\n이둘\n박세나',(people||[]).map(p=>p.name).join('\n'))+'<button class="btn subtle" type="submit">참가자 명단 적용</button></form>':'<div class="module-info">입장한 '+ev.peopleCount+'명 중 '+winners.length+'명 당첨</div>')
- +'<div class="module-actions">'+button('✦ 당첨자 추첨하기','raffle-draw','btn primary big',((local?people.length:ev.peopleCount)<=winners.length?'disabled':''))+button('당첨 기록 초기화','raffle-reset','btn subtle')+'</div>':'<p class="participant-hint">추첨이 진행되면 당첨자가 여기에 표시됩니다.</p>')+
- '</div><div class="history-panel"><h3>당첨 기록 <span>'+winners.length+'명</span></h3>'+(winners.length?'<div class="winner-list">'+winners.map((w,i)=>'<div><span>'+String(i+1).padStart(2,'0')+'</span><b>'+h(w.name)+'</b><small>당첨</small></div>').join('')+'</div>':'<p class="empty-message">아직 당첨자가 없습니다.</p>')+'</div>');
+ const winners=s.winners||[],last=s.lastBatch?.length?s.lastBatch:s.last?[s.last]:[],remaining=Math.max(0,(local?people.length:ev.peopleCount)-winners.length);
+ return moduleBox('LUCKY DRAW','오늘의 행운은 누구에게?','모든 참가자에게 동등한 기회를 주는 무작위 추첨입니다.',
+ '<div class="raffle-overview"><div><strong>'+ (local?people.length:ev.peopleCount) +'</strong><span>전체 참가자</span></div><div><strong>'+winners.length+'</strong><span>누적 당첨</span></div><div><strong>'+remaining+'</strong><span>남은 인원</span></div></div>'
+ +'<div class="draw-area"><div class="draw-display '+(last.length?'has-winner':'')+'">'+(last.length?'<span class="draw-star">✦</span><small>CONGRATULATIONS!</small><div class="winner-spotlight">'+last.map(w=>'<strong>'+h(w.name)+'</strong>').join('')+'</div><span>축하합니다! 이번 추첨 당첨자 '+last.length+'명</span>':'<div class="draw-await"><span>✦</span><b>행운의 주인공을 기다립니다</b><small>참가자 명단을 준비하고 추첨을 시작해 보세요.</small></div>')+'</div>'
+ +(host?(local?'<form data-form="local-people"><label class="input-label">추첨 대상 이름 (한 줄에 하나씩)</label>'+inlineNames('김하나\n이둘\n박세나',people.map(p=>p.name).join('\n'))+'<button class="btn subtle" type="submit">명단 적용하기</button></form>':'<p class="participant-hint">행사 QR·초대 링크로 입장한 참가자가 추첨 대상에 자동 포함됩니다.</p>')
+ +'<div class="raffle-settings"><label class="input-label" for="raffle-count">한 번에 추첨할 인원</label><select id="raffle-count" class="text-input" aria-label="한 번에 추첨할 인원">'+[1,2,3,5,10].map(n=>'<option value="'+n+'">'+n+'명'+(n>remaining?' (잔여 인원 부족)':'')+'</option>').join('')+'</select></div>'
+ +'<div class="module-actions">'+button('✦ 당첨자 추첨하기','raffle-draw','btn primary big',remaining<1?'disabled':'')+button('당첨 기록 초기화','raffle-reset','btn subtle')+'</div>':'<p class="participant-hint">진행자가 추첨하면 이곳에서 당첨자를 확인할 수 있어요.</p>')
+ +'</div><div class="history-panel"><h3>당첨 기록 <span>'+winners.length+'명</span></h3>'+(winners.length?'<div class="winner-list">'+winners.map((w,i)=>'<div><span>'+String(i+1).padStart(2,'0')+'</span><b>'+h(w.name)+'</b><small>당첨</small></div>').join('')+'</div>':'<p class="empty-message">아직 당첨자가 없습니다.</p>')+'</div>');
  }
  case 'poll':{
  const options=s.options||[],ready=!!s.id,open=s.open;
@@ -231,18 +267,21 @@ function renderModule(ev,id,host,local=false,screen=false){
  +'</div>':'<div class="empty-message padded">진행자가 투표를 준비하고 있습니다.</div>'));
  }
  case 'wheel':{
- const items=s.items||[];
- return moduleBox('RANDOM WHEEL','돌림판, 어디에 멈출까?','직접 항목을 입력하고 한 번의 클릭으로 무작위 결과를 뽑습니다.',
- '<div class="wheel-layout"><div class="wheel-visual" style="--count:'+Math.max(2,items.length)+'"><div class="wheel-face"><span>LUCKY<br>WHEEL</span></div><div class="wheel-pin"></div></div><div class="wheel-controls">'
- +(s.last?'<div class="wheel-last"><span>마지막 결과</span><strong>'+h(s.last.name)+'</strong></div>':'<div class="wheel-last"><span>항목 수</span><strong>'+items.length+'개</strong></div>')
- +(host?'<form data-form="wheel"><label class="input-label">추첨 항목 (줄 단위 입력)</label>'+inlineNames('1등\n2등\n3등',items.join('\n'))+'<button class="btn subtle" type="submit">항목 적용</button></form>'+button('룰렛 돌리기','wheel-spin','btn primary big full'):('<p class="participant-hint">결과가 나오면 여기에서 확인할 수 있어요.</p>'))+'</div></div>'
- +(s.history?.length?'<div class="history-panel"><h3>최근 결과</h3><p>'+s.history.slice(-12).reverse().map(x=>h(x.name)).join(' · ')+'</p></div>':''));
+ const items=s.items||[],n=Math.max(items.length,1),colors=['#6D80E8','#E5E9FF','#F1AF86','#FFE4C4','#78CDB7','#DCF6E9','#BDABF4','#F0E8FF','#A5CEEE','#DBE8FA'];
+ const stop=s.last?Math.max(0,items.indexOf(s.last.name)):-1,stopAngle=stop<0?0:-(stop+.5)*360/n;
+ const segments=items.map((x,i)=>colors[i%colors.length]+' '+(i*360/n)+'deg '+((i+1)*360/n)+'deg').join(',');
+ const labels=items.length<=12?items.map((x,i)=>'<span class="wheel-slice-label" style="--slice-angle:'+((i+.5)*360/n)+'deg">'+h(x.slice(0,8))+'</span>').join(''):'<span class="wheel-item-count">'+items.length+'개 항목</span>';
+ return moduleBox('RANDOM WHEEL','돌림판, 어디에 멈출까?','룰렛에는 모든 항목이 같은 확률로 배정됩니다. 선정 결과는 기록에 남아요.',
+ '<div class="wheel-layout"><div class="wheel-visual"><div class="wheel-pin"></div><div class="wheel-face" id="wheel-face" style="background:conic-gradient('+segments+');transform:rotate('+stopAngle+'deg)"><div class="wheel-label-layer">'+labels+'</div><span class="wheel-center">S</span></div></div><div class="wheel-controls">'
+ +(s.last?'<div class="wheel-last"><span>마지막 당첨 결과</span><strong>'+h(s.last.name)+'</strong></div>':'<div class="wheel-last"><span>룰렛 항목</span><strong>'+items.length+'개</strong></div>')
+ +(host?'<form data-form="wheel"><label class="input-label">룰렛 항목 (한 줄에 하나씩)</label>'+inlineNames('1등\n2등\n3등',items.join('\n'))+'<button class="btn subtle" type="submit">항목 적용</button></form>'+button('돌림판 회전하기','wheel-spin','btn primary big full'):('<p class="participant-hint">진행자가 돌림판을 돌리면 결과가 여기에 표시됩니다.</p>'))+'</div></div>'
+ +(s.history?.length?'<div class="history-panel"><h3>추첨 기록 · '+s.history.length+'회</h3><div class="wheel-history">'+s.history.slice(-12).reverse().map((x,i)=>'<span>'+h(x.name)+'</span>').join('')+'</div></div>':''));
  }
  case 'score':{
  const rows=s.rows||[];
  return moduleBox('LIVE SCORE','우리가 만든 점수판','팀별 점수를 조정하면 전체 참가자 화면에도 반영됩니다.',
  (host?'<form data-form="score" class="compact-form"><label class="input-label">팀·선수 이름 (한 줄에 하나씩)</label>'+inlineNames('청팀\n홍팀',rows.map(x=>x.name).join('\n'))+'<button class="btn subtle" type="submit">점수판 만들기 · 점수 초기화</button></form>':'')
- +(rows.length?'<div class="score-board">'+[...rows].map(x=>({...x,index:rows.indexOf(x)})).sort((a,b)=>b.points-a.points).map((x,i)=>'<div class="score-entry"><div class="score-name"><small>'+String(i+1).padStart(2,'0')+'</small><strong>'+h(x.name)+'</strong></div><strong class="score-number">'+x.points+'</strong>'+(host?'<div class="score-controls">'+button('−','score-minus','btn score-button','data-index="'+x.index+'" aria-label="'+h(x.name)+' 점수 감소"')+button('+','score-plus','btn score-button add','data-index="'+x.index+'" aria-label="'+h(x.name)+' 점수 증가"')+'</div>':'')+'</div>').join('')+'</div>':'<div class="empty-message padded">아직 점수판이 준비되지 않았어요.</div>'));
+ +(rows.length?'<div class="score-board">'+[...rows].map(x=>({...x,index:rows.indexOf(x)})).sort((a,b)=>b.points-a.points).map((x,i)=>'<div class="score-entry"><div class="score-name"><small>'+String(i+1).padStart(2,'0')+'</small><strong>'+h(x.name)+'</strong></div><strong class="score-number">'+x.points+'</strong>'+(host?'<div class="score-controls">'+button('−5','score-minus5','btn score-button','data-index="'+x.index+'" aria-label="'+h(x.name)+' 5점 감소"')+button('−1','score-minus','btn score-button','data-index="'+x.index+'" aria-label="'+h(x.name)+' 1점 감소"')+button('+1','score-plus','btn score-button add','data-index="'+x.index+'" aria-label="'+h(x.name)+' 1점 추가"')+button('+5','score-plus5','btn score-button add','data-index="'+x.index+'" aria-label="'+h(x.name)+' 5점 추가"')+'</div>':'')+'</div>').join('')+'</div>':'<div class="empty-message padded">아직 점수판이 준비되지 않았어요.</div>'));
  }
  case 'teams':{
  const groups=s.groups||[];
@@ -254,7 +293,7 @@ function renderModule(ev,id,host,local=false,screen=false){
  const t=s,r=timerRemaining(t);
  return moduleBox('COUNTDOWN TIMER','행사의 순간을 정확하게','발표나 경기 제한 시간을 설정하고 모두의 화면에 동시에 표시합니다.',
  '<div class="timer-display"><span>TIME REMAINING</span><strong id="time-digits" data-start="'+(t.startedAt||0)+'" data-left="'+(t.remaining||0)+'" data-running="'+(!!t.running)+'">'+fmtTime(r)+'</strong><small>'+(t.running?'카운트다운 진행 중':'대기 / 일시정지')+'</small></div>'
- +(host?'<form data-form="timer" class="timer-settings"><label class="input-label">시간 설정</label><div class="timer-setting-row"><input class="text-input" type="number" name="minutes" min="0" max="120" value="'+Math.floor(t.duration/60)+'" aria-label="분"><span>분</span><input class="text-input" type="number" name="seconds" min="0" max="59" value="'+(t.duration%60)+'" aria-label="초"><span>초</span><button class="btn subtle" type="submit">시간 적용</button></div></form><div class="module-actions">'+button(icon(t.running?'pause':'play',17)+(t.running?' 일시정지':' 시작'),t.running?'timer-pause':'timer-start','btn primary big')+button('처음부터','timer-reset','btn subtle')+'</div>':'<p class="participant-hint">진행자의 조작에 따라 시간이 표시됩니다.</p>'));
+ +(host?'<div class="timer-presets"><span>빠른 시간 설정</span>'+[30,60,180,300,600].map(secs=>button(secs<60?secs+'초':(secs/60)+'분','timer-preset','btn subtle','data-seconds="'+secs+'"')).join('')+'</div><form data-form="timer" class="timer-settings"><label class="input-label">시간 설정</label><div class="timer-setting-row"><input class="text-input" type="number" name="minutes" min="0" max="120" value="'+Math.floor(t.duration/60)+'" aria-label="분"><span>분</span><input class="text-input" type="number" name="seconds" min="0" max="59" value="'+(t.duration%60)+'" aria-label="초"><span>초</span><button class="btn subtle" type="submit">시간 적용</button></div></form><div class="module-actions">'+button(icon(t.running?'pause':'play',17)+(t.running?' 일시정지':' 시작'),t.running?'timer-pause':'timer-start','btn primary big')+button('처음부터','timer-reset','btn subtle')+'</div>':'<p class="participant-hint">진행자의 조작에 따라 시간이 표시됩니다.</p>'));
  }
  case 'bracket':{
  const b=s,rounds=b.rounds||[];
@@ -279,7 +318,9 @@ function updateClock(){
  const el=document.querySelector('#time-digits');
  if(!el)return;
  const t={running:el.dataset.running==='true',remaining:Number(el.dataset.left),startedAt:Number(el.dataset.start)};
- el.textContent=fmtTime(timerRemaining(t));
+ const rem=timerRemaining(t);
+ el.textContent=fmtTime(rem);
+ document.querySelector('.timer-display')?.classList.toggle('is-finished',rem===0);
 }
 function singleTool(id){
  if(!byId[id])return shellNotice('프로그램을 찾지 못했습니다.','다른 프로그램을 선택해 주세요.','#/tools');
@@ -312,7 +353,7 @@ async function sendAction(op,value){
  await api('action',{id:activeEvent.id,op,value},secret,null,getMode()==='participant'?saved.members[activeEvent.id]?.id:'');
  await loadEvent(activeEvent.id,activeView);
 }
-function rand(n){return Math.floor(Math.random()*n);}
+function rand(n){if(!Number.isSafeInteger(n)||n<1)throw Error('뽑기 범위가 잘못되었습니다.');const a=new Uint32Array(1),max=Math.floor(4294967296/n)*n;do{crypto.getRandomValues(a);}while(a[0]>=max);return a[0]%n;}
 function shuffled(a){const result=[...a];for(let i=result.length-1;i>0;i--){const j=rand(i+1);[result[i],result[j]]=[result[j],result[i]]}return result;}
 function nextBracket(b){for(let i=0;i<8;i++){const last=b.rounds.at(-1);if(!last?.every(m=>m.winner))break;if(last.length===1){b.finished=true;break;}const next=[];for(let j=0;j<last.length;j+=2)next.push({a:last[j].winner,b:last[j+1].winner,winner:null});b.rounds.push(next);}return b;}
 function generateBracket(names){
@@ -328,11 +369,15 @@ function localAction(op,val){
  case 'event.status':e.status=val;break;
  case 'local.people':e.people=[...new Set(val)].map((name,i)=>({id:String(i),name}));e.peopleCount=e.people.length;break;
  case 'raffle.draw':{
-   const seen=new Set(s.raffle.winners.map(w=>w.id));const eligible=people.filter(p=>!seen.has(p.id));
-   if(!eligible.length)throw Error('추첨 대상이 없습니다.');
-   const p=eligible[rand(eligible.length)],winner={...p,at:Date.now()};s.raffle.winners.push(winner);s.raffle.last=winner;break;
+   const seen=new Set(s.raffle.winners.map(w=>w.id)),eligible=people.filter(p=>!seen.has(p.id));
+   const count=Number(val===null||val===undefined?1:val);
+   if(!Number.isInteger(count)||count<1||count>10)throw Error('한 번에 1~10명만 추첨할 수 있습니다.');
+   if(eligible.length<count)throw Error('남은 대상자가 '+eligible.length+'명뿐입니다.');
+   const picked=[];
+   for(let i=0;i<count;i++){const index=rand(eligible.length),p=eligible.splice(index,1)[0];picked.push({...p,at:Date.now()});}
+   s.raffle.winners.push(...picked);s.raffle.last=picked[picked.length-1];s.raffle.lastBatch=picked;break;
  }
- case 'raffle.reset':s.raffle={winners:[],last:null};break;
+ case 'raffle.reset':s.raffle={winners:[],last:null,lastBatch:[]};break;
  case 'poll.set':s.poll={id:String(Date.now()),question:val.question,options:val.options,counts:val.options.map(()=>0),open:false,answered:0};break;
  case 'poll.open':s.poll.open=true;break;
  case 'poll.close':s.poll.open=false;break;
@@ -426,7 +471,9 @@ document.addEventListener('click',e=>{
  const el=e.target.closest('[data-do]');if(!el||el.disabled)return;
  const act=el.dataset.do;
  postSafe(async()=>{
-  if(act==='copy-link'){await navigator.clipboard.writeText(urlFor(activeEvent.id));toast('참여 링크를 복사했습니다.');}
+  if(act==='export-csv'){exportCsv(getMode()==='local'?route()[1]:route()[3],activeEvent);toast('결과 파일을 저장했습니다.');}
+  else if(act==='print-result'){window.print();}
+  else if(act==='copy-link'){await navigator.clipboard.writeText(urlFor(activeEvent.id));toast('참여 링크를 복사했습니다.');}
   else if(act==='qr-download'){
    const canvas=document.querySelector('#event-qr');if(!canvas)throw Error('QR코드가 없습니다.');
    const a=document.createElement('a');a.download='sosoking-qr-'+activeEvent.id+'.png';a.href=canvas.toDataURL('image/png');a.click();
@@ -441,7 +488,7 @@ document.addEventListener('click',e=>{
   else if(act==='demo-setup'){if(getMode()==='local'){loadLocalDemo(el.dataset.id);toast('샘플을 불러왔습니다. 바로 플레이해 보세요!');}}
   else if(act==='activate'){if(getMode()==='participant'||getMode()==='screen')return;await sendAction('event.active',el.dataset.id);toast('프로그램 화면을 전환했습니다.');}
   else if(act==='door'){await sendAction('event.status',activeEvent.status==='open'?'closed':'open');}
-  else if(act==='raffle-draw'){await sendAction('raffle.draw');}
+  else if(act==='raffle-draw'){const count=Number(document.querySelector('#raffle-count')?.value||1);await sendAction('raffle.draw',count);toast(count+'명 추첨이 완료됐습니다.');}
   else if(act==='raffle-reset'){if(confirm('기존 당첨 기록을 모두 초기화할까요?'))await sendAction('raffle.reset');}
   else if(act==='poll-open'){await sendAction('poll.open');}
   else if(act==='poll-close'){await sendAction('poll.close');}
@@ -453,8 +500,20 @@ document.addEventListener('click',e=>{
    await sendAction('poll.vote',index);
    member.voted=[...(member.voted||[]),activeEvent.state.poll.id];save();toast('투표를 완료했습니다.');
    renderEvent();
-  }else if(act==='wheel-spin'){await sendAction('wheel.spin');}
-  else if(act==='score-plus'||act==='score-minus'){await sendAction('score.add',{index:Number(el.dataset.index),delta:act==='score-plus'?1:-1});}
+  }else if(act==='wheel-spin'){
+    el.disabled=true;
+    try{
+      await sendAction('wheel.spin');
+      const face=document.querySelector('#wheel-face'),state=activeEvent?.state?.wheel;
+      const index=state?.items?.indexOf(state?.last?.name);
+      if(face&&index>=0&&window.matchMedia?.('(prefers-reduced-motion: reduce)').matches!==true){
+        const angle=-(index+.5)*360/state.items.length;
+        face.animate([{transform:'rotate(0deg)'},{transform:'rotate('+(1800+angle)+'deg)'}],{duration:1600,easing:'cubic-bezier(.18,.75,.2,1)',fill:'none'});
+      }
+    }finally{el.disabled=false;}
+  }
+  else if(['score-plus','score-minus','score-plus5','score-minus5'].includes(act)){await sendAction('score.add',{index:Number(el.dataset.index),delta:({'score-plus':1,'score-minus':-1,'score-plus5':5,'score-minus5':-5})[act]});}
+  else if(act==='timer-preset'){await sendAction('timer.set',Number(el.dataset.seconds));toast('타이머 시간을 설정했습니다.');}
   else if(act==='timer-start'){await sendAction('timer.start');}
   else if(act==='timer-pause'){await sendAction('timer.pause');}
   else if(act==='timer-reset'){await sendAction('timer.reset');}
