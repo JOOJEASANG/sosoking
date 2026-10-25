@@ -77,3 +77,29 @@ GitHub Actions는 sosokingEventApi 함수만 지정하여 배포한 뒤 Hosting�
 - 타이머: 30초·1분·3분·5분·10분 빠른 설정, 종료 시 배경 색상 변경
 - 모든 전용 페이지에 결과 CSV 저장, 인쇄 기능 추가. CSV는 엑셀 수식 실행을 유도하는 입력을 이스케이프합니다.
 - 참가자 QR 링크와 온라인 발표 화면, 독립 프로그램 페이지 동작은 기존 구조 유지
+
+## SEO 및 디자인 개편 (2026-10-25)
+
+각 공개 프로그램은 아래의 검색엔진 친화적인 독립 주소를 사용합니다.
+
+- 홈: https://sosoking.co.kr/
+- 추첨: https://sosoking.co.kr/programs/raffle/
+- 투표: https://sosoking.co.kr/programs/poll/
+- 룰렛: https://sosoking.co.kr/programs/wheel/
+- 점수판: https://sosoking.co.kr/programs/score/
+- 팀 나누기: https://sosoking.co.kr/programs/teams/
+- 타이머: https://sosoking.co.kr/programs/timer/
+- 대진표: https://sosoking.co.kr/programs/bracket/
+
+Vite 멀티페이지 빌드로 각 URL에 고유 title, description, canonical, OG, 구조화 데이터, 서버에서 읽을 수 있는 기본 안내문을 제공합니다. 자바스크립트를 실행하면 같은 페이지에 인터랙티브 도구가 표시됩니다.
+
+SEO 페이지 설명: tools/seo-programs.json
+정적 페이지 자동 생성: npm run prepare:seo
+정적 공개 sitemap: https://sosoking.co.kr/sitemap.xml
+크롤러 설정: https://sosoking.co.kr/robots.txt
+이전 해시 라우트 #/tool/... 는 기존 링크 호환성을 위해 유지합니다.
+
+검색 서비스 등록: 사이트 운영자는 Google Search Console 및 네이버 서치어드바이저에서 sosoking.co.kr 소유 확인을 진행하고 sitemap.xml 을 제출해야 합니다. 이 작업은 현재 GitHub 배포만으로 수행되지 않습니다.
+검색 색인/순위는 보장되지 않으며 실제 수집 상황을 각 검색 서비스에서 확인해야 합니다.
+
+디자인은 밝은 배경, 일관된 여백, 간결한 카드, 모바일 가독성 중심으로 정리했습니다.

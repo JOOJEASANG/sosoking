@@ -4,8 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "node tools/generate-icons.mjs && vite build",
-    "check": "node --check src/app.js && node --check functions/main.js"
+    "build": "node tools/generate-seo-pages.mjs && node tools/generate-icons.mjs && vite build",
+    "check": "node tools/generate-seo-pages.mjs && node --check src/app.js && node --check functions/main.js",
+    "prepare:seo": "node tools/generate-seo-pages.mjs"
   },
   "dependencies": {
     "qrcode": "^1.5.4"

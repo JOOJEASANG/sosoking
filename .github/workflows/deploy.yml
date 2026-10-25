@@ -39,6 +39,10 @@ jobs:
           node tools/check-site.mjs
           npm run build
           test -f dist/index.html
+          test -f dist/programs/wheel/index.html
+          test -f dist/programs/bracket/index.html
+          test -f dist/robots.txt
+          test -f dist/sitemap.xml
 
       - name: Set up Firebase CLI
         run: npm install -g firebase-tools@15.24.0 --no-audit --no-fund
@@ -62,6 +66,9 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
+
+      - name: Smoke test public SEO pages
+        run: node tools/smoke-seo.mjs
 
       - name: Smoke test live events
         run: node tools/smoke-live.mjs
