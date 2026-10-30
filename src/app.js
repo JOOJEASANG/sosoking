@@ -49,7 +49,7 @@ function initial(){return{
 };}
 function localEvent(id){return{id:'local-'+id,title:byId[id].name+' · 바로 사용',modules:[id],active:id,status:'open',people:[],peopleCount:0,state:initial(),createdAt:Date.now(),revision:0};}
 function route(){
- if(location.hash.startsWith('#/'))return decodeURIComponent(location.hash.slice(2)).split('/');
+ if(location.hash.startsWith('#/')){try{return decodeURIComponent(location.hash.slice(2)).split('/')}catch{return ['not-found']}}
  const match=location.pathname.match(/^\/programs\/([a-z-]+)\/?(?:index\.html)?$/);
  if(match&&byId[match[1]])return ['tool',match[1]];
  return ['home'];
@@ -57,7 +57,7 @@ function route(){
 function routeMatch(){const r=route();return r[0]||'home';}
 function navUpdate(){
  const r=routeMatch();
- document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('current',(r==='home'?'/':r==='tools'||r==='tool'?'/tools':r==='events'||r==='manage'||r==='join'?'/events':'/create')===a.dataset.nav));
+ document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('current',(r==='home'?'/':r==='tools'||r==='tool'?'/tools':r==='events'||r==='manage'||r==='join'?'/events':r==='install'?'/install':'/create')===a.dataset.nav));
 }
 function badge(text,extra=''){return '<span class="badge '+extra+'">'+h(text)+'</span>';}
 function button(text,action,extra='',attrs=''){return '<button class="btn '+extra+'" type="button" data-do="'+action+'" '+attrs+'>'+text+'</button>';}
@@ -76,8 +76,11 @@ function home(){
  +'<div class="step-grid"><div class="step"><span>01</span><div class="step-icon">'+icon('plus',26)+'</div><h3>행사 만들기</h3><p>행사명을 입력하고 원하는 프로그램 선택</p></div><div class="step-arrow">→</div><div class="step"><span>02</span><div class="step-icon">'+icon('qr',26)+'</div><h3>QR·링크 공유</h3><p>현장은 QR, 온라인은 링크로 입장</p></div><div class="step-arrow">→</div><div class="step"><span>03</span><div class="step-icon">'+icon('play',26)+'</div><h3>함께 즐기기</h3><p>진행자가 프로그램을 열면 함께 참여</p></div></div></section>'
  +'<section class="program-section"><div class="shell">'+sectionHead('PROGRAM LIBRARY','필요한 것만 쏙쏙','행사가 없어도 바로 실행할 수 있는 7가지 프로그램. 대진표도 포함돼요.')
  +'<div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="section-actions"><a href="/#/create" class="btn primary">이 프로그램으로 행사 만들기 '+icon('arrow',17)+'</a></div></div></section>'
+ +homeExtras()
  +'<section class="shell close-cta"><div><span class="eyebrow">ONE EVENT, MANY MOMENTS</span><h2>우리 행사에 딱 맞게<br>구성해 보세요.</h2><p>바자회, 체육대회, 온라인 동창회, 가족 모임 어디서나.</p></div><a href="/#/create" class="btn white big">행사 만들기 '+icon('arrow',17)+'</a></section></div>';
 }
+function homeExtras(){return "<section class=\"shell detail-section\" aria-labelledby=\"cases-title\"><div class=\"section-heading\"><div><span class=\"eyebrow\">REAL LIFE USE CASES</span><h2 id=\"cases-title\">어떤 모임이든 더 쉽게 운영하세요</h2></div><p>진행자는 준비를 줄이고 참가자는 더 편하게 즐길 수 있습니다.</p></div><div class=\"case-grid\"><article><span class=\"case-icon\">01</span><h3>학교·학급 행사</h3><p>학급 대항전, 발표 시간, 토너먼트 경기까지 필요한 도구를 한곳에서 운영해요.</p><span>대진표 · 점수판 · 타이머</span></article><article><span class=\"case-icon\">02</span><h3>회사·팀 워크숍</h3><p>조 편성 후 의견을 모으고, 마지막 경품 추첨으로 분위기를 이어가세요.</p><span>팀 나누기 · 투표 · 추첨</span></article><article><span class=\"case-icon\">03</span><h3>동호회·온라인 모임</h3><p>초대 링크로 각자 입장하고 진행자 화면을 공유하며 참여할 수 있어요.</p><span>QR 입장 · 실시간 투표 · 룰렛</span></article></div></section>\n<section class=\"feature-section\"><div class=\"shell\"><div class=\"section-heading\"><div><span class=\"eyebrow\">CHOOSE YOUR WAY</span><h2>혼자 바로 쓰기 vs 함께 행사 진행</h2></div><p>상황에 맞는 방식으로 시작하세요.</p></div><div class=\"feature-grid\"><article><div class=\"feature-illustration feature-solo\">✦ <span>ONE CLICK</span></div><div><h3>바로 사용하기</h3><p>프로그램을 선택하면 즉시 실행됩니다. 별도의 행사방 없이 이 브라우저에 결과를 저장합니다.</p><ul><li>룰렛·대진표·추첨 즉시 시작</li><li>샘플 명단으로 빠른 연습</li><li>CSV 저장과 인쇄</li></ul><a href=\"/#/tools\" class=\"feature-link\">프로그램 찾아보기 →</a></div></article><article><div class=\"feature-illustration feature-group\">▦ <span>TOGETHER</span></div><div><h3>함께 행사 진행하기</h3><p>진행자가 행사방을 만들면 참가자는 QR이나 링크로 입장합니다. 관리와 발표 화면을 분리해 운영할 수 있어요.</p><ul><li>행사당 최대 200명 입장</li><li>진행자 전용 프로그램 관리</li><li>생성 후 7일간 이용</li></ul><a href=\"/#/create\" class=\"feature-link\">행사방 만들기 →</a></div></article></div></div></section>\n<section class=\"shell install-teaser\"><div class=\"install-teaser-copy\"><span class=\"eyebrow\">SOSOKING ON YOUR HOME SCREEN</span><h2>소소킹을 스마트폰에<br>앱처럼 꺼내 쓰세요</h2><p>앱 마켓 다운로드 없이 브라우저의 ‘홈 화면에 추가’ 기능으로 아이콘을 만들 수 있습니다. 설치하지 않아도 모든 프로그램을 이용할 수 있어요.</p><div class=\"install-teaser-actions\"><button type=\"button\" class=\"btn primary big\" data-do=\"install-app\">홈 화면에 추가하기</button><a href=\"/#/install\" class=\"btn pale big\">기기별 설치 방법</a></div></div><img src=\"/install-guide.svg\" alt=\"스마트폰에 소소킹 아이콘을 추가하는 화면 예시\" width=\"480\" height=\"310\" loading=\"lazy\"></section>\n<section class=\"shell home-faq\"><div class=\"section-heading\"><div><span class=\"eyebrow\">FREQUENT QUESTIONS</span><h2>자주 묻는 질문</h2></div><p>처음 사용하는 분들도 쉽게 시작할 수 있도록 정리했습니다.</p></div><div class=\"faq-grid\"><details><summary>회원가입이나 앱 설치가 꼭 필요한가요?</summary><p>아니요. 프로그램은 웹에서 바로 이용할 수 있습니다. 홈 화면에 추가하는 기능은 선택 사항입니다.</p></details><details><summary>행사 참가자는 어떻게 입장하나요?</summary><p>진행자가 만든 행사방의 QR코드를 스캔하거나 초대 링크를 누른 뒤 닉네임을 입력하면 됩니다.</p></details><details><summary>행사를 만든 뒤 프로그램을 바꿀 수 있나요?</summary><p>네. 행사 관리실에서 7가지 프로그램을 추가하거나 제외할 수 있습니다. 이미 진행한 기록은 유지됩니다.</p></details><details><summary>진행하던 행사는 얼마나 유지되나요?</summary><p>행사방은 생성 후 7일간 이용할 수 있습니다. 진행자 비밀키는 생성 기기의 브라우저에 저장되므로 브라우저 데이터를 삭제하지 않도록 유의해 주세요.</p></details></div></section>";}
+function install(){return "<div class=\"shell inner-page install-page\"><div class=\"page-intro compact\"><span class=\"eyebrow\">INSTALL SOSOKING LIVE</span><h1>소소킹을 앱처럼 사용하세요</h1><p>앱스토어 다운로드가 아닌 브라우저의 홈 화면 추가 기능입니다. 웹사이트와 동일한 7가지 프로그램을 실행합니다.</p></div><div class=\"install-hero\"><div><img class=\"install-hero-mark\" src=\"/app-icon.svg\" alt=\"소소킹 앱 아이콘\" width=\"92\" height=\"92\"><h2>홈 화면에서 한 번에 시작</h2><p>스마트폰 바탕화면에 소소킹 아이콘을 추가해 원하는 프로그램을 빠르게 이용하세요.</p><button type=\"button\" data-do=\"install-app\" class=\"btn primary big\">이 기기에 설치하기</button><p class=\"install-hero-note\">기기·브라우저에 따라 설치 메뉴 이름과 버튼 표시 여부가 달라집니다.</p></div><img class=\"install-hero-art\" src=\"/install-guide.svg\" alt=\"스마트폰 홈 화면과 소소킹 아이콘 설치 예시\" width=\"480\" height=\"310\"></div><div class=\"section-heading install-heading\"><div><span class=\"eyebrow\">STEP BY STEP</span><h2>기기별 설치 방법</h2></div><p>설치 버튼이 나타나지 않으면 아래 방법을 이용해 주세요.</p></div><div class=\"install-steps\"><article><span class=\"install-platform\">ANDROID · CHROME</span><h3>안드로이드 크롬</h3><ol><li>크롬에서 sosoking.co.kr을 엽니다.</li><li>오른쪽 위 더보기(⋮)를 누릅니다.</li><li>‘앱 설치’ 또는 ‘홈 화면에 추가’를 선택합니다.</li><li>안내에 따라 추가를 완료합니다.</li></ol></article><article><span class=\"install-platform\">SAMSUNG INTERNET</span><h3>삼성 인터넷</h3><ol><li>삼성 인터넷에서 사이트를 엽니다.</li><li>메뉴(≡)를 누릅니다.</li><li>‘현재 페이지 추가’ 또는 홈 화면 추가 메뉴를 선택합니다.</li><li>홈 화면에 바로가기를 만듭니다.</li></ol></article><article><span class=\"install-platform\">IPHONE · SAFARI</span><h3>아이폰 사파리</h3><ol><li>사파리에서 사이트를 엽니다.</li><li>공유 버튼을 선택합니다.</li><li>‘홈 화면에 추가’를 선택합니다.</li><li>이름을 확인하고 ‘추가’를 누릅니다.</li></ol></article></div><div class=\"install-footnote\"><strong>알아두세요</strong><p>이 사이트는 웹 기반 서비스입니다. Google Play 또는 App Store에 등록된 앱을 내려받는 방식이 아니며, 행사방의 데이터 공유 기능은 인터넷 연결이 필요합니다.</p><a href=\"/#/tools\">7가지 프로그램 사용하기 →</a></div></div>";}
 function tools(){
  return '<div class="shell inner-page"><div class="page-intro"><span class="eyebrow">PROGRAM LIBRARY</span><h1>행사가 없어도 좋아요.<br>골라서 바로 즐기세요.</h1><p>룰렛·대진표·추첨기까지, 클릭 한 번으로 바로 실행해요. 행사를 따로 만들 필요 없어요.</p></div><div class="direct-play-strip"><strong>지금 바로 사용 가능</strong><span>개별 도구는 회원가입·행사 생성·QR 없이 쓸 수 있어요.</span><a href="/programs/bracket/" target="_blank" rel="noopener noreferrer">대진표 바로 만들기 ↗</a></div><div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="bottom-hint">'+icon('users',23)+' <div><strong>여러 사람이 함께 참여하나요?</strong><p>행사방을 만들면 QR 입장, 진행자 제어, 실시간 결과 공유가 가능합니다.</p></div><a href="/#/create" class="btn primary">행사 만들기</a></div></div>';
 }
@@ -356,6 +359,7 @@ async function loadRoute(){
  window.scrollTo({top:0,behavior:'instant'});
  if(current==='home'){root.innerHTML=home();}
  else if(current==='tools'){root.innerHTML=tools();}
+ else if(current==='install'){root.innerHTML=install();}
  else if(current==='create'){root.innerHTML=create();}
  else if(current==='events'){root.innerHTML=events();}
  else if(current==='tool'){root.innerHTML=singleTool(id);}
@@ -386,7 +390,7 @@ function localAction(op,val){
  switch(op){
  case 'event.active':e.active=val;break;
  case 'event.status':e.status=val;break;
- case 'local.people':e.people=[...new Set(val)].map((name,i)=>({id:String(i),name}));e.peopleCount=e.people.length;break;
+ case 'local.people':e.people=[...new Set(val)].map((name,i)=>({id:String(i),name}));e.peopleCount=e.people.length;s.raffle={winners:[],last:null,lastBatch:[]};break;
  case 'raffle.draw':{
    const seen=new Set(s.raffle.winners.map(w=>w.id)),eligible=people.filter(p=>!seen.has(p.id));
    const count=Number(val===null||val===undefined?1:val);
@@ -400,7 +404,7 @@ function localAction(op,val){
  case 'poll.set':s.poll={id:String(Date.now()),question:val.question,options:val.options,counts:val.options.map(()=>0),open:false,answered:0};break;
  case 'poll.open':s.poll.open=true;break;
  case 'poll.close':s.poll.open=false;break;
- case 'poll.vote':s.poll.counts[val]++;s.poll.answered++;break;
+ case 'poll.vote':if(!s.poll.open||!Number.isInteger(val)||val<0||val>=s.poll.counts.length)throw Error('투표할 수 없는 선택지입니다.');s.poll.counts[val]++;s.poll.answered++;break;
  case 'wheel.set':s.wheel={items:val,last:null,history:[]};break;
  case 'wheel.spin':{
    const w={name:s.wheel.items[rand(s.wheel.items.length)],at:Date.now()};s.wheel.last=w;s.wheel.history.push(w);break;
@@ -414,12 +418,12 @@ function localAction(op,val){
    shuffled(names).forEach((x,i)=>groups[i%count].members.push(x));s.teams.groups=groups;break;
  }
  case 'timer.set':s.timer={duration:val,remaining:val,running:false,startedAt:0};break;
- case 'timer.start':s.timer={...s.timer,remaining:timerRemaining(s.timer),running:true,startedAt:Date.now()};break;
+ case 'timer.start':{const remain=timerRemaining(s.timer);if(remain<=0)throw Error('타이머를 초기화한 뒤 다시 시작하세요.');s.timer={...s.timer,remaining:remain,running:true,startedAt:Date.now()};break;}
  case 'timer.pause':s.timer={...s.timer,remaining:timerRemaining(s.timer),running:false,startedAt:0};break;
  case 'timer.reset':s.timer={duration:s.timer.duration,remaining:s.timer.duration,running:false,startedAt:0};break;
  case 'bracket.set':s.bracket=generateBracket(val);break;
  case 'bracket.win':{
-   const b=s.bracket,m=b.rounds[val.round]?.[val.match];if(!m||b.rounds[val.round+1])throw Error('이 경기는 수정할 수 없습니다.');
+   const b=s.bracket,m=b.rounds[val.round]?.[val.match];if(!m||!m.a||!m.b||b.rounds[val.round+1]||![m.a,m.b].includes(val.winner))throw Error('이 경기는 수정할 수 없습니다.');
    m.winner=val.winner;nextBracket(b);break;
  }
  default:throw Error('지원하지 않는 기능입니다.');
@@ -430,8 +434,10 @@ async function postSafe(fn){try{await fn()}catch(error){toast(error.message,true
 document.addEventListener('submit',ev=>{
  const form=ev.target.closest('[data-form]');if(!form)return;ev.preventDefault();
  const kind=form.dataset.form,data=new FormData(form);
- if(requesting)return;
- postSafe(async()=>{
+ if(requesting||form.dataset.submitting==='true')return;
+ form.dataset.submitting='true';
+ const submitButton=form.querySelector('[type="submit"]');if(submitButton)submitButton.disabled=true;
+ postSafe(async()=>{try{
   if(kind==='create'){
    const title=String(data.get('title')||'').trim(),modules=data.getAll('modules'),mode=String(data.get('mode')||'hybrid');
    if(!title||modules.length===0)throw Error('행사명과 프로그램을 선택해 주세요.');
@@ -478,6 +484,7 @@ document.addEventListener('submit',ev=>{
    if(!confirm('새 대진표를 만들면 이전 경기 결과가 초기화됩니다. 계속할까요?'))return;
    await sendAction('bracket.set',names);toast('대진표를 만들었습니다.');
   }
+ }finally{form.dataset.submitting='false';if(submitButton)submitButton.disabled=false;}
  });
 });
 document.addEventListener('change',e=>{
@@ -486,11 +493,20 @@ document.addEventListener('change',e=>{
   const count=document.querySelector('#selected-count');if(count)count.textContent=window.picks.length;
  }
 });
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;toast('소소킹이 홈 화면에 추가되었습니다.');});
 document.addEventListener('click',e=>{
  const el=e.target.closest('[data-do]');if(!el||el.disabled)return;
  const act=el.dataset.do;
  postSafe(async()=>{
-  if(act==='export-csv'){exportCsv(getMode()==='local'?route()[1]:route()[3],activeEvent);toast('결과 파일을 저장했습니다.');}
+  if(act==='install-app'){
+   if(window.matchMedia('(display-mode: standalone)').matches||navigator.standalone){toast('이미 앱 화면으로 실행 중입니다.');return;}
+   if(deferredInstallPrompt){const prompt=deferredInstallPrompt;deferredInstallPrompt=null;await prompt.prompt();const choice=await prompt.userChoice;if(choice?.outcome==='accepted')toast('소소킹 설치를 요청했습니다.');}
+   else if(routeMatch()==='install')toast('브라우저 메뉴에서 홈 화면에 추가를 선택해 주세요.');
+   else location.hash='#/install';
+  }
+  else if(act==='export-csv'){exportCsv(getMode()==='local'?route()[1]:route()[3],activeEvent);toast('결과 파일을 저장했습니다.');}
   else if(act==='print-result'){window.print();}
   else if(act==='copy-link'){await navigator.clipboard.writeText(urlFor(activeEvent.id));toast('참여 링크를 복사했습니다.');}
   else if(act==='qr-download'){

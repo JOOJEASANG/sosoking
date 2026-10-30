@@ -11,7 +11,7 @@ for(const page of pages){
  +'<meta name="robots" content="index,follow,max-image-preview:large">\n'
  +'<meta property="og:type" content="website">\n'
  +'<meta property="og:url" content="'+canonical+'">\n'
- +'<meta property="og:image" content="'+BASE+'/icon-512.png">\n'
+ +'<meta property="og:image" content="'+BASE+'/social-preview.png">\n'
  +'<meta name="twitter:card" content="summary">\n'
  +'<meta name="twitter:title" content="'+esc(title)+'">\n'
  +'<meta name="twitter:description" content="'+esc(page.description)+'">';

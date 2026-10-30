@@ -611,3 +611,55 @@ body{background:#f9fbfe}
 @media(max-width:900px){.hero-layout{gap:8px}.hero-art{transform:scale(.85)}.program-grid{gap:12px}}
 @media(max-width:780px){.hero-art{transform:scale(.86)}.quick-play-section{padding-top:54px}.program-section{padding:65px 0}.how-section{padding:62px 19px}.seo-static{margin:25px 18px 55px;padding:25px}}
 @media(max-width:560px){.header-row{height:66px}.brand{font-size:17px}.hero-layout{min-height:0}.hero-text{padding:52px 0 17px}.hero h1{font-size:34px;letter-spacing:-.06em}.hero-art{height:300px;transform:scale(.73)}.hero-text>p{font-size:12px}.quick-card{min-height:145px;padding:17px}.program-card{padding:16px}.program-grid{gap:10px}.program-section{padding:53px 0}.close-cta{margin-top:55px;margin-bottom:55px}.program-details{padding:20px 16px}.program-details-columns{grid-template-columns:1fr;gap:10px;margin-top:14px}.program-details-columns>div{padding:14px 17px}.program-details-intro h2{font-size:19px}.seo-static{border-radius:12px;padding:20px 16px}.seo-static h1{font-size:22px}}
+
+/* Sosoking LIVE brand and install experience — 2026-10-30 */
+.brand-logo-image{display:block;width:165px;height:auto;max-height:40px}
+.site-footer a{color:#415abf;font-weight:800}
+.detail-section{padding-top:70px;padding-bottom:80px}
+.case-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.case-grid article{border:1px solid #e2e9f7;background:#fff;border-radius:19px;padding:28px;min-width:0}
+.case-icon{display:grid;place-items:center;width:45px;height:45px;border-radius:13px;background:#eaf0ff;color:#4f64c7;font-size:13px;font-weight:900}
+.case-grid h3{font-size:20px;margin:20px 0 8px;color:#233554}
+.case-grid p{color:#697991;font-size:13px;line-height:1.9;min-height:77px}
+.case-grid article>span:last-child{display:block;color:#4360bc;font-weight:800;font-size:12px}
+.feature-section{background:#f0f4fc;border-block:1px solid #e4ebf7;padding:80px 0}
+.feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.feature-grid article{background:#fff;border:1px solid #e1e8f6;border-radius:19px;padding:28px;display:grid;grid-template-columns:120px 1fr;gap:24px}
+.feature-illustration{height:124px;border-radius:20px;display:grid;align-content:center;justify-items:center;font-size:55px;font-weight:800}
+.feature-illustration span{font-size:10px;letter-spacing:.1em}
+.feature-solo{background:#edf1ff;color:#5269cf}.feature-group{background:#e8f9f5;color:#269b82}
+.feature-grid h3{font-size:20px;margin:0 0 11px}.feature-grid p{font-size:13px;line-height:1.85;color:#72809b}
+.feature-grid ul{margin:12px 0 16px;padding-left:18px;color:#566882;font-size:13px;line-height:2}
+.feature-link{font-weight:900;color:#4562c6;font-size:13px}
+.install-teaser{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;padding-top:70px;padding-bottom:72px}
+.install-teaser h2{font-size:clamp(26px,3vw,36px);color:#26385b}
+.install-teaser p{font-size:14px;line-height:1.9;color:#71819b;max-width:480px}
+.install-teaser img{width:100%;height:auto;border-radius:20px;border:1px solid #dfe8fa}
+.install-teaser-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}
+.home-faq{padding-top:15px;padding-bottom:80px}
+.faq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.faq-grid details{background:#fff;border:1px solid #e2e9f4;border-radius:13px;padding:21px 24px}
+.faq-grid summary{font-size:15px;font-weight:900;cursor:pointer;color:#263858}
+.faq-grid p{font-size:13px;color:#667994;line-height:1.9;margin:12px 0 0}
+.install-page{min-height:70vh}
+.install-hero{background:#eef3ff;border:1px solid #e0e8f9;border-radius:25px;padding:36px 42px;display:grid;grid-template-columns:1fr 1.1fr;align-items:center;gap:32px}
+.install-hero-mark{border-radius:22px}
+.install-hero h2{font-size:27px;color:#223454;margin-top:17px}
+.install-hero p{color:#647793;line-height:1.9;font-size:14px}
+.install-hero .install-hero-note{font-size:12px;margin:17px 0 0}
+.install-hero-art{width:100%;height:auto;border-radius:18px}
+.install-heading{margin:65px 0 24px}
+.install-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.install-steps article{padding:27px;border:1px solid #e3e9f2;border-radius:18px;background:#fff}
+.install-platform{font-size:10px;letter-spacing:.07em;font-weight:900;color:#5b70ce}
+.install-steps h3{font-size:19px;margin:12px 0 20px}
+.install-steps ol{padding-left:20px;margin:0;font-size:13px;color:#5d708e;line-height:2.05}
+.install-footnote{margin-top:25px;padding:24px 28px;background:#f1f5fb;border-radius:15px}
+.install-footnote strong{font-size:15px;color:#283a59}
+.install-footnote p{font-size:13px;line-height:1.85;color:#657692;margin:10px 0}
+.install-footnote a{color:#4961c5;font-weight:900}
+.program-card p,.event-program-card p,.step p,.quick-card small,.program-details-intro p,.program-details-columns li,.program-faq p{font-size:12px}
+@media(max-width:900px){.case-grid{gap:10px}.feature-grid article{grid-template-columns:1fr}.feature-illustration{height:98px}.install-hero{padding:27px}}
+@media(max-width:780px){.brand-logo-image{width:140px}.desktop-nav a[data-nav="/install"]{display:none}.case-grid{grid-template-columns:1fr 1fr}.install-teaser{grid-template-columns:1fr}.install-teaser img{max-width:540px}.install-steps{grid-template-columns:1fr}.install-hero{grid-template-columns:1fr}.install-hero-art{max-width:540px}}
+@media(max-width:560px){.brand-logo-image{width:111px}.case-grid{grid-template-columns:1fr}.case-grid p{min-height:unset}.detail-section{padding-top:45px;padding-bottom:52px}.feature-section{padding:49px 0}.feature-grid{grid-template-columns:1fr}.feature-grid article{padding:20px}.install-teaser{padding-top:47px;padding-bottom:48px}.install-teaser h2{font-size:26px}.install-teaser p{font-size:13px}.home-faq{padding-bottom:45px}.faq-grid{grid-template-columns:1fr}.faq-grid details{padding:18px}.faq-grid summary{font-size:14px}.install-hero{padding:19px}.install-hero h2{font-size:23px}.install-steps article{padding:19px}.program-card p,.event-program-card p{font-size:12px}.step p{font-size:12px}.hero-text>p{font-size:13px}.page-intro p{font-size:13px}}
+@media print{.install-teaser,.home-faq,.detail-section,.feature-section{display:none!important}}

@@ -103,3 +103,14 @@ SEO 페이지 설명: tools/seo-programs.json
 검색 색인/순위는 보장되지 않으며 실제 수집 상황을 각 검색 서비스에서 확인해야 합니다.
 
 디자인은 밝은 배경, 일관된 여백, 간결한 카드, 모바일 가독성 중심으로 정리했습니다.
+
+## 2026-10-30: 로고·앱 아이콘·설치 경험 개편
+
+- 일관된 브랜드 자산: `public/brand-mark.svg`(심볼), `public/brand-logo.svg`(가로 로고), `public/app-icon.svg`(앱 아이콘), `public/install-guide.svg`(설치 안내), `public/social-preview.svg`(SNS 미리보기)
+- `npm run build` 실행 시 180/192/512픽셀 아이콘과 마스커블 아이콘, 소셜 미리보기 PNG가 자동 생성됩니다.
+- 홈 화면에 행사 활용 사례, 바로 사용과 행사방의 차이, 앱 설치 안내, 자주 묻는 질문을 추가했습니다.
+- `/#/install`에서 안드로이드 Chrome, 삼성 인터넷, 아이폰 Safari의 홈 화면 추가 방법을 제공합니다. 스토어 등록 앱이 아니라 웹앱 설치 및 바로가기입니다.
+- 로컬 프로그램의 투표 인덱스·타이머 재시작·대진표 승자 검사, 명단 변경 뒤 재추첨 초기화 및 중복 폼 제출을 보완했습니다.
+- Firebase 기존 행사 API와 저장된 행사 데이터 구조를 유지했습니다.
+
+검증 명령: `npm run check && node tools/check-site.mjs && npm run build`. 실제 모바일 설치 동작은 브라우저별 지원 조건을 확인해야 합니다.

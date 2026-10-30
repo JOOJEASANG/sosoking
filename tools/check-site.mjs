@@ -79,4 +79,16 @@ assert.ok(!api.includes('GEMINI_API_KEY'),'No AI runtime calls');
 assert.ok(css.length>15000,'responsive UI styles present');
 assert.equal(firebase.hosting.public,'dist');
 assert.equal(firebase.hosting.rewrites[0].function.functionId,'sosokingEventApi');
+for(const path of ['public/brand-mark.svg','public/brand-logo.svg','public/app-icon.svg','public/install-guide.svg','public/social-preview.svg']){
+ assert.match(read(path),/<svg[^>]+/,'Missing SVG asset: '+path);
+}
+assert.match(page,/apple-touch-icon\.png/);
+assert.match(page,/brand-logo\.svg/);
+assert.match(page,/\/\#\/install/);
+assert.match(app,/function homeExtras/);
+assert.match(app,/function install\(\)/);
+assert.match(app,/beforeinstallprompt/);
+assert.match(app,/form\.dataset\.submitting/);
+assert.match(read('public/site.webmanifest'),/icon-maskable-512\.png/);
+assert.match(read('tools/generate-icons.mjs'),/social-preview\.png/);
 console.log('SOSOKING LIVE PASS: seven modules, event QR, client roles, backend and responsive UI.');
