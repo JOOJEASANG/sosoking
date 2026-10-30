@@ -1,7 +1,10 @@
 import sharp from 'sharp';
-import {readFile,mkdir,writeFile} from 'node:fs/promises';
-const svg=await readFile('public/brand-mark.svg');
-for(const size of [192,512]){
- await sharp(svg,{density:300}).resize(size,size).png().toFile('public/icon-'+size+'.png');
+import {readFile} from 'node:fs/promises';
+const appIcon=await readFile('public/app-icon.svg');
+for(const size of [180,192,512]){
+ const path=size===180?'apple-touch-icon.png':'icon-'+size+'.png';
+ await sharp(appIcon,{density:300}).resize(size,size).png().toFile('public/'+path);
 }
-console.log('SOSOKING BRAND ICONS: generated 192px and 512px');
+await sharp(appIcon,{density:300}).resize(512,512).png().toFile('public/icon-maskable-512.png');
+await sharp(await readFile('public/social-preview.svg')).resize(1200,630).png().toFile('public/social-preview.png');
+console.log('SOSOKING: icons and social preview generated');
