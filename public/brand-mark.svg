@@ -1,17 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-<title id="title">소소킹 로고</title><desc id="desc">보라색 정사각형 안에서 연결된 두 개의 곡선과 작은 별이 소소킹의 만남과 활동을 표현합니다</desc>
-<defs>
-  <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#5C73F6"/><stop offset=".57" stop-color="#4358CE"/><stop offset="1" stop-color="#303F9E"/>
-  </linearGradient>
-  <linearGradient id="wave" x1="0" y1="1" x2="1" y2="0">
-    <stop offset="0" stop-color="#C9F9E9"/><stop offset="1" stop-color="#7AEDD4"/>
-  </linearGradient>
-</defs>
-<rect x="12" y="12" width="488" height="488" rx="123" fill="url(#base)"/>
-<circle cx="388" cy="124" r="23" fill="#FBD588"/>
-<path d="M351 135l-7 28-28 7 28 7 7 28 7-28 28-7-28-7z" fill="#fff" opacity=".94"/>
-<path d="M342 173C319 150 286 139 249 139 187 139 143 175 143 221c0 44 38 63 91 69l44 5c40 4 58 16 58 36 0 23-29 40-76 40-42 0-78-15-102-39" fill="none" stroke="#fff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M161 342c26 22 60 34 99 34 56 0 100-27 100-71 0-38-31-63-89-69l-44-4" fill="none" stroke="url(#wave)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="138" cy="340" r="14" fill="#FBD588"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="t d"><title id="t">소소킹 LIVE</title><desc id="d">즐거운 모임을 뜻하는 밝은 곡선의 S와 별이 있는 파란색 로고</desc><defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5A74F4"/><stop offset=".54" stop-color="#425BCD"/><stop offset="1" stop-color="#273F9C"/></linearGradient><linearGradient id="m" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#B5FDE3"/><stop offset="1" stop-color="#64DEC7"/></linearGradient></defs><rect x="8" y="8" width="496" height="496" rx="132" fill="url(#b)"/><circle cx="116" cy="125" r="14" fill="#FCD88B"/><path d="M159 203c26-45 70-69 124-69 55 0 94 27 94 68 0 36-29 55-88 65l-65 11c-34 6-51 19-51 39 0 25 29 40 78 40 47 0 87-19 117-59" stroke="#fff" stroke-width="47" fill="none" stroke-linecap="round"/><path d="M169 342c22 25 60 42 102 43 56 1 104-27 114-72" stroke="url(#m)" stroke-width="26" fill="none" stroke-linecap="round"/><path d="m385 99 10 31 31 10-31 10-10 31-10-31-31-10 31-10Z" fill="#FFD481"/><path d="m111 375 7 19 19 7-19 7-7 19-7-19-19-7 19-7Z" fill="#fff" opacity=".9"/></svg>
