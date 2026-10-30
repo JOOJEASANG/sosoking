@@ -1,0 +1,33 @@
+name: Validate Sosoking
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [enhancement/brand-and-install-20261030]
+permissions:
+  contents: read
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install packages
+        run: npm install --no-audit --no-fund
+      - name: Static and route checks
+        run: |
+          npm run check
+          node tools/check-site.mjs
+      - name: Build site and verify generated images
+        run: |
+          npm run build
+          test -s dist/icon-192.png
+          test -s dist/icon-512.png
+          test -s dist/apple-touch-icon.png
+          test -s dist/icon-maskable-512.png
+          test -s dist/social-preview.png
+          test -s dist/install-guide.svg
+          test -s dist/programs/bracket/index.html
