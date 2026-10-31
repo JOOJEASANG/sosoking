@@ -2,10 +2,11 @@
 const {onRequest}=require('firebase-functions/v2/https');
 const admin=require('firebase-admin');
 const crypto=require('node:crypto');
+const {makeBoard,answerMatches,blankState}=require('./treasure');
 if(!admin.apps.length)admin.initializeApp();
 const db=admin.firestore();
 const FieldValue=admin.firestore.FieldValue;
-const MODULES=['raffle','poll','wheel','score','teams','timer','bracket'];
+const MODULES=['raffle','poll','wheel','score','teams','timer','bracket','treasure'];
 const MAX_PEOPLE=200;
 function token(bytes=20){return crypto.randomBytes(bytes).toString('hex');}
 function digest(s){return crypto.createHash('sha256').update(String(s||'')).digest('hex');}
@@ -24,7 +25,8 @@ function initState(){return {
  score:{rows:[]},
  teams:{groups:[],at:0},
  timer:{duration:60,remaining:60,running:false,startedAt:0},
- bracket:{names:[],rounds:[],finished:false}
+ bracket:{names:[],rounds:[],finished:false},
+ treasure:blankState()
 };}
 function remaining(t){return t.running?Math.max(0,Math.ceil((t.remaining*1000-(Date.now()-t.startedAt))/1000)):t.remaining;}
 function bracketFrom(names){
@@ -69,7 +71,7 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
   if(method==='GET'&&path==='/health')return res.json({ok:true,service:'sosoking-events-v1'});
   if(method==='POST'&&path==='/create'){
    const name=clean(req.body?.title,65);
-   const modules=list(req.body?.modules,7).filter(x=>MODULES.includes(x));
+   const modules=list(req.body?.modules,MODULES.length).filter(x=>MODULES.includes(x));
    const mode=['onsite','online','hybrid'].includes(req.body?.mode)?req.body.mode:'hybrid';
    must(name.length>=2,'행사명을 두 글자 이상 입력하세요.');
    must(modules.length>0,'프로그램을 하나 이상 선택하세요.');
@@ -108,7 +110,15 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
    const data=safeEvent(doc);
    if(!full&&data.state.poll.open)data.state={...data.state,poll:{...data.state.poll,counts:[],answered:0}};
    if(full){data.people=await getPeople(doc.id);}
-   return res.json({event:data});
+   let memberTreasure=null;
+   if(req.query.member==='1'){
+     const person=await participant(ref,req);
+     const progress=person.data.treasure||{};
+     memberTreasure=progress.round===data.state.treasure?.round?{
+       round:progress.round,found:progress.found||[],attempts:progress.attempts||{}
+     }:{round:data.state.treasure?.round||0,found:[],attempts:{}};
+   }
+   return res.json({event:data,memberTreasure});
   }
   if(method==='POST'&&path==='/action'){
    const id=clean(req.body?.id,40),op=clean(req.body?.op,40),val=req.body?.value;
@@ -132,6 +142,43 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
      });
      return res.json({ok:true});
    }
+   if(op==='treasure.solve'){
+     const person=await participant(ref,req);
+     const spotId=clean(val?.id,40),answer=clean(val?.answer,60);
+     must(spotId&&answer,'보물 위치와 암호를 입력하세요.');
+     const outcome=await db.runTransaction(async tx=>{
+       const [eventSnap,personSnap]=await Promise.all([tx.get(ref),tx.get(person.ref)]);
+       must(eventSnap.exists&&personSnap.exists,'행사 참가 정보를 확인할 수 없습니다.');
+       const cur=eventSnap.data(),s=cur.state.treasure||blankState(),now=Date.now();
+       if(!cur.modules.includes('treasure')||cur.active!=='treasure'||s.status!=='playing'||now>=s.endsAt)fail('현재 보물찾기 대회가 진행 중이 아닙니다.',409);
+       const spot=s.board.find(x=>x.id===spotId&&x.kind==='treasure');
+       must(spot,'암호를 입력할 보물을 선택하세요.');
+       const old=personSnap.data().treasure||{};
+       const progress=old.round===s.round?{...old}:{round:s.round,found:[],attempts:{},score:0,lastAt:0};
+       if(progress.found.includes(spotId))fail('이미 발견한 보물입니다.',409);
+       const attempts={...progress.attempts};
+       if((attempts[spotId]||0)>=5)fail('이 보물의 암호 입력 기회를 모두 사용했습니다.',429);
+       if(now-(progress.lastAt||0)<800)fail('잠시 후 다시 입력해 주세요.',429);
+       attempts[spotId]=(attempts[spotId]||0)+1;
+       const correct=answerMatches(spotId,answer);
+       if(!correct){
+         tx.update(person.ref,{treasure:{...progress,attempts,lastAt:now}});
+         return {correct:false,left:5-attempts[spotId]};
+       }
+       const first=!s.firsts.some(x=>x.id===spotId);
+       const points=spot.points+(first?15:0);
+       const found=[...progress.found,spotId];
+       const oldRank=s.rankings.find(x=>x.id===person.id);
+       const rank={id:person.id,name:personSnap.data().name||'참가자',points:(oldRank?.points||0)+points,found:found.length,at:now};
+       const rankings=[...s.rankings.filter(x=>x.id!==person.id),rank].sort((a,b)=>b.points-a.points||a.at-b.at);
+       const firsts=first?[...s.firsts,{id:spotId,personId:person.id,name:rank.name,at:now}]:s.firsts;
+       tx.update(person.ref,{treasure:{...progress,found,attempts,score:rank.points,lastAt:now}});
+       tx.update(ref,{'state.treasure.rankings':rankings,'state.treasure.firsts':firsts,revision:FieldValue.increment(1)});
+       return {correct:true,points,first};
+     });
+     if(!outcome.correct)return res.status(422).json({error:'암호가 달라요. 남은 기회 '+outcome.left+'회',attemptsLeft:outcome.left});
+     return res.json({ok:true,...outcome});
+   }
    organizer(req,doc);
    let people=null;
    if(['raffle.draw','teams.make'].includes(op))people=await getPeople(id);
@@ -146,7 +193,7 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
        tx.update(ref,{active,revision:FieldValue.increment(1)});break;
       }
       case 'event.modules':{
-       const modules=list(val,7).filter(x=>MODULES.includes(x));
+       const modules=list(val,MODULES.length).filter(x=>MODULES.includes(x));
        must(modules.length>=1,'프로그램은 최소 하나 이상 선택해야 합니다.');
        const active=modules.includes(cur.active)?cur.active:'';
        tx.update(ref,{modules,active,revision:FieldValue.increment(1)});break;
@@ -245,6 +292,21 @@ exports.sosokingEventApi=onRequest({region:'asia-northeast3',memory:'256MiB',tim
        must(val.winner===m.a||val.winner===m.b,'참가하지 않은 팀입니다.');
        m.winner=val.winner;advanceBracket(b);
        tx.update(ref,{'state.bracket':b,revision:FieldValue.increment(1)});break;
+      }
+      case 'treasure.start':{
+       const duration=Number(val?.duration??300);
+       must(Number.isInteger(duration)&&duration>=60&&duration<=1800,'게임 시간은 1~30분으로 설정하세요.');
+       const round=(state.treasure?.round||0)+1;
+       tx.update(ref,{'state.treasure':{...blankState(),status:'playing',round,board:makeBoard(),duration,startedAt:now,endsAt:now+duration*1000},active:'treasure',revision:FieldValue.increment(1)});break;
+      }
+      case 'treasure.stop':{
+       const t=state.treasure||blankState();
+       must(t.status==='playing','진행 중인 보물찾기가 없습니다.');
+       tx.update(ref,{'state.treasure.status':'finished','state.treasure.endsAt':now,revision:FieldValue.increment(1)});break;
+      }
+      case 'treasure.reset':{
+       const t=state.treasure||blankState();
+       tx.update(ref,{'state.treasure':{...blankState(),round:t.round+1},revision:FieldValue.increment(1)});break;
       }
       default:fail('존재하지 않는 동작입니다.',404);
      }

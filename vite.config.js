@@ -1,7 +1,7 @@
 import {defineConfig} from 'vite';
 import {resolve} from 'node:path';
 
-const ids=['raffle','poll','wheel','score','teams','timer','bracket'];
+const ids=['raffle','poll','wheel','score','teams','timer','bracket','treasure'];
 export default defineConfig({
   build:{
     rollupOptions:{

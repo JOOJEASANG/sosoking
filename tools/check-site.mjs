@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=x=>readFileSync(x,'utf8');
 const page=read('index.html'), app=read('src/app.js'),api=read('functions/main.js'),css=read('src/style.css'),firebase=JSON.parse(read('firebase.json'));
-const ids=['raffle','poll','wheel','score','teams','timer','bracket'];
+const ids=['raffle','poll','wheel','score','teams','timer','bracket','treasure'];
 for(const id of ids){
  assert.ok(app.includes("id:'"+id+"'"),id+' card must exist');
  assert.ok(app.includes("case '"+id+"':"),id+' module UI must exist');
  assert.ok(api.includes("case '"+id+"."),id+' server action must exist');
 }
 assert.doesNotMatch(page,/OX\s*퀴즈/i,'OX quiz excluded');
-assert.equal(new Set(ids).size,7);
+assert.equal(new Set(ids).size,8);
 assert.match(page,/소소킹 LIVE/);
 assert.match(app,/QRCode\.toCanvas/);
 assert.match(app,/function screenPanel/,'Online meeting presentation view missing');
@@ -33,7 +33,7 @@ assert.match(app,/location\.pathname\.match/,'Direct crawlable URLs must load ea
 assert.match(app,/function programDetails/,'Rendered pages need explanatory content');
 const fs=await import('node:fs');
 const seo=JSON.parse(read('tools/seo-programs.json'));
-assert.equal(seo.length,7,'All seven tools must have SEO content');
+assert.equal(seo.length,8,'All seven tools must have SEO content');
 const robots=read('public/robots.txt');
 const sitemap=read('public/sitemap.xml');
 assert.match(robots,/Sitemap: https:\/\/sosoking\.co\.kr\/sitemap\.xml/);
@@ -52,7 +52,7 @@ for(const p of seo){
  assert.ok(!links.has(path),'Unique program URLs');links.add(path);
 }
 assert.ok(sitemap.includes('<loc>https://sosoking.co.kr/</loc>'));
-assert.equal((sitemap.match(/<loc>/g)||[]).length,8,'Only public canonical routes in sitemap');
+assert.equal((sitemap.match(/<loc>/g)||[]).length,9,'Only public canonical routes in sitemap');
 assert.match(app,/target="_blank" rel="noopener noreferrer"/,'Program page should open a new tab');
 assert.match(app,/route\(\)\[2\]==='tool'/,'Event program route handling missing');
 assert.match(app,/programPage\(activeEvent,id,true\)/,'Standalone tool must use dedicated page');
@@ -91,4 +91,8 @@ assert.match(app,/beforeinstallprompt/);
 assert.match(app,/form\.dataset\.submitting/);
 assert.match(read('public/site.webmanifest'),/icon-maskable-512\.png/);
 assert.match(read('tools/generate-icons.mjs'),/social-preview\.png/);
-console.log('SOSOKING LIVE PASS: seven modules, event QR, client roles, backend and responsive UI.');
+assert.match(app,/function renderTreasure/,'Treasure exploration UI missing');
+assert.match(api,/treasure\.solve/,'Treasure solve endpoint missing');
+assert.match(api,/memberTreasure/,'Per-participant progress missing');
+assert.match(read('functions/treasure.js'),/answerMatches/,'Server puzzles missing');
+console.log('SOSOKING LIVE PASS: eight modules, event QR, client roles, backend and responsive UI.');
