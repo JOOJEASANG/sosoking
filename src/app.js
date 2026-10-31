@@ -24,6 +24,8 @@ let saved={hosts:{},members:{},recent:[],standalone:{},...load()};
 let activeEvent=null,activeId='',activeView='',loading=false,requesting=false,notice='',lastRoute='';
 let polling=null,ticking=null,lastRenderKey='';
 let selectedTreasureSpot='';
+const visitedTreasureSpots=new Set();
+let treasureRoundKey='';
 const save=()=>{try{localStorage.setItem(storageKey,JSON.stringify(saved))}catch{}};
 const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtTime=n=>{const s=Math.max(0,Math.floor(Number(n)||0));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
@@ -71,14 +73,14 @@ function moduleCard(m,context='tools'){
  return '<article class="program-card tone-'+m.tone+'"><div class="program-top"><div class="program-symbol">'+m.symbol+'</div>'+badge(m.category)+'</div><h3>'+h(m.name)+'</h3><p>'+h(m.desc)+'</p>'+(context==='create'?'<label class="pick-choice"><input type="checkbox" name="modules" value="'+m.id+'" '+(window.picks?.includes(m.id)?'checked':'')+'> <span>행사에 추가</span></label>':'<a class="card-link" href="'+programUrl(m.id)+'" target="_blank" rel="noopener noreferrer">'+label+' '+icon('external',17)+'</a>')+'</article>';
 }
 function home(){
- return '<div class="page-home"><section class="hero"><div class="shell hero-layout"><div class="hero-text"><div class="hero-pill"><span class="pulse"></span> 필요할 때 꺼내 쓰는 7가지 도구</div><h1>일상의 작은 선택도,<br><em>모임의 특별한 순간도.</em></h1><p>룰렛·대진표·추첨기·점수판까지, 클릭 한 번으로 바로 시작하세요.<br>여럿이 모일 땐 QR이나 초대 링크로 함께 즐길 수 있어요.</p><div class="hero-actions"><a href="/#/tools" class="btn primary big">프로그램 바로 사용하기 '+icon('arrow',18)+'</a><a href="/#/create" class="btn pale big">모임 만들기</a></div><div class="hero-trust"><span>'+icon('check',16)+' 별도 앱 설치 없음</span><span>'+icon('check',16)+' 필요한 기능만 선택</span><span>'+icon('check',16)+' 모바일·대형 화면</span></div></div><div class="hero-art"><div class="art-glow"></div><div class="art-card art-main"><div class="art-card-head"><span class="art-mini-logo">S</span><div><b>가을 한마음 축제</b><small>행사 진행 중 · LIVE</small></div><span class="art-dot"></span></div><div class="art-qr">▦<small>QR 입장</small></div><div class="art-people"><span class="art-avatars">● ● ●</span><b>참가자 128명</b></div><div class="art-stat"><span>추첨</span><span>투표</span><span>대진표</span></div></div><div class="float-note note-top">✦ 당첨자를 발표했어요!</div><div class="float-note note-bottom">✓ 모두 입장 완료</div></div></div></section>'
- +'<section class="shell quick-play-section"><div class="quick-header"><div><span class="eyebrow">INSTANT PLAY · 설치 없이 시작</span><h2>필요한 프로그램, 바로 시작하세요</h2><p>회원가입도 복잡한 설정도 없이. 원하는 도구를 골라 사용하세요.</p></div><a href="/#/tools" class="quick-all">7개 전체 보기 →</a></div><div class="quick-grid">'
+ return '<div class="page-home"><section class="hero"><div class="shell hero-layout"><div class="hero-text"><div class="hero-pill"><span class="pulse"></span> 필요할 때 꺼내 쓰는 8가지 도구</div><h1>일상의 작은 선택도,<br><em>모임의 특별한 순간도.</em></h1><p>룰렛·대진표·추첨기·점수판까지, 클릭 한 번으로 바로 시작하세요.<br>여럿이 모일 땐 QR이나 초대 링크로 함께 즐길 수 있어요.</p><div class="hero-actions"><a href="/#/tools" class="btn primary big">프로그램 바로 사용하기 '+icon('arrow',18)+'</a><a href="/#/create" class="btn pale big">모임 만들기</a></div><div class="hero-trust"><span>'+icon('check',16)+' 별도 앱 설치 없음</span><span>'+icon('check',16)+' 필요한 기능만 선택</span><span>'+icon('check',16)+' 모바일·대형 화면</span></div></div><div class="hero-art"><div class="art-glow"></div><div class="art-card art-main"><div class="art-card-head"><span class="art-mini-logo">S</span><div><b>가을 한마음 축제</b><small>행사 진행 중 · LIVE</small></div><span class="art-dot"></span></div><div class="art-qr">▦<small>QR 입장</small></div><div class="art-people"><span class="art-avatars">● ● ●</span><b>참가자 128명</b></div><div class="art-stat"><span>추첨</span><span>투표</span><span>대진표</span></div></div><div class="float-note note-top">✦ 당첨자를 발표했어요!</div><div class="float-note note-bottom">✓ 모두 입장 완료</div></div></div></section>'
+ +'<section class="shell quick-play-section"><div class="quick-header"><div><span class="eyebrow">INSTANT PLAY · 설치 없이 시작</span><h2>필요한 프로그램, 바로 시작하세요</h2><p>회원가입도 복잡한 설정도 없이. 원하는 도구를 골라 사용하세요.</p></div><a href="/#/tools" class="quick-all">8개 전체 보기 →</a></div><div class="quick-grid">'
  +[{id:'wheel',title:'룰렛 돌리기',subtitle:'오늘의 운을 시험해요',symbol:'◉',color:'mint'},{id:'raffle',title:'랜덤 추첨',subtitle:'누가 당첨될까요?',symbol:'✦',color:'peach'},{id:'bracket',title:'대진표 만들기',subtitle:'순위와 우승자를 정해요',symbol:'⑂',color:'lilac'},{id:'teams',title:'랜덤 팀 나누기',subtitle:'공평하게 팀을 나눠요',symbol:'♟',color:'butter'}].map(m=>'<a href="'+programUrl(m.id)+'" target="_blank" rel="noopener noreferrer" class="quick-card quick-'+m.color+'"><span class="quick-emoji">'+m.symbol+'</span><b>'+m.title+'</b><small>'+m.subtitle+'</small><span class="quick-arrow">↗</span></a>').join('')
  +'</div><div class="quick-help">같이 진행하고 싶나요? <a href="/#/create">행사방 만들고 QR·링크로 함께 참여하기 →</a></div></section>'
 
  +'<section class="shell how-section">'+sectionHead('HOW IT WORKS','세 단계면 준비 끝','현장은 QR로, 온라인 모임은 링크로. 별도 앱 없이 시작하세요.')
  +'<div class="step-grid"><div class="step"><span>01</span><div class="step-icon">'+icon('plus',26)+'</div><h3>행사 만들기</h3><p>행사명을 입력하고 원하는 프로그램 선택</p></div><div class="step-arrow">→</div><div class="step"><span>02</span><div class="step-icon">'+icon('qr',26)+'</div><h3>QR·링크 공유</h3><p>현장은 QR, 온라인은 링크로 입장</p></div><div class="step-arrow">→</div><div class="step"><span>03</span><div class="step-icon">'+icon('play',26)+'</div><h3>함께 즐기기</h3><p>진행자가 프로그램을 열면 함께 참여</p></div></div></section>'
- +'<section class="program-section"><div class="shell">'+sectionHead('PROGRAM LIBRARY','필요한 것만 쏙쏙','행사가 없어도 바로 실행할 수 있는 7가지 프로그램. 대진표도 포함돼요.')
+ +'<section class="program-section"><div class="shell">'+sectionHead('PROGRAM LIBRARY','필요한 것만 쏙쏙','행사가 없어도 바로 실행할 수 있는 8가지 프로그램. 대진표도 포함돼요.')
  +'<div class="program-grid">'+defs.map(m=>moduleCard(m)).join('')+'</div><div class="section-actions"><a href="/#/create" class="btn primary">이 프로그램으로 행사 만들기 '+icon('arrow',17)+'</a></div></div></section>'
  +homeExtras()
  +'<section class="shell close-cta"><div><span class="eyebrow">ONE EVENT, MANY MOMENTS</span><h2>우리 행사에 딱 맞게<br>구성해 보세요.</h2><p>바자회, 체육대회, 온라인 동창회, 가족 모임 어디서나.</p></div><a href="/#/create" class="btn white big">행사 만들기 '+icon('arrow',17)+'</a></section></div>';
@@ -118,7 +120,7 @@ async function loadEvent(id,view,silent=false){
     if(route()[1]!==id||routeMatch()!==view)return;
   }
   activeEvent=response.event;activeEvent.memberTreasure=response.memberTreasure||null;activeId=id;activeView=view;
-  const currentKey=route().join('/')+'|'+String(activeEvent.revision||0);
+  const currentKey=route().join('/')+'|'+String(activeEvent.revision||0)+'|'+JSON.stringify(activeEvent.memberTreasure||{});
   const editing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
   if((!silent||currentKey!==lastRenderKey)&&(!silent||!editing))renderEvent();
   drawQr();
@@ -339,6 +341,8 @@ function treasureRemaining(s){return Math.max(0,Math.ceil(((s.endsAt||0)-Date.no
 function treasureStatus(s){return s.status==='playing'&&treasureRemaining(s)===0?'finished':s.status;}
 function renderTreasure(ev,s,host,local=false,screen=false){
  const state=treasureStatus(s),board=s.board||[],rankings=s.rankings||[];
+ const roundKey=ev.id+'-'+(s.round||0);
+ if(treasureRoundKey!==roundKey){treasureRoundKey=roundKey;visitedTreasureSpots.clear();selectedTreasureSpot='';}
  const member=local?{found:s.solved||[],attempts:s.attempts||{}}:ev.memberTreasure||{found:[],attempts:{}};
  const ownFound=member.found||[],foundIds=new Set(ownFound);
  const selected=board.find(x=>x.id===selectedTreasureSpot)||null;
@@ -350,8 +354,9 @@ function renderTreasure(ev,s,host,local=false,screen=false){
  const banner=state==='waiting'?'<div class="treasure-banner">탐험 준비 중! '+(host?'제한 시간을 선택하고 시작해 보세요.':'진행자가 보물섬을 열면 참가할 수 있어요.')+'</div>':state==='finished'?'<div class="treasure-banner treasure-ended">탐험이 종료되었습니다.'+(top?' 우승: '+h(top.name)+' ('+top.points+'점)':'')+'</div>':'<div class="treasure-banner">보물 6개가 숨어 있어요. 지도를 탐험하고 암호를 풀어보세요!</div>';
  const tiles=board.map((spot,i)=>{
    const solved=foundIds.has(spot.id),first=(s.firsts||[]).find(x=>x.id===spot.id);
+   const explored=visitedTreasureSpots.has(spot.id)||solved;
    const klass='treasure-tile '+(solved?'is-solved ':'')+(selected?.id===spot.id?'is-selected ':'');
-   const inner='<span class="treasure-tile-no">'+String(i+1).padStart(2,'0')+'</span><span class="treasure-tile-icon">'+(solved?'🏆':h(spot.icon))+'</span><b>'+h(spot.title)+'</b><small>'+(solved?'발견 완료':spot.kind==='treasure'?'탐험 가능':'미지의 구역')+'</small>'+(first?'<span class="treasure-first">'+icon('spark',13)+' 첫 발견</span>':'');
+   const inner='<span class="treasure-tile-no">'+String(i+1).padStart(2,'0')+'</span><span class="treasure-tile-icon">'+(solved?'🏆':explored?h(spot.icon):'❔')+'</span><b>'+(explored?h(spot.title):'미지의 장소')+'</b><small>'+(solved?'발견 완료':explored?'탐험한 장소':'눌러서 탐험')+'</small>'+(first?'<span class="treasure-first">'+icon('spark',13)+' 첫 발견</span>':'');
    return screen?'<div class="'+klass+'">'+inner+'</div>':'<button type="button" class="'+klass+'" data-do="treasure-explore" data-spot-id="'+h(spot.id)+'" aria-pressed="'+(selected?.id===spot.id)+'">'+inner+'</button>';
  }).join('');
  let selectedHtml='';
@@ -381,7 +386,7 @@ function renderEvent(){
  if(!activeEvent)return;
  root.innerHTML=mode==='participant'?participantPanel(activeEvent):mode==='screen'?screenPanel(activeEvent):mode==='host'&&route()[2]==='tool'?programPage(activeEvent,route()[3],false):mode==='local'?programPage(activeEvent,route()[1],true):hostPanel(activeEvent);
  drawQr();updateClock();
- lastRenderKey=route().join('/')+'|'+String(activeEvent.revision||0);
+ lastRenderKey=route().join('/')+'|'+String(activeEvent.revision||0)+'|'+JSON.stringify(activeEvent.memberTreasure||{});
  const currentTool=getMode()==='host'&&route()[2]==='tool'?byId[route()[3]]:getMode()==='local'?byId[route()[1]]:null;
  if(!location.pathname.startsWith('/programs/'))document.title=(currentTool?currentTool.name+' · '+(getMode()==='local'?'바로 사용':activeEvent.title):getMode()==='host'?activeEvent.title:'소소킹 LIVE')+' | 소소킹 LIVE';
 }
@@ -586,7 +591,7 @@ document.addEventListener('click',e=>{
  const el=e.target.closest('[data-do]');if(!el||el.disabled)return;
  const act=el.dataset.do;
  postSafe(async()=>{
-  if(act==='treasure-explore'){selectedTreasureSpot=el.dataset.spotId;renderEvent();document.querySelector('#treasure-selected')?.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  if(act==='treasure-explore'){selectedTreasureSpot=el.dataset.spotId;visitedTreasureSpots.add(selectedTreasureSpot);renderEvent();document.querySelector('#treasure-selected')?.scrollIntoView({block:'nearest',behavior:'smooth'});}
   else if(act==='treasure-start'){
    const duration=Number(document.querySelector('#treasure-duration')?.value||300);
    if(activeEvent?.state?.treasure?.status==='playing'&&!confirm('기존 점수와 탐험 기록을 초기화하고 새 게임을 시작할까요?'))return;
