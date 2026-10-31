@@ -663,3 +663,68 @@ body{background:#f9fbfe}
 @media(max-width:780px){.brand-logo-image{width:140px}.desktop-nav a[data-nav="/install"]{display:none}.case-grid{grid-template-columns:1fr 1fr}.install-teaser{grid-template-columns:1fr}.install-teaser img{max-width:540px}.install-steps{grid-template-columns:1fr}.install-hero{grid-template-columns:1fr}.install-hero-art{max-width:540px}}
 @media(max-width:560px){.brand-logo-image{width:111px}.case-grid{grid-template-columns:1fr}.case-grid p{min-height:unset}.detail-section{padding-top:45px;padding-bottom:52px}.feature-section{padding:49px 0}.feature-grid{grid-template-columns:1fr}.feature-grid article{padding:20px}.install-teaser{padding-top:47px;padding-bottom:48px}.install-teaser h2{font-size:26px}.install-teaser p{font-size:13px}.home-faq{padding-bottom:45px}.faq-grid{grid-template-columns:1fr}.faq-grid details{padding:18px}.faq-grid summary{font-size:14px}.install-hero{padding:19px}.install-hero h2{font-size:23px}.install-steps article{padding:19px}.program-card p,.event-program-card p{font-size:12px}.step p{font-size:12px}.hero-text>p{font-size:13px}.page-intro p{font-size:13px}}
 @media print{.install-teaser,.home-faq,.detail-section,.feature-section{display:none!important}}
+
+
+/* SOSOKING TREASURE — accessible, responsive island explorer */
+.treasure-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+.treasure-stats>div{background:#f2f6ff;border:1px solid #e0e8fa;border-radius:14px;padding:15px 17px}
+.treasure-stats small{display:block;color:#73849e;font-size:11px;font-weight:800}
+.treasure-stats b{font-size:25px;font-weight:900;color:#263f90;display:block;margin-top:5px}
+.treasure-control{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;background:#f7faff;border:1px solid #e2eafa;border-radius:14px;margin-bottom:16px}
+.treasure-control label{margin:0}.treasure-control select{max-width:130px}
+.treasure-banner{background:linear-gradient(115deg,#dff7ed,#e8f3ff);color:#2e5d69;font-weight:800;padding:15px 19px;border-radius:13px;margin:15px 0;font-size:13px}
+.treasure-banner.treasure-ended{background:#fff1e1;color:#95601d}
+.treasure-layout{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:19px;align-items:start;margin-top:21px}
+.treasure-map-heading{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-bottom:12px}
+.treasure-map-heading h3{font-size:18px;margin:0}
+.treasure-map-heading small{color:#8b9ab0}
+.treasure-grid{background:linear-gradient(140deg,#e2f5e5,#d5edf4 68%,#eaf4df);border:1px solid #c5e2d7;border-radius:22px;padding:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;position:relative}
+.treasure-tile{position:relative;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:142px;background:rgba(255,255,255,.82);border:2px solid transparent;border-radius:16px;padding:14px 9px;color:#304d64;font:inherit;min-width:0;transition:transform .16s,box-shadow .16s,border-color .16s}
+button.treasure-tile{cursor:pointer}
+button.treasure-tile:hover{transform:translateY(-3px);box-shadow:0 12px 25px rgba(35,83,73,.11)}
+.treasure-tile.is-selected{border-color:#4977d0;box-shadow:0 0 0 3px rgba(79,114,206,.15)}
+.treasure-tile.is-solved{background:#e7fcf2;border-color:#5fb99b}
+.treasure-tile-no{position:absolute;top:8px;left:10px;color:#98a8b6;font-weight:800;font-size:10px}
+.treasure-tile-icon{font-size:36px;line-height:1.3}
+.treasure-tile b{font-size:12px;font-weight:900;line-height:1.5;word-break:keep-all}
+.treasure-tile small{font-size:10px;color:#758d96}
+.treasure-first{font-size:9px;font-weight:900;color:#bf7d16;background:#fff4d8;padding:3px 7px;border-radius:7px}
+.treasure-first svg{vertical-align:middle}
+.treasure-not-started{min-height:280px;border:2px dashed #bcd5d3;border-radius:20px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f4faf8;padding:25px}
+.treasure-not-started>span{font-size:54px}
+.treasure-not-started h3{font-size:19px;margin:8px 0}
+.treasure-not-started p{font-size:12px;color:#7a8e94}
+.treasure-selected{margin-top:17px;background:#fff;border:1px solid #dce6f4;border-radius:17px;padding:22px;box-shadow:0 9px 24px rgba(31,62,100,.04)}
+.treasure-selected-top{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.treasure-selected-top>span{font-size:38px}
+.treasure-selected-top small{display:block;font-size:10px;font-weight:800;color:#8b9bb0}
+.treasure-selected h3{font-size:21px;margin:1px 0}
+.treasure-selected>p{font-size:13px;color:#64768e}
+.treasure-question{background:#f4f7fd;border-radius:13px;padding:17px}
+.treasure-question b{font-size:13px;color:#344dc1}
+.treasure-question p{font-size:16px;font-weight:800;margin:9px 0;color:#2c3f5e}
+.treasure-question details{margin-top:10px;font-size:12px}
+.treasure-question summary{cursor:pointer;font-weight:800;color:#59719c}
+.treasure-question details p{font-size:12px;font-weight:500}
+.treasure-answer-row{display:flex;gap:9px;margin-top:7px}
+.treasure-answer-row input{flex:1;min-width:0}
+.treasure-answer-row .btn{white-space:nowrap}
+.treasure-selected form{margin-top:16px}
+.treasure-success{font-weight:900;color:#258767}
+.treasure-empty{background:#fff6e7;color:#98692b;border-radius:10px;padding:14px;font-size:12px}
+.treasure-leaderboard{background:#fff;border:1px solid #e0e8f2;border-radius:19px;padding:20px;position:sticky;top:93px}
+.treasure-leaderboard h3{font-size:17px;margin-bottom:16px}
+.treasure-rank{display:flex;gap:8px;align-items:center;border-bottom:1px solid #edf1f7;padding:10px 2px;min-width:0}
+.treasure-rank>span{min-width:27px;font-size:11px;font-weight:900;color:#8da0b2}
+.treasure-rank b{font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.treasure-rank small{font-size:10px;color:#8b98ab;white-space:nowrap}
+.treasure-rank strong{font-size:13px;color:#4663c1;white-space:nowrap}
+.treasure-rank.self{background:#f0f5ff;padding-inline:8px;border-radius:8px}
+.treasure-leaderboard>p{font-size:11px;color:#8491a4;line-height:1.75;margin:15px 0 0}
+.treasure-news{border-radius:12px;background:#f0faf3;padding:11px;margin-top:13px;font-size:11px;color:#427b69}
+.treasure-news>div+div{margin-top:7px}
+.treasure-rules{font-size:12px;color:#7c8da4;line-height:1.9;margin-top:17px}
+@media(max-width:1050px){.treasure-layout{grid-template-columns:minmax(0,1fr) 235px}.treasure-tile{min-height:120px}.treasure-tile-icon{font-size:29px}}
+@media(max-width:850px){.treasure-layout{grid-template-columns:1fr}.treasure-leaderboard{position:static}.treasure-grid{gap:7px}.treasure-tile{min-height:120px}}
+@media(max-width:560px){.treasure-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.treasure-stats>div{padding:12px}.treasure-stats b{font-size:22px}.treasure-control{align-items:stretch;gap:8px}.treasure-control select{max-width:none;flex:1}.treasure-control .btn{min-height:45px}.treasure-grid{padding:7px;border-radius:15px;gap:5px}.treasure-tile{min-height:112px;padding:13px 3px 8px;border-radius:9px}.treasure-tile-no{top:3px;left:5px;font-size:8px}.treasure-tile-icon{font-size:27px}.treasure-tile b{font-size:10px}.treasure-tile small{font-size:9px}.treasure-first{font-size:8px;padding:1px 3px}.treasure-selected{padding:15px}.treasure-question{padding:12px}.treasure-question p{font-size:14px}.treasure-answer-row{flex-direction:column}.treasure-answer-row .btn{min-height:45px}}
+@media print{.treasure-control,.treasure-selected form{display:none!important}.treasure-leaderboard{position:static}.treasure-tile{break-inside:avoid}}

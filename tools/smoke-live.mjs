@@ -11,7 +11,7 @@ async function call(path,data=null,token='',personId=''){
 }
 const health=await call('health');
 assert.equal(health.ok,true,'Function Health OK');
-const created=await call('create',{title:'소소킹 온라인 모임 점검',mode:'online',modules:['raffle','poll','wheel','score','teams','timer','bracket']});
+const created=await call('create',{title:'소소킹 온라인 모임 점검',mode:'online',modules:['raffle','poll','wheel','score','teams','timer','bracket','treasure']});
 assert.match(created.id,/^[a-f0-9]{20}$/);
 assert.ok(created.adminToken);
 const id=created.id,host=created.adminToken;
@@ -29,7 +29,7 @@ assert.ok(!('adminHash' in publicView),'private admin key must not leak');
 await action('event.modules',['raffle','poll','bracket']);
 ev=(await manage()).event;
 assert.deepEqual(ev.modules,['raffle','poll','bracket'],'host can modify enabled modules');
-await action('event.modules',['raffle','poll','wheel','score','teams','timer','bracket']);
+await action('event.modules',['raffle','poll','wheel','score','teams','timer','bracket','treasure']);
 ev=(await manage()).event;
 assert.equal(ev.people.length,2);
 await action('event.active','poll');
@@ -66,5 +66,38 @@ await action('bracket.win',{round:0,match,winner:ev.state.bracket.rounds[0][matc
 ev=(await manage()).event;
 assert.ok(ev.state.bracket.rounds.length>=2,'winner advances');
 assert.equal(ev.state.score.rows[0].points,0,'Score adjustments work in both directions');
+
+await action('event.active','treasure');
+await action('treasure.start',{duration:180});
+ev=(await manage()).event;
+assert.equal(ev.state.treasure.status,'playing');
+assert.equal(ev.state.treasure.board.length,12,'Treasure map has twelve tiles');
+assert.equal(ev.state.treasure.board.filter(x=>x.kind==='treasure').length,6,'Six puzzle treasures');
+assert.ok(ev.state.treasure.board.every(x=>!('answers' in x)),'Secret answers stay out of public event state');
+const answerMap={moon:'달',north:'북쪽',time:'60',rainbow:'7',forest:'나무',ice:'얼음',sun:'태양',star:'별',water:'물',river:'바다',map:'지도',key:'열쇠'};
+const spot=ev.state.treasure.board.find(x=>x.kind==='treasure');
+const solve=(p,answer)=>call('action',{id,op:'treasure.solve',value:{id:spot.id,answer}},p.personToken,p.personId);
+let rejected=false;
+try{await solve(p1,'무작위틀린암호')}catch(e){rejected=/암호가 달라요/.test(e.message);}
+assert.ok(rejected,'Incorrect treasure answer must be rejected');
+const member=await call('event?id='+id+'&member=1',null,p1.personToken,p1.personId);
+assert.ok(member.memberTreasure?.attempts?.[spot.id]===1,'Wrong attempt is recorded per participant');
+const solved1=await solve(p1,answerMap[spot.id]);
+assert.equal(solved1.correct,true);
+assert.equal(solved1.first,true,'First participant wins the discovery bonus');
+const solved2=await solve(p2,answerMap[spot.id]);
+assert.equal(solved2.correct,true);
+assert.equal(solved2.first,false,'Second participant gets no first discovery bonus');
+let duplicate=false;
+try{await solve(p1,answerMap[spot.id])}catch(e){duplicate=/이미 발견한/.test(e.message);}
+assert.ok(duplicate,'Claiming the same treasure twice must fail');
+ev=(await manage()).event;
+assert.equal(ev.state.treasure.rankings.length,2);
+assert.equal(ev.state.treasure.firsts.length,1);
+assert.ok(ev.state.treasure.rankings[0].points>ev.state.treasure.rankings[1].points);
+await action('treasure.stop');
+ev=(await manage()).event;
+assert.equal(ev.state.treasure.status,'finished');
+
 await action('event.status','closed');
-console.log('LIVE SMOKE PASS: online meeting mode, QR/link room, module editing, poll anti-double-vote, raffle anti-repeat, wheel, score, teams, timer, tournament.');
+console.log('LIVE SMOKE PASS: online meeting mode, QR/link room, module editing, poll anti-double-vote, raffle anti-repeat, wheel, score, teams, timer, tournament, treasure hunt server scoring and first-finder bonus.');

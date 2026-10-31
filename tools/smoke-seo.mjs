@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 const base='https://sosoking-481e6.web.app';
-const slugs=['raffle','poll','wheel','score','teams','timer','bracket'];
+const slugs=['raffle','poll','wheel','score','teams','timer','bracket','treasure'];
 async function get(path){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
  try{
@@ -42,4 +42,4 @@ for(const slug of slugs){
  assert.ok(!titles.has(title),'Unique title '+slug);titles.add(title);
  assert.ok(sitemap.body.includes('https://sosoking.co.kr/programs/'+slug+'/'),'Sitemap URL '+slug);
 }
-console.log('SEO LIVE SMOKE PASS: 7 live canonical pages with unique titles, descriptions, prerendered content, bundled app, sitemap and robots.');
+console.log('SEO LIVE SMOKE PASS: 8 live canonical pages with unique titles, descriptions, prerendered content, bundled app, sitemap and robots.');
