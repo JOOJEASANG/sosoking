@@ -82,6 +82,8 @@ try{await solve(p1,'무작위틀린암호')}catch(e){rejected=/암호가 달라�
 assert.ok(rejected,'Incorrect treasure answer must be rejected');
 const member=await call('event?id='+id+'&member=1',null,p1.personToken,p1.personId);
 assert.ok(member.memberTreasure?.attempts?.[spot.id]===1,'Wrong attempt is recorded per participant');
+// Respect the per-participant cooldown after an incorrect answer.
+await new Promise(resolve=>setTimeout(resolve,1000));
 const solved1=await solve(p1,answerMap[spot.id]);
 assert.equal(solved1.correct,true);
 assert.equal(solved1.first,true,'First participant wins the discovery bonus');
