@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "check": "node --check reconnect-preview/live-chat.js && node --check reconnect-preview/firebase-config.js",
+    "check": "node --check reconnect-preview/live-chat.js && node --check reconnect-preview/firebase-config.js && node tests/phone-convert.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
