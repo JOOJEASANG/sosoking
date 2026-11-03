@@ -83,6 +83,22 @@ service cloud.firestore {
         allow delete: if signedIn() && request.auth.uid == uid && !owner(roomId);
         allow update: if false;
       }
+      match /stories/{storyId} {
+        allow read: if member(roomId);
+        allow create: if member(roomId) && roomOpen(roomId)
+          && request.resource.data.keys().hasOnly(['uid','displayName','year','title','body','createdAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 30
+          && request.resource.data.year is string && request.resource.data.year.size() <= 4
+          && request.resource.data.title is string && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 80
+          && request.resource.data.body is string && request.resource.data.body.size() > 0
+          && request.resource.data.body.size() <= 1200
+          && request.resource.data.createdAt == request.time;
+        allow delete: if signedIn() && member(roomId) &&
+          (resource.data.uid == request.auth.uid || owner(roomId));
+        allow update: if false;
+      }
       match /messages/{messageId} {
         allow read: if member(roomId);
         allow create: if member(roomId) && roomOpen(roomId)
