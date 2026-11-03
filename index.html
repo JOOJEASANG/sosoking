@@ -31,6 +31,51 @@
 .hero p:not(.hero-tagline){font-size:15px}
 @media(max-width:650px){.brand{font-size:20px}.hero h1.catchphrase{column-gap:0;row-gap:0;margin:18px auto}.catchphrase .phrase{padding:9px 7px}.catchphrase .phrase::after{left:8px;right:8px;bottom:6px;height:8px}.catchphrase .phrase-icon{right:2px;top:-5px}.desktop-break{display:none}}
 
+
+/* NEO-RETRO CHAT: warm memories + modern messenger layout */
+.retro{color:#243a35;background:#ffffff;border:1px solid #d8e2dc;border-radius:24px;box-shadow:0 18px 48px rgba(21,53,44,.09);overflow:hidden}
+.retro-top{padding:19px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(110deg,#fbfdfb,#f1f7f3);border-bottom:1px solid #e2ebe5;font-family:inherit;color:#2d413b;font-size:13px}
+.retro-heading{display:flex;align-items:center;gap:12px;min-width:0}.retro-heading strong{display:block;font-size:16px;letter-spacing:-.03em}.retro-heading small{display:block;color:#889891;font-size:12px;margin-top:3px}
+.retro-logo{display:grid;place-items:center;width:45px;height:45px;flex-shrink:0;border-radius:14px;background:#2c5e50;color:#f4e4b7;font-size:19px;font-weight:900;letter-spacing:-.08em;box-shadow:inset 0 -3px 0 #174438}
+.retro-head-right{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.retro-year,.retro-private{font-size:11px;letter-spacing:.02em;border:1px solid #dce8e0;border-radius:30px;padding:6px 9px;background:#fff;color:#496c5d;white-space:nowrap}
+.retro-private{background:#edf4ef;color:#678376;border-color:transparent}
+.retro .screen{height:330px;padding:22px clamp(16px,3vw,30px);background:radial-gradient(circle at 90% 10%,#f6f0e7 0,transparent 34%),#f8faf7;font-family:inherit;font-size:14px;line-height:1.6;white-space:normal}
+.chat-day{text-align:center;margin:0 0 15px}.chat-day span{font-size:11px;color:#87948f;background:#eef2ee;border-radius:20px;padding:6px 12px;display:inline-block}
+.demo-notice{max-width:465px;text-align:center;color:#698078;background:#f0f5f0;border:1px solid #e4ebe4;border-radius:12px;font-size:12px;line-height:1.6;padding:10px 15px;margin:0 auto 22px}
+.demo-chat{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;max-width:85%}.demo-chat.mine{margin-left:auto;justify-content:flex-end}.demo-chat-body{min-width:0}
+.demo-avatar{width:33px;height:33px;border-radius:12px;background:#dce9e0;color:#366253;font-size:13px;font-weight:800;display:grid;place-items:center;flex:none}.demo-avatar.warm{background:#faead7;color:#9d7251}
+.demo-author{display:block;font-size:11px;color:#71857c;margin:0 0 4px 3px}
+.demo-bubble{display:inline-block;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;padding:11px 15px;border-radius:5px 16px 16px 16px;border:1px solid #e4eae5;background:#fff;color:#35473f;line-height:1.6;box-shadow:0 2px 8px rgba(30,55,40,.025)}
+.demo-chat.mine .demo-bubble{background:#316e5b;color:#fff;border:1px solid #316e5b;border-radius:16px 5px 16px 16px}
+.demo-time{display:block;margin:4px 3px 0;color:#91a09a;font-size:10px}.demo-chat.mine .demo-time{text-align:right}
+.retro-bottom{padding:14px 17px;background:#fff;border-top:1px solid #e6ede7;display:flex;align-items:center;gap:10px}
+.retro-compose-icon{display:grid;place-items:center;width:34px;flex:none;color:#7e998b;font-size:22px}
+.retro-bottom input{min-width:0;flex:1;background:#f5f8f5;color:#28463a;border:1px solid #e0eae2;border-radius:13px;font-size:14px;padding:13px 15px}
+.retro-bottom input:focus{outline:2px solid #b9deca;outline-offset:0}
+.retro-bottom button{white-space:nowrap;padding:12px 17px;color:#fff;background:#2e6c58;border:0;border-radius:12px;font-size:13px;box-shadow:0 4px 9px rgba(34,93,70,.15)}.retro-bottom button:hover{background:#245846}
+.live-chat-titlebar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:20px 0 12px}
+.live-chat-kicker{display:block;font-size:10px;letter-spacing:.14em;font-weight:800;color:#799588;margin-bottom:6px}
+.live-chat-titlebar h3{font-size:19px;letter-spacing:-.035em;margin:0 0 4px!important;color:#32483e}
+.live-chat-titlebar small{font-size:12px;color:#81968b}
+.live-chat-lock{font-size:11px;color:#577662;border:1px solid #d5e6d9;background:#f1f8f1;padding:7px 10px;border-radius:20px;white-space:nowrap}
+.chat-window{padding:0;background:#f8faf7;color:#2e4e3b;border:1px solid #dde9e0;border-radius:20px;overflow:hidden;box-shadow:0 12px 30px rgba(24,57,43,.055);font-family:inherit}
+.chat-messages{padding:25px clamp(14px,2.7vw,24px);height:360px;background:radial-gradient(circle at 82% 12%,#f7f0e6,transparent 35%),#f8faf7;color:#38483e;font-size:14px;line-height:1.6;white-space:normal}
+.live-chat-item{display:flex;align-items:flex-start;gap:9px;max-width:90%;margin-bottom:17px}
+.live-chat-item.mine{margin-left:auto;justify-content:flex-end}
+.live-chat-avatar{display:grid;place-items:center;flex:none;background:#e0eee5;color:#32664e;width:34px;height:34px;border-radius:12px;font-weight:800;font-size:13px}
+.live-chat-item.mine .live-chat-avatar{display:none}
+.live-chat-content{min-width:0}.live-chat-name{display:block;color:#7b9086;font-size:11px;margin:0 0 5px 3px}
+.live-chat-bubble{background:#fff;border:1px solid #e3eae4;border-radius:5px 16px 16px 16px;padding:11px 15px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;box-shadow:0 2px 7px rgba(16,43,32,.035)}
+.live-chat-item.mine .live-chat-bubble{background:#31735f;border-color:#31735f;color:#fff;border-radius:16px 5px 16px 16px}
+.live-chat-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:5px 3px 0;color:#90a19a;font-size:10px}.live-chat-item.mine .live-chat-meta{justify-content:flex-end}
+.chat-remove{border:0;background:none;padding:0;color:#80988e;font-size:11px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.chat-remove:hover{color:#ba614e}
+#live-chat-form{border-top:1px solid #e5eee8;padding:12px;display:flex;gap:9px;background:#fff}
+#live-chat-input{background:#f5f8f5;color:#2a4b3f;border:1px solid #e2ebe4;border-radius:13px;padding:12px 14px;min-width:0;flex:1}
+#live-chat-input:focus{outline:2px solid #b7ddc9;outline-offset:0}
+#live-chat-form .btn{white-space:nowrap;border-radius:12px;padding:11px 16px;background:#31715e}
+@media(max-width:650px){.retro-top{padding:15px}.retro-heading strong{font-size:14px}.retro-heading small{font-size:11px}.retro-logo{width:38px;height:38px;font-size:17px}.retro-year{display:none}.retro .screen{height:340px;padding:18px 12px}.demo-chat{max-width:96%}.retro-bottom{padding:11px}.retro-compose-icon{display:none}.retro-bottom button{padding:12px}.live-chat-lock{font-size:10px;padding:6px}.chat-messages{height:360px;padding:17px 11px}.live-chat-item{max-width:97%}#live-chat-form{padding:10px}#live-chat-form .btn{padding:11px}}
 </style></head><body>
 <header class="top"><div class="wrap"><a class="brand" href="#" aria-label="소소킹 추억킹 홈"><span class="brand-symbol" aria-hidden="true">✦</span> 소소킹 <span class="brand-divider" aria-hidden="true">/</span> <span class="brand-sub">추억킹</span></a><nav><a href="#convert">번호 변환</a><a href="#bulk">일괄 변환</a><a href="#memory">추억 주소록</a><a href="#room">추억방</a><a href="#hello">안부 문자</a></nav></div></header>
 <section class="hero"><div class="wrap"><div class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> 소소킹이 이어주는 그때의 인연 <span class="eyebrow-line" aria-hidden="true"></span></div><h1 class="catchphrase"><span class="phrase found"><span class="phrase-icon" aria-hidden="true">⌕</span>찾았<span class="phrase-key">소!</span></span><span class="phrase met"><span class="phrase-icon" aria-hidden="true">♡</span>만났<span class="phrase-key">소!</span></span><span class="phrase king"><span class="phrase-icon" aria-hidden="true">✦</span>추억<span class="phrase-key">킹!</span></span></h1><p class="hero-tagline">그때 그 번호를 찾고, 오랜 인연과 다시 만나,<br class="desktop-break"> 우리만의 추억을 나누는 곳</p><p>서랍 속 수첩, 교회 요람, 동창회 연락처를 정리하고 다시 이어진 인연과 추억을 나눠 보세요.</p><div class="pill">번호 변환·주소록은 내 기기에서 처리 · 무료 서비스</div></div></section>
@@ -39,7 +84,21 @@
 <section class="section" id="convert"><h2>01. 옛날 번호 변환</h2><p>확인된 국번 범위에서 변환 결과를 계산합니다. 일부 국번은 규칙 확인 후 지원합니다.</p><div class="panel"><div class="label">옛날 휴대전화 번호</div><div class="numbers"><select id="prefix" aria-label="앞번호"><option>016</option><option>019</option><option>011</option><option>017</option><option>018</option></select><span>-</span><input id="middle" maxlength="4" inputmode="numeric" placeholder="234" aria-label="중간번호"><span>-</span><input id="last" maxlength="4" inputmode="numeric" placeholder="1234" aria-label="뒷번호"><button class="btn" id="convert-btn">변환</button></div><div class="result" id="result"><small>변환 결과</small><strong>010-XXXX-XXXX</strong></div><div class="actions"><button class="btn alt" id="copy-btn" disabled>결과 복사</button><button class="btn alt" id="remember-btn" disabled>추억 주소록에 가져오기</button></div></div></section>
 <section class="section" id="bulk"><h2>02. 여러 번호 한 번에 변환</h2><p>한 줄에 한 번호씩 입력하세요. 최대 1,000개, 브라우저 안에서만 처리됩니다.</p><div class="panel"><textarea id="bulk-text" placeholder="016-234-1234&#10;019-567-1234"></textarea><div class="actions"><button class="btn" id="bulk-run">일괄 변환하기</button><button class="btn alt" id="bulk-download" disabled>CSV 다운로드</button></div><div id="bulk-output" class="entries muted">아직 변환한 내역이 없습니다.</div></div></section>
 <section class="section" id="memory"><h2>03. 추억 주소록</h2><p>이름, 인연, 기억하고 싶은 이야기를 정리하세요. 이 기기의 브라우저에만 저장되며 서버로 전송하지 않습니다. 공용 기기에서는 사용 후 전체 비우기를 누르세요. CSV 백업도 가능합니다.</p><div class="panel"><form id="memory-form" class="grid"><label>이름 또는 별명<input id="name" required maxlength="40" placeholder="예: 청년부 민수 형"></label><label>옛날 번호<input id="old-number" maxlength="18" placeholder="016-234-1234"></label><label>함께한 모임<input id="group" maxlength="60" placeholder="교회 / 동창회 / 동네 친구"></label><label>그때의 추억<input id="memo" maxlength="200" placeholder="수련회에서 함께 노래했던 날"></label><button class="btn" type="submit">추억 저장</button></form><div class="actions"><button class="btn alt" id="memory-download">주소록 CSV 다운로드</button><button class="btn alt" id="memory-clear">전체 비우기</button></div><div id="memory-list" class="entries muted">아직 등록된 추억이 없습니다.</div></div></section>
-<section class="section" id="room"><h2>04. 그때 그 시절, 추억방</h2><p>초록빛 PC통신 화면처럼 이야기를 나누는 공간. 지금은 화면과 대화 방식을 체험하는 <b>로컬 데모</b>입니다. 실제 초대·실시간 채팅은 로그인과 초대 동의, 접근 권한을 갖춘 서버 기능이 필요합니다.</p><div class="retro"><div class="retro-top"><span>★ 추억의 채팅방 · 1999 MODE ★</span><span>LOCAL DEMO</span></div><div class="screen" id="screen"><span class="system">[시스템] 그 시절의 추억방에 오신 것을 환영합니다.\n[시스템] 이 화면은 나의 기기에서만 보이는 체험판입니다.\n[시스템] 현재 다른 사용자는 접속해 있지 않습니다.\n\n</span></div><form class="retro-bottom" id="chat-form"><input id="chat-input" maxlength="250" placeholder="그때의 추억을 한마디 적어보세요" aria-label="채팅 내용" required><button type="submit">전송</button></form></div><p class="muted">정식 출시 계획: 초대 코드, 상호 동의 가입, 비공개 방, 실시간 대화, 사진·추억앨범, 신고·차단, 방 나가기·삭제.</p></section>
+<section class="section" id="room"><h2>04. 그때 그 시절, 추억방</h2><p>그리운 PC통신의 감성은 남기고, 지금 쓰기 편한 메신저처럼 다듬었습니다. 아래는 <b>실제 사용자와 연결되지 않는 체험 화면</b>입니다.</p>
+<div class="retro" aria-label="추억 채팅방 로컬 체험">
+  <div class="retro-top">
+    <div class="retro-heading"><span class="retro-logo" aria-hidden="true">99</span><span><strong>우리들의 추억방</strong><small>그 시절의 이야기, 지금 다시</small></span></div>
+    <div class="retro-head-right"><span class="retro-year">1999 감성</span><span class="retro-private">체험 모드</span></div>
+  </div>
+  <div class="screen" id="screen" role="log" aria-live="polite" aria-label="채팅방 체험 대화">
+    <div class="chat-day"><span>추억을 여는 날</span></div>
+    <div class="demo-notice">이 공간은 디자인 체험용입니다. 작성한 메시지는 다른 사람에게 전송되지 않습니다.</div>
+    <div class="demo-chat other"><span class="demo-avatar" aria-hidden="true">기</span><div class="demo-chat-body"><small class="demo-author">추억 안내</small><div class="demo-bubble">반가워요! 그 시절 이야기, 어디부터 시작해 볼까요?</div><small class="demo-time">미리보기 대화</small></div></div>
+    <div class="demo-chat other"><span class="demo-avatar warm" aria-hidden="true">추</span><div class="demo-chat-body"><small class="demo-author">추억 안내</small><div class="demo-bubble">삐삐 번호, 수학여행, 첫 만남… 다 추억이죠.</div></div></div>
+  </div>
+  <form class="retro-bottom" id="chat-form"><span class="retro-compose-icon" aria-hidden="true">✎</span><input id="chat-input" maxlength="250" placeholder="그 시절의 추억을 적어보세요" aria-label="체험 채팅 내용" required><button type="submit" aria-label="채팅 체험 메시지 전송">보내기 <span aria-hidden="true">↗</span></button></form>
+</div>
+<p class="muted">실제 친구와 나누는 채팅은 아래의 회원 전용 비공개 추억방에서 사용할 수 있도록 개발 중입니다.</p></section>
 <section class="section" id="hello"><h2>05. 오랜만에 보내는 안부</h2><p>혹시 다른 사람의 번호일 수 있으니 먼저 본인을 소개하고 상대가 맞는지 확인하세요.</p><div class="panel"><div class="grid"><label>호칭<input id="hello-name" placeholder="예: 영희 언니"></label><label>관계<select id="relation"><option value="church">교회에서 알던 사이</option><option value="class">학교 동창</option><option value="friend">오래된 지인</option></select></label></div><div class="preview" id="message"></div><button class="btn" id="message-copy">문자 복사</button></div></section>
 <section class="section" id="live"><h2>06. 친구와 함께하는 진짜 추억방</h2><p>회원가입 후 비공개 추억방을 만들고 초대 링크를 공유하세요. 초대 링크를 알고 회원가입한 사람만 참가할 수 있습니다. 초대 링크는 7일 동안 유효하며 공유 대상에 주의하세요.</p>
 <div class="live-box">
@@ -53,7 +112,7 @@
 <div><h3>내 추억방</h3><div id="room-list" class="entries muted">참여한 방이 없습니다.</div>
 <div class="live-fields"><label>새 추억방 이름<input id="new-room-title" maxlength="60" placeholder="예: 1998년 청년부 친구들"></label><button class="btn" id="create-room">비공개 추억방 만들기</button></div>
 <div class="live-fields"><label>받은 초대 링크 또는 코드<input id="invite-input" placeholder="초대 링크 붙여넣기"></label><button class="btn alt" id="join-invite">초대받은 방 참가</button></div></div>
-<div id="room-controls" hidden><h3 id="room-title">추억방</h3><div class="chat-window"><div id="live-screen" class="chat-messages"></div><form id="live-chat-form"><input id="live-chat-input" maxlength="600" required placeholder="옛날 이야기 한마디"><button class="btn" type="submit">전송</button></form></div>
+<div id="room-controls" hidden><div class="live-chat-titlebar"><div><span class="live-chat-kicker">PRIVATE MEMORY ROOM</span><h3 id="room-title">추억방</h3><small>친구들과 나누는 그때의 이야기</small></div><span class="live-chat-lock">비공개 · 초대제</span></div><div class="chat-window"><div id="live-screen" class="chat-messages" role="log" aria-label="실시간 채팅 메시지"></div><form id="live-chat-form"><input id="live-chat-input" maxlength="600" required aria-label="메시지 입력" placeholder="오늘은 어떤 추억을 나눌까요?"><button class="btn" type="submit">보내기 <span aria-hidden="true">↗</span></button></form></div>
 <div class="chat-actions"><button class="btn alt" id="make-invite">친구 초대 링크 만들기</button><button class="btn alt" id="revoke-invite">마지막 초대 링크 취소</button><button class="btn alt" id="leave-room">방 나가기</button><button class="btn alt" id="close-room">방 운영 종료</button></div><input id="invite-output" readonly aria-label="생성된 초대 링크" placeholder="초대 링크가 여기에 표시됩니다"><div class="story-panel"><h3>우리들의 추억 게시판</h3>
 <p class="tiny">그때의 장소와 기억을 짧은 글로 남겨보세요. 방 멤버만 읽을 수 있으며 추억방이 종료되면 새 글을 작성할 수 없습니다.</p>
 <form id="story-form" class="live-fields">
@@ -96,7 +155,16 @@ $('memory-form').onsubmit=e=>{e.preventDefault();let old=$('old-number').value.t
 $('memory-list').onclick=e=>{let b=e.target.closest('[data-remove]');if(b){memories.splice(Number(b.dataset.remove),1);renderMemory();}};
 $('memory-download').onclick=()=>downloadCSV('추억주소록.csv',[['이름','옛 번호','전환 결과','인연','추억'],...memories.map(m=>[m.name,m.old,m.converted,m.group,m.memo])]);
 $('memory-clear').onclick=()=>{if(confirm('현재 주소록을 모두 지울까요?')){memories=[];renderMemory();}};
-$('chat-form').onsubmit=e=>{e.preventDefault();let v=$('chat-input').value.trim();if(!v)return;const p=document.createElement('div');p.className='chat';p.textContent='[나] '+v;$('screen').appendChild(p);$('screen').scrollTop=$('screen').scrollHeight;$('chat-input').value='';};
+$('chat-form').onsubmit=e=>{
+ e.preventDefault();
+ const input=$('chat-input'),message=input.value.trim();if(!message)return;
+ const entry=document.createElement('div');entry.className='demo-chat mine';
+ const body=document.createElement('div');body.className='demo-chat-body';
+ const bubble=document.createElement('div');bubble.className='demo-bubble';bubble.textContent=message;
+ const time=document.createElement('small');time.className='demo-time';time.textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+ body.append(bubble,time);entry.appendChild(body);
+ $('screen').appendChild(entry);$('screen').scrollTop=$('screen').scrollHeight;input.value='';input.focus();
+};
 function message(){let n=$('hello-name').value.trim()||'안녕하세요',r=$('relation').value;let context=r==='church'?'예전에 교회에서 함께 지냈던':r==='class'?'예전에 학교에서 함께 공부했던':'예전에 알고 지냈던';$('message').textContent=n+'! 오래간만이에요. 저는 '+context+' 사람입니다.\n예전 연락처를 정리하다가 생각이 나서 조심스럽게 인사드려요. 혹시 제가 기억하는 분이 맞으실까요? 아니라면 죄송합니다. 좋은 하루 보내세요.';}
 $('hello-name').oninput=message;$('relation').onchange=message;message();renderMemory();
 $('message-copy').onclick=()=>navigator.clipboard.writeText($('message').textContent).then(()=>alert('복사했습니다.')).catch(()=>alert('복사할 수 없습니다.'));
