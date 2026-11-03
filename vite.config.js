@@ -1,2 +1,3 @@
 import {defineConfig} from 'vite';
-export default defineConfig({build:{outDir:'dist',emptyOutDir:true}});
+// Do not copy legacy games or assets from the previous public directory.
+export default defineConfig({publicDir:false,build:{outDir:'dist',emptyOutDir:true}});
