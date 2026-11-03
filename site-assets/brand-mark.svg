@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="소소킹 추억킹">
+ <rect width="512" height="512" rx="112" fill="#235f4e"/>
+ <path d="M115 167a82 82 0 0 1 82-82h118a82 82 0 0 1 82 82v127a82 82 0 0 1-82 82H215l-71 62v-66a81 81 0 0 1-29-78V167z" fill="#f8f5e9"/>
+ <path d="M192 214l20 46 44-68 40 77 27-32" fill="none" stroke="#2f8067" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+ <path d="M325 95l11 32 32 11-32 11-11 32-11-32-32-11 32-11z" fill="#e4b572"/>
+</svg>

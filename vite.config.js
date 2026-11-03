@@ -1,14 +1,3 @@
 import {defineConfig} from 'vite';
-import {resolve} from 'node:path';
-
-const ids=['raffle','poll','wheel','score','teams','timer','bracket','treasure'];
-export default defineConfig({
-  build:{
-    rollupOptions:{
-      input:{
-        home:resolve('index.html'),
-        ...Object.fromEntries(ids.map(id=>[id,resolve('programs',id,'index.html')]))
-      }
-    }
-  }
-});
+// Copy only new public assets; do not publish the legacy game assets.
+export default defineConfig({publicDir:'site-assets',build:{outDir:'dist',emptyOutDir:true}});

@@ -1,18 +1,18 @@
 {
-  "name": "sosoking-live",
+  "name": "geuttae-number",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "build": "node tools/generate-seo-pages.mjs && node tools/generate-icons.mjs && vite build",
-    "check": "node tools/generate-seo-pages.mjs && node --check src/app.js && node --check src/treasure-local.js && node --check functions/main.js && node --check functions/treasure.js && node tools/test-treasure.cjs",
-    "prepare:seo": "node tools/generate-seo-pages.mjs"
+    "dev": "vite",
+    "build": "vite build",
+    "check": "node --check reconnect-preview/bootstrap-live.js && node --check reconnect-preview/live-chat.js && node --check reconnect-preview/firebase-config.js && node tests/phone-convert.test.mjs && node tests/site.test.mjs",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "qrcode": "^1.5.4"
+    "firebase": "^12.4.0"
   },
   "devDependencies": {
-    "vite": "^6.4.1",
-    "sharp": "^0.34.4"
+    "vite": "^6.4.1"
   }
 }

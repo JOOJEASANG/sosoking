@@ -1,4 +1,4 @@
-name: Validate Sosoking
+name: Validate Nostalgia Portal
 on:
   pull_request:
     branches: [main]
@@ -20,14 +20,7 @@ jobs:
       - name: Static and route checks
         run: |
           npm run check
-          node tools/check-site.mjs
-      - name: Build site and verify generated images
+      - name: Build and inspect new homepage
         run: |
           npm run build
-          test -s dist/icon-192.png
-          test -s dist/icon-512.png
-          test -s dist/apple-touch-icon.png
-          test -s dist/icon-maskable-512.png
-          test -s dist/social-preview.png
-          test -s dist/install-guide.svg
-          test -s dist/programs/bracket/index.html
+          test -s dist/index.html
