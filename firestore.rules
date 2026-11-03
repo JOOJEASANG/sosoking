@@ -15,10 +15,17 @@ service cloud.firestore {
     }
     match /users/{uid}/rooms/{roomId} {
       allow read, delete: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid
+      allow create: if signedIn() && request.auth.uid == uid
         && member(roomId)
-        && request.resource.data.keys().hasOnly(['title', 'joinedAt'])
-        && request.resource.data.title is string && request.resource.data.title.size() <= 60;
+        && request.resource.data.keys().hasOnly(['title','joinedAt','ownerUid','closed'])
+        && request.resource.data.title is string && request.resource.data.title.size() <= 60
+        && request.resource.data.ownerUid == get(roomPath(roomId)).data.ownerUid
+        && request.resource.data.closed == false
+        && request.resource.data.joinedAt == request.time;
+      allow update: if signedIn() && request.auth.uid == uid
+        && owner(roomId) && uid == get(roomPath(roomId)).data.ownerUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closed'])
+        && request.resource.data.closed == true;
     }
     match /invites/{token} {
       allow get: if signedIn() && request.time < resource.data.expiresAt;
