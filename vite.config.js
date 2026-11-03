@@ -1,3 +1,3 @@
 import {defineConfig} from 'vite';
-// Do not copy legacy games or assets from the previous public directory.
-export default defineConfig({publicDir:false,build:{outDir:'dist',emptyOutDir:true}});
+// Copy only new public assets; do not publish the legacy game assets.
+export default defineConfig({publicDir:'site-assets',build:{outDir:'dist',emptyOutDir:true}});
