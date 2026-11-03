@@ -15,7 +15,15 @@ $('live-chat-input').disabled=Boolean(match?.closed);
 $('story-form').querySelector('button').disabled=Boolean(match?.closed);
 $('close-room').hidden=false;
 if(match){$('close-room').hidden=match.ownerUid!==state.user?.uid || Boolean(match.closed);}
-status(match?.closed?'이 방은 운영이 종료되어 메시지를 보낼 수 없습니다.':'방에 입장했습니다.');state.unsubMessages=onSnapshot(query(collection(state.db,'rooms',id,'messages'),orderBy('createdAt','desc'),limit(60)),snapshot=>{screen.replaceChildren();for(const snap of snapshot.docs.slice().reverse()){const m=snap.data();const line=document.createElement('div');line.className='chat';const time=m.createdAt?.toDate?.()?.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})||'';line.textContent='['+String(m.displayName||'친구').slice(0,30)+'] '+String(m.text||'').slice(0,600)+'  '+time;screen.appendChild(line);}screen.scrollTop=screen.scrollHeight;},e=>status(errorText(e),true));
+status(match?.closed?'이 방은 운영이 종료되어 메시지를 보낼 수 없습니다.':'방에 입장했습니다.');state.unsubMessages=onSnapshot(query(collection(state.db,'rooms',id,'messages'),orderBy('createdAt','desc'),limit(60)),snapshot=>{screen.replaceChildren();for(const snap of snapshot.docs.slice().reverse()){const m=snap.data();const line=document.createElement('div');line.className='chat';const time=m.createdAt?.toDate?.()?.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})||'';line.textContent='['+String(m.displayName||'친구').slice(0,30)+'] '+String(m.text||'').slice(0,600)+'  '+time;
+screen.appendChild(line);
+if(m.uid===state.user?.uid || match?.ownerUid===state.user?.uid){
+ const del=button('삭제',async()=>{
+  if(!confirm('이 채팅 메시지를 삭제할까요?'))return;
+  try{await deleteDoc(doc(state.db,'rooms',id,'messages',snap.id));}catch(e){status(errorText(e),true);}
+ });
+ del.style.padding='2px 7px';del.style.margin='0 0 6px 8px';screen.appendChild(del);
+}}screen.scrollTop=screen.scrollHeight;},e=>status(errorText(e),true));
 state.unsubStories=onSnapshot(query(collection(state.db,'rooms',id,'stories'),orderBy('createdAt','desc'),limit(40)),snapshot=>{
  const holder=$('story-list');holder.replaceChildren();
  if(snapshot.empty){holder.textContent='아직 작성된 추억이 없습니다.';return;}
