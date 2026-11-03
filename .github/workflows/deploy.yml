@@ -11,7 +11,16 @@ concurrency:
   group: geuttae-deploy
   cancel-in-progress: false
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund && npm run check && npm run build
   deploy:
+    needs: validate
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -20,7 +29,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
       - run: npm install --no-audit --no-fund
       - run: npm run check && npm run build && test -f dist/index.html
       - run: npm install -g firebase-tools@15.24.0
