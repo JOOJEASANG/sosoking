@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function roomPath(roomId) { return /databases/$(database)/documents/rooms/$(roomId); }
+    function memberPath(roomId, uid) { return /databases/$(database)/documents/rooms/$(roomId)/members/$(uid); }
+    function owner(roomId) {
+      return signedIn() && get(roomPath(roomId)).data.ownerUid == request.auth.uid;
+    }
+    function member(roomId) {
+      return signedIn() && exists(memberPath(roomId, request.auth.uid));
+    }
+    match /users/{uid}/rooms/{roomId} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && member(roomId)
+        && request.resource.data.keys().hasOnly(['title', 'joinedAt'])
+        && request.resource.data.title is string && request.resource.data.title.size() <= 60;
+    }
+    match /invites/{token} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['roomId','ownerUid','title','createdAt'])
+        && request.resource.data.roomId is string
+        && request.resource.data.ownerUid == request.auth.uid
+        && owner(request.resource.data.roomId)
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow update: if false;
+    }
+    match /rooms/{roomId} {
+      allow get, list: if signedIn() && (resource.data.ownerUid == request.auth.uid || member(roomId));
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['ownerUid','title','createdAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+      match /members/{uid} {
+        allow get: if signedIn() && (request.auth.uid == uid || owner(roomId) || member(roomId));
+        allow list: if member(roomId) || owner(roomId);
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['uid','inviteToken','joinedAt'])
+          && request.resource.data.uid == uid
+          && request.resource.data.joinedAt == request.time
+          && request.resource.data.inviteToken is string
+          && (
+            (owner(roomId) && request.resource.data.inviteToken == 'owner')
+            ||
+            (
+              request.resource.data.inviteToken != 'owner'
+              && exists(/databases/$(database)/documents/invites/$(request.resource.data.inviteToken))
+              && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteToken)).data.roomId == roomId
+            )
+          );
+        allow delete: if signedIn() && request.auth.uid == uid && !owner(roomId);
+        allow update: if false;
+      }
+      match /messages/{messageId} {
+        allow read: if member(roomId);
+        allow create: if member(roomId)
+          && request.resource.data.keys().hasOnly(['uid','displayName','text','createdAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 30
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 600
+          && request.resource.data.createdAt == request.time;
+        allow delete: if signedIn() && (resource.data.uid == request.auth.uid || owner(roomId));
+        allow update: if false;
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
