@@ -15,15 +15,40 @@ $('live-chat-input').disabled=Boolean(match?.closed);
 $('story-form').querySelector('button').disabled=Boolean(match?.closed);
 $('close-room').hidden=false;
 if(match){$('close-room').hidden=match.ownerUid!==state.user?.uid || Boolean(match.closed);}
-status(match?.closed?'이 방은 운영이 종료되어 메시지를 보낼 수 없습니다.':'방에 입장했습니다.');state.unsubMessages=onSnapshot(query(collection(state.db,'rooms',id,'messages'),orderBy('createdAt','desc'),limit(60)),snapshot=>{screen.replaceChildren();for(const snap of snapshot.docs.slice().reverse()){const m=snap.data();const line=document.createElement('div');line.className='chat';const time=m.createdAt?.toDate?.()?.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})||'';line.textContent='['+String(m.displayName||'친구').slice(0,30)+'] '+String(m.text||'').slice(0,600)+'  '+time;
-screen.appendChild(line);
-if(m.uid===state.user?.uid || match?.ownerUid===state.user?.uid){
- const del=button('삭제',async()=>{
-  if(!confirm('이 채팅 메시지를 삭제할까요?'))return;
-  try{await deleteDoc(doc(state.db,'rooms',id,'messages',snap.id));}catch(e){status(errorText(e),true);}
- });
- del.style.padding='2px 7px';del.style.margin='0 0 6px 8px';screen.appendChild(del);
-}}screen.scrollTop=screen.scrollHeight;},e=>status(errorText(e),true));
+status(match?.closed?'이 방은 운영이 종료되어 메시지를 보낼 수 없습니다.':'방에 입장했습니다.');state.unsubMessages=onSnapshot(query(collection(state.db,'rooms',id,'messages'),orderBy('createdAt','desc'),limit(60)),snapshot=>{
+ screen.replaceChildren();
+ if(snapshot.empty){
+  const empty=document.createElement('div');
+  empty.className='demo-notice';
+  empty.textContent='아직 메시지가 없습니다. 첫 번째 추억 이야기를 시작해 보세요.';
+  screen.appendChild(empty);
+ }
+ for(const snap of snapshot.docs.slice().reverse()){
+  const message=snap.data(),own=message.uid===state.user?.uid,author=String(message.displayName||'친구').slice(0,30);
+  const item=document.createElement('article');item.className='live-chat-item'+(own?' mine':'');
+  const avatar=document.createElement('span');avatar.className='live-chat-avatar';avatar.textContent=Array.from(author)[0]||'추';avatar.setAttribute('aria-hidden','true');
+  const content=document.createElement('div');content.className='live-chat-content';
+  if(!own){const name=document.createElement('span');name.className='live-chat-name';name.textContent=author;content.appendChild(name);}
+  const bubble=document.createElement('div');bubble.className='live-chat-bubble';bubble.textContent=String(message.text||'').slice(0,600);
+  content.appendChild(bubble);
+  const meta=document.createElement('div');meta.className='live-chat-meta';
+  const time=document.createElement('time');
+  const date=message.createdAt?.toDate?.();
+  if(date){time.dateTime=date.toISOString();time.textContent=date.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});}else{time.textContent='전송 중';}
+  meta.appendChild(time);
+  if(own||match?.ownerUid===state.user?.uid){
+   const del=document.createElement('button');del.className='chat-remove';del.type='button';del.textContent='삭제';del.setAttribute('aria-label','이 메시지 삭제');
+   del.onclick=async()=>{
+    if(!confirm('이 채팅 메시지를 삭제할까요?'))return;
+    try{await deleteDoc(doc(state.db,'rooms',id,'messages',snap.id));}
+    catch(e){status(errorText(e),true);}
+   };
+   meta.appendChild(del);
+  }
+  content.appendChild(meta);item.append(avatar,content);screen.appendChild(item);
+ }
+ screen.scrollTop=screen.scrollHeight;
+},e=>status(errorText(e),true));
 state.unsubStories=onSnapshot(query(collection(state.db,'rooms',id,'stories'),orderBy('createdAt','desc'),limit(40)),snapshot=>{
  const holder=$('story-list');holder.replaceChildren();
  if(snapshot.empty){holder.textContent='아직 작성된 추억이 없습니다.';return;}
