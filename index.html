@@ -4,7 +4,7 @@
 .live-box{background:#fff;border-radius:18px;border:1px solid #dfe7e2;padding:26px;box-shadow:0 8px 26px #24432a0a}
 .live-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
 .live-box h3{margin:0 0 12px}.live-box p{font-size:13px;color:#68807a}.live-fields{display:grid;gap:9px;margin:12px 0}
-.chat-window{background:#172b25;border:7px solid #4a6156;border-radius:12px;color:#c7f5ca;padding:12px;font-family:monospace}
+.story-panel{margin-top:23px;padding-top:20px;border-top:1px solid #e5e8e6}.story-panel textarea{min-height:95px}.story-card{padding:13px;margin:9px 0;border:1px solid #dbe8e1;border-radius:12px;background:#f7faf7}.story-card p{white-space:pre-wrap;overflow-wrap:anywhere;color:#344946;font-size:14px}.story-card small{color:#648479}.chat-window{background:#172b25;border:7px solid #4a6156;border-radius:12px;color:#c7f5ca;padding:12px;font-family:monospace}
 .chat-messages{height:250px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;padding:7px;font-size:13px}.chat-messages .chat{margin-bottom:8px}
 #live-chat-form{display:flex;gap:7px}#live-chat-input{background:#203a30;color:#e3ffdf;border-color:#607b6f}
 #live-status{font-size:13px;padding:10px 0}.chat-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
@@ -33,7 +33,13 @@
 <div class="live-fields"><label>새 추억방 이름<input id="new-room-title" maxlength="60" placeholder="예: 1998년 청년부 친구들"></label><button class="btn" id="create-room">비공개 추억방 만들기</button></div>
 <div class="live-fields"><label>받은 초대 링크 또는 코드<input id="invite-input" placeholder="초대 링크 붙여넣기"></label><button class="btn alt" id="join-invite">초대받은 방 참가</button></div></div>
 <div id="room-controls" hidden><h3 id="room-title">추억방</h3><div class="chat-window"><div id="live-screen" class="chat-messages"></div><form id="live-chat-form"><input id="live-chat-input" maxlength="600" required placeholder="옛날 이야기 한마디"><button class="btn" type="submit">전송</button></form></div>
-<div class="chat-actions"><button class="btn alt" id="make-invite">친구 초대 링크 만들기</button><button class="btn alt" id="revoke-invite">마지막 초대 링크 취소</button><button class="btn alt" id="leave-room">방 나가기</button><button class="btn alt" id="close-room">방 운영 종료</button></div><input id="invite-output" readonly aria-label="생성된 초대 링크" placeholder="초대 링크가 여기에 표시됩니다">
+<div class="chat-actions"><button class="btn alt" id="make-invite">친구 초대 링크 만들기</button><button class="btn alt" id="revoke-invite">마지막 초대 링크 취소</button><button class="btn alt" id="leave-room">방 나가기</button><button class="btn alt" id="close-room">방 운영 종료</button></div><input id="invite-output" readonly aria-label="생성된 초대 링크" placeholder="초대 링크가 여기에 표시됩니다"><div class="story-panel"><h3>우리들의 추억 게시판</h3>
+<p class="tiny">그때의 장소와 기억을 짧은 글로 남겨보세요. 방 멤버만 읽을 수 있으며 추억방이 종료되면 새 글을 작성할 수 없습니다.</p>
+<form id="story-form" class="live-fields">
+<div class="live-columns"><label>그 시절 연도 (선택)<input id="story-year" inputmode="numeric" maxlength="4" placeholder="1999"></label><label>추억 제목<input id="story-title" maxlength="80" required placeholder="청년부 여름 수련회"></label></div>
+<textarea id="story-body" maxlength="1200" required placeholder="그때 우리 함께 했던 이야기를 적어보세요."></textarea>
+<button class="btn" type="submit">추억 글 남기기</button></form>
+<div id="story-list" class="entries muted">아직 작성한 추억이 없습니다.</div></div>
 <p class="tiny">초대 링크를 받은 사람은 회원가입 후 방에 들어올 수 있습니다. 링크를 가진 로그인 사용자는 참가할 수 있으므로 공개 게시하지 마세요. 마지막으로 발급한 링크만 현재 화면에서 취소할 수 있습니다. 방 운영 종료는 새 채팅을 차단하지만 자료를 서버에서 삭제하지 않습니다.</p></div>
 </div></div></div></section></main><footer class="foot"><div class="wrap"><b>☎ 그때 그 번호</b><small>연락이 닿았을 때 비로소 시작되는 이야기. 본 페이지는 소소킹 개편 브랜치의 기능 시안입니다.</small></div></footer>
 <script>
