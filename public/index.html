@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f8f4e9">
+  <meta name="description" content="두 주사위로 항로를 골라 섬에 편지를 배달하는 입체 보드게임. 친구 2~4명 또는 혼자, 모두 같은 조건으로 출항하세요.">
+  <title>물결우체국 · Tidepost</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="modulepreload" href="/js/app.js">
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true">
+  <symbol id="i-ship" viewBox="0 0 24 24"><path d="m3 16 3 4h12l3-5zM11 14V3l-7 11zM14 5l6 7-6 1z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-3-2-6-2-10-1v14c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1zm0 0v14"/></symbol>
+  <symbol id="i-waves" viewBox="0 0 24 24"><path d="M2 7q3-3 6 0t6 0 6 0l2-1M2 12q3-3 6 0t6 0 6 0l2-1M2 17q3-3 6 0t6 0 6 0l2-1"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 7v2m0 2v2m0 2v2"/></symbol>
+  <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="16" cy="16" r="1"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="9" r="5"/><path d="m12 13 8 8m-4-4 3-3m-6 0 2-2"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 5V4H4v12h1"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-3-6l3 3m0-5v5h-5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.4 6 .9-4.3 4.2 1 6-5.4-2.8L6.6 19.5l1-6-4.3-4.2 6-.9z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4m0 1c5-4 9 4 15 0l-2 8c-5 3-9-4-13 0"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="m3 9 4 0 5-4v14l-5-4H3zm13-1a7 7 0 0 1 0 8m3-11a11 11 0 0 1 0 14"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="m3 9 4 0 5-4v14l-5-4H3zm13 1 5 5m0-5-5 5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-anchor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v14M4 14c1 4 4 6 8 7 4-1 7-3 8-7m-16 0v4m0-4 4 1m12-1v4m0-4-4 1M8 10h8"/></symbol>
+  <symbol id="i-exit" viewBox="0 0 24 24"><path d="M10 4H4v16h6m-1-8h12m-4-4 4 4-4 4"/></symbol>
+</svg>
+<div class="site">
+  <header class="site-head">
+    <div class="brand"><img src="/mark.svg" alt="" width="42" height="42"><div><b>물결우체국</b><small>TIDEPOST</small></div></div>
+    <nav aria-label="게임 메뉴">
+      <button class="nav-btn" id="rules-btn" type="button"><svg class="icon"><use href="#i-book"/></svg><span>게임 방법</span></button>
+      <button class="icon-btn" id="sound-btn" type="button" aria-label="효과음 켜기" aria-pressed="false"></button>
+    </nav>
+  </header>
+  <main id="main"><p class="loading">항구를 열고 있어요…</p></main>
+  <footer><span><svg class="icon"><use href="#i-waves"/></svg> 물결우체국</span><span>소소킹의 보드게임</span></footer>
+</div>
+<dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-inside"><button class="icon-btn dialog-x" id="close-dialog" aria-label="닫기"><svg class="icon"><use href="#i-x"/></svg></button><div id="dialog-body"></div></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript>게임을 실행하려면 브라우저에서 자바스크립트를 켜 주세요.</noscript>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

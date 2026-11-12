@@ -1,4 +1,7 @@
 dist/
+dist-public/
 node_modules/
+outputs/
 .firebase/
 firebase-debug.log
+.tidepost-local.sqlite*
