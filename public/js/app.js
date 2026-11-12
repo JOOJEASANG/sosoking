@@ -54,7 +54,7 @@ function home() {
     <section class="postcard" aria-labelledby="home-title"><div class="pc-inner"><div class="postmark">Island mail service</div>
     <h1 id="home-title">물결우체국</h1><div class="eng-title" lang="en">Tidepost</div>
     <p class="hero-desc">주사위를 굴려 항로를 고르고,<br>열여섯 섬에 편지를 전하세요.</p></div>
-    <div class="meta"><span>${icon('users')} 2–4인</span><span>${icon('waves')} 8라운드</span></div></section>
+    <div class="meta"><span>${icon('users')} 2–4인</span><span>${icon('waves')} 8라운드</span><span>유료 아이템 없음</span></div></section>
     <section class="boarding"><div class="eyebrow">Boarding pass</div><h2>승선 준비</h2>
     <form id="create-form"><label class="lbl" for="nickname">선장 이름</label><input id="nickname" maxlength="16" placeholder="사용할 이름" autocomplete="nickname" value="${h(nick())}">
     <div class="stack"><button type="submit" class="btn primary" data-net>${icon('users')}친구 초대방 만들기</button>
@@ -132,7 +132,7 @@ async function restore(g) {
 function startPractice() {
   if(busy)return;
   const name=($('#nickname')?.value??nick()).trim()||'우편 선장';
-  save(localStorage,'name',name);closeModal();mode='practice';
+  save(localStorage,'name',name);save(sessionStorage,'grant',null);closeModal();mode='practice';
   if(board){board.stop();board=null;view='';}
   practice=newGame([{id:practiceId,name,seat:0},{id:'pilot-maru',name:'마루',seat:1}]);
   persistPractice();beep();render();window.scrollTo(0,0);
@@ -185,7 +185,7 @@ function actionPane(g,own,p) {
     <div class="stats" style="margin:12px 0">${ranking(g).map(q=>`<div class="stat-row ${q.out?'retired':''}">${dot(q)}<b>${h(q.name)}</b><small>배달 ${q.delivered}통</small><span class="score">${q.out?'하선':points(q)+'점'}</span></div>`).join('')}</div>
     ${mode==='practice'?turnButton('again','다시 연습하기','primary','rotate'):canHost()?turnButton('rematch','대기실에서 다시 모이기','primary','rotate'):'<p class="fine">방장이 다음 항해를 준비할 수 있어요.</p>'}`;
   }
-  const label=own?'내 차례':p.name+' 선장 차례',title=own?({roll:'주사위를 굴려요',choose:'어디로 갈까요?',office:g.offer==='upgrade'?'우체국을 키울까요?':'우체국을 세울까요?'})[g.phase]:'다음 항로를 기다려요';
+  const label=own?'내 차례':p.name+' 차례',title=own?({roll:'주사위를 굴려요',choose:'어디로 갈까요?',office:g.offer==='upgrade'?'우체국을 키울까요?':'우체국을 세울까요?'})[g.phase]:'다음 항로를 기다려요';
   let body='';
   if(g.phase==='roll'){body=dicePair(null,false)+(own?turnButton('roll','주사위 굴리기','primary','dice'):'');}
   if(g.phase==='choose') {
@@ -197,7 +197,7 @@ function actionPane(g,own,p) {
     const offer=OFFER[g.offer];
     body=`<p class="sub" style="margin:9px 0 12px">${h(TILES[p.pos].name)}에서 우표 ${offer.cost}장을 쓰고 별도장 ${offer.stars}개를 받아요.</p><div class="stack">${turnButton('build',offer.label,'primary','flag')}${turnButton('pass','그냥 지나가기','plain','arrow')}</div>`;
   }
-  if(!own)body+=`<p class="sub">${mode==='practice'?'연습 선장 '+h(p.name)+'가 움직이고 있어요.':h(p.name)+' 선장이 항해를 마치면 차례가 넘어와요.'}</p>`;
+  if(!own)body+=`<p class="sub">${mode==='practice'?'연습 선장 '+h(p.name)+'가 움직이고 있어요.':h(p.name)+'의 항해가 끝나면 차례가 넘어와요.'}</p>`;
   return `<div class="section-line" style="margin:0"><span class="turn-label">${dot(p)} ${h(label)}</span><span data-clock class="countdown"></span></div><h2>${h(title)}</h2>${body}`;
 }
 function renderGame() {
