@@ -1,18 +1,11 @@
 {
-  "name": "geuttae-number",
+  "name": "sosoking-skybreak",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "check": "node --check reconnect-preview/bootstrap-live.js && node --check reconnect-preview/live-chat.js && node --check reconnect-preview/firebase-config.js && node tests/phone-convert.test.mjs && node tests/site.test.mjs",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "firebase": "^12.4.0"
-  },
-  "devDependencies": {
-    "vite": "^6.4.1"
+    "dev": "node scripts/serve.mjs",
+    "check": "node --test",
+    "build": "node scripts/build.mjs"
   }
 }
