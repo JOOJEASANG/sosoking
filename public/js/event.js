@@ -1,6 +1,6 @@
 import {initializeApp,getApps} from 'firebase/app';
 import {getAuth,signInAnonymously,onAuthStateChanged} from 'firebase/auth';
-import {getFirestore,collection,doc,getDoc,setDoc,updateDoc,onSnapshot,query,serverTimestamp,writeBatch,deleteDoc} from 'firebase/firestore';
+import {getFirestore,collection,doc,getDoc,getDocs,setDoc,updateDoc,onSnapshot,query,serverTimestamp,writeBatch,deleteDoc} from 'firebase/firestore';
 import {allowedFields,htmlEscape as e,validateEvent,parseNameList,sumEvent,createCsv} from './event-core.js';
 
 const root=document.getElementById('app');
@@ -115,7 +115,7 @@ function renderOwner(){
  stage(`${sectionEventTitle()}${firstCode?`<div class="notice warning"><strong>중요: 관리자 복구 코드를 별도로 보관하세요.</strong> 기기를 변경하면 코드 없이는 이 행사의 총괄자 권한을 복구할 수 없습니다. 아래 '복구 코드 보기'를 눌러 복사하세요.</div>`:''}
  <div class="wide-card"><div class="card-top"><div><span class="eyebrow">행사 총괄자 전용</span><h2>실시간 집계 현황</h2></div><span class="soft-badge">서버 권한 보호</span></div><div class="stat-grid"><div class="stat-card"><span>전체 참가 인원</span><strong>${s.people}<small>명</small></strong></div><div class="stat-card"><span>단체 제출 현황</span><strong>${s.submitted}<small> / ${s.groups}</small></strong></div>${state.event.fee?`<div class="stat-card"><span>참가비 예정</span><strong class="money">${money(s.expected)}</strong></div><div class="stat-card"><span>입금 확인액</span><strong class="money">${money(s.paid)}</strong></div>`:''}</div>
  <div class="share-box"><label class="label">카카오톡에 공유할 행사 링크</label><div class="share-line"><input class="input" aria-label="행사 주소" readonly value="${e(link)}" id="eventLink"><button class="btn secondary" id="copyEventLink" type="button">링크 복사</button></div><p class="hint">링크를 받은 사람이더라도 총괄자의 승인 전에는 참가 명단을 작성하거나 볼 수 없습니다.</p></div>
- <div class="actions"><button class="btn outline" id="downloadCsv">전체 명단 CSV 저장</button><button class="btn outline" id="showRecovery">관리자 복구 코드 보기</button><a class="btn outline" href="/event.html">다른 행사 만들기</a></div><div id="statusMessage" class="notice" hidden></div></div>
+ <div class="actions"><button class="btn outline" id="downloadCsv">전체 명단 CSV 저장</button><button class="btn outline" id="showRecovery">관리자 복구 코드 보기</button><button class="btn outline" id="toggleEvent">${state.event.status==="open"?"접수 마감하기":"접수 다시 열기"}</button><button class="btn outline" id="removeEvent">행사 자료 삭제</button><a class="btn outline" href="/event.html">다른 행사 만들기</a></div><div id="statusMessage" class="notice" hidden></div></div>
  <div class="wide-card"><div class="card-top"><h2>담당자 승인 요청 <small>${pending.length}건</small></h2></div>${pending.length?pending.map(m=>`<div class="member-row"><div><strong>${e(m.name)}</strong><p>${e(groupTitle(m.groupId))} · 접속 권한 요청</p></div><div class="inline-buttons"><button class="btn small secondary approve" data-uid="${e(m.uid)}">승인</button><button class="btn small outline reject" data-uid="${e(m.uid)}">거절</button></div></div>`).join(''):'<p class="muted">현재 승인 대기 중인 담당자가 없습니다.</p>'}<div class="notice info">실제로 알고 있는 담당자인지 카카오톡이나 전화로 확인한 후 승인해 주세요. 승인하면 해당 기기에서 그 단체의 명단에 접근할 수 있습니다.</div></div>
  <div class="wide-card"><div class="card-top"><h2>단체별 참가 현황</h2><span class="soft-badge">${state.groups.length}개 단체</span></div><div class="group-list">${state.groups.map(g=>`<div class="group-row"><div><strong>${e(g.name)}</strong><p>${g.submitted?'제출 완료':'아직 미제출'}${state.event.fee?' · 입금 '+money(g.paid||0):''}</p></div><div class="group-end"><b>${g.count}명</b><button class="btn small outline group-edit" data-group="${e(g.id)}">${state.event.mode==='count'?'인원 수정':'명단 관리'}</button></div></div>`).join('')}</div>
  ${state.event.fee?`<div class="admin-money"><h3>단체별 입금 확인</h3><p class="hint">신청 금액과 실제 입금액은 다릅니다. 입금 확인 후 금액을 직접 입력하세요.</p><div class="money-grid">${state.groups.map(g=>`<label class="money-row"><span>${e(g.name)}</span><input type="number" min="0" step="1" class="input paid-amount" value="${Number(g.paid)||0}" data-group="${e(g.id)}" aria-label="${e(g.name)} 입금액"></label>`).join('')}</div><button id="savePayments" class="btn secondary">입금액 저장</button></div>`:''}<div id="adminEditor"></div></div>
@@ -128,6 +128,41 @@ function renderOwner(){
   try{await navigator.clipboard.writeText(code);localStorage.removeItem('sosoking-owner-code-new-'+state.id);message('관리자 복구 코드를 복사했습니다. 안전한 곳에 보관하세요.','success');}catch{prompt('아래 복구 코드를 별도로 보관하세요.',code);}
  };
  $('downloadCsv').onclick=()=>{const csv=createCsv(state.event,state.groups),blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(state.event.title||'행사')+'-참가명단.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+
+ $('toggleEvent').onclick=async()=>{
+  const status=state.event.status==='open'?'closed':'open';
+  if(status==='closed'&&!confirm('행사를 마감하면 지방 담당자가 더 이상 명단을 수정할 수 없습니다. 마감하시겠습니까?'))return;
+  try{await updateDoc(eventRef(),{status});state.event.status=status;renderOwner();}
+  catch(err){message(errorText(err),'error');}
+ };
+ $('removeEvent').onclick=async()=>{
+  const typed=prompt('이 행사의 참가자 정보와 관련 자료를 모두 삭제합니다. 복원할 수 없습니다.\n계속하려면 행사명을 정확하게 입력하세요.\n\n'+state.event.title);
+  if(typed!==state.event.title)return;
+  if(!confirm('정말 삭제하시겠습니까? 삭제 후에는 모든 행사 링크가 더 이상 작동하지 않습니다.'))return;
+  try{
+   const recoveries=await getDocs(collection(state.db,'events',state.id,'recovery'));
+   const others=[
+    ...state.groups.map(g=>groupRef(g.id)),
+    ...state.members.map(m=>memberRef(m.uid)),
+    doc(state.db,'events',state.id,'private','ownerRecovery')
+   ];
+   for(let i=0;i<others.length;i+=300){
+    const batch=writeBatch(state.db);
+    for(const ref of others.slice(i,i+300))batch.delete(ref);
+    await batch.commit();
+   }
+   const batch=writeBatch(state.db);
+   for(const found of recoveries.docs)batch.delete(found.ref);
+   batch.delete(eventRef());
+   await batch.commit();
+   const ids=JSON.parse(localStorage.getItem('sosoking-event-ids')||'[]');
+   localStorage.setItem('sosoking-event-ids',JSON.stringify(ids.filter(x=>x!==state.id)));
+   localStorage.removeItem('sosoking-owner-code-'+state.id);
+   localStorage.removeItem('sosoking-owner-code-new-'+state.id);
+   location.href='/event.html';
+  }catch(err){message('삭제를 완료하지 못했습니다. 다시 시도해 주세요. '+errorText(err),'error');}
+ };
+
  root.querySelectorAll('.approve,.reject,.revoke').forEach(b=>b.onclick=async()=>{
   const uid=b.dataset.uid,person=state.members.find(m=>m.uid===uid);if(!person)return;
   if(b.classList.contains('revoke')&&!confirm(`${person.name}님의 접근 권한을 취소하시겠습니까?`))return;
