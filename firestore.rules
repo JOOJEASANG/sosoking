@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signedIn() { return request.auth != null; }
+  function eventPath(eventId) { return /databases/$(database)/documents/events/$(eventId); }
+  function owner(eventId) {
+   return signedIn() && (
+    get(eventPath(eventId)).data.ownerUid == request.auth.uid ||
+    exists(/databases/$(database)/documents/events/$(eventId)/recovery/$(request.auth.uid))
+   );
+  }
+  function member(eventId) {
+   return get(/databases/$(database)/documents/events/$(eventId)/members/$(request.auth.uid)).data;
+  }
+  function assigned(eventId, groupId) {
+   return signedIn() &&
+    exists(/databases/$(database)/documents/events/$(eventId)/members/$(request.auth.uid)) &&
+    member(eventId).status == 'approved' && member(eventId).groupId == groupId;
+  }
+  match /events/{eventId} {
+   // This document is a public invitation shell: do not put attendee info, recovery hashes or passwords here.
+   allow get: if signedIn();
+   allow list: if false;
+   allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+    && request.resource.data.keys().hasOnly(['title','date','fee','mode','fields','groups','ownerUid','status','createdAt'])
+    && request.resource.data.title is string && request.resource.data.title.size() <= 100
+    && request.resource.data.groups is list && request.resource.data.groups.size() <= 80
+    && request.resource.data.mode in ['count','names','custom'] && request.resource.data.status == 'open'
+    && request.resource.data.fee is int && request.resource.data.fee >= 0 && request.resource.data.fee <= 100000000;
+   allow update: if owner(eventId) && request.resource.data.ownerUid == resource.data.ownerUid;
+   allow delete: if false;
+   match /private/{privateId} {
+    allow read: if owner(eventId);
+    allow create: if owner(eventId) && privateId == 'ownerRecovery'
+      && request.resource.data.hash is string && request.resource.data.hash.size() == 64;
+    allow update, delete: if false;
+   }
+   match /recovery/{userId} {
+    allow get: if signedIn() && request.auth.uid == userId;
+    allow list: if false;
+    // A 192-bit off-line secret is hashed before submission and compared server-side.
+    // Neither anonymous users nor event invite holders may read the protected stored hash.
+    allow create: if signedIn() && request.auth.uid == userId &&
+     request.resource.data.keys().hasOnly(['hash','createdAt']) &&
+     request.resource.data.hash is string && request.resource.data.hash.size() == 64 &&
+     request.resource.data.hash == get(/databases/$(database)/documents/events/$(eventId)/private/ownerRecovery).data.hash;
+    allow update: if false;
+    allow delete: if owner(eventId);
+   }
+   match /members/{userId} {
+    allow get: if signedIn() && (request.auth.uid == userId || owner(eventId));
+    allow list: if owner(eventId);
+    allow create: if signedIn() && request.auth.uid == userId
+      && request.resource.data.keys().hasOnly(['name','groupId','status','requestedAt'])
+      && request.resource.data.name is string && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 60
+      && request.resource.data.groupId is string && request.resource.data.groupId.size() >= 8
+      && request.resource.data.status == 'pending';
+    allow update: if owner(eventId) && request.resource.data.name == resource.data.name
+      && request.resource.data.groupId == resource.data.groupId
+      && request.resource.data.status in ['approved','pending','rejected'];
+    allow delete: if owner(eventId);
+   }
+   match /groups/{groupId} {
+    allow get: if owner(eventId) || assigned(eventId, groupId);
+    allow list: if owner(eventId);
+    allow create: if owner(eventId) && request.resource.data.name is string
+      && request.resource.data.name.size() <= 60
+      && request.resource.data.count == 0 && request.resource.data.paid == 0
+      && request.resource.data.attendees.size() == 0;
+    // All writers are constrained, including admins. Rules are not merely a UI condition.
+    allow update: if (owner(eventId) || assigned(eventId, groupId)) &&
+      request.resource.data.keys().hasOnly(['name','count','attendees','paid','submitted','updatedAt']) &&
+      request.resource.data.name == resource.data.name &&
+      request.resource.data.count is int && request.resource.data.count >= 0 && request.resource.data.count <= 20000 &&
+      request.resource.data.attendees is list && request.resource.data.attendees.size() <= 300 &&
+      request.resource.data.paid is int && request.resource.data.paid >= 0 && request.resource.data.paid <= 10000000000 &&
+      (owner(eventId) || (request.resource.data.paid == resource.data.paid &&
+       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count','attendees','submitted','updatedAt']) &&
+       get(eventPath(eventId)).data.status == 'open'));
+    allow delete: if false;
+   }
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}

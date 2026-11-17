@@ -1,4 +1,4 @@
-name: RIFT GUARD · Test & Deploy
+name: SOSOKING Tools · Test & Deploy
 on:
   push:
     branches: [main]
@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: rift-guard-${{ github.ref }}
+  group: sosoking-tools-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   check:
@@ -16,12 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+        with: {node-version: '22'}
       - run: npm install --no-audit --no-fund
-      - run: npm run check
-      - run: npm run build
-      - run: node --check public/js/game.js
+      - run: npm run check && npm run build
   deploy:
     if: github.event_name != 'pull_request'
     needs: check
@@ -30,12 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+        with: {node-version: '22'}
       - run: npm install --no-audit --no-fund
       - run: npm run check && npm run build
       - run: npm install -g firebase-tools@15.24.0
-      - name: Deploy to Firebase Hosting
+      - name: Prepare Firebase credentials
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -43,8 +39,19 @@ jobs:
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
           umask 077
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS"' EXIT
-          firebase deploy --only hosting --project sosoking-481e6 --non-interactive
-      - name: Verify public game
+      - name: Deploy Firestore security rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only firestore:rules --project sosoking-481e6 --non-interactive
+      - name: Deploy site
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
+      - name: Verify public programs
         run: |
-          curl --fail --retry 4 --retry-delay 4 -sSL https://sosoking-481e6.web.app/ | grep -q 'RIFT GUARD'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q 'SOSOKING'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/event.html | grep -q '행사 참가자 취합기'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/old-phone.html | grep -q '옛 휴대폰 번호 변환'
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f '${{ runner.temp }}/firebase-service-account.json'
