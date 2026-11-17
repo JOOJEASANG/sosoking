@@ -301,3 +301,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:manipu
 @media(prefers-reduced-motion:reduce){
  *,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}
 }
+.relocate-btn{width:100%;border:1px solid #426477;border-radius:9px;padding:11px 8px;margin-top:8px;background:#132e3f;color:#a4e8e4;font-size:11px;font-weight:900}
+.relocate-btn:not(:disabled):hover{border-color:#77ffda;background:#1b4550}
+.resume-btn{display:block;width:100%;border:1px solid #4c988e;border-radius:11px;background:linear-gradient(100deg,#193a45,#132934);padding:15px;color:#9ffbe0;font-weight:950;font-size:13px;margin-top:15px}
+.resume-btn:hover{border-color:#8effdf;background:#254f58}

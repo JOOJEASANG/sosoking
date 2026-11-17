@@ -1,7 +1,7 @@
 import {
   WIDTH,HEIGHT,CELL,COLS,ROWS,ROUTES,RUINS,PATH_TILES,RUIN_TILES,ROUTE_LENGTHS,
   DIFFICULTIES,TOWERS,ENEMIES,CARDS,gridToPixel,routePoints,routePosition,
-  canBuild,upgradePrice,sellValue,wavePlan,cardChoices,defaultBoosts,applyCard,formatNumber
+  canBuild,synergyCount,upgradePrice,sellValue,wavePlan,cardChoices,defaultBoosts,applyCard,formatNumber
 } from "./rules.js";
 
 const $=id=>document.getElementById(id);
@@ -10,8 +10,9 @@ const modal=$("modal"),modalBody=$("modalBody");
 const keys=Object.keys(TOWERS);
 const particles=[],shots=[],beams=[],floats=[];
 const stars=Array.from({length:90},(_,i)=>({x:(i*173+37)%WIDTH,y:(i*79+83)%HEIGHT,r:i%7===0?2:1}));
-let state,frame=0,last=0,hover=null,selectedKind=null,selectedTower=null,enemySeq=1,audio=null,muted=false,uiTimer=0;
+let state,frame=0,last=0,hover=null,selectedKind=null,selectedTower=null,movingTower=null,modalPauseRestore=false,enemySeq=1,audio=null,muted=false,uiTimer=0;
 let logs=[];
+const SAVE_KEY="riftguard-checkpoint-v1";
 
 function fresh(diff="normal"){
  const d=DIFFICULTIES[diff];
@@ -48,9 +49,47 @@ function burst(x,y,color,count=12,power=100){
 function floater(x,y,text,color="#ffffff"){
  floats.push({x,y,text,color,life:.85});if(floats.length>90)floats.shift();
 }
+function saveCheckpoint(){
+ if(!state||state.phase!=="prepare")return;
+ try{
+  localStorage.setItem(SAVE_KEY,JSON.stringify({
+   v:1,difficulty:state.difficulty,wave:state.wave,lives:state.lives,shield:state.shield,
+   credits:state.credits,score:state.score,kills:state.kills,charge:state.charge,
+   boosts:state.boosts,towers:state.towers.map(t=>({gx:t.gx,gy:t.gy,type:t.type,level:t.level}))
+  }));
+ }catch(err){/* storage may be unavailable */}
+}
+function readCheckpoint(){
+ try{
+  const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
+  if(!s||s.v!==1||!DIFFICULTIES[s.difficulty]||!Number.isInteger(s.wave)||s.wave<1||
+    !Array.isArray(s.towers)||s.towers.length>100||!s.boosts)return null;
+  return s;
+ }catch(err){return null;}
+}
+function resumeRun(){
+ const s=readCheckpoint();
+ if(!s){showIntro();return;}
+ shots.length=0;beams.length=0;floats.length=0;particles.length=0;
+ state=fresh(s.difficulty);
+ state.wave=s.wave;state.lives=s.lives;state.shield=s.shield;state.credits=s.credits;
+ state.score=s.score;state.kills=s.kills;state.charge=s.charge;
+ state.boosts={...defaultBoosts(),...s.boosts};state.towers=[];
+ for(const t of s.towers){
+  if(!TOWERS[t.type]||!canBuild(t.gx,t.gy,state.towers))continue;
+  const p=gridToPixel(t.gx,t.gy);
+  state.towers.push({...p,gx:t.gx,gy:t.gy,type:t.type,level:Math.max(1,Math.min(4,t.level)),angle:-Math.PI/2,cooldown:.1,flash:0});
+ }
+ selectedTower=null;selectedKind=null;movingTower=null;logs=[];
+ $("difficultyLabel").textContent=DIFFICULTIES[state.difficulty].label;
+ modal.classList.add("hidden");log("저장된 작전 복원 · WAVE "+state.wave+" 완료");
+ toast("작전 복구 성공 · 다음 웨이브를 시작하세요");
+ sound(660,.18,"triangle");updateUI();
+}
 function play(diff){
  shots.length=0;beams.length=0;floats.length=0;particles.length=0;
- state=fresh(diff);selectedKind=null;selectedTower=null;enemySeq=1;logs=[];
+ state=fresh(diff);selectedKind=null;selectedTower=null;movingTower=null;enemySeq=1;logs=[];
+ try{localStorage.removeItem(SAVE_KEY);}catch(err){}
  log("지휘 시스템 온라인. 첫 침공을 준비하세요.");
  $("difficultyLabel").textContent=DIFFICULTIES[diff].label;
  modal.classList.add("hidden");
@@ -62,7 +101,7 @@ function startWave(){
  if(state.phase!=="prepare")return;
  state.wave++;state.plan=wavePlan(state.wave);
  state.spawnIndex=0;state.waveTimer=0;state.phase="combat";state.paused=false;
- selectedTower=null;selectedKind=null;
+ selectedTower=null;selectedKind=null;movingTower=null;
  const warning=state.plan.boss?" · 보스 감지!":"";
  log("WAVE "+String(state.wave).padStart(2,"0")+" 침공 시작"+warning);
  toast(state.plan.boss?"경고: 거대 개체 접근 중!":"침공 감지 · 방어선을 유지하세요");
@@ -81,7 +120,7 @@ function spawnEnemy(data,dist=0,mini=false){
  state.enemies.push(e);return e;
 }
 function effectiveRange(t){return TOWERS[t.type].range*(1+(t.level-1)*.085)*state.boosts.range;}
-function effectiveDamage(t){return TOWERS[t.type].damage*(1+(t.level-1)*.48)*state.boosts.damage;}
+function effectiveDamage(t){return TOWERS[t.type].damage*(1+(t.level-1)*.48)*state.boosts.damage*(1+synergyCount(t,state.towers)*.13);}
 function effectiveInterval(t){return TOWERS[t.type].interval/((1+(t.level-1)*.18)*state.boosts.speed*(state.overdrive>0?1.65:1));}
 function inRange(t,e){return Math.hypot(t.x-e.x,t.y-e.y)<=effectiveRange(t)+ENEMIES[e.kind].size*.35;}
 function targetFor(t){
@@ -222,6 +261,7 @@ function endWave(){
 function useCard(id){
  applyCard(state,id);const card=CARDS.find(c=>c.id===id);
  log("프로토콜 적용: "+card.name);state.phase="prepare";
+ saveCheckpoint();
  modal.classList.add("hidden");selectedTower=null;selectedKind=null;
  toast(card.name+" 활성화");
  sound(720,.18,"triangle",.028);updateUI();
@@ -230,6 +270,7 @@ function gameOver(){
  state.phase="over";selectedTower=null;selectedKind=null;
  const best=Number(localStorage.getItem("riftguard-best")||0);
  if(state.score>best)localStorage.setItem("riftguard-best",String(state.score));
+ try{localStorage.removeItem(SAVE_KEY);}catch(err){}
  log("코어 기능 정지 · 작전 종료");
  sound(110,.5,"sawtooth",.05);
  showEnd();
@@ -275,7 +316,7 @@ function sell(){
  log("포탑 철거 · +"+back+" CR");sound(350,.11,"sine");updateUI();
 }
 function pickKind(kind){
- selectedTower=null;selectedKind=selectedKind===kind?null:kind;
+ movingTower=null;selectedTower=null;selectedKind=selectedKind===kind?null:kind;
  updateUI();
 }
 function canvasPoint(e){
@@ -289,6 +330,14 @@ canvas.addEventListener("pointerleave",()=>hover=null);
 canvas.addEventListener("pointerdown",e=>{
  if(!state||["menu","draft","over"].includes(state.phase))return;
  const p=canvasPoint(e),gx=Math.floor(p.x/CELL),gy=Math.floor(p.y/CELL);
+ if(movingTower){
+  if(!canBuild(gx,gy,state.towers)){toast("이동할 수 없는 위치입니다");return;}
+  if(state.credits<35){toast("재배치에 필요한 크레딧이 부족합니다");return;}
+  const p=gridToPixel(gx,gy);
+  movingTower.gx=gx;movingTower.gy=gy;movingTower.x=p.x;movingTower.y=p.y;movingTower.cooldown=.25;
+  state.credits-=35;selectedTower=movingTower;movingTower=null;
+  burst(p.x,p.y,"#65f4d5",19,85);log("시설 재배치 완료 · -35 CR");sound(670,.12,"triangle");updateUI();return;
+ }
  const t=state.towers.find(t=>t.gx===gx&&t.gy===gy);
  if(t){selectedTower=t;selectedKind=null;updateUI();return;}
  if(selectedKind){placeTower(gx,gy);return;}
@@ -304,7 +353,13 @@ $("speedBtn").addEventListener("click",()=>{state.speed=state.speed===1?2:1;upda
 $("overdriveBtn").addEventListener("click",triggerOverdrive);
 $("upgradeBtn").addEventListener("click",upgrade);
 $("sellBtn").addEventListener("click",sell);
-$("clearBtn").addEventListener("click",()=>{selectedTower=null;selectedKind=null;updateUI();});
+$("relocateBtn").addEventListener("click",()=>{
+ if(!selectedTower||state.credits<35)return;
+ movingTower=movingTower===selectedTower?null:selectedTower;
+ if(movingTower)toast("이동할 빈 칸을 선택하세요 · 35 CR");
+ updateUI();
+});
+$("clearBtn").addEventListener("click",()=>{selectedTower=null;selectedKind=null;movingTower=null;updateUI();});
 $("helpBtn").addEventListener("click",showHelp);
 $("muteBtn").addEventListener("click",()=>{muted=!muted;$("muteBtn").textContent=muted?"소리 켜기":"음소거";});
 $("newBtn").addEventListener("click",showReset);
@@ -313,7 +368,7 @@ window.addEventListener("keydown",e=>{
  if(["Space","Digit1","Digit2","Digit3","Digit4","Escape"].includes(e.code))e.preventDefault();
  if(e.code.startsWith("Digit")&&Number(e.code.slice(5))>=1&&Number(e.code.slice(5))<=4)pickKind(keys[Number(e.code.slice(5))-1]);
  if(e.code==="Space")triggerOverdrive();
- if(e.code==="Escape"){selectedTower=null;selectedKind=null;updateUI();}
+ if(e.code==="Escape"){selectedTower=null;selectedKind=null;movingTower=null;updateUI();}
  if(e.code==="KeyP")$("pauseBtn").click();
  if(e.code==="KeyF")$("speedBtn").click();
  if(e.code==="Enter"&&state.phase==="prepare")startWave();
@@ -354,7 +409,8 @@ function updateUI(){
   inspector.innerHTML='<div class="selected-title"><span class="selected-dot" style="background:'+cfg.color+'"></span><div><strong>'+cfg.name+'</strong><small>LEVEL '+t.level+' / 4</small></div></div>'+
    '<div class="inspect-rows"><div><span>공격력</span><b>'+Math.round(effectiveDamage(t))+'</b></div>'+
    '<div><span>사거리</span><b>'+Math.round(effectiveRange(t))+'</b></div>'+
-   '<div><span>공격 간격</span><b>'+effectiveInterval(t).toFixed(2)+'s</b></div></div>';
+   '<div><span>공격 간격</span><b>'+effectiveInterval(t).toFixed(2)+'s</b></div>'+
+   '<div><span>시설 연계</span><b>+'+(synergyCount(t,state.towers)*13)+'% DMG</b></div></div>';
   $("upgradeBtn").disabled=up===null||state.credits<up;
   $("upgradeBtn").textContent=up===null?"최대 강화 완료":"강화 · "+up+" CR";
   $("sellBtn").disabled=false;$("sellBtn").textContent="철거 · +"+sellValue(t.type,t.level);
@@ -363,6 +419,8 @@ function updateUI(){
   $("upgradeBtn").disabled=true;$("upgradeBtn").textContent="강화";
   $("sellBtn").disabled=true;$("sellBtn").textContent="철거";
  }
+ $("relocateBtn").disabled=!selectedTower||state.credits<35;
+ $("relocateBtn").textContent=movingTower?"이동할 위치 선택 중…":"재배치 · 35 CR";
  $("bestStat").textContent=formatNumber(Number(localStorage.getItem("riftguard-best")||0));
 }
 function modalSet(html){
@@ -370,6 +428,9 @@ function modalSet(html){
 }
 function showIntro(){
  state=fresh("normal");state.phase="menu";updateUI();
+ const checkpoint=readCheckpoint();
+ const continueBlock=checkpoint?
+ '<button type="button" id="continueSaved" class="resume-btn">↻ 저장된 작전 이어하기 · WAVE '+(checkpoint.wave+1)+' →</button>':"";
  modalSet('<div class="modal-eyebrow">SOSOKING ORIGINAL · DEFENSE</div>'+
  '<div class="modal-symbol">✦</div><h1>RIFT <em>GUARD</em></h1>'+
  '<p class="modal-lead">두 개의 차원문, 하나의 코어.<br>당신의 배치와 선택이 전장의 흐름을 바꿉니다.</p>'+
@@ -379,8 +440,9 @@ function showIntro(){
  '<button class="difficulty-btn" data-difficulty="easy"><small>CASUAL</small><b>정찰</b><span>넉넉한 자원 · 여유로운 방어</span></button>'+
  '<button class="difficulty-btn recommended" data-difficulty="normal"><small>RECOMMENDED</small><b>작전</b><span>전략과 반응의 균형</span></button>'+
  '<button class="difficulty-btn" data-difficulty="hard"><small>HARDCORE</small><b>극한</b><span>강한 적 · 높은 기록 점수</span></button></div>'+
- '<p class="modal-footnote">무료 · 광고 없음 · 설치 없이 플레이</p>');
+ '<p class="modal-footnote">무료 · 광고 없음 · 설치 없이 플레이</p>'+continueBlock);
  modalBody.querySelectorAll("[data-difficulty]").forEach(b=>b.addEventListener("click",()=>play(b.dataset.difficulty)));
+ if(checkpoint)$("continueSaved").addEventListener("click",resumeRun);
 }
 function showDraft(reward){
  const cards=cardChoices(state.wave);
@@ -399,7 +461,17 @@ function showEnd(){
  '<button class="primary large" id="restartFromEnd">다시 출격 →</button>');
  $("restartFromEnd").addEventListener("click",showIntro);
 }
+function pauseForUtility(){
+ modalPauseRestore=state.phase==="combat"&&!state.paused;
+ if(modalPauseRestore)state.paused=true;
+}
+function closeUtility(){
+ modal.classList.add("hidden");
+ if(modalPauseRestore)state.paused=false;
+ modalPauseRestore=false;updateUI();
+}
 function showHelp(){
+ pauseForUtility();
  modalSet('<div class="modal-eyebrow">FIELD MANUAL</div><h2>작전 가이드</h2>'+
  '<div class="help-text"><p><b>01 · 건설</b><br>왼쪽에서 포탑을 고른 뒤 전장 빈 칸을 선택하세요. 적이 이동하는 도로와 잔해 위에는 건설할 수 없습니다.</p>'+
  '<p><b>02 · 경제</b><br>적을 처치하면 크레딧을 얻습니다. 고급 포탑만 늘리기보다 저렴한 포탑을 강화하는 편이 유리할 때도 있습니다.</p>'+
@@ -408,15 +480,16 @@ function showHelp(){
  '<p><b>05 · 선택의 시간</b><br>매 웨이브 종료 후 세 가지 프로토콜 중 하나를 선택할 수 있습니다. 5웨이브마다 강력한 보스가 등장합니다.</p>'+
  '<p><b>단축키</b><br>1~4 포탑 선택 · Space 오버드라이브 · Enter 웨이브 시작 · P 일시정지 · F 2배속 · ESC 선택 해제</p></div>'+
  '<button id="helpClose" class="primary large">전장으로 돌아가기</button>');
- $("helpClose").addEventListener("click",()=>modal.classList.add("hidden"));
+ $("helpClose").addEventListener("click",closeUtility);
 }
 function showReset(){
+ pauseForUtility();
  const active=state.phase==="combat"||state.phase==="prepare";
  if(!active){showIntro();return;}
  modalSet('<div class="modal-eyebrow">NEW OPERATION</div><h2>작전을 초기화할까요?</h2>'+
  '<p class="modal-lead">현재 진행 중인 웨이브와 포탑은 초기화됩니다.<br>최고 기록은 유지됩니다.</p>'+
  '<div class="confirm-row"><button id="resetCancel" class="ghost large">계속 플레이</button><button id="resetConfirm" class="danger-btn large">새 작전 시작</button></div>');
- $("resetCancel").addEventListener("click",()=>modal.classList.add("hidden"));
+ $("resetCancel").addEventListener("click",closeUtility);
  $("resetConfirm").addEventListener("click",showIntro);
 }
 function renderBackground(){
@@ -504,11 +577,26 @@ function drawTower(t,ghost=false){
  ctx.restore();
 }
 function renderTowers(){
+ ctx.save();ctx.setLineDash([5,6]);ctx.lineWidth=1.5;
+ for(let i=0;i<state.towers.length;i++)for(let j=i+1;j<state.towers.length;j++){
+  const a=state.towers[i],b=state.towers[j];
+  if(a.type===b.type||Math.hypot(a.x-b.x,a.y-b.y)>115)continue;
+  ctx.strokeStyle="rgba(118,255,217,.38)";ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+ }
+ ctx.restore();
  for(const t of state.towers)drawTower(t);
- if(selectedTower){
+ if(selectedTower&&!movingTower){
   ctx.strokeStyle="rgba(122,255,220,.26)";ctx.fillStyle="rgba(100,240,210,.06)";ctx.lineWidth=2;
   ctx.beginPath();ctx.arc(selectedTower.x,selectedTower.y,effectiveRange(selectedTower),0,Math.PI*2);ctx.fill();ctx.stroke();
   ctx.strokeStyle="#a6ffe6";ctx.lineWidth=2;ctx.strokeRect(selectedTower.x-25,selectedTower.y-25,50,50);
+ }
+ if(movingTower&&hover){
+  const valid=canBuild(hover.gx,hover.gy,state.towers)&&state.credits>=35;
+  const p=gridToPixel(hover.gx,hover.gy);
+  ctx.strokeStyle=valid?"rgba(125,255,220,.52)":"rgba(255,100,130,.65)";
+  ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,effectiveRange(movingTower),0,Math.PI*2);ctx.stroke();
+  ctx.strokeRect(hover.gx*CELL+2,hover.gy*CELL+2,CELL-4,CELL-4);
+  drawTower({...movingTower,x:p.x,y:p.y},true);
  }
  if(hover&&selectedKind){
   const gx=hover.gx,gy=hover.gy,valid=canBuild(gx,gy,state.towers),cfg=TOWERS[selectedKind];

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
  ROUTES,ROUTE_LENGTHS,routePosition,PATH_TILES,RUIN_TILES,
- canBuild,TOWERS,upgradePrice,sellValue,wavePlan,cardChoices,CARDS,
+ canBuild,synergyCount,TOWERS,upgradePrice,sellValue,wavePlan,cardChoices,CARDS,
  defaultBoosts,applyCard,DIFFICULTIES
 } from "../public/js/rules.js";
 
@@ -64,4 +64,12 @@ test("All permanent upgrades have observable effects",()=>{
  assert.ok(state.boosts.freeze>0);
  assert.ok(state.boosts.crit>0);
  assert.deepEqual(Object.keys(DIFFICULTIES),["easy","normal","hard"]);
+});
+
+test("Mixed tower adjacency rewards positioning, capped to 3 links",()=>{
+ const p={x:100,y:100,type:"pulse"};
+ const towers=[p,{x:150,y:100,type:"frost"},{x:100,y:150,type:"rail"},
+   {x:150,y:150,type:"arc"},{x:300,y:100,type:"frost"},{x:115,y:100,type:"pulse"}];
+ assert.equal(synergyCount(p,towers),3);
+ assert.equal(synergyCount({x:900,y:400,type:"pulse"},towers),0);
 });

@@ -87,6 +87,11 @@ export function canBuild(x,y,towers=[]){
     &&!PATH_TILES.has(key)&&!RUIN_TILES.has(key)
     &&!towers.some(t=>t.gx===x&&t.gy===y);
 }
+// Different adjacent tower types resonate, rewarding mixed tactical formations.
+export function synergyCount(t,towers){
+ return Math.min(3,towers.filter(other=>other!==t&&other.type!==t.type&&
+   Math.hypot(other.x-t.x,other.y-t.y)<=115).length);
+}
 export function upgradePrice(type,level){
   if(level>=4)return null;
   return Math.round(TOWERS[type].cost*(.55+level*.50)/5)*5;
