@@ -22,9 +22,12 @@ service cloud.firestore {
    allow get: if signedIn();
    allow list: if false;
    allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.keys().hasOnly(['title','date','fee','mode','fields','groups','ownerUid','status','createdAt'])
+    && request.resource.data.keys().hasOnly(['title','date','fee','feeItems','mode','fields','groups','ownerUid','status','createdAt'])
     && request.resource.data.title is string && request.resource.data.title.size() <= 100
     && request.resource.data.groups is list && request.resource.data.groups.size() <= 80
+    && request.resource.data.fields is list && request.resource.data.fields.size() <= 20
+    && (!request.resource.data.keys().hasAny(['feeItems']) ||
+        (request.resource.data.feeItems is list && request.resource.data.feeItems.size() <= 12))
     && request.resource.data.mode in ['count','names','custom'] && request.resource.data.status == 'open'
     && request.resource.data.fee is int && request.resource.data.fee >= 0 && request.resource.data.fee <= 100000000;
    allow update: if owner(eventId) && request.resource.data.ownerUid == resource.data.ownerUid;
@@ -67,13 +70,17 @@ service cloud.firestore {
     allow create: if owner(eventId) && request.resource.data.name is string
       && request.resource.data.name.size() <= 60
       && request.resource.data.count == 0 && request.resource.data.paid == 0
-      && request.resource.data.attendees.size() == 0;
+      && request.resource.data.attendees.size() == 0
+      && (!request.resource.data.keys().hasAny(['feeQuantities']) ||
+          (request.resource.data.feeQuantities is map && request.resource.data.feeQuantities.keys().size() <= 12));
     // All writers are constrained, including admins. Rules are not merely a UI condition.
     allow update: if (owner(eventId) || assigned(eventId, groupId)) &&
-      request.resource.data.keys().hasOnly(['name','count','attendees','paid','submitted','updatedAt']) &&
+      request.resource.data.keys().hasOnly(['name','count','attendees','feeQuantities','paid','submitted','updatedAt']) &&
       request.resource.data.name == resource.data.name &&
       request.resource.data.count is int && request.resource.data.count >= 0 && request.resource.data.count <= 20000 &&
       request.resource.data.attendees is list && request.resource.data.attendees.size() <= 300 &&
+      (!request.resource.data.keys().hasAny(['feeQuantities']) ||
+        (request.resource.data.feeQuantities is map && request.resource.data.feeQuantities.keys().size() <= 12)) &&
       request.resource.data.paid is int && request.resource.data.paid >= 0 && request.resource.data.paid <= 10000000000 &&
       (owner(eventId) || (request.resource.data.paid == resource.data.paid &&
        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count','attendees','submitted','updatedAt']) &&

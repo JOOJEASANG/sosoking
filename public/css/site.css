@@ -39,3 +39,53 @@
 .install-dialog-done{width:100%}
 @media(max-width:850px){.nav nav{gap:12px}.nav nav a{font-size:13px}.install-trigger{padding:9px 12px}}
 @media(max-width:640px){.nav .brand-symbol{width:38px;height:38px}.nav .install-trigger{margin-left:auto;min-height:40px;font-size:13px}.nav nav{order:3;width:100%;justify-content:space-between;margin-left:0}.hero-cta{align-items:stretch}.hero-cta>.btn{flex:1}.install-dialog-inner{padding:26px 21px 23px}}
+
+
+/* Event form builder: predefined checkboxes, custom fields and flexible fee items */
+.section-in-panel h3,.custom-config-head h3{margin:0;font-size:17px;line-height:1.4;letter-spacing:-.035em}
+.custom-config-head{display:flex;gap:16px;justify-content:space-between;align-items:center;margin:19px 0 15px}
+.custom-config-head .hint{margin:2px 0 0}
+.base-field-row{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:12px;border-radius:11px;background:#fff;border:1px solid #dfe8ee;min-height:54px}
+.base-field-row .checkrow{font-weight:700}
+.base-field-row .required-field{font-size:12px;font-weight:500;color:#637789;white-space:nowrap}
+.base-field-row .required-field input{width:16px;height:16px}
+.base-field-row .required-field:has(input:disabled){opacity:.48}
+.custom-fields-list,.fee-items-list{display:flex;flex-direction:column;gap:13px}
+.config-item{background:#fff;border:1px solid #dae5ed;border-radius:13px;padding:16px;box-shadow:0 4px 14px #1b365209}
+.config-item-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.config-item-top strong{font-size:15px;color:#26435a}
+.config-item .form-grid{margin:0 0 14px}
+.config-item>.checkrow{font-size:14px}
+.extra-options{margin:0 0 14px}
+.config-item .textarea{min-height:75px;resize:vertical}
+.fee-line #feeWrap{border-top:1px solid #dfe8ef;margin-top:17px;padding-top:3px}
+.fee-line .custom-config-head{margin-top:17px}
+.fee-quantity-panel{background:#f6fbfa;border:1px solid #d9ebe5;padding:17px;border-radius:14px}
+.fee-quantity-panel .custom-config-head{margin:0 0 8px}
+.fee-quantity-row{display:flex;justify-content:space-between;align-items:center;gap:16px;background:#fff;padding:11px 13px;border-radius:11px;border:1px solid #e0ebe8;margin:10px 0}
+.fee-quantity-row>span{display:flex;flex-direction:column;gap:2px}
+.fee-quantity-row small{font-size:13px;color:#607687}
+.fee-quantity-row input{max-width:132px;font-size:18px;text-align:right;font-weight:750}
+.fee-summary{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:15px 17px;border-radius:12px;background:#e7f5ef;color:#1b665a;font-size:15px}
+.fee-summary strong{font-size:22px;white-space:nowrap}
+.fee-quantity-panel .fee-summary{margin-top:14px}
+.attendee-fees{border:1px solid #d7e8e5;border-radius:11px;padding:13px 14px 15px;margin:15px 0 0;background:#fff}
+.attendee-fees legend{padding:0 7px;font-size:14px;font-weight:800;color:#2d5c56}
+.fee-check-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fee-check{min-width:0;border:1px solid #e0e9e6;border-radius:10px;padding:9px 10px;align-items:flex-start}
+.fee-check:has(input:checked){background:#eaf8f2;border-color:#75c5af}
+.fee-check span{display:flex;flex-direction:column;min-width:0;line-height:1.5}
+.fee-check small{color:#5b7584}
+.person-fee-amount{display:flex;gap:10px;justify-content:space-between;align-items:center;border-top:1px solid #e5efeb;padding-top:10px;margin-top:13px;font-size:14px;color:#617589}
+.person-fee-amount strong{color:#155c51;font-size:18px}
+.entry-row .form-grid{align-items:end}
+@media(max-width:800px){.fields-panel .option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){
+ .custom-config-head{align-items:stretch;flex-direction:column;gap:8px}
+ .custom-config-head>.btn{width:100%}
+ .fields-panel .option-grid{grid-template-columns:1fr}
+ .config-item{padding:13px}
+ .fee-check-list{grid-template-columns:1fr}
+ .fee-quantity-row input{max-width:114px}
+ .fee-summary strong{font-size:19px}
+}
