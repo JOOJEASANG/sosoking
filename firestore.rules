@@ -83,7 +83,7 @@ service cloud.firestore {
         (request.resource.data.feeQuantities is map && request.resource.data.feeQuantities.keys().size() <= 12)) &&
       request.resource.data.paid is int && request.resource.data.paid >= 0 && request.resource.data.paid <= 10000000000 &&
       (owner(eventId) || (request.resource.data.paid == resource.data.paid &&
-       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count','attendees','submitted','updatedAt']) &&
+       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count','attendees','feeQuantities','submitted','updatedAt']) &&
        get(eventPath(eventId)).data.status == 'open'));
     allow delete: if owner(eventId);
    }
