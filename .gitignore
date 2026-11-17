@@ -1,7 +1,6 @@
-dist/
-dist-public/
 node_modules/
-outputs/
+dist-public/
+.DS_Store
 .firebase/
-firebase-debug.log
-.tidepost-local.sqlite*
+.env
+coverage/

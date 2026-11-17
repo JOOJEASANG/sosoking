@@ -1,188 +1,140 @@
-export const TITLE = '물결우체국';
-export const ROUND_LIMIT = 8;
-export const TEAMS = [
-  { name: '산호', color: '#cc6248', light: '#f3c1aa' },
-  { name: '청록', color: '#277d78', light: '#b3dcd0' },
-  { name: '제비꽃', color: '#8065a6', light: '#d7c7e7' },
-  { name: '호박', color: '#ae802c', light: '#f4d891' }
-];
+// SOSOKING: Rift Guard — deterministic game rules shared by gameplay and tests.
+export const WIDTH = 1000;
+export const HEIGHT = 600;
+export const CELL = 50;
+export const COLS = WIDTH / CELL;
+export const ROWS = HEIGHT / CELL;
 
-const port = (name, theme) => ({name, theme, kind: 'port'});
-export const TILES = [
-  { name: '출항 우체국', kind: 'start', theme: 'post' },
-  port('귤빛 부두','orange'), port('조개 공방','shell'), port('산호 서점','book'),
-  { name: '우표 창고', kind: 'stock', theme: 'stamp' },
-  port('솔바람 숲','pine'), port('꽃등 정원','flower'), port('백사장 찻집','tea'),
-  { name: '순풍 등대', kind: 'wind', theme: 'light' },
-  port('하늘 유리방','glass'), port('해달 시장','market'), port('라일락 만','lilac'),
-  { name: '병편지 곶', kind: 'bottle', theme: 'bottle' },
-  port('노을 빵집','bread'), port('파도 다방','cafe'), port('별모래 항','star')
+export const ROUTES = [
+  [[-1,2],[3,2],[3,4],[7,4],[7,2],[12,2],[12,5],[18,5],[20,5]],
+  [[-1,9],[3,9],[3,7],[7,7],[7,9],[12,9],[12,5],[18,5],[20,5]]
 ];
-
-export const OFFER = {
-  build: {label:'우체국 세우기', cost:4, stars:2},
-  upgrade: {label:'등대 우체국으로 증축', cost:3, stars:2}
-};
-export const TILE_RULE = {
-  port:'빈 섬에 우표 4장으로 우체국을 세울 수 있어요.',
-  start:'이 칸을 지나거나 도착하면 우표 2장을 받아요.',
-  stock:'도착하면 우표 3장을 받아요.',
-  wind:'특급권을 1장 충전해요. 이미 2장이면 우표 2장을 받아요.',
-  bottle:'도착하면 표류한 병편지를 열어 선물을 받아요.'
+export const RUINS = [[1,4],[2,4],[5,0],[5,10],[9,0],[10,7],[10,10],[15,2],[15,8],[17,10],[18,1],[1,6]];
+export const DIFFICULTIES = {
+  easy:{label:"정찰",hp:.83,speed:.92,credits:450,lives:25,score:1},
+  normal:{label:"작전",hp:1,speed:1,credits:370,lives:20,score:1.5},
+  hard:{label:"극한",hp:1.28,speed:1.13,credits:350,lives:15,score:2.3}
 };
 
-export function tide(round) { return Math.floor((round - 1) / 2) % 2 === 0 ? 1 : -1; }
-export function route(pos, steps, direction) {
-  return Array.from({length:steps}, (_, i) => (pos + direction * (i + 1) + 32) % 16);
-}
-export function captain(g) { return g.players[g.active]; }
-export function points(p) { return p.stars + Math.floor(p.stamps / 3); }
-export function ranking(g) {
-  return g.players.slice().sort((a,b) => Number(a.out) - Number(b.out) || points(b) - points(a) || a.seat - b.seat);
-}
-export function winners(g) {
-  const ranks = ranking(g).filter(p => !p.out);
-  return ranks.filter(p => points(p) === points(ranks[0])).map(p => p.id);
-}
-const end = path => path[path.length - 1];
-const d6 = random => 1 + Math.floor(random() * 6);
-function note(g, text) {
-  g.log.unshift({id:++g.serial, text});
-  if (g.log.length > 14) g.log.pop();
-}
+export const TOWERS = {
+  pulse:{name:"펄스 캐논",sub:"빠른 단일 공격",cost:90,range:153,damage:18,interval:.55,speed:650,color:"#65f4d5",key:"1"},
+  frost:{name:"서리 방사기",sub:"광역 둔화",cost:125,range:148,damage:12,interval:1.28,speed:370,splash:62,slow:.48,color:"#75b4ff",key:"2"},
+  rail:{name:"레일 스나이퍼",sub:"긴 사거리 · 관통",cost:175,range:245,damage:68,interval:1.68,pierce:3,color:"#ffcc77",key:"3"},
+  arc:{name:"아크 코일",sub:"연쇄 번개",cost:205,range:171,damage:33,interval:1.18,chain:4,color:"#cc95ff",key:"4"}
+};
 
-export function newGame(members) {
-  if (members.length < 2 || members.length > 4) throw Error('선장 2~4명이 필요해요.');
-  const players = members.map(m => ({
-    id:m.id, name:m.name, seat:m.seat, pos:0, stamps:8, stars:0, express:2,
-    destination:3, delivered:0, out:false
-  }));
-  const g = {players, round:1, active:0, phase:'roll', dice:[], offices:{},
-    offer:null, move:null, turn:1, serial:0, log:[], finishReason:null};
-  note(g, '첫 편지의 목적지는 산호 서점입니다.');
-  return g;
-}
+export const ENEMIES = {
+  drone:{name:"드론",hp:72,speed:67,bounty:12,damage:1,color:"#ef7b9b",size:12},
+  dash:{name:"스프린터",hp:43,speed:114,bounty:11,damage:1,color:"#fbcd7a",size:10},
+  shield:{name:"실드봇",hp:152,shield:82,speed:53,bounty:22,damage:2,color:"#7aabff",size:16},
+  tank:{name:"중장갑",hp:320,armor:.30,speed:37,bounty:29,damage:3,color:"#ff9d77",size:20},
+  split:{name:"분열체",hp:132,speed:72,bounty:21,damage:2,color:"#b5ee91",size:15},
+  boss:{name:"공허 군주",hp:2000,shield:260,armor:.18,speed:35,bounty:230,damage:6,color:"#ed79ff",size:31}
+};
 
-function nextLetter(g, p, random) {
-  const candidates = route(p.pos, 9, tide(g.round)).slice(2).filter(i => TILES[i].kind === 'port');
-  return candidates[Math.floor(random() * candidates.length)];
-}
+export const CARDS = [
+  {id:"damage",icon:"✦",name:"고출력 탄두",description:"모든 포탑 공격력 +15%",detail:"화력 강화",tone:"mint"},
+  {id:"speed",icon:"⌁",name:"시간 가속기",description:"모든 포탑 공격 속도 +12%",detail:"연사력 강화",tone:"blue"},
+  {id:"range",icon:"◎",name:"정밀 탐지",description:"모든 포탑 사거리 +10%",detail:"전장 통제",tone:"purple"},
+  {id:"cash",icon:"◇",name:"긴급 보급",description:"즉시 160 크레딧 획득",detail:"경제 확장",tone:"amber"},
+  {id:"repair",icon:"♥",name:"긴급 수리",description:"코어 내구도 +5 (최대 30)",detail:"생존 강화",tone:"rose"},
+  {id:"shield",icon:"⬡",name:"에너지 장벽",description:"코어 보호막 +5",detail:"피해 흡수",tone:"blue"},
+  {id:"bounty",icon:"◈",name:"잔해 회수",description:"적 처치 보상 +20%",detail:"경제 성장",tone:"amber"},
+  {id:"freeze",icon:"❆",name:"극저온 촉매",description:"서리 포탑 둔화 효과 +12%",detail:"제어 강화",tone:"purple"},
+  {id:"crit",icon:"✧",name:"약점 해석",description:"공격 시 12% 확률로 2배 피해",detail:"폭발 화력",tone:"rose"}
+];
 
-export function options(g) {
-  if (g.phase !== 'choose') return [];
-  const p = captain(g);
-  const faces = [{id:'a',steps:g.dice[0]}];
-  if (g.dice[0] !== g.dice[1]) faces.push({id:'b',steps:g.dice[1]});
-  if (p.express > 0) faces.push({id:'express',steps:g.dice[0] + g.dice[1]});
-  return faces.map(face => {
-    const path = route(p.pos, face.steps, tide(g.round));
-    return {...face, path, to:end(path), delivery:path.includes(p.destination)};
-  });
+export function seeded(seed){
+  let x = (Math.imul(seed ^ 0x9e3779b9, 1664525) + 1013904223) >>> 0;
+  return ()=>{ x ^= x<<13; x ^= x>>>17; x ^= x<<5; return (x>>>0)/4294967296; };
 }
-function finish(g, reason) {
-  g.phase = 'finished'; g.offer = null; g.finishReason = reason;
-  note(g, reason === 'last' ? '마지막 선장이 항해를 마쳤습니다.' : '여덟 번째 라운드의 배달을 마쳤습니다.');
+export function gridToPixel(x,y){return {x:x*CELL+CELL/2,y:y*CELL+CELL/2};}
+export function routePoints(lane){return ROUTES[lane].map(p=>gridToPixel(p[0],p[1]));}
+export function getRouteLength(lane){
+  const pts=routePoints(lane); let len=0;
+  for(let i=1;i<pts.length;i++)len+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);
+  return len;
 }
-function nextTurn(g) {
-  const oldActive = g.active;
-  let next = (oldActive + 1) % g.players.length;
-  while (g.players[next].out) next = (next + 1) % g.players.length;
-  if (next <= oldActive) {
-    if (g.round === ROUND_LIMIT) { finish(g,'rounds'); return; }
-    g.round++;
-    if (g.round % 2 === 1) note(g, '물때가 바뀌어 항로가 반대로 돕니다.');
+export const ROUTE_LENGTHS=[getRouteLength(0),getRouteLength(1)];
+export function routePosition(lane,dist){
+  const pts=routePoints(lane);
+  let left=Math.max(0,dist);
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1],b=pts[i],segment=Math.hypot(b.x-a.x,b.y-a.y);
+    if(left<=segment)return{x:a.x+(b.x-a.x)*left/segment,y:a.y+(b.y-a.y)*left/segment,angle:Math.atan2(b.y-a.y,b.x-a.x)};
+    left-=segment;
   }
-  g.active = next; g.turn++; g.phase = 'roll'; g.offer = null; g.dice = [];
+  const b=pts[pts.length-1]; return {x:b.x,y:b.y,angle:0};
 }
-function land(g, p, random) {
-  const tile = TILES[p.pos], office = g.offices[p.pos];
-  if (tile.kind === 'port') {
-    if (office && office.owner !== p.id) {
-      const owner = g.players.find(q => q.id === office.owner);
-      const fee = Math.min(p.stamps, office.level);
-      p.stamps -= fee; owner.stamps += fee;
-      if (fee) note(g, p.name + ' → ' + owner.name + ' · 우편 이용료 ' + fee + '장');
-    } else {
-      const type = !office ? 'build' : office.level === 1 ? 'upgrade' : null;
-      if (type && p.stamps >= OFFER[type].cost) {
-        g.phase = 'office'; g.offer = type; return;
-      }
+export function pathTiles(){
+  const all=new Set();
+  for(const route of ROUTES)for(let i=1;i<route.length;i++){
+    let [x,y]=route[i-1];const [tx,ty]=route[i];
+    const sx=Math.sign(tx-x),sy=Math.sign(ty-y);
+    while(x!==tx||y!==ty){
+      if(x>=0&&x<COLS&&y>=0&&y<ROWS)all.add(x+","+y);
+      x+=sx;y+=sy;
     }
+    if(tx>=0&&tx<COLS&&ty>=0&&ty<ROWS)all.add(tx+","+ty);
   }
-  if (tile.kind === 'stock') {
-    p.stamps += 3; note(g,p.name + ' · 창고에서 우표 3장 수령');
-  } else if (tile.kind === 'wind') {
-    if (p.express < 2) { p.express++; note(g,p.name + ' · 특급권 1장 충전'); }
-    else { p.stamps += 2; note(g,p.name + ' · 순풍 보너스 우표 2장'); }
-  } else if (tile.kind === 'bottle') {
-    const gift = Math.floor(random() * 3);
-    if (gift === 0) { p.stamps += 3; note(g,'병편지 선물 · '+p.name+'에게 우표 3장'); }
-    else if (gift === 1) { p.stars += 2; note(g,'병편지 선물 · '+p.name+'에게 별도장 2개'); }
-    else { p.stars++; p.stamps += 2; note(g,'병편지 선물 · '+p.name+'에게 별도장 1개와 우표 2장'); }
-  }
-  nextTurn(g);
+  return all;
 }
-
-export function play(g, id, action, random = Math.random) {
-  const p = captain(g);
-  if (g.phase === 'finished' || p.id !== id || p.out) throw Error('지금은 내 차례가 아니에요.');
-  if (action.type === 'roll' && g.phase === 'roll') {
-    g.dice = [d6(random), d6(random)]; g.phase = 'choose'; return;
-  }
-  if (action.type === 'sail' && g.phase === 'choose') {
-    const choice = options(g).find(o => o.id === action.choice);
-    if (!choice) throw Error('선택할 수 없는 항로예요.');
-    if (choice.id === 'express') p.express--;
-    g.move = {turn:g.turn, player:p.id, from:p.pos, path:choice.path, delivery:choice.delivery};
-    p.pos = choice.to;
-    note(g,p.name + ' · ' + TILES[p.pos].name + ' 도착');
-    if (choice.path.includes(0)) { p.stamps += 2; note(g,'출항 우체국 통과 · '+p.name+' 우표 2장'); }
-    if (choice.delivery) {
-      p.delivered++; p.stars += 4; p.stamps += 3;
-      note(g,p.name + ' · ' + TILES[p.destination].name + ' 배달! 별도장 4개와 우표 3장');
-      p.destination = nextLetter(g,p,random);
-    }
-    land(g,p,random); return;
-  }
-  if ((action.type === 'build' || action.type === 'pass') && g.phase === 'office') {
-    if (action.type === 'build') {
-      const offer = OFFER[g.offer];
-      if (p.stamps < offer.cost) throw Error('우표가 부족해요.');
-      p.stamps -= offer.cost; p.stars += offer.stars;
-      g.offices[p.pos] = {owner:p.id, level:g.offer === 'upgrade' ? 2 : 1};
-      note(g,p.name+' · '+TILES[p.pos].name+' '+(g.offer === 'upgrade'?'등대 우체국 증축':'우체국 개설'));
-    }
-    nextTurn(g); return;
-  }
-  throw Error('현재 단계에서 할 수 없는 행동이에요.');
+export const PATH_TILES=pathTiles();
+export const RUIN_TILES=new Set(RUINS.map(p=>p[0]+","+p[1]));
+export function canBuild(x,y,towers=[]){
+  const key=x+","+y;
+  return Number.isInteger(x)&&Number.isInteger(y)&&x>=0&&x<COLS&&y>=0&&y<ROWS
+    &&!PATH_TILES.has(key)&&!RUIN_TILES.has(key)
+    &&!towers.some(t=>t.gx===x&&t.gy===y);
 }
-
-export function retire(g,id) {
-  const p = g.players.find(q => q.id === id);
-  if (!p || p.out || g.phase === 'finished') return;
-  p.out = true;
-  for (const [key,office] of Object.entries(g.offices)) if (office.owner === id) delete g.offices[key];
-  note(g,p.name+' 선장이 항해에서 내렸습니다.');
-  if (g.players.filter(q => !q.out).length <= 1) finish(g,'last');
-  else if (captain(g).id === id) nextTurn(g);
+export function upgradePrice(type,level){
+  if(level>=4)return null;
+  return Math.round(TOWERS[type].cost*(.55+level*.50)/5)*5;
 }
-
-export function pilotAction(g) {
-  if (g.phase === 'roll') return {type:'roll'};
-  if (g.phase === 'office') return {type:'build'};
-  const p = captain(g);
-  function weight(o) {
-    const t = TILES[o.to], off = g.offices[o.to];
-    const distance = route(o.to,16,tide(g.round)).indexOf(p.destination) + 1;
-    return (o.delivery ? 12 : -distance*.22) + (o.path.includes(0)?1.4:0)
-      + (t.kind === 'port' ? !off ? 2.2 : off.owner === p.id ? .8 : -1.2*off.level : 1)
-      - (o.id === 'express' ? g.round < 7 ? 2.7 : .5 : 0);
+export function sellValue(type,level){
+  let total=TOWERS[type].cost;
+  for(let i=1;i<level;i++)total+=upgradePrice(type,i);
+  return Math.round(total*.65);
+}
+export function wavePlan(wave){
+  const rand=seeded(9000+wave*3571);
+  const count=7+wave*3;
+  const spacing=Math.max(.29,.90-wave*.027);
+  const spawns=[];
+  for(let i=0;i<count;i++){
+    const p=rand();let type="drone";
+    if(wave>=2&&p<.25)type="dash";
+    if(wave>=3&&p>.71)type="shield";
+    if(wave>=5&&p>.84)type="tank";
+    if(wave>=6&&p>.50&&p<.64)type="split";
+    if(wave>=9&&p<.19)type="tank";
+    spawns.push({at:i*spacing,type,lane:((i+Math.floor(i/4)+wave)%2)});
   }
-  const best = options(g).sort((a,b) => weight(b) - weight(a))[0];
-  return {type:'sail',choice:best.id};
+  if(wave%5===0)spawns.push({at:count*spacing+2.0,type:"boss",lane:wave%2});
+  return {spawns,duration:count*spacing+3,boss:wave%5===0};
 }
-
-export function finishAutoTurn(g, random) {
-  const turn = g.turn, id = captain(g).id;
-  for (let step=0; step<3 && g.turn===turn && g.phase!=='finished'; step++) play(g,id,pilotAction(g),random);
+export function cardChoices(wave){
+  const rand=seeded(3401+wave*113);
+  const arr=[...CARDS];
+  for(let i=arr.length-1;i>0;i--){let j=Math.floor(rand()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr.slice(0,3);
 }
+export function defaultBoosts(){
+  return {damage:1,speed:1,range:1,bounty:1,freeze:0,crit:0};
+}
+export function applyCard(state,id){
+  const b=state.boosts;
+  switch(id){
+    case "damage":b.damage*=1.15;break;
+    case "speed":b.speed*=1.12;break;
+    case "range":b.range*=1.10;break;
+    case "bounty":b.bounty+=.20;break;
+    case "freeze":b.freeze+=.12;break;
+    case "crit":b.crit+=.12;break;
+    case "cash":state.credits+=160;break;
+    case "repair":state.lives=Math.min(30,state.lives+5);break;
+    case "shield":state.shield+=5;break;
+    default:throw new Error("Unknown protocol card");
+  }
+}
+export function formatNumber(n){return Math.round(n).toLocaleString("ko-KR");}
