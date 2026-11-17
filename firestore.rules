@@ -12,31 +12,47 @@ service cloud.firestore {
   function member(eventId) {
    return get(/databases/$(database)/documents/events/$(eventId)/members/$(request.auth.uid)).data;
   }
+  function verifiedAccess(eventId) {
+   return get(eventPath(eventId)).data.get('passwordRequired', false) != true || (
+    signedIn() &&
+    exists(/databases/$(database)/documents/events/$(eventId)/access/$(request.auth.uid)) &&
+    get(/databases/$(database)/documents/events/$(eventId)/access/$(request.auth.uid)).data.version ==
+      get(eventPath(eventId)).data.get('passwordVersion', 0) &&
+    get(/databases/$(database)/documents/events/$(eventId)/access/$(request.auth.uid)).data.hash ==
+      get(/databases/$(database)/documents/events/$(eventId)/private/accessPassword).data.hash
+   );
+  }
   function assigned(eventId, groupId) {
    return signedIn() &&
     exists(/databases/$(database)/documents/events/$(eventId)/members/$(request.auth.uid)) &&
-    member(eventId).status == 'approved' && member(eventId).groupId == groupId;
+    member(eventId).status == 'approved' && member(eventId).groupId == groupId &&
+    verifiedAccess(eventId);
   }
   match /events/{eventId} {
    // This document is a public invitation shell: do not put attendee info, recovery hashes or passwords here.
    allow get: if signedIn();
    allow list: if false;
    allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.keys().hasOnly(['title','date','fee','feeItems','mode','fields','groups','ownerUid','status','createdAt'])
+    && request.resource.data.keys().hasOnly(['title','date','fee','feeItems','mode','fields','groups','ownerUid','status','createdAt','passwordRequired','passwordVersion'])
     && request.resource.data.title is string && request.resource.data.title.size() <= 100
     && request.resource.data.groups is list && request.resource.data.groups.size() <= 80
     && request.resource.data.fields is list && request.resource.data.fields.size() <= 20
     && (!request.resource.data.keys().hasAny(['feeItems']) ||
         (request.resource.data.feeItems is list && request.resource.data.feeItems.size() <= 12))
     && request.resource.data.mode in ['count','names','custom'] && request.resource.data.status == 'open'
+    && (!request.resource.data.keys().hasAny(['passwordRequired']) ||
+      (request.resource.data.passwordRequired is bool &&
+       request.resource.data.passwordVersion is int &&
+       request.resource.data.passwordVersion >= 0))
     && request.resource.data.fee is int && request.resource.data.fee >= 0 && request.resource.data.fee <= 100000000;
    allow update: if owner(eventId) && request.resource.data.ownerUid == resource.data.ownerUid;
    allow delete: if owner(eventId);
    match /private/{privateId} {
     allow read: if owner(eventId);
-    allow create: if owner(eventId) && privateId == 'ownerRecovery'
+    allow create: if owner(eventId) && privateId in ['ownerRecovery','accessPassword']
       && request.resource.data.hash is string && request.resource.data.hash.size() == 64;
-    allow update: if false;
+    allow update: if owner(eventId) && privateId == 'accessPassword' &&
+      request.resource.data.hash is string && request.resource.data.hash.size() == 64;
     allow delete: if owner(eventId);
    }
    match /recovery/{userId} {
@@ -49,6 +65,26 @@ service cloud.firestore {
      request.resource.data.hash is string && request.resource.data.hash.size() == 64 &&
      request.resource.data.hash == get(/databases/$(database)/documents/events/$(eventId)/private/ownerRecovery).data.hash;
     allow update: if false;
+    allow delete: if owner(eventId);
+   }
+   match /access/{userId} {
+    // Password proof is stored only after the organizer approves the same anonymous identity.
+    // Hashes live in an owner-only document; a public event link never grants group access.
+    function validProof() {
+     return signedIn() && request.auth.uid == userId &&
+      get(eventPath(eventId)).data.get('passwordRequired', false) == true &&
+      exists(/databases/$(database)/documents/events/$(eventId)/members/$(userId)) &&
+      get(/databases/$(database)/documents/events/$(eventId)/members/$(userId)).data.status == 'approved' &&
+      request.resource.data.keys().hasOnly(['hash','version','updatedAt']) &&
+      request.resource.data.hash is string && request.resource.data.hash.size() == 64 &&
+      request.resource.data.version is int &&
+      request.resource.data.version == get(eventPath(eventId)).data.passwordVersion &&
+      request.resource.data.hash ==
+       get(/databases/$(database)/documents/events/$(eventId)/private/accessPassword).data.hash;
+    }
+    allow get: if signedIn() && (request.auth.uid == userId || owner(eventId));
+    allow list: if owner(eventId);
+    allow create, update: if validProof();
     allow delete: if owner(eventId);
    }
    match /members/{userId} {

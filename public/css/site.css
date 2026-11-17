@@ -99,3 +99,18 @@
 .seo-guide-grid h3{font-size:17px;letter-spacing:-.035em;margin:0 0 9px}
 .seo-guide-grid p{font-size:14px;color:#63758a;line-height:1.8;margin:0}
 @media(max-width:640px){.seo-guide{padding:0 0 45px}.seo-guide-grid{grid-template-columns:1fr}.seo-guide-grid section{padding:17px 18px}}
+
+/* 모임집계: clear organizer/member guidance, optional entry password */
+.role-guide{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0 22px}
+.role-guide-item{border-radius:17px;background:#fff;border:1px solid #d9e8e7;padding:22px 23px;box-shadow:0 5px 20px #26395608}
+.role-guide-label{display:inline-flex;background:#ecf9f3;color:#16745f;font-size:12px;font-weight:800;padding:5px 10px;border-radius:40px}
+.role-guide-item h3{font-size:18px;letter-spacing:-.045em;margin:12px 0 8px}
+.role-guide-item p{font-size:14px;color:#627489;margin:0;line-height:1.8}
+.security-choice{padding:19px;background:#f3f9f7;border:1px solid #cce7de;border-radius:14px}
+.security-choice .checkrow{font-size:16px}
+.security-choice .hint{margin:10px 0 0}
+.security-card>.muted{margin:-5px 0 18px}
+.security-card .actions{margin:10px 0}
+.security-card>.notice{margin:14px 0}
+.security-card .hint{margin:10px 0 0}
+@media(max-width:700px){.role-guide{grid-template-columns:1fr}.role-guide-item{padding:18px 19px}}

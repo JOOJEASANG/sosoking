@@ -9,7 +9,7 @@ if(new URLSearchParams(location.search).has('id')){
 }
 const root=document.getElementById('app');
 const projectId='sosoking-481e6';
-const state={app:null,db:null,auth:null,user:null,event:null,id:null,owner:false,member:null,groups:[],members:[],group:null,editingGroupId:null,editDirty:false,recoveryCode:null,unsub:[],pending:false};
+const state={app:null,db:null,auth:null,user:null,event:null,id:null,owner:false,member:null,groups:[],members:[],group:null,editingGroupId:null,editDirty:false,recoveryCode:null,unsub:[],pending:false,accessProof:null,accessGranted:false,accessListening:false,accessUnsub:null,groupUnsub:null,groupListening:null};
 const money=n=>Math.round(Number(n)||0).toLocaleString('ko-KR')+'원';
 const $=id=>document.getElementById(id);
 const errorText=err=>{
@@ -19,15 +19,21 @@ const errorText=err=>{
  if(m.includes('unavailable')||m.includes('Failed to fetch'))return '서버에 연결할 수 없습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
  return m.slice(0,240);
 };
-const message=(s,type='info')=>{const box=$('statusMessage');if(box){box.textContent=s;box.className='notice '+type;}else root.insertAdjacentHTML('afterbegin',`<div class="notice ${type}">${e(s)}</div>`);};
+const message=(s,type='info')=>{const box=$('statusMessage');if(box){box.textContent=s;box.className='notice '+type;box.hidden=false;}else root.insertAdjacentHTML('afterbegin',`<div class="notice ${type}">${e(s)}</div>`);};
 const stage=s=>root.innerHTML=s;
 const safeInt=(x,max=100000000)=>Math.max(0,Math.min(max,Math.trunc(Number(x)||0)));
 const randomSecret=()=>{const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,v=>v.toString(16).padStart(2,'0')).join('');};
+const accessKey=id=>'sosoking-access-code-'+id;
+const normalizeAccessCode=value=>String(value||'').replace(/[\s-]/g,'').trim().toUpperCase();
+const makeAccessCode=()=>{const bytes=new Uint8Array(12);crypto.getRandomValues(bytes);const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from(bytes,v=>alphabet[v&31]).join('');};
+const formatAccessCode=c=>String(c).match(/.{1,4}/g)?.join('-')||'';
 const sha256=async s=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),v=>v.toString(16).padStart(2,'0')).join('');
 const eventRef=()=>doc(state.db,'events',state.id);
 const groupRef=id=>doc(state.db,'events',state.id,'groups',id);
 const memberRef=(uid=state.user.uid)=>doc(state.db,'events',state.id,'members',uid);
 const ownRecoveryRef=()=>doc(state.db,'events',state.id,'recovery',state.user.uid);
+const accessRef=()=>doc(state.db,'events',state.id,'access',state.user.uid);
+const passwordRef=()=>doc(state.db,'events',state.id,'private','accessPassword');
 const publicLink=id=>location.origin+'/event.html?id='+encodeURIComponent(id);
 const groupTitle=id=>(state.event?.groups||[]).find(g=>g.id===id)?.name||'알 수 없는 단체';
 function resetSubscriptions(){state.unsub.forEach(fn=>fn());state.unsub=[];}
@@ -45,17 +51,18 @@ async function setup(){
   const p=new URLSearchParams(location.search);state.id=p.get('id');
   if(state.id){if(!/^[A-Za-z0-9_-]{8,45}$/.test(state.id))throw Error('잘못된 행사 링크입니다.');await openEvent();}
   else renderLanding();
- }catch(err){console.error('SOSEVENT init',err);renderFailure(err);}
+ }catch(err){console.error('모임집계 init',err);renderFailure(err);}
 }
 function renderLanding(){
  const saved=JSON.parse(localStorage.getItem('sosoking-event-ids')||'[]').slice(0,25);
  stage(`<div class="feature-cards">
- <div class="feature-card"><b>① 행사 만들기</b><span>행사명과 단체 이름만 입력하면 시작</span></div>
- <div class="feature-card"><b>② 카톡 링크 공유</b><span>가입 없이 승인 요청</span></div>
- <div class="feature-card"><b>③ 자동 집계</b><span>인원·명단·참가비 실시간 합계</span></div>
+ <div class="feature-card"><b>① 총괄자가 행사 만들기</b><span>행사 링크·참가자 항목·비용을 설정</span></div>
+ <div class="feature-card"><b>② 담당자는 승인 요청</b><span>카톡 링크 접속 → 이름·소속 입력</span></div>
+ <div class="feature-card"><b>③ 승인 뒤 명단 작성</b><span>필요시 비밀번호 입력 → 자동 집계</span></div>
  </div>
+ <div class="role-guide"><section class="role-guide-item"><span class="role-guide-label">행사 총괄자</span><h3>행사를 만들고, 접속을 승인하세요</h3><p>행사 생성 → 링크 공유 → 요청자 확인·승인 → 전체 명단과 비용 확인</p></section><section class="role-guide-item"><span class="role-guide-label">단체 담당자</span><h3>가입 없이 링크로 명단을 제출하세요</h3><p>링크 열기 → 담당 단체 선택·승인 요청 → (설정된 경우 비밀번호 입력) → 명단 작성</p></section></div>
  <div class="wide-card">
- <div class="card-top"><div><span class="eyebrow">STEP 01</span><h2>새 행사 만들기</h2></div><span class="soft-badge">총괄자 전용</span></div>
+ <div class="card-top"><div><span class="eyebrow">STEP 01 · 총괄자</span><h2>새 행사 만들기</h2></div><span class="soft-badge">총괄자 전용</span></div>
  <div id="statusMessage" class="notice" hidden></div>
  <form id="createForm" class="stack">
  <div class="form-grid"><div class="stack-sm"><label for="eventTitle" class="label">행사명 <b>*</b></label><input class="input" id="eventTitle" required maxlength="100" placeholder="예: 2027년 연합수련회"></div><div class="stack-sm"><label for="eventDate" class="label">행사 날짜 (선택)</label><input class="input" id="eventDate" type="date"></div></div>
@@ -77,6 +84,7 @@ function renderLanding(){
  <div id="feeItemsBox" class="fee-items-list"></div>
  <p class="hint">상세명단은 참가자마다 해당 항목을 체크합니다. 인원수만·이름만 받는 경우에는 단체별로 항목당 적용 인원을 입력합니다. 여러 항목을 적용할 수도 있습니다.</p>
  </div></div>
+ <div class="security-choice"><label class="checkrow"><input type="checkbox" id="useAccessPassword"><b>승인 후 접속 비밀번호도 입력받기 (선택)</b></label><p class="hint">체크하면 안전한 임의 비밀번호를 자동 생성합니다. 총괄자가 실제 담당자를 승인한 뒤 비밀번호를 따로 알려주어야 명단을 열 수 있습니다. 링크와 비밀번호를 한 메시지에 함께 보내지 마세요.</p><div id="passwordModeHint" class="notice info" hidden>승인 + 비밀번호 두 단계를 거칩니다. 비밀번호는 총괄자가 보관하며, 재발급하면 기존 비밀번호로는 접속할 수 없습니다.</div></div>
  <div class="notice info"><b>개인정보 보호</b><br>승인받지 않은 담당자는 명단을 작성하거나 볼 수 없습니다. 승인된 담당자는 자기 단체 자료만 관리합니다. 개인정보 수집 안내는 총괄자가 참가자에게 제공해야 합니다.</div>
  <button id="createBtn" class="btn primary jumbo" type="submit">행사 생성하고 링크 만들기</button></form></div>
  ${saved.length?`<div class="wide-card"><h2>이 기기에서 만들었던 행사</h2><div class="saved-list">${saved.map(id=>`<a class="saved" href="/event.html?id=${encodeURIComponent(id)}">행사 열기 <small>${e(id.slice(0,9))}…</small> →</a>`).join('')}</div></div>`:''}`);
@@ -117,6 +125,7 @@ function renderLanding(){
   recount(feeBox);
  }
  $('addFee').onclick=()=>addFee();
+ $('useAccessPassword').onchange=event=>{$('passwordModeHint').hidden=!event.target.checked;};
  $('feeEnabled').onchange=event=>{
   $('feeWrap').hidden=!event.target.checked;
   if(event.target.checked&&!feeBox.children.length)addFee({label:'참가비',amount:20000});
@@ -145,20 +154,25 @@ function renderLanding(){
    const ref=doc(collection(state.db,'events'));
    const groups=input.groups.map(name=>({name,id:doc(collection(state.db,'events',ref.id,'groups')).id}));
    const code=randomSecret(),hash=await sha256(code);
+   const passwordRequired=$('useAccessPassword').checked;
+   const passwordCode=passwordRequired?makeAccessCode():null;
+   const passwordHash=passwordCode?await sha256(passwordCode):null;
    await setDoc(ref,{
     title:input.title,date:input.date,fee:input.fee,feeItems:input.feeItems,
-    mode:input.mode,fields:input.fields,groups,ownerUid:state.user.uid,status:'open',createdAt:serverTimestamp()
+    mode:input.mode,fields:input.fields,groups,ownerUid:state.user.uid,status:'open',passwordRequired,passwordVersion:passwordRequired?1:0,createdAt:serverTimestamp()
    });
    const batch=writeBatch(state.db);
    for(const g of groups)batch.set(doc(state.db,'events',ref.id,'groups',g.id),{
     name:g.name,count:0,attendees:[],feeQuantities:{},paid:0,submitted:false,updatedAt:serverTimestamp()
    });
    batch.set(doc(state.db,'events',ref.id,'private','ownerRecovery'),{hash,createdAt:serverTimestamp()});
+   if(passwordRequired)batch.set(doc(state.db,'events',ref.id,'private','accessPassword'),{hash:passwordHash,updatedAt:serverTimestamp()});
    await batch.commit();
    const ids=JSON.parse(localStorage.getItem('sosoking-event-ids')||'[]');
    localStorage.setItem('sosoking-event-ids',JSON.stringify([ref.id,...ids.filter(x=>x!==ref.id)].slice(0,30)));
    localStorage.setItem('sosoking-owner-code-'+ref.id,code);
    localStorage.setItem('sosoking-owner-code-new-'+ref.id,'true');
+   if(passwordCode)localStorage.setItem(accessKey(ref.id),passwordCode);
    location.href='/event.html?id='+encodeURIComponent(ref.id);
   }catch(err){
    state.pending=false;$('createBtn').disabled=false;$('createBtn').textContent='행사 생성하고 링크 만들기';
@@ -167,18 +181,56 @@ function renderLanding(){
  };
 }
 async function openEvent(){
- const ref=eventRef();const snap=await getDoc(ref);
+ const snap=await getDoc(eventRef());
  if(!snap.exists())throw Error('행사를 찾을 수 없습니다. 행사 링크를 확인해 주세요.');
  state.event=snap.data();
  const oldRecovery=await getDoc(ownRecoveryRef()).catch(()=>null);
  state.owner=state.event.ownerUid===state.user.uid||!!oldRecovery?.exists();
  if(state.owner){showOwner();return;}
- state.unsub.push(onSnapshot(memberRef(),snap=>{state.member=snap.exists()?snap.data():null;if(state.member?.status==='approved')listenGroup(state.member.groupId);else {state.group=null;renderParticipant();}},err=>renderFailure(err)));
+ state.unsub.push(onSnapshot(eventRef(),next=>{
+  if(!next.exists()){renderFailure(Error('행사가 삭제되었습니다.'));return;}
+  state.event=next.data();
+  if(state.member?.status==='approved')syncMemberAccess();
+  else renderParticipant();
+ },err=>renderFailure(err)));
+ state.unsub.push(onSnapshot(memberRef(),next=>{
+  state.member=next.exists()?next.data():null;
+  if(state.member?.status==='approved')syncMemberAccess();
+  else{stopGroup();state.accessGranted=false;renderParticipant();}
+ },err=>renderFailure(err)));
+}
+function stopGroup(){
+ if(state.groupUnsub){state.groupUnsub();state.groupUnsub=null;}
+ state.groupListening=null;
+ state.group=null;
+}
+function syncMemberAccess(){
+ if(state.member?.status!=='approved'){stopGroup();state.accessGranted=false;renderParticipant();return;}
+ if(state.event.passwordRequired!==true){state.accessGranted=true;listenGroup(state.member.groupId);return;}
+ if(!state.accessListening){
+  state.accessListening=true;
+  state.accessUnsub=onSnapshot(accessRef(),proof=>{
+   state.accessProof=proof.exists()?proof.data():null;
+   syncMemberAccess();
+  },err=>renderFailure(err));
+  state.unsub.push(()=>state.accessUnsub?.());
+ }
+ const currentVersion=Number(state.event.passwordVersion||0);
+ state.accessGranted=state.accessProof?.version===currentVersion && currentVersion>0;
+ if(state.accessGranted)listenGroup(state.member.groupId);
+ else {stopGroup();renderParticipant();}
 }
 function listenGroup(groupId){
  if(state.groupListening===groupId)return;
- if(state.groupUnsub)state.groupUnsub();state.groupListening=groupId;
- state.groupUnsub=onSnapshot(groupRef(groupId),snap=>{state.group=snap.exists()?{id:snap.id,...snap.data()}:null;renderParticipant();},err=>renderFailure(err));
+ if(state.groupUnsub)state.groupUnsub();
+ state.groupListening=groupId;
+ state.groupUnsub=onSnapshot(groupRef(groupId),snap=>{
+  state.group=snap.exists()?{id:snap.id,...snap.data()}:null;renderParticipant();
+ },err=>{
+  if(err.code==='permission-denied'){
+   stopGroup();state.accessGranted=false;state.accessProof=null;renderParticipant();
+  }else renderFailure(err);
+ });
  state.unsub.push(()=>state.groupUnsub?.());
 }
 function sectionEventTitle(){
@@ -189,12 +241,40 @@ function sectionEventTitle(){
 }
 function renderParticipant(){
  const m=state.member;
- if(!m){stage(`${sectionEventTitle()}<div class="wide-card"><h2>참가 명단 등록 권한 요청</h2><p class="muted lead">총괄자 승인을 받은 담당자만 참가 정보를 작성·확인할 수 있습니다. 회원가입은 필요 없습니다.</p><form id="requestForm" class="stack"><div class="stack-sm"><label for="requestName" class="label">담당자 성함</label><input id="requestName" class="input" maxlength="60" required placeholder="성함 입력"></div><div class="stack-sm"><label for="requestGroup" class="label">담당 단체</label><select id="requestGroup" class="input" required>${state.event.groups.map(g=>`<option value="${e(g.id)}">${e(g.name)}</option>`).join('')}</select></div><div class="notice info">접근 요청을 보내면 총괄자가 성함과 소속을 확인한 뒤 승인합니다. <b>성함만 입력했다고 신원이 인증되는 것은 아니므로</b> 총괄자는 카카오톡 등 별도 방법으로 실제 담당자인지 확인해 주세요.</div><button class="btn primary jumbo" type="submit">승인 요청 보내기</button></form></div><div class="wide-card"><h2>행사 총괄자이신가요?</h2><p class="muted">다른 휴대전화에서 행사 관리 기능을 사용하려면 개설 시 보관한 관리자 복구 코드를 입력해 주세요.</p><form id="recoveryForm" class="stack"><label class="label" for="recoveryInput">관리자 복구 코드</label><input id="recoveryInput" class="input" type="password" required minlength="48" maxlength="48" autocomplete="off" placeholder="48자리 복구 코드"><button class="btn secondary" type="submit">총괄자 권한 복구</button></form></div>`);
+ if(!m){stage(`${sectionEventTitle()}<div class="wide-card"><span class="eyebrow">담당자 전용 · 1단계</span><h2>참가 명단 등록 권한 요청</h2><p class="muted lead">총괄자 승인을 받은 담당자만 참가 정보를 작성·확인할 수 있습니다. 회원가입은 필요 없습니다.</p><form id="requestForm" class="stack"><div class="stack-sm"><label for="requestName" class="label">담당자 성함</label><input id="requestName" class="input" maxlength="60" required placeholder="성함 입력"></div><div class="stack-sm"><label for="requestGroup" class="label">담당 단체</label><select id="requestGroup" class="input" required>${state.event.groups.map(g=>`<option value="${e(g.id)}">${e(g.name)}</option>`).join('')}</select></div><div class="notice info">접근 요청을 보내면 총괄자가 성함과 소속을 확인한 뒤 승인합니다. <b>성함만 입력했다고 신원이 인증되는 것은 아니므로</b> 총괄자는 카카오톡 등 별도 방법으로 실제 담당자인지 확인해 주세요.</div><button class="btn primary jumbo" type="submit">승인 요청 보내기</button></form></div><div class="wide-card"><h2>행사 총괄자이신가요?</h2><p class="muted">다른 휴대전화에서 행사 관리 기능을 사용하려면 개설 시 보관한 관리자 복구 코드를 입력해 주세요.</p><form id="recoveryForm" class="stack"><label class="label" for="recoveryInput">관리자 복구 코드</label><input id="recoveryInput" class="input" type="password" required minlength="48" maxlength="48" autocomplete="off" placeholder="48자리 복구 코드"><button class="btn secondary" type="submit">총괄자 권한 복구</button></form></div>`);
   $('requestForm').onsubmit=async ev=>{ev.preventDefault();try{const name=$('requestName').value.trim(),groupId=$('requestGroup').value;if(!name||!state.event.groups.some(g=>g.id===groupId))throw Error('담당자 정보를 확인해 주세요.');await setDoc(memberRef(),{name:name.slice(0,60),groupId,status:'pending',requestedAt:serverTimestamp()});}catch(err){message(errorText(err),'error');}};
   $('recoveryForm').onsubmit=async ev=>{ev.preventDefault();const code=$('recoveryInput').value.trim().toLowerCase();if(!/^[a-f0-9]{48}$/.test(code)){alert('48자리 복구 코드를 확인해 주세요.');return;}try{await setDoc(ownRecoveryRef(),{hash:await sha256(code),createdAt:serverTimestamp()});localStorage.setItem('sosoking-owner-code-'+state.id,code);location.reload();}catch(err){message('복구 코드를 확인할 수 없습니다. 정확한 코드를 입력했는지 확인해 주세요.','error');}};return;
  }
- if(m.status==='pending'){stage(`${sectionEventTitle()}${template('접근 승인 대기 중','총괄자가 담당자 요청을 확인하고 있습니다. 승인이 완료되면 이 화면에서 명단을 작성할 수 있습니다.',`<div class="notice info">요청자: ${e(m.name)} · ${e(groupTitle(m.groupId))}<br>가입·로그인 없이 사용 중인 기기에서 승인을 기다리고 있습니다.</div><button id="refresh" class="btn secondary">새로고침</button>`)}`);$('refresh').onclick=()=>location.reload();return;}
+ if(m.status==='pending'){stage(`${sectionEventTitle()}${template('접근 승인 대기 중','총괄자가 담당자 요청을 확인하고 있습니다. 승인 후 비밀번호가 설정된 행사라면 비밀번호를 입력하고 명단을 작성할 수 있습니다.',`<div class="notice info">요청자: ${e(m.name)} · ${e(groupTitle(m.groupId))}<br>가입·로그인 없이 사용 중인 기기에서 승인을 기다리고 있습니다.</div><button id="refresh" class="btn secondary">새로고침</button>`)}`);$('refresh').onclick=()=>location.reload();return;}
  if(m.status==='rejected'){stage(`${sectionEventTitle()}${template('요청이 승인되지 않았습니다','행사 총괄자에게 직접 문의해 주세요.','')}`);return;}
+ if(state.event.passwordRequired===true&&!state.accessGranted){
+  stage(`${sectionEventTitle()}<div class="wide-card"><span class="eyebrow">담당자 전용 · 2단계</span>
+   <h2>승인 완료 · 접속 비밀번호 입력</h2>
+   <p class="muted lead">총괄자가 ${e(m.name)}님을 <strong>${e(groupTitle(m.groupId))}</strong> 담당자로 승인했습니다. 마지막으로 총괄자에게 별도로 받은 접속 비밀번호를 입력해 주세요.</p>
+   <div class="notice info">비밀번호는 행사 총괄자가 승인받은 담당자에게만 전화나 개인 카톡으로 전달합니다. 이 페이지에서는 비밀번호를 보여주지 않습니다.</div>
+   <div id="statusMessage" class="notice" hidden></div>
+   <form id="unlockForm" class="stack">
+    <label class="stack-sm"><span class="label">접속 비밀번호</span><input class="input large" type="password" id="accessPasswordInput" required maxlength="30" autocomplete="off" autocapitalize="characters" placeholder="총괄자에게 받은 비밀번호"></label>
+    <button id="unlockButton" class="btn primary jumbo" type="submit">비밀번호 확인 후 명단 열기</button>
+   </form><p class="hint">비밀번호를 아직 받지 못했다면 총괄자에게 개인적으로 문의해 주세요. 이 기기에서 한 번 확인하면 비밀번호를 다시 입력하지 않아도 됩니다(재발급 시 제외).</p>
+   </div>`);
+  $('unlockForm').onsubmit=async ev=>{
+   ev.preventDefault();
+   const input=$('accessPasswordInput'),code=normalizeAccessCode(input.value);
+   if(code.length!==12||!/^[A-HJ-NP-Z2-9]{12}$/.test(code)){message('비밀번호를 다시 확인해 주세요. 12자리 영문·숫자 코드입니다.','error');$('statusMessage').hidden=false;return;}
+   $('unlockButton').disabled=true;
+   try{
+    await setDoc(accessRef(),{hash:await sha256(code),version:Number(state.event.passwordVersion),updatedAt:serverTimestamp()});
+    // The access-doc listener grants group access only after Firestore verifies the hash.
+    message('접속 비밀번호가 확인되었습니다. 명단을 불러옵니다.','success');$('statusMessage').hidden=false;
+    input.value='';
+   }catch(err){
+    message('비밀번호가 일치하지 않거나 권한이 없습니다. 총괄자에게 확인해 주세요.','error');
+    $('statusMessage').hidden=false;$('unlockButton').disabled=false;input.value='';
+   }
+  };
+  return;
+ }
  if(!state.group){stage(`${sectionEventTitle()}${template('명단을 불러오는 중입니다','승인된 단체 자료를 안전하게 확인하고 있습니다.','')}`);return;}
  const group=state.group;
  stage(`${sectionEventTitle()}<div class="wide-card"><div class="card-top"><div><span class="eyebrow">내 단체 · 승인 완료</span><h2>${e(groupTitle(m.groupId))}</h2></div><span class="soft-badge">담당자 ${e(m.name)}</span></div><div class="stat-strip"><span>현재 등록된 인원</span><strong>${group.count}명</strong></div><div id="statusMessage" class="notice" hidden></div><div id="editor"></div></div>`);
@@ -208,13 +288,61 @@ function renderOwner(){
  const s=sumEvent(state.event,state.groups),link=publicLink(state.id),pending=state.members.filter(m=>m.status==='pending');
  const firstCode=localStorage.getItem('sosoking-owner-code-new-'+state.id)==='true';
  stage(`${sectionEventTitle()}${firstCode?`<div class="notice warning"><strong>중요: 관리자 복구 코드를 별도로 보관하세요.</strong> 기기를 변경하면 코드 없이는 이 행사의 총괄자 권한을 복구할 수 없습니다. 아래 '복구 코드 보기'를 눌러 복사하세요.</div>`:''}
- <div class="wide-card"><div class="card-top"><div><span class="eyebrow">행사 총괄자 전용</span><h2>실시간 집계 현황</h2></div><span class="soft-badge">서버 권한 보호</span></div><div class="stat-grid"><div class="stat-card"><span>전체 참가 인원</span><strong>${s.people}<small>명</small></strong></div><div class="stat-card"><span>단체 제출 현황</span><strong>${s.submitted}<small> / ${s.groups}</small></strong></div>${feeItemsFor(state.event).length?`<div class="stat-card"><span>참가비 예정</span><strong class="money">${money(s.expected)}</strong></div><div class="stat-card"><span>입금 확인액</span><strong class="money">${money(s.paid)}</strong></div>`:''}</div>
+ <div class="wide-card"><div class="card-top"><div><span class="eyebrow">모임집계 총괄자 전용</span><h2>실시간 집계 현황</h2></div><span class="soft-badge">서버 권한 보호</span></div><div class="stat-grid"><div class="stat-card"><span>전체 참가 인원</span><strong>${s.people}<small>명</small></strong></div><div class="stat-card"><span>단체 제출 현황</span><strong>${s.submitted}<small> / ${s.groups}</small></strong></div>${feeItemsFor(state.event).length?`<div class="stat-card"><span>참가비 예정</span><strong class="money">${money(s.expected)}</strong></div><div class="stat-card"><span>입금 확인액</span><strong class="money">${money(s.paid)}</strong></div>`:''}</div>
  <div class="share-box"><label class="label">카카오톡에 공유할 행사 링크</label><div class="share-line"><input class="input" aria-label="행사 주소" readonly value="${e(link)}" id="eventLink"><button class="btn secondary" id="copyEventLink" type="button">링크 복사</button></div><p class="hint">링크를 받은 사람이더라도 총괄자의 승인 전에는 참가 명단을 작성하거나 볼 수 없습니다.</p></div>
  <div class="actions"><button class="btn outline" id="downloadCsv">전체 명단 CSV 저장</button><button class="btn outline" id="showRecovery">관리자 복구 코드 보기</button><button class="btn outline" id="toggleEvent">${state.event.status==="open"?"접수 마감하기":"접수 다시 열기"}</button><button class="btn outline" id="removeEvent">행사 자료 삭제</button><a class="btn outline" href="/event.html">다른 행사 만들기</a></div><div id="statusMessage" class="notice" hidden></div></div>
- <div class="wide-card"><div class="card-top"><h2>담당자 승인 요청 <small>${pending.length}건</small></h2></div>${pending.length?pending.map(m=>`<div class="member-row"><div><strong>${e(m.name)}</strong><p>${e(groupTitle(m.groupId))} · 접속 권한 요청</p></div><div class="inline-buttons"><button class="btn small secondary approve" data-uid="${e(m.uid)}">승인</button><button class="btn small outline reject" data-uid="${e(m.uid)}">거절</button></div></div>`).join(''):'<p class="muted">현재 승인 대기 중인 담당자가 없습니다.</p>'}<div class="notice info">실제로 알고 있는 담당자인지 카카오톡이나 전화로 확인한 후 승인해 주세요. 승인하면 해당 기기에서 그 단체의 명단에 접근할 수 있습니다.</div></div>
+ <div class="wide-card security-card">
+ <div class="card-top"><div><span class="eyebrow">총괄자용 · 접속 보안</span><h2>담당자 접속 보호</h2></div>
+ <span class="soft-badge">${state.event.passwordRequired?'승인 + 비밀번호':'승인제 운영'}</span></div>
+ <p class="muted">모든 담당자는 먼저 총괄자의 승인을 받아야 합니다. 필요하면 비밀번호를 한 번 더 입력하도록 설정할 수 있습니다.</p>
+ ${state.event.passwordRequired?`
+  <div class="notice info"><strong>2단계 접속 설정이 켜져 있습니다.</strong><br>승인된 담당자에게만 총괄자가 비밀번호를 <b>개인 카톡이나 전화로 별도 전달</b>하세요. 비밀번호가 링크에 자동 표시되지는 않습니다.</div>
+  <div class="actions"><button class="btn secondary" type="button" id="showAccessCode">비밀번호 확인·복사</button><button class="btn outline" type="button" id="rotateAccessCode">비밀번호 다시 만들기</button><button class="btn outline" type="button" id="disableAccessCode">비밀번호 보호 끄기</button></div>
+  <p class="hint">비밀번호 재발급 시 기존 비밀번호 인증은 무효가 되어 담당자가 새 비밀번호를 다시 입력해야 합니다. 총괄자 복구 코드와는 전혀 다른 비밀번호입니다.</p>`:`
+  <div class="notice warning">현재는 <b>총괄자 승인만</b> 받으면 명단에 접근할 수 있습니다. 명단·전화번호처럼 개인정보를 모으는 행사에는 비밀번호 보호를 추가하는 것이 좋습니다.</div>
+  <button class="btn secondary" type="button" id="enableAccessCode">접속 비밀번호 만들기</button>`}
+ </div>
+ <div class="wide-card"><div class="card-top"><h2>담당자 승인 요청 <small>${pending.length}건</small></h2></div>${pending.length?pending.map(m=>`<div class="member-row"><div><strong>${e(m.name)}</strong><p>${e(groupTitle(m.groupId))} · 접속 권한 요청</p></div><div class="inline-buttons"><button class="btn small secondary approve" data-uid="${e(m.uid)}">승인</button><button class="btn small outline reject" data-uid="${e(m.uid)}">거절</button></div></div>`).join(''):'<p class="muted">현재 승인 대기 중인 담당자가 없습니다.</p>'}<div class="notice info">실제로 알고 있는 담당자인지 카카오톡이나 전화로 확인한 후 승인해 주세요. 비밀번호 보호가 켜진 행사는 승인 후 비밀번호까지 입력해야 명단에 접근할 수 있습니다.</div></div>
  <div class="wide-card"><div class="card-top"><h2>단체별 참가 현황</h2><span class="soft-badge">${state.groups.length}개 단체</span></div><div class="group-list">${state.groups.map(g=>`<div class="group-row"><div><strong>${e(g.name)}</strong><p>${g.submitted?'제출 완료':'아직 미제출'}${feeItemsFor(state.event).length?' · 예정 '+money(groupExpected(state.event,g))+' · 입금 '+money(g.paid||0):''}</p></div><div class="group-end"><b>${g.count}명</b><button class="btn small outline group-edit" data-group="${e(g.id)}">${state.event.mode==='count'?'인원 수정':'명단 관리'}</button></div></div>`).join('')}</div>
  ${feeItemsFor(state.event).length?`<div class="admin-money"><h3>단체별 입금 확인</h3><p class="hint">신청 금액과 실제 입금액은 다릅니다. 입금 확인 후 금액을 직접 입력하세요.</p><div class="money-grid">${state.groups.map(g=>`<label class="money-row"><span>${e(g.name)}</span><input type="number" min="0" step="1" class="input paid-amount" value="${Number(g.paid)||0}" data-group="${e(g.id)}" aria-label="${e(g.name)} 입금액"></label>`).join('')}</div><button id="savePayments" class="btn secondary">입금액 저장</button></div>`:''}<div id="adminEditor"></div></div>
  <div class="wide-card"><h2>담당자 접근 권한</h2>${state.members.filter(m=>m.status==='approved').map(m=>`<div class="member-row"><div><strong>${e(m.name)}</strong><p>${e(groupTitle(m.groupId))} · 승인됨</p></div><button class="btn small outline revoke" data-uid="${e(m.uid)}">권한 취소</button></div>`).join('')||'<p class="muted">승인된 담당자가 없습니다.</p>'}</div>`);
+ const showAccess=$('showAccessCode');
+ if(showAccess)showAccess.onclick=async()=>{
+  const saved=localStorage.getItem(accessKey(state.id));
+  if(!saved){message('이 기기에는 접속 비밀번호가 보관되어 있지 않습니다. 아래 “비밀번호 다시 만들기”를 사용하세요.','error');return;}
+  if(!confirm('접속 비밀번호를 복사하시겠습니까? 승인된 담당자에게만 별도로 전달하세요.'))return;
+  const formatted=formatAccessCode(saved);
+  try{await navigator.clipboard.writeText(formatted);message('비밀번호를 복사했습니다. 승인된 담당자에게 개인적으로 전달하세요.','success');}
+  catch{prompt('접속 비밀번호입니다. 승인자에게만 별도로 전달하세요.',formatted);}
+ };
+ async function updatePasswordProtection(action){
+  if(action==='disable'){
+   if(!confirm('비밀번호 보호를 끄면 승인된 담당자는 비밀번호 입력 없이 명단에 접근할 수 있습니다. 계속하시겠습니까?'))return;
+   try{
+    await updateDoc(eventRef(),{passwordRequired:false,passwordVersion:Number(state.event.passwordVersion||0)+1});
+    state.event.passwordRequired=false;state.event.passwordVersion=Number(state.event.passwordVersion||0)+1;
+    localStorage.removeItem(accessKey(state.id));renderOwner();
+    message('비밀번호 보호를 껐습니다. 기존 담당자 승인 권한은 유지됩니다.','success');
+   }catch(err){message(errorText(err),'error');}
+   return;
+  }
+  const rotating=action==='rotate';
+  if(!confirm(rotating?'새 비밀번호를 만들면 기존 담당자가 모두 비밀번호를 다시 입력해야 합니다. 계속하시겠습니까?':'승인된 담당자에게도 별도 비밀번호를 요구합니다. 비밀번호는 총괄자가 직접 전달해야 합니다. 계속하시겠습니까?'))return;
+  const code=makeAccessCode(),hash=await sha256(code),version=Number(state.event.passwordVersion||0)+1;
+  try{
+   const batch=writeBatch(state.db);
+   batch.set(passwordRef(),{hash,updatedAt:serverTimestamp()});
+   batch.update(eventRef(),{passwordRequired:true,passwordVersion:version});
+   await batch.commit();
+   state.event.passwordRequired=true;state.event.passwordVersion=version;
+   localStorage.setItem(accessKey(state.id),code);
+   renderOwner();
+   message('새 접속 비밀번호가 만들어졌습니다. “비밀번호 확인·복사”를 눌러 승인된 담당자에게 개별 전달하세요.','success');
+  }catch(err){message(errorText(err),'error');}
+ }
+ if($('enableAccessCode'))$('enableAccessCode').onclick=()=>updatePasswordProtection('enable');
+ if($('rotateAccessCode'))$('rotateAccessCode').onclick=()=>updatePasswordProtection('rotate');
+ if($('disableAccessCode'))$('disableAccessCode').onclick=()=>updatePasswordProtection('disable');
  $('copyEventLink').onclick=async()=>{try{await navigator.clipboard.writeText(link);message('행사 링크를 복사했습니다. 카카오톡에 붙여 넣으세요.','success');}catch{message('링크를 복사할 수 없습니다. 주소를 길게 눌러 복사해 주세요.','error');}};
  $('showRecovery').onclick=async()=>{
   const code=localStorage.getItem('sosoking-owner-code-'+state.id);
@@ -236,10 +364,13 @@ function renderOwner(){
   if(!confirm('정말 삭제하시겠습니까? 삭제 후에는 모든 행사 링크가 더 이상 작동하지 않습니다.'))return;
   try{
    const recoveries=await getDocs(collection(state.db,'events',state.id,'recovery'));
+   const accessProofs=await getDocs(collection(state.db,'events',state.id,'access'));
    const others=[
     ...state.groups.map(g=>groupRef(g.id)),
     ...state.members.map(m=>memberRef(m.uid)),
-    doc(state.db,'events',state.id,'private','ownerRecovery')
+    doc(state.db,'events',state.id,'private','ownerRecovery'),
+    ...accessProofs.docs.map(found=>found.ref),
+    ...(state.event.passwordRequired||state.event.passwordVersion?[passwordRef()]:[])
    ];
    for(let i=0;i<others.length;i+=300){
     const batch=writeBatch(state.db);
@@ -254,6 +385,7 @@ function renderOwner(){
    localStorage.setItem('sosoking-event-ids',JSON.stringify(ids.filter(x=>x!==state.id)));
    localStorage.removeItem('sosoking-owner-code-'+state.id);
    localStorage.removeItem('sosoking-owner-code-new-'+state.id);
+   localStorage.removeItem(accessKey(state.id));
    location.href='/event.html';
   }catch(err){message('삭제를 완료하지 못했습니다. 다시 시도해 주세요. '+errorText(err),'error');}
  };
@@ -275,7 +407,7 @@ function renderEditor(group,isAdmin){
  const el=$(isAdmin?'adminEditor':'editor');if(!el)return;
  const fields=state.event.fields||[],mode=state.event.mode,fees=feeItemsFor(state.event);
  if(state.event.status!=='open'){el.innerHTML='<div class="notice warning">행사가 종료되어 명단을 수정할 수 없습니다.</div>';return;}
- if(isAdmin)el.innerHTML='<div class="editor-card"><h3>'+e(group.name)+' · 명단 직접 등록</h3><p class="hint">총괄자가 대신 작성할 수 있습니다.</p><div id="editorInner"></div></div>';
+ if(isAdmin)el.innerHTML='<div class="editor-card"><h3>'+e(group.name)+' · 단체 명단 직접 등록</h3><p class="hint">총괄자가 대신 작성할 수 있습니다.</p><div id="editorInner"></div></div>';
  const inner=isAdmin?el.querySelector('#editorInner'):el;
  const rows=(group.attendees||[]).map(row=>({...row}));
  const quantityMarkup=()=>{
