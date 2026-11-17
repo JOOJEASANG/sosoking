@@ -9,3 +9,33 @@
 @media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-cards{grid-template-columns:1fr}.tool-card p{min-height:105px}}
 @media(max-width:640px){body{font-size:16px}.container{width:min(100% - 28px,1170px)}.nav{height:auto;min-height:74px;flex-wrap:wrap;padding:12px 0 10px}.brand{font-size:19px}.brand-symbol{width:38px;height:38px}.nav nav{width:100%;justify-content:space-between;gap:6px}.nav nav a{font-size:12px;padding:4px 2px}.hero .container{padding:62px 0 54px}.hero h1{font-size:42px}.hero p{font-size:15px}.section{padding:44px 0}.section-head h2{font-size:27px}.tool-grid{grid-template-columns:1fr}.tool-card{padding:24px}.tool-card p{min-height:auto}.tool-icon{margin:17px 0}.future{padding:16px}.footer .container{flex-direction:column;align-items:flex-start}.subpage{padding:24px 0 65px}.page-heading{padding:22px 0}.page-heading h1{font-size:31px}.wide-card{padding:21px 16px;border-radius:17px}.wide-card h2{font-size:21px}.form-grid{grid-template-columns:1fr;gap:12px}.option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.event-banner{padding:20px;flex-direction:column;align-items:flex-start}.stat-grid{gap:8px}.stat-card{padding:14px 10px}.stat-card span{font-size:12px}.stat-card strong{font-size:25px}.stat-card strong.money{font-size:17px}.share-line{flex-direction:column}.share-line .btn{width:100%}.member-row,.group-row{align-items:flex-start}.group-row{gap:6px}.group-end{flex-direction:column;align-items:flex-end}.money-grid{grid-template-columns:1fr}.money-row input{max-width:170px}.inline-buttons{flex-direction:column;align-items:stretch}.inline-buttons .btn{min-width:73px}.actions .btn{flex:1}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+
+/* SOSOKING unified mark + progressive web app installation */
+.brand-symbol{display:block;flex:none;width:43px;height:43px;object-fit:contain;padding:0;background:none;border-radius:12px;box-shadow:0 6px 15px #142a422b}
+.install-trigger{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 16px;border:1px solid #c2deda;background:#ebf8f2;color:#105d57;border-radius:12px;font-weight:800;font-size:14px;white-space:nowrap;transition:background .15s,transform .15s}
+.install-trigger:hover:not(:disabled){background:#d8f1e8;transform:translateY(-1px)}
+.install-trigger:focus-visible,.hero-install:focus-visible,.install-dialog button:focus-visible{outline:3px solid #37bc9d;outline-offset:3px}
+.install-trigger.installed{background:#edf2f5;border-color:#e1e8ed;color:#778391;cursor:default}
+.nav nav{margin-left:auto}
+.hero-cta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.btn.hero-install{background:rgba(255,255,255,.1);border:1px solid #b9e0df70;color:#e4fff3;min-height:48px}
+.btn.hero-install:hover{background:rgba(255,255,255,.19)}
+.hero-install img{display:block;border-radius:6px}
+.footer-brand{display:inline-flex;align-items:center;gap:9px;font-weight:900;letter-spacing:-.04em}
+.footer-brand img{display:block;border-radius:7px}
+.install-dialog{width:min(430px,calc(100vw - 32px));max-height:min(92dvh,720px);overflow:auto;border:1px solid #d8e5e7;border-radius:24px;padding:0;background:#fff;color:#192d40;box-shadow:0 35px 100px #071d37a1}
+.install-dialog::backdrop{background:rgba(8,20,37,.64);backdrop-filter:blur(4px)}
+.install-dialog-inner{padding:32px 28px 28px;position:relative}
+.install-dialog-close{position:absolute;right:18px;top:14px;border:0;background:#f0f4f7;color:#47586c;width:38px;height:38px;border-radius:50%;font-size:27px;line-height:1}
+.install-dialog-logo{width:76px;height:76px;border-radius:19px;box-shadow:0 10px 30px #15354d2e}
+.install-dialog h2{font-size:25px;letter-spacing:-.045em;margin:15px 0 8px}
+.install-dialog-intro{color:#617285;font-size:15px;margin:0 0 20px;line-height:1.7}
+.install-dialog-help{border:1px solid #dceae9;background:#f6fbfa;border-radius:16px;padding:17px 18px;margin:16px 0}
+.install-dialog-help strong{display:block;font-size:16px;margin-bottom:10px}
+.install-dialog-help ol{margin:0;padding-left:22px;line-height:1.8;font-size:15px}
+.install-dialog-help li{padding-left:4px;margin:4px 0}
+.install-embedded{font-size:13px;border-left:3px solid #d59e49;background:#fff7e7;padding:9px 12px;color:#7b5b24}
+.install-dialog-note{border-top:1px solid #deebea;padding-top:12px;color:#607286;font-size:13px;margin:13px 0 0}
+.install-dialog-done{width:100%}
+@media(max-width:850px){.nav nav{gap:12px}.nav nav a{font-size:13px}.install-trigger{padding:9px 12px}}
+@media(max-width:640px){.nav .brand-symbol{width:38px;height:38px}.nav .install-trigger{margin-left:auto;min-height:40px;font-size:13px}.nav nav{order:3;width:100%;justify-content:space-between;margin-left:0}.hero-cta{align-items:stretch}.hero-cta>.btn{flex:1}.install-dialog-inner{padding:26px 21px 23px}}
