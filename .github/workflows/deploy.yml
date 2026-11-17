@@ -52,6 +52,21 @@ jobs:
           curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q 'SOSOKING'
           curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/event.html | grep -q '행사 참가자 취합기'
           curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/old-phone.html | grep -q '옛 휴대폰 번호 변환'
+      - name: Verify Firebase app config and anonymous access
+        run: |
+          node --input-type=module <<'NODE'
+          const response=await fetch('https://sosoking-481e6.web.app/__/firebase/init.json');
+          if(!response.ok)throw Error('Firebase web configuration endpoint not available: HTTP '+response.status);
+          const config=await response.json();
+          if(!config.apiKey||config.projectId!=='sosoking-481e6')throw Error('Firebase web app API configuration invalid');
+          const auth=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+encodeURIComponent(config.apiKey),{
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})
+          });
+          if(!auth.ok){const error=await auth.json();throw Error('Firebase anonymous auth unavailable: '+String(error?.error?.message||auth.status));}
+          const user=await auth.json();
+          if(!user.localId||!user.idToken)throw Error('Anonymous auth returned missing identity');
+          console.log('Firebase anonymous sign-in works; account details not logged');
+          NODE
       - name: Cleanup credentials
         if: always()
         run: rm -f '${{ runner.temp }}/firebase-service-account.json'
