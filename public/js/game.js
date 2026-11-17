@@ -3,9 +3,11 @@ import {
   DIFFICULTIES,TOWERS,ENEMIES,CARDS,gridToPixel,routePoints,routePosition,
   canBuild,synergyCount,upgradePrice,sellValue,wavePlan,cardChoices,defaultBoosts,applyCard,formatNumber
 } from "./rules.js";
+import {createBattle3D} from "./renderer3d.js";
 
 const $=id=>document.getElementById(id);
 const canvas=$("battlefield"),ctx=canvas.getContext("2d",{alpha:false});
+let visual=null;
 const modal=$("modal"),modalBody=$("modalBody");
 const keys=Object.keys(TOWERS);
 const particles=[],shots=[],beams=[],floats=[];
@@ -320,6 +322,7 @@ function pickKind(kind){
  updateUI();
 }
 function canvasPoint(e){
+ if(visual)return visual.pointer(e);
  const b=canvas.getBoundingClientRect();
  return{x:(e.clientX-b.left)*WIDTH/b.width,y:(e.clientY-b.top)*HEIGHT/b.height};
 }
@@ -669,6 +672,7 @@ function updateEffects(dt){
 }
 function render(){
  if(!state)return;
+ if(visual){visual.update(state,{shots,beams,particles,floats},frame,hover,selectedKind,selectedTower,movingTower,effectiveRange);return;}
  const shake=state.shake>0?Math.min(8,state.shake):0;
  ctx.save();ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
  renderBackground();renderPaths();renderTowers();renderEnemies();renderAttacks();
@@ -687,5 +691,6 @@ function loop(now){
  if(uiTimer>.12){updateUI();uiTimer=0;}
  requestAnimationFrame(loop);
 }
+try{visual=createBattle3D(canvas);}catch(err){console.warn("3D renderer unavailable; using 2D fallback",err);visual=null;}
 showIntro();
 requestAnimationFrame(loop);

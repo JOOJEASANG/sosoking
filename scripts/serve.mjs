@@ -1,7 +1,7 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-const root=path.resolve("public");
+const root=path.resolve("dist-public");
 const types={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".svg":"image/svg+xml",".json":"application/json"};
 const port=Number(process.env.PORT||3000);
 http.createServer((req,res)=>{

@@ -305,3 +305,37 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:manipu
 .relocate-btn:not(:disabled):hover{border-color:#77ffda;background:#1b4550}
 .resume-btn{display:block;width:100%;border:1px solid #4c988e;border-radius:11px;background:linear-gradient(100deg,#193a45,#132934);padding:15px;color:#9ffbe0;font-weight:950;font-size:13px;margin-top:15px}
 .resume-btn:hover{border-color:#8effdf;background:#254f58}
+
+
+/* 3-D edition: wide cinematic viewport, glass panels and integrated controls */
+.canvas-wrap{isolation:isolate;background:#08111c;overflow:hidden}
+.battle-3d{z-index:1}
+.canvas-wrap .toast{z-index:4}
+.battle-frame{border-color:#416474;background:#0b1a2a;box-shadow:0 0 0 1px rgba(114,241,211,.14),0 28px 85px #03070ec9,0 0 56px rgba(26,144,158,.06)}
+.battle-frame-head{background:linear-gradient(90deg,#132c39,#102131);height:43px;border-color:#335d6b}
+.battle-frame-foot{background:#091a29;height:37px}
+.battle-heading{height:85px}
+.battle-heading h1{font-weight:900}
+.tower-card{border-color:#355163;background:linear-gradient(125deg,#162f43 0%,#102333 85%);box-shadow:inset 0 1px 0 rgba(181,238,253,.035)}
+.tower-card.active{background:linear-gradient(125deg,#205653,#133640);box-shadow:inset 0 1px 0 rgba(189,255,232,.14),0 6px 25px rgba(43,228,176,.08)}
+.tower-art{box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.panel{border-color:#345267;background:linear-gradient(155deg,rgba(18,37,55,.98),rgba(9,23,37,.98))}
+.control-deck{margin-top:18px}
+.primary{background:linear-gradient(125deg,#c4ffda,#61dfbf)}
+.section-heading .eyebrow,.mini-heading .eyebrow{color:#8bd2cb}
+.topbar{border-bottom-color:#2b4b59}
+body{background:radial-gradient(ellipse at 52% -17%,rgba(56,119,148,.25),transparent 55%),radial-gradient(ellipse at 100% 55%,rgba(29,107,117,.11),transparent 60%),#050d18}
+@media(min-width:1200px){
+  .main-grid{grid-template-columns:215px minmax(0,1fr) 225px;gap:14px}
+  .app-shell{max-width:1940px;padding:0 21px}
+  .panel{padding:17px 12px}
+  .tower-card{gap:7px}
+  .tower-art{width:42px;height:44px;font-size:24px}
+}
+@media(max-width:700px){
+  .battle-heading{height:72px}
+  .battle-frame-head{height:32px}
+  .battle-frame-foot{height:29px}
+  .canvas-wrap{min-height:180px}
+  .main-grid{grid-template-columns:1fr}
+}
