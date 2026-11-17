@@ -3,6 +3,10 @@ import {getAuth,signInAnonymously,onAuthStateChanged} from 'firebase/auth';
 import {getFirestore,collection,doc,getDoc,getDocs,setDoc,updateDoc,onSnapshot,query,serverTimestamp,writeBatch,deleteDoc} from 'firebase/firestore';
 import {allowedFields,htmlEscape as e,validateEvent,parseNameList,sumEvent,createCsv,feeItemsFor,groupExpected} from './event-core.js';
 
+// Event invite URLs contain private attendee workflows. They must not appear in web search.
+if(new URLSearchParams(location.search).has('id')){
+ document.querySelector('meta[name="robots"]')?.setAttribute('content','noindex,nofollow');
+}
 const root=document.getElementById('app');
 const projectId='sosoking-481e6';
 const state={app:null,db:null,auth:null,user:null,event:null,id:null,owner:false,member:null,groups:[],members:[],group:null,editingGroupId:null,editDirty:false,recoveryCode:null,unsub:[],pending:false};

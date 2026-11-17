@@ -89,3 +89,13 @@
  .fee-quantity-row input{max-width:114px}
  .fee-summary strong{font-size:19px}
 }
+
+/* Static SEO help text is readable by search engines without loading Firebase. */
+.seo-guide{padding:10px 0 65px;max-width:1170px}
+.seo-guide>h2{font-size:clamp(22px,3vw,28px);letter-spacing:-.05em;margin:10px 0}
+.seo-guide>p{max-width:850px;color:#5d6c80;line-height:1.9;margin:0 0 22px;font-size:15px}
+.seo-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.seo-guide-grid section{background:white;border:1px solid #e2eaf0;border-radius:16px;padding:20px 22px}
+.seo-guide-grid h3{font-size:17px;letter-spacing:-.035em;margin:0 0 9px}
+.seo-guide-grid p{font-size:14px;color:#63758a;line-height:1.8;margin:0}
+@media(max-width:640px){.seo-guide{padding:0 0 45px}.seo-guide-grid{grid-template-columns:1fr}.seo-guide-grid section{padding:17px 18px}}

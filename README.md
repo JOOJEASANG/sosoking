@@ -4,6 +4,17 @@ https://sosoking-481e6.web.app/
 
 여러 소형 웹 프로그램을 추가할 수 있도록 설계된 웹 도구 모음입니다. AI를 사용하지 않습니다.
 
+## 검색엔진 노출(SEO)
+
+- `robots.txt`에 Google·Naver 등 검색로봇의 공개 사이트 수집 허용과 `sitemap.xml` 경로를 안내.
+- `sitemap.xml`은 홈페이지, 행사 취합기, 옛 번호 변환기 3개 **공개 소개 페이지**만 포함. 행사별 실제 초대 링크(`event.html?id=...`)와 개인정보를 검색엔진에 제공하지 않음.
+- 세 페이지마다 개별 제목, 메타 설명, canonical, Open Graph, 소소킹 공유 이미지, Schema.org JSON-LD 마크업 적용.
+- 행사·번호 변환 페이지 하단에 검색로봇이 JavaScript 실행 없이 볼 수 있는 공개 기능 설명 추가.
+- Google Search Console: https://search.google.com/search-console
+- NAVER Search Advisor: https://searchadvisor.naver.com/
+- **사이트 소유권 인증과 사이트맵 제출은 사이트 소유자가 계정에 로그인하여 별도로 진행해야 함.** XML sitemap과 robots.txt 게시만으로 검색 결과 등록이나 검색 순위를 보장하지 않음.
+- 배포 전 `node scripts/verify-seo.mjs --built`와 배포 후 공개 사이트 `robots.txt`, `sitemap.xml` HTTP 응답 검사.
+
 ## 통합 앱 로고 및 설치(PWA)
 
 - 메인, 행사 취합기, 옛 번호 변환 모두 동일한 `public/icons/sosoking.svg` 소소킹 로고 사용.
