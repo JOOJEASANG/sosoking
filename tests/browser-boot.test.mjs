@@ -22,17 +22,20 @@ test("Actual game module boots, starts a run, builds a tower and begins wave",as
  const makeEl=(id)=>{
   const ele={
    id,style:{},dataset:{},classList:classSet(),disabled:false,textContent:"",
-   innerHTML:"",listeners:{},setAttribute(name,value){this[name]=value;},
+   innerHTML:"",listeners:{},queryCache:new Map(),setAttribute(name,value){this[name]=value;},
    addEventListener(name,callback){this.listeners[name]=callback;},
    click(){this.listeners.click?.();},
    querySelectorAll(selector){
     const attr=selector.match(/^\[([^\]]+)\]$/)?.[1];
     if(!attr)return[];
+    const old=this.queryCache.get(selector);
+    if(old?.html===this.innerHTML)return old.list;
     const regex=new RegExp(attr+'="([^"]+)"','g');
-    return [...this.innerHTML.matchAll(regex)].map(m=>{
+    const list=[...this.innerHTML.matchAll(regex)].map(m=>{
      const o=makeEl("modal-"+m[1]);o.dataset[attr.replace("data-","")]=m[1];
      return o;
     });
+    this.queryCache.set(selector,{html:this.innerHTML,list});return list;
    }
   };
   return ele;
