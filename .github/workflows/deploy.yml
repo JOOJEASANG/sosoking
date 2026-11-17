@@ -67,6 +67,8 @@ jobs:
           if(!user.localId||!user.idToken)throw Error('Anonymous auth returned missing identity');
           console.log('Firebase anonymous sign-in works; account details not logged');
           NODE
+      - name: Live Firestore permission test (synthetic data only)
+        run: node scripts/smoke-firebase.mjs
       - name: Cleanup credentials
         if: always()
         run: rm -f '${{ runner.temp }}/firebase-service-account.json'
