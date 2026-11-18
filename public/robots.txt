@@ -1,8 +1,10 @@
-# SOSOKING public tools are crawlable; private event invite URLs are not.
 User-agent: *
 Allow: /
 Disallow: /__/
-Disallow: /event.html?id=
-Disallow: /tools/event?id=
+Disallow: /event.html
+Disallow: /old-phone.html
+Disallow: /roster.html
+Disallow: /orders.html
+Disallow: /chat.html
 
 Sitemap: https://sosoking-481e6.web.app/sitemap.xml

@@ -50,16 +50,6 @@
           }
         ]
       }
-    ],
-    "rewrites": [
-      {
-        "source": "/tools/event",
-        "destination": "/event.html"
-      },
-      {
-        "source": "/tools/old-phone",
-        "destination": "/old-phone.html"
-      }
     ]
   },
   "firestore": {

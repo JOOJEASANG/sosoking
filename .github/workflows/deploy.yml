@@ -1,4 +1,4 @@
-name: SOSOKING Tools · Test & Deploy
+name: SOSOKING Daily Check · Test & Deploy
 on:
   push:
     branches: [main]
@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: sosoking-tools-${{ github.ref }}
+  group: sosoking-daily-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   check:
@@ -39,45 +39,27 @@ jobs:
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
           umask 077
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
-      - name: Deploy Firestore security rules
+      - name: Deploy locked-down Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:rules --project sosoking-481e6 --non-interactive
-      - name: Deploy site
+      - name: Deploy new Daily Check site
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
-      - name: Verify public programs
+      - name: Verify live application and retired programs
         run: |
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q 'SOSOKING'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/event.html | grep -q '모임집계'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/guide.html | grep -q '소소킹 사용 안내'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/roster.html | grep -q '명단정리'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/orders.html | grep -q '주문모아'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/chat.html | grep -q '카톡정리'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/old-phone.html | grep -q '옛 휴대폰 번호 변환'
-      - name: Verify search crawler access
-        run: |
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/robots.txt | grep -q 'Sitemap: https://sosoking-481e6.web.app/sitemap.xml'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sitemap.xml | grep -q '<loc>https://sosoking-481e6.web.app/event.html</loc>'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/event.html | grep -q 'rel="canonical"'
-      - name: Verify Firebase app config and anonymous access
-        run: |
-          node --input-type=module <<'NODE'
-          const response=await fetch('https://sosoking-481e6.web.app/__/firebase/init.json');
-          if(!response.ok)throw Error('Firebase web configuration endpoint not available: HTTP '+response.status);
-          const config=await response.json();
-          if(!config.apiKey||config.projectId!=='sosoking-481e6')throw Error('Firebase web app API configuration invalid');
-          const auth=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+encodeURIComponent(config.apiKey),{
-            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})
-          });
-          if(!auth.ok){const error=await auth.json();throw Error('Firebase anonymous auth unavailable: '+String(error?.error?.message||auth.status));}
-          const user=await auth.json();
-          if(!user.localId||!user.idToken)throw Error('Anonymous auth returned missing identity');
-          console.log('Firebase anonymous sign-in works; account details not logged');
-          NODE
-      - name: Live Firestore permission test (synthetic data only)
-        run: node scripts/smoke-firebase.mjs
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q '나의 하루체크'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sw.js | grep -q 'sosoking-daily-shell-v3'
+          for page in event.html old-phone.html roster.html orders.html chat.html guide.html; do
+            status=$(curl -sSL -o /dev/null -w '%{http_code}' "https://sosoking-481e6.web.app/$page")
+            test "$status" = 404
+          done
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sitemap.xml | grep -q '<loc>https://sosoking-481e6.web.app/</loc>'
+      - name: Verify shared item protections with synthetic data
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: node scripts/smoke-daily.mjs
       - name: Cleanup credentials
         if: always()
         run: rm -f '${{ runner.temp }}/firebase-service-account.json'
