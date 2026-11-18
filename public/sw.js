@@ -1,7 +1,7 @@
 /* SOSOKING application shell only. No user data, event submissions or Firebase APIs are cached. */
 const CACHE = 'sosoking-static-v1';
 const STATIC = [
-  '/', '/index.html', '/event.html', '/old-phone.html',
+  '/', '/index.html', '/event.html', '/old-phone.html', '/guide.html',
   '/css/site.css', '/js/pwa-install.js', '/js/event.js', '/js/phone.js',
   '/manifest.webmanifest', '/icons/sosoking.svg',
   '/icons/sosoking-192.png', '/icons/sosoking-512.png',

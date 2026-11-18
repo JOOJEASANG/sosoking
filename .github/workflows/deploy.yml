@@ -51,6 +51,7 @@ jobs:
         run: |
           curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q 'SOSOKING'
           curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/event.html | grep -q '모임집계'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/guide.html | grep -q '소소킹 사용 안내'
           curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/old-phone.html | grep -q '옛 휴대폰 번호 변환'
       - name: Verify search crawler access
         run: |

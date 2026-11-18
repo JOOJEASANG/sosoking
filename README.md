@@ -4,12 +4,14 @@ https://sosoking-481e6.web.app/
 
 여러 소형 웹 프로그램을 추가할 수 있도록 설계된 웹 도구 모음입니다. AI를 사용하지 않습니다.
 
-## 검색엔진 노출(SEO)
+## 검색엔진 노출(SEO) 및 공개 서비스 안내
 
 - `robots.txt`에 Google·Naver 등 검색로봇의 공개 사이트 수집 허용과 `sitemap.xml` 경로를 안내.
-- `sitemap.xml`은 홈페이지, 모임집계, 옛 번호 변환기 3개 **공개 소개 페이지**만 포함. 행사별 실제 초대 링크(`event.html?id=...`)와 개인정보를 검색엔진에 제공하지 않음.
-- 세 페이지마다 개별 제목, 메타 설명, canonical, Open Graph, 소소킹 공유 이미지, Schema.org JSON-LD 마크업 적용.
+- `sitemap.xml`은 홈페이지, 모임집계, 옛 번호 변환기, 이용안내 4개 **공개 페이지**만 포함. 행사별 실제 초대 링크(`event.html?id=...`)와 개인정보를 검색엔진에 제공하지 않음.
+- 각 페이지마다 개별 제목, 메타 설명, canonical, Open Graph, 소소킹 공유 이미지, Schema.org JSON-LD 마크업 적용.
 - 행사·번호 변환 페이지 하단에 검색로봇이 JavaScript 실행 없이 볼 수 있는 공개 기능 설명 추가.
+- `/guide.html`에 총괄자·담당자별 이용 방법, 비밀번호 승인 흐름, 실제 개인정보 수집 방식과 삭제 방식, 광고 미사용 현황을 공개. 현재 안내는 법률상 필요한 운영자 정보가 포함된 공식 개인정보처리방침을 대체하지 않으므로, 광고 신청·상용 서비스 운영 전 해당 방침을 완비해야 함.
+- 현재 방문자에게 광고 코드를 삽입하지 않았으며, `ads.txt`는 광고 게시자 계정 발급 전까지 생성하지 않음.
 - Google Search Console: https://search.google.com/search-console
 - NAVER Search Advisor: https://searchadvisor.naver.com/
 - **사이트 소유권 인증과 사이트맵 제출은 사이트 소유자가 계정에 로그인하여 별도로 진행해야 함.** XML sitemap과 robots.txt 게시만으로 검색 결과 등록이나 검색 순위를 보장하지 않음.

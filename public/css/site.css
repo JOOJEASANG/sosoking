@@ -114,3 +114,31 @@
 .security-card>.notice{margin:14px 0}
 .security-card .hint{margin:10px 0 0}
 @media(max-width:700px){.role-guide{grid-template-columns:1fr}.role-guide-item{padding:18px 19px}}
+
+/* Public, crawler-readable help guide and site policy navigation */
+.footer-nav{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.footer-nav a{font-size:13px;font-weight:650;color:inherit;text-underline-offset:3px}
+.footer-nav a:hover{text-decoration:underline}
+.guide-entry-link{margin:-4px 0 24px}
+.guide-entry-link a{display:inline-flex;color:#167a69;font-weight:750;text-underline-offset:4px;text-decoration:underline;font-size:14px}
+.guide-teaser{margin:27px 0 20px;padding:23px 25px;background:#f2fbf7;border:1px solid #d7eee4;border-radius:19px;display:flex;gap:20px;align-items:center;justify-content:space-between}
+.guide-teaser strong{display:block;font-size:18px;letter-spacing:-.03em}
+.guide-teaser p{font-size:14px;color:#60768a;line-height:1.7;margin:5px 0 0}
+.guide-teaser .btn{flex:none}
+.guide-content{max-width:1140px}
+.guide-content .page-heading{max-width:890px}
+.guide-content .wide-card{max-width:1000px}
+.guide-content .wide-card>p{font-size:15px;color:#526477;line-height:1.9}
+.guide-steps{display:flex;flex-direction:column;gap:0;margin:12px 0 22px}
+.guide-step{display:flex;gap:18px;padding:19px 0;border-bottom:1px solid #e9eef2}
+.guide-step:last-child{border-bottom:0}
+.guide-number{display:inline-grid;place-items:center;border-radius:13px;background:#e9f7f0;color:#15755f;font-size:16px;font-weight:900;flex:0 0 45px;height:45px}
+.guide-step h3{margin:2px 0 7px;letter-spacing:-.035em;font-size:17px}
+.guide-step p{color:#607286;font-size:14px;line-height:1.8;margin:0}
+.guide-step a,.guide-faq a{color:#138678;text-decoration:underline;text-underline-offset:3px}
+.guide-note{border-left:3px solid #8fcfbb;background:#f6fcf9;padding:12px 15px;border-radius:6px;font-size:14px!important;color:#477068!important;margin:15px 0 20px!important;line-height:1.75!important}
+.guide-faq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}
+.guide-faq section{padding:19px;background:#f8fafc;border:1px solid #e2e9f1;border-radius:13px}
+.guide-faq h3{font-size:16px;line-height:1.4;margin:0 0 10px;letter-spacing:-.035em}
+.guide-faq p{font-size:14px;color:#617286;line-height:1.8;margin:0}
+@media(max-width:710px){.guide-faq{grid-template-columns:1fr}.guide-step{gap:13px}.guide-teaser{flex-direction:column;align-items:stretch}.guide-teaser .btn{width:100%}}

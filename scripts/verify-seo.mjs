@@ -7,7 +7,8 @@ const host = 'https://sosoking-481e6.web.app';
 const pages = [
   {path:'index.html',url:host+'/'},
   {path:'event.html',url:host+'/event.html'},
-  {path:'old-phone.html',url:host+'/old-phone.html'}
+  {path:'old-phone.html',url:host+'/old-phone.html'},
+  {path:'guide.html',url:host+'/guide.html'}
 ];
 const robots = fs.readFileSync(path.join(root,'robots.txt'),'utf8');
 assert.match(robots,/User-agent: \*/i);
@@ -34,4 +35,4 @@ for (const p of pages){
  assert.ok(['SoftwareApplication','WebSite'].includes(data['@type']));
  assert.ok(data.url===p.url);
 }
-console.log('SEO passed: 3 canonical pages, sitemap, crawl rules, metadata, structured data.');
+console.log('SEO passed: 4 canonical pages, sitemap, crawl rules, metadata, structured data.');

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { build } from 'esbuild';
 import { Resvg } from '@resvg/resvg-js';
 const source=path.resolve('public'),dest=path.resolve('dist-public');
-for(const p of ['index.html','event.html','old-phone.html','css/site.css','js/event.js','js/phone.js','js/phone-rules.js','js/event-core.js','icons/sosoking.svg','manifest.webmanifest','js/pwa-install.js','sw.js','robots.txt','sitemap.xml']){
+for(const p of ['index.html','event.html','old-phone.html','guide.html','css/site.css','js/event.js','js/phone.js','js/phone-rules.js','js/event-core.js','icons/sosoking.svg','manifest.webmanifest','js/pwa-install.js','sw.js','robots.txt','sitemap.xml']){
  if(!fs.existsSync(path.join(source,p)))throw new Error('Missing '+p);
 }
 fs.rmSync(dest,{recursive:true,force:true});fs.cpSync(source,dest,{recursive:true});
