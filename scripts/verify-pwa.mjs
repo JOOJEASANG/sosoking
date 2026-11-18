@@ -19,6 +19,6 @@ for(const required of ['src="/js/daily.js"','rel="manifest"','apple-touch-icon',
  assert.ok(html.includes(required),required);
 }
 const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
-assert.match(sw,/request.method !== 'GET'/);
+assert.match(sw,/request\.method\s*!==\s*'GET'/);
 assert.match(sw,/staticPaths.has\(url.pathname\)/);
 console.log('Daily Check PWA passed');
