@@ -57,17 +57,17 @@ export function cleanJournal(raw){
  out.customItems=(Array.isArray(raw.customItems)?raw.customItems:[]).slice(0,80).flatMap(x=>{
   try{
    const item=validateItem(x);
-   return [{...item,id:/^l_[a-zA-Z0-9-]{10,75}$/.test(String(x.id))?x.id:'l_'+crypto.randomUUID(),icon:'✦'}];
+   return [{...item,id:/^l_[a-zA-Z0-9_-]{10,75}$/.test(String(x.id))?x.id:'l_'+crypto.randomUUID(),icon:'✦'}];
   }catch{return [];}
  });
  out.sharedItems=(Array.isArray(raw.sharedItems)?raw.sharedItems:[]).slice(0,150).flatMap(x=>{
   try{
    const item=validateItem(x);
-   if(!/^s_[a-zA-Z0-9-]{8,110}$/.test(String(x.id)))return [];
+   if(!/^s_[a-zA-Z0-9_-]{8,110}$/.test(String(x.id)))return [];
    return [{...item,id:x.id,icon:'✦'}];
   }catch{return [];}
  });
- out.selectedSharedIds=[...new Set((Array.isArray(raw.selectedSharedIds)?raw.selectedSharedIds:[]).filter(x=>typeof x==='string'&&/^s_[a-zA-Z0-9-]{8,110}$/.test(x)))].slice(0,150);
+ out.selectedSharedIds=[...new Set((Array.isArray(raw.selectedSharedIds)?raw.selectedSharedIds:[]).filter(x=>typeof x==='string'&&/^s_[a-zA-Z0-9_-]{8,110}$/.test(x)))].slice(0,150);
  out.hiddenItemIds=[...new Set((Array.isArray(raw.hiddenItemIds)?raw.hiddenItemIds:[]).filter(x=>typeof x==='string'&&x.length<120))].slice(0,200);
  out.hiddenDefaultIds=[...new Set((Array.isArray(raw.hiddenDefaultIds)?raw.hiddenDefaultIds:[]).filter(x=>DEFAULT_ITEMS.some(item=>item.id===x)))];
  if(raw.days&&typeof raw.days==='object'){
