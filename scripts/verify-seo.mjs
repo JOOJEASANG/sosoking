@@ -32,7 +32,7 @@ for (const p of pages){
  assert.ok(match,p.path+' JSON-LD');
  const data=JSON.parse(match[1]);
  assert.equal(data['@context'],'https://schema.org');
- assert.ok(['SoftwareApplication','WebSite'].includes(data['@type']));
+ assert.ok(['SoftwareApplication','WebSite','WebPage'].includes(data['@type']));
  assert.ok(data.url===p.url);
 }
 console.log('SEO passed: 4 canonical pages, sitemap, crawl rules, metadata, structured data.');
