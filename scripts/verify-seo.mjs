@@ -8,7 +8,10 @@ const pages = [
   {path:'index.html',url:host+'/'},
   {path:'event.html',url:host+'/event.html'},
   {path:'old-phone.html',url:host+'/old-phone.html'},
-  {path:'guide.html',url:host+'/guide.html'}
+  {path:'guide.html',url:host+'/guide.html'},
+  {path:'roster.html',url:host+'/roster.html'},
+  {path:'orders.html',url:host+'/orders.html'},
+  {path:'chat.html',url:host+'/chat.html'}
 ];
 const robots = fs.readFileSync(path.join(root,'robots.txt'),'utf8');
 assert.match(robots,/User-agent: \*/i);
@@ -35,4 +38,4 @@ for (const p of pages){
  assert.ok(['SoftwareApplication','WebSite','WebPage'].includes(data['@type']));
  assert.ok(data.url===p.url);
 }
-console.log('SEO passed: 4 canonical pages, sitemap, crawl rules, metadata, structured data.');
+console.log('SEO passed: 7 canonical pages, sitemap, crawl rules, metadata, structured data.');

@@ -2,6 +2,7 @@ import {initializeApp,getApps} from 'firebase/app';
 import {getAuth,signInAnonymously,onAuthStateChanged} from 'firebase/auth';
 import {getFirestore,collection,doc,getDoc,getDocs,setDoc,updateDoc,onSnapshot,query,serverTimestamp,writeBatch,deleteDoc} from 'firebase/firestore';
 import {allowedFields,htmlEscape as e,validateEvent,parseNameList,sumEvent,createCsv,feeItemsFor,groupExpected} from './event-core.js';
+import {peekTransfer,readTransfer} from './tool-ui.js';
 
 // Event invite URLs contain private attendee workflows. They must not appear in web search.
 if(new URLSearchParams(location.search).has('id')){
@@ -186,7 +187,11 @@ async function openEvent(){
  state.event=snap.data();
  const oldRecovery=await getDoc(ownRecoveryRef()).catch(()=>null);
  state.owner=state.event.ownerUid===state.user.uid||!!oldRecovery?.exists();
- if(state.owner){showOwner();return;}
+ if(state.owner){
+  const pending=peekTransfer('event-roster');
+  if(pending?.eventId===state.id&&state.event.groups?.some(g=>g.id===pending.groupId))state.editingGroupId=pending.groupId;
+  showOwner();return;
+ }
  state.unsub.push(onSnapshot(eventRef(),next=>{
   if(!next.exists()){renderFailure(Error('행사가 삭제되었습니다.'));return;}
   state.event=next.data();
@@ -410,6 +415,37 @@ function renderEditor(group,isAdmin){
  if(isAdmin)el.innerHTML='<div class="editor-card"><h3>'+e(group.name)+' · 단체 명단 직접 등록</h3><p class="hint">총괄자가 대신 작성할 수 있습니다.</p><div id="editorInner"></div></div>';
  const inner=isAdmin?el.querySelector('#editorInner'):el;
  const rows=(group.attendees||[]).map(row=>({...row}));
+ // Explicit hand-off from 명단정리, only after this editor is authorized and unlocked.
+ let imported=0;
+ if(mode!=='count'){
+  const pending=peekTransfer('event-roster');
+  const permitted=isAdmin||state.member?.status==='approved'&&state.member.groupId===group.id&&(!state.event.passwordRequired||state.accessGranted);
+  if(pending?.eventId===state.id&&pending?.groupId===group.id&&permitted&&Array.isArray(pending.rows)){
+   const data=readTransfer('event-roster');
+   if(data&&confirm('명단정리에서 '+data.rows.length+'명을 가져왔습니다. 기존 명단은 유지하고 중복되지 않는 이름을 추가할까요?')){
+    const keys=new Set(rows.map(r=>String(r.name||'').trim().toLocaleLowerCase('ko')+'|'+String(r.phone||'').replace(/\D/g,'')));
+    for(const record of data.rows){
+     if(rows.length>=300)break;
+     const name=String(record?.name||'').trim().slice(0,60);
+     if(!name)continue;
+     const phone=String(record?.phone||'').slice(0,80);
+     const key=name.toLocaleLowerCase('ko')+'|'+phone.replace(/\D/g,'');
+     if(keys.has(key))continue;
+     keys.add(key);
+     const row={name};
+     if(mode==='custom'){
+      const fieldNames=new Set(fields.map(f=>f.key));
+      if(fieldNames.has('phone'))row.phone=phone;
+      if(fieldNames.has('role'))row.role=String(record?.role||'').slice(0,80);
+      if(fieldNames.has('affiliation'))row.affiliation=String(record?.group||'').slice(0,80);
+      if(Array.isArray(state.event.feeItems))row.feeIds=[];
+     }
+     rows.push(row);imported++;
+    }
+   }
+  }
+ }
+
  const quantityMarkup=()=>{
   if(!fees.length||mode==='custom')return '';
   const old=group.feeQuantities||{};
@@ -447,6 +483,18 @@ function renderEditor(group,isAdmin){
    <div class="stat-strip"><span>입력 인원</span><strong id="entryCount">${rows.length}명</strong></div>
    ${fees.length?`<div class="fee-summary"><span>참가비 예상 합계</span><strong id="allFeeExpected">${money(groupExpected(state.event,group))}</strong></div>`:''}
    <button type="button" class="btn primary jumbo" id="saveEntries">상세 명단 저장하기</button></div>`;
+ }
+ if(mode!=='count'){
+  const target='/roster.html?returnEvent='+encodeURIComponent(state.id)+'&group='+encodeURIComponent(group.id);
+  const ribbon=document.createElement('div');
+  ribbon.className='roster-import-bar';
+  ribbon.innerHTML='<div><strong>많은 명단을 한 번에 등록하나요?</strong><p>명단정리에서 이름·전화번호를 붙여 넣고 중복 확인 후 이 단체로 가져올 수 있습니다.</p></div><a class="btn outline" href="'+target+'">명단정리에서 가져오기 ↗</a>';
+  inner.prepend(ribbon);
+  if(imported){
+   const note=document.createElement('div');note.className='notice info';
+   note.textContent='정리된 명단 '+imported+'명을 화면에 추가했습니다. 내용을 확인한 다음 반드시 아래 저장 버튼을 눌러야 실제 행사 명단에 반영됩니다.';
+   ribbon.after(note);
+  }
  }
  function readQuantities(count){
   const quantities={};

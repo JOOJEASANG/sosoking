@@ -22,7 +22,7 @@ for(const [file,size] of icons){
  assert.ok(buffer.length>1000,file+' unexpectedly small');
 }
 for(const icon of manifest.icons) assert.ok(fs.existsSync(path.join(root,icon.src.replace(/^\//,''))));
-for(const page of ['index.html','event.html','old-phone.html']){
+for(const page of ['index.html','event.html','old-phone.html','roster.html','orders.html','chat.html']){
  const html=fs.readFileSync(path.join(root,page),'utf8');
  assert.match(html,/rel="manifest"/,page);
  assert.match(html,/apple-touch-icon/,page);
