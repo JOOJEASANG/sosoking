@@ -45,8 +45,8 @@ test('backup validation filters malformed items and values',()=>{
  assert.equal(safe.sharedItems.length,1);
  assert.deepEqual(cleanJournal(emptyJournal()),emptyJournal());
 });
-test('new site serves only a single daily check product',()=>{
- const html=fs.readFileSync('public/index.html','utf8');
+test('daily check remains available on its own page after portal migration',()=>{
+ const html=fs.readFileSync('public/daily.html','utf8');
  for(const marker of ['data-screen="today"','data-screen="explore"','data-screen="history"','data-screen="settings"','id="createDialog"','id="dayPicker"','id="dailyGrid"'])assert.ok(html.includes(marker),marker);
  const rules=fs.readFileSync('firestore.rules','utf8');
  assert.match(rules,/match \/publicItems\/\{itemId\}/);
