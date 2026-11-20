@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {DEFAULT_ITEMS,CATEGORIES,validateItem,normalizeAnswer,localDateKey,shiftDay,dayProgress,emptyJournal,cleanJournal,calculateStreak,monthSummary} from '../public/js/daily-core.js';
+import {DEFAULT_ITEMS,CATEGORIES,validateItem,normalizeAnswer,localDateKey,shiftDay,dayProgress,emptyJournal,cleanJournal,normalizeShoppingDetail,shoppingDescription,SHOPPING_CATEGORIES,calculateStreak,monthSummary} from '../public/js/daily-core.js';
 
 test('default daily check covers routine meals, shopping, relationships and playful counts',()=>{
  assert.ok(DEFAULT_ITEMS.length>=8);
@@ -45,9 +45,36 @@ test('backup validation filters malformed items and values',()=>{
  assert.equal(safe.sharedItems.length,1);
  assert.deepEqual(cleanJournal(emptyJournal()),emptyJournal());
 });
+test('shopping can be detailed with multiple categories or a free-text note',()=>{
+ assert.ok(SHOPPING_CATEGORIES.includes('식료품'));
+ assert.ok(SHOPPING_CATEGORIES.includes('의류·패션'));
+ assert.deepEqual(normalizeShoppingDetail({types:['식료품','식료품','임의값','의류·패션'],note:'마트에서 우유'}),{types:['식료품','의류·패션'],note:'마트에서 우유'});
+ assert.equal(shoppingDescription({types:['생활용품'],note:'세제'}),'생활용품 · 세제');
+ assert.equal(shoppingDescription({types:[],note:'  책  '}),'책');
+ assert.equal(normalizeShoppingDetail({types:[],note:'a'.repeat(220)}).note.length,120);
+});
+test('older journal backups remain readable and shopping details roundtrip safely',()=>{
+ const old={version:1,days:{'2026-11-20':{d_shopping:true},'2026-11-19':{d_shopping:false}},customItems:[],sharedItems:[],selectedSharedIds:[],hiddenDefaultIds:[],hiddenItemIds:[]};
+ const legacy=cleanJournal(old);
+ assert.deepEqual(legacy.details,{});
+ legacy.details['2026-11-20']={d_shopping:{types:['식료품','생활용품'],note:'간식'}};
+ legacy.details['2026-11-19']={d_shopping:{types:['의류·패션'],note:'저장되지 않아야 함'}};
+ legacy.details['invalid']={d_shopping:{types:['식료품'],note:'불량 날짜'}};
+ const restored=cleanJournal(JSON.parse(JSON.stringify(legacy)));
+ assert.deepEqual(restored.details,{'2026-11-20':{d_shopping:{types:['식료품','생활용품'],note:'간식'}}});
+ assert.equal(restored.days['2026-11-19'].d_shopping,false);
+ assert.equal(restored.days['2026-11-20'].d_shopping,true);
+ assert.deepEqual(cleanJournal(restored),restored);
+});
+test('shopping details do not enter shared item definitions',()=>{
+ const raw={version:1,days:{'2026-11-20':{d_shopping:true}},details:{'2026-11-20':{d_shopping:{types:['선택되지 않은 항목','식료품'],note:'직접 입력'}}}};
+ const cleaned=cleanJournal(raw);
+ assert.deepEqual(cleaned.details['2026-11-20'].d_shopping,{types:['식료품'],note:'직접 입력'});
+ assert.ok(!JSON.stringify(cleaned.sharedItems).includes('직접 입력'));
+});
 test('new site serves only a single daily check product',()=>{
  const html=fs.readFileSync('public/index.html','utf8');
- for(const marker of ['data-screen="today"','data-screen="explore"','data-screen="history"','data-screen="settings"','id="createDialog"','id="dayPicker"','id="dailyGrid"'])assert.ok(html.includes(marker),marker);
+ for(const marker of ['data-screen="today"','data-screen="explore"','data-screen="history"','data-screen="settings"','id="createDialog"','id="dayPicker"','id="dailyGrid"','id="recordedOnly"','id="goToday"'])assert.ok(html.includes(marker),marker);
  const rules=fs.readFileSync('firestore.rules','utf8');
  assert.match(rules,/match \/publicItems\/\{itemId\}/);
  assert.match(rules,/getAfter\(limitPath\(request.auth.uid\)\)/);

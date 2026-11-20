@@ -185,3 +185,50 @@
  .site-footer .container{flex-direction:column}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Daily Check refinement — keeps existing four screens and data intact. */
+:root{--ink:#23372f;--muted:#6c8175;--line:#e2eae4;--bg:#f7f9f6;--green:#286d58;--shadow:0 10px 32px rgba(34,72,51,.055)}
+.site-header{background:rgba(255,255,255,.94);border-bottom-color:#edf1eb}
+.hero{background:linear-gradient(115deg,#e7f3e8 0%,#edf6ec 55%,#f8f4e9 100%);border:1px solid #e1eadf;box-shadow:0 16px 44px #3e72590b}
+.hero h1{font-weight:850}.hero p{color:#5a7665;max-width:580px}
+.hero-note{transform:rotate(3deg);box-shadow:0 22px 50px #4d70531c}
+.nav-item,.btn,.circle-btn,.choice-button,.shopping-chip,.category-chips button{transition:background .17s,border-color .17s,color .17s,transform .17s,box-shadow .17s}
+.nav-item:hover,.circle-btn:hover:not(:disabled){background:#e9f4eb}
+.date-panel,.progress-panel,.check-card,.summary-tile,.history-calendar-card,.history-list-card,.settings-card,.catalog-card{border-color:#e3ebe3;box-shadow:0 10px 28px #254e3710}
+.progress-track{height:11px;background:#e8f0e7}.progress-fill{background:linear-gradient(90deg,#72c398,#2c9367)}
+.date-actions{flex-wrap:wrap}.go-today-btn{min-height:40px;padding:8px 12px;background:#ebf5ef;border:1px solid #d7e9db;border-radius:11px;color:#2f7154;font-size:12px;font-weight:850;white-space:nowrap}.go-today-btn:hover:not(:disabled){background:#dcefe3}.go-today-btn:disabled{opacity:.5}
+.filter-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}.filter-row .category-chips{flex:1;min-width:0}
+.recorded-toggle{border:1px solid #dae7dd;background:#fff;border-radius:30px;padding:9px 14px;white-space:nowrap;color:#537363;font-size:12px;font-weight:800;min-height:40px;flex-shrink:0}.recorded-toggle.active{background:#e4f3e9;color:#1a704b;border-color:#8fc5a5}
+.shopping-tip{display:flex;align-items:center;gap:13px;border:1px solid #dde8db;background:#f1f7ed;border-radius:14px;padding:13px 17px;margin-bottom:20px;color:#60806a}.shopping-tip-icon{font-size:23px;line-height:1}.shopping-tip p{margin:0;font-size:12px;line-height:1.8}.shopping-tip strong{color:#2c664b}
+.check-card{position:relative;min-width:0}.check-card:hover{border-color:#bed8c6;box-shadow:0 13px 30px #1b603619}.check-card.done{background:#fff;border-color:#93c9a8}.check-card.done:before{content:"";position:absolute;top:0;right:0;width:38px;height:4px;background:#4ba578;border-radius:0 20px 0 6px}
+.choice-button:hover:not(.active),.shopping-chip:hover:not(.selected){background:#eaf4e9;border-color:#a7d3b7}.choice-button:focus-visible,.shopping-chip:focus-visible{outline:3px solid #70b692;outline-offset:2px}
+.check-card.shopping-card{grid-column:span 2}.shopping-card h3{flex:initial}.shopping-card .card-choice-buttons{gap:10px}.shopping-card .choice-button{min-width:103px}
+.shopping-editor{background:#f5faf5;border:1px solid #e0eee2;border-radius:15px;padding:18px 19px;margin-top:1px}
+.shopping-editor h4{font-size:15px;letter-spacing:-.03em;color:#254b38;margin:0 0 4px}.shopping-help{font-size:12px;color:#718676;margin:0 0 15px;line-height:1.7}
+.shopping-choices{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.shopping-chip{border:1px solid #d9e5db;background:#fff;color:#5e7968;border-radius:100px;min-height:37px;padding:7px 13px;font-size:12px;font-weight:750}.shopping-chip.selected{background:#276a51;border-color:#276a51;color:#fff}.shopping-chip.selected:before{content:"✓";margin-right:5px}
+.shopping-note-label{display:flex;flex-direction:column;gap:8px;font-size:12px;color:#365e46;font-weight:800}
+.shopping-note{width:100%;min-height:44px;border:1px solid #d6e3d8;border-radius:11px;background:#fff;color:#273d31;padding:11px 13px;font-size:14px;outline:none}.shopping-note:focus{border-color:#5bab80;box-shadow:0 0 0 3px #a6ddba45}
+.note-count{display:block;margin-top:5px;text-align:right;font-size:11px;color:#829588}
+.shopping-saved{margin:12px 0 0;color:#4a8a63;font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.history-helper{font-size:12px;color:#8a9a90;margin:9px 0 10px}
+.recent-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.recent-main>span{font-size:12px;color:#8a9a90}
+.recent-main .recent-detail{font-size:11px;color:#487b5a;white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+.recent-arrow{color:#7b9b86;font-size:23px}
+.recent-row:hover{background:#f8fbf7}
+@media(min-width:1001px){.shopping-card{grid-column:span 2}}
+@media(max-width:1000px){.shopping-card{grid-column:span 2}}
+@media(max-width:750px){
+ .filter-row{flex-wrap:wrap;gap:3px}.filter-row .category-chips{width:100%;flex-basis:100%;padding-bottom:9px}
+ .recorded-toggle{margin:0 0 13px}
+ .check-card.shopping-card{grid-column:span 1}
+ .shopping-tip{align-items:flex-start;padding:12px}
+ .shopping-tip-icon{font-size:20px}
+ .check-card{padding:20px}
+}
+@media(max-width:480px){
+ .go-today-btn{flex-basis:100%}
+ .shopping-editor{padding:16px 13px}
+ .shopping-chip{min-height:41px}
+ .hero{border-radius:21px}
+}

@@ -1,14 +1,14 @@
 import {initializeApp} from 'firebase/app';
 import {getAuth,signInAnonymously} from 'firebase/auth';
 import {getFirestore,collection,doc,getDocs,query,orderBy,limit,setDoc,writeBatch,serverTimestamp} from 'firebase/firestore';
-import {CATEGORIES,DEFAULT_ITEMS,localDateKey,shiftDay,dayLabel,validateItem,normalizeAnswer,emptyJournal,cleanJournal,dayProgress,calculateStreak,monthSummary,orderedEntries} from './daily-core.js';
+import {CATEGORIES,DEFAULT_ITEMS,SHOPPING_CATEGORIES,localDateKey,shiftDay,dayLabel,validateItem,normalizeAnswer,normalizeShoppingDetail,shoppingDescription,emptyJournal,cleanJournal,dayProgress,calculateStreak,monthSummary,orderedEntries} from './daily-core.js';
 
 const $=id=>document.getElementById(id);
 const STORAGE='sosoking-daily-journal-v1';
 let journal=emptyJournal();
 try{const raw=localStorage.getItem(STORAGE);if(raw)journal=cleanJournal(JSON.parse(raw));}
 catch(err){console.warn('Unable to load local journal',err);}
-let activeDate=localDateKey(),calendarMonth=activeDate.slice(0,7),activeTab='today',todayCategory='전체',exploreCategory='전체';
+let activeDate=localDateKey(),calendarMonth=activeDate.slice(0,7),activeTab='today',todayCategory='전체',exploreCategory='전체',recordedOnly=false;
 let firebaseDb=null,firebaseAuth=null,publicItems=[],firebaseStatus='connecting',savingPublic=false,toastTimer;
 const curated=[
  {id:'s_curated_fridge',title:'냉장고를 열었다 그냥 닫은 적 있어?',kind:'check',category:'재미',options:[],icon:'🧊'},
@@ -59,7 +59,66 @@ function saveAnswer(item,value){
  const data={...answers()};
  if(normalized===null)delete data[item.id];else data[item.id]=normalized;
  if(Object.keys(data).length)journal.days[activeDate]=data;else delete journal.days[activeDate];
- persist();renderToday();
+ if(item.id==='d_shopping'&&normalized!==true)delete journal.details[activeDate];
+ persist();
+ renderToday();
+ // Keep keyboard users anchored to the card after the update.
+ const card=[...document.querySelectorAll('.check-card')].find(c=>c.dataset.itemId===item.id);
+ const target=[...card?.querySelectorAll('.choice-button')||[]].find(b=>b.dataset.value===String(normalized));
+ (target||card?.querySelector('button'))?.focus({preventScroll:true});
+}
+function shoppingDetailForDay(day=activeDate){
+ return normalizeShoppingDetail(journal.details[day]?.d_shopping);
+}
+function saveShoppingDetail(detail){
+ const normalized=normalizeShoppingDetail(detail);
+ if(normalized.types.length||normalized.note.trim())journal.details[activeDate]={d_shopping:normalized};
+ else delete journal.details[activeDate];
+ return persist();
+}
+function shoppingEditor(){
+ const existing=shoppingDetailForDay();
+ const editor=el('section','shopping-editor');
+ editor.setAttribute('aria-label','쇼핑 상세 기록');
+ editor.append(el('h4','','무엇을 쇼핑했나요?'));
+ editor.append(el('p','shopping-help','종류는 여러 개 고를 수 있어요. 아래에 직접 적어도 됩니다.'));
+ const grid=el('div','shopping-choices');
+ const chips=[];
+ const status=el('p','shopping-saved');
+ status.setAttribute('role','status');
+ const refreshStatus=()=>{
+  const desc=shoppingDescription(shoppingDetailForDay());
+  status.textContent=desc?'저장된 내용: '+desc:'종류를 고르거나 직접 입력해 보세요.';
+ };
+ for(const type of SHOPPING_CATEGORIES){
+  const chip=btn('shopping-chip'+(existing.types.includes(type)?' selected':''),type,()=>{
+   const current=shoppingDetailForDay();
+   current.types=current.types.includes(type)?current.types.filter(x=>x!==type):[...current.types,type];
+   if(!saveShoppingDetail(current))return;
+   for(const b of chips){
+    const selected=current.types.includes(b.textContent);
+    b.classList.toggle('selected',selected);
+    b.setAttribute('aria-pressed',String(selected));
+   }
+   refreshStatus();
+  });
+  chip.setAttribute('aria-pressed',String(existing.types.includes(type)));
+  chips.push(chip);grid.append(chip);
+ }
+ editor.append(grid);
+ const label=el('label','shopping-note-label','구매한 물건이나 장소 직접 입력 (선택)');
+ const input=el('input','shopping-note');
+ input.type='text';input.maxLength=120;input.value=existing.note;input.autocomplete='off';
+ input.placeholder='예: 마트에서 우유, 책 한 권, 운동화…';
+ const count=el('span','note-count',existing.note.length+' / 120자');
+ input.addEventListener('input',()=>{
+  const current=shoppingDetailForDay();current.note=input.value;
+  if(saveShoppingDetail(current))refreshStatus();
+  count.textContent=input.value.length+' / 120자';
+ });
+ label.append(input);editor.append(label,count);
+ refreshStatus();editor.append(status);
+ return editor;
 }
 function chips(target,current,onSelect){
  target.replaceChildren();
@@ -70,7 +129,7 @@ function chips(target,current,onSelect){
 }
 function checkCard(item,data){
  const recorded=Object.prototype.hasOwnProperty.call(data,item.id);
- const card=el('article','check-card'+(recorded?' done':''));
+ const card=el('article','check-card'+(recorded?' done':'')+(item.id==='d_shopping'?' shopping-card':''));card.dataset.itemId=item.id;
  const top=el('div','check-card-top');
  top.append(el('span','card-emoji',item.icon||CAT_ICONS[item.category]||'✦'),el('span','card-category',item.category));
  card.append(top,el('h3','',item.title));
@@ -88,6 +147,7 @@ function checkCard(item,data){
   const wrap=el('div','card-choice-buttons');
   for(const [value,label] of [[true,'했어 ✓'],[false,'안 했어']]){
    const n=btn('choice-button'+(recorded&&data[item.id]===value?' active':''),label,()=>saveAnswer(item,value));
+   n.dataset.value=String(value);
    n.setAttribute('aria-pressed',String(recorded&&data[item.id]===value));wrap.append(n);
   }
   actions.append(wrap);
@@ -108,7 +168,7 @@ function checkCard(item,data){
    persist();renderToday();toast('체크 목록에서 숨겼습니다. 설정에서 다시 표시할 수 있어요.');
   }));
  }
- card.append(actions,footer);return card;
+ card.append(actions);if(item.id==='d_shopping'&&data[item.id]===true)card.append(shoppingEditor());card.append(footer);return card;
 }
 function renderToday(){
  const today=localDateKey();
@@ -121,14 +181,19 @@ function renderToday(){
  const items=itemsForToday(),data=answers(),progress=dayProgress(items,data);
  $('progressLabel').textContent=progress.recorded+' / '+progress.total;
  $('progressFill').style.width=progress.percent+'%';
+ $('progressFill').setAttribute('aria-valuenow',String(progress.percent));
  $('progressHint').textContent=progress.recorded===0?'하나만 체크해도 충분해요.':progress.recorded===progress.total?'오늘의 작은 일들을 모두 기록했어요!':'작은 기록 '+progress.recorded+'개가 쌓였어요.';
  $('visibleCount').textContent=items.length+'개';
  chips($('todayCategories'),todayCategory,cat=>{todayCategory=cat;renderToday();});
  const grid=$('dailyGrid');grid.replaceChildren();
- const shown=items.filter(item=>todayCategory==='전체'||item.category===todayCategory);
- if(!shown.length)grid.append(el('div','no-items','아직 항목이 없어요. 다른 카테고리를 보거나 새로 만들어 보세요.'));
+ const shown=items.filter(item=>(todayCategory==='전체'||item.category===todayCategory)&&(!recordedOnly||Object.prototype.hasOwnProperty.call(data,item.id)));
+ $('recordedOnly').classList.toggle('active',recordedOnly);
+ $('recordedOnly').setAttribute('aria-pressed',String(recordedOnly));
+ if(!shown.length)grid.append(el('div','no-items',recordedOnly?'이 조건에 맞는 기록이 없어요. ‘기록한 항목만’을 해제해 보세요.':'아직 항목이 없어요. 다른 카테고리를 보거나 새로 만들어 보세요.'));
  else shown.forEach(item=>grid.append(checkCard(item,data)));
 }
+$('goToday').onclick=()=>{activeDate=localDateKey();todayCategory='전체';recordedOnly=false;renderToday();};
+$('recordedOnly').onclick=()=>{recordedOnly=!recordedOnly;renderToday();};
 $('prevDay').onclick=()=>{activeDate=shiftDay(activeDate,-1);renderToday();};
 $('nextDay').onclick=()=>{const next=shiftDay(activeDate,1);if(next<=localDateKey()){activeDate=next;renderToday();}};
 $('dayPicker').onchange=event=>{const day=event.target.value;if(day&&shiftDay(day,0)===day&&day<=localDateKey()){activeDate=day;renderToday();}};
@@ -225,8 +290,13 @@ function renderHistory(){
  if(!entries.length)recent.append(el('p','recent-empty','기록이 쌓이면 이곳에 날짜별로 나타나요.'));
  else for(const [day,values] of entries){
   const r=btn('recent-row','',()=>{activeDate=day;switchTab('today');});
-  r.append(el('strong','',dayLabel(day)),el('span','',Object.keys(values).length+'개 기록 →'));
-  recent.append(r);
+  const title=el('span','recent-main');
+  title.append(el('strong','',dayLabel(day)),el('span','',Object.keys(values).length+'개 기록'));
+  if(values.d_shopping===true){
+   const detail=shoppingDescription(journal.details[day]?.d_shopping);
+   if(detail)title.append(el('small','recent-detail','쇼핑 · '+detail));
+  }
+  r.append(title,el('span','recent-arrow','›'));recent.append(r);
  }
 }
 $('prevMonth').onclick=()=>{const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDateKey(new Date(y,m-2,1)).slice(0,7);renderHistory();};
