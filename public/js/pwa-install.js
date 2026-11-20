@@ -51,7 +51,7 @@
         '설치 기능이 보이지 않으면 브라우저가 지원하는지 확인해 주세요.'
       ];
     }
-    help.innerHTML = `<strong>${escape(heading)} 설치 방법</strong>${embedded ? '<p class="install-embedded">카카오톡 등 앱 내부 브라우저에서는 설치 메뉴가 표시되지 않을 수 있습니다. 먼저 브라우저에서 열어주세요.</p>' : ''}<ol>${items.map(i=>`<li>${escape(i)}</li>`).join('')}</ol><p class="install-dialog-note">웹사이트는 설치 없이도 계속 사용할 수 있습니다. 오프라인에서는 행사 등록·명단 관리가 작동하지 않습니다.</p>`;
+    help.innerHTML = `<strong>${escape(heading)} 설치 방법</strong>${embedded ? '<p class="install-embedded">카카오톡 등 앱 내부 브라우저에서는 설치 메뉴가 표시되지 않을 수 있습니다. 먼저 브라우저에서 열어주세요.</p>' : ''}<ol>${items.map(i=>`<li>${escape(i)}</li>`).join('')}</ol><p class="install-dialog-note">웹사이트는 설치 없이도 계속 사용할 수 있습니다. 오프라인에서는 공유 항목 가져오기 등 온라인 기능이 제한될 수 있습니다.</p>`;
     if (typeof dialog.showModal === 'function') dialog.showModal();
     else dialog.setAttribute('open', '');
   }

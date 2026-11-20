@@ -1,4 +1,4 @@
-name: SOSOKING Daily Check · Test & Deploy
+name: SOSOKING Portal · Test & Deploy
 on:
   push:
     branches: [main]
@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: sosoking-daily-${{ github.ref }}
+  group: sosoking-portal-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   check:
@@ -43,14 +43,17 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:rules --project sosoking-481e6 --non-interactive
-      - name: Deploy new Daily Check site
+      - name: Deploy SOSOKING portal
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
       - name: Verify live application and retired programs
         run: |
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q '나의 하루체크'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sw.js | grep -q 'sosoking-daily-shell-v3'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q '소소한 정보와 도구'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sw.js | grep -q 'sosoking-portal-shell-v1'
+          for page in tools.html info.html daily.html; do
+            curl --fail --retry 4 --retry-delay 3 -sSL "https://sosoking-481e6.web.app/$page" > /dev/null
+          done
           for page in event.html old-phone.html roster.html orders.html chat.html guide.html; do
             status=$(curl -sSL -o /dev/null -w '%{http_code}' "https://sosoking-481e6.web.app/$page")
             test "$status" = 404

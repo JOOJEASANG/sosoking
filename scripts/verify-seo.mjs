@@ -14,13 +14,14 @@ assert.ok(json);
 const schema=JSON.parse(json[1]);
 assert.equal(schema['@context'],'https://schema.org');
 assert.equal(schema.url,host);
-assert.ok(schema.name.includes('하루체크'));
+assert.ok(schema.name.includes('소소킹'));
 const sitemap=fs.readFileSync(path.join(root,'sitemap.xml'),'utf8');
 const urls=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
-assert.deepEqual(urls,[host]);
+assert.deepEqual(urls,[host,host+'tools.html',host+'info.html',host+'daily.html']);
+for(const page of ['tools.html','info.html','daily.html'])assert.ok(fs.existsSync(path.join(root,page)),'Missing public page: '+page);
 const robots=fs.readFileSync(path.join(root,'robots.txt'),'utf8');
 assert.match(robots,/Sitemap: https:\/\/sosoking-481e6\.web\.app\/sitemap\.xml/);
 for(const old of ['event.html','old-phone.html','roster.html','orders.html','chat.html','guide.html']){
  assert.ok(!fs.existsSync(path.join(root,old)),'Old program should be removed: '+old);
 }
-console.log('Daily Check SEO passed');
+console.log('SOSOKING Portal SEO passed');

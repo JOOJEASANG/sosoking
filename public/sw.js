@@ -1,12 +1,14 @@
-/* Cache only public static app shell, never user diaries, Firestore data or authentication. */
-const CACHE='sosoking-daily-shell-v3';
-const STATIC=['/','/index.html','/css/site.css','/js/daily.js','/js/pwa-install.js',
- '/manifest.webmanifest','/icons/sosoking.svg','/icons/sosoking-180.png',
+/* Cache only public static pages. Never cache user diaries, auth or Firestore requests. */
+const CACHE='sosoking-portal-shell-v1';
+const STATIC=['/','/index.html','/tools.html','/info.html','/daily.html',
+ '/css/portal.css','/css/site.css','/js/portal.js','/js/tools.js','/js/tool-core.js',
+ '/js/daily.js','/js/pwa-install.js','/manifest.webmanifest',
+ '/icons/sosoking.svg','/icons/sosoking-180.png',
  '/icons/sosoking-192.png','/icons/sosoking-512.png','/icons/sosoking-maskable-512.png','/favicon-32.png'];
 const staticPaths=new Set(STATIC);
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(STATIC)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(Promise.all([
- caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&(k.startsWith('sosoking-static-')||k.startsWith('sosoking-daily-'))).map(k=>caches.delete(k)))),
+ caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&(k.startsWith('sosoking-static-')||k.startsWith('sosoking-daily-')||k.startsWith('sosoking-portal-'))).map(k=>caches.delete(k)))),
  self.clients.claim()
 ])));
 self.addEventListener('fetch',event=>{

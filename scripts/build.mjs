@@ -3,7 +3,7 @@ import path from 'node:path';
 import {build} from 'esbuild';
 import {Resvg} from '@resvg/resvg-js';
 const source=path.resolve('public'),dest=path.resolve('dist-public');
-for(const filename of ['index.html','css/site.css','js/daily.js','js/daily-core.js','js/pwa-install.js','icons/sosoking.svg','manifest.webmanifest','sw.js','robots.txt','sitemap.xml']){
+for(const filename of ['index.html','tools.html','info.html','daily.html','css/portal.css','css/site.css','js/portal.js','js/tools.js','js/tool-core.js','js/daily.js','js/daily-core.js','js/pwa-install.js','icons/sosoking.svg','manifest.webmanifest','sw.js','robots.txt','sitemap.xml']){
  if(!fs.existsSync(path.join(source,filename)))throw Error('Missing '+filename);
 }
 fs.rmSync(dest,{recursive:true,force:true});
@@ -21,4 +21,4 @@ await build({entryPoints:[path.join(source,'js','daily.js')],outfile:path.join(d
 for(const legacy of ['event.html','old-phone.html','roster.html','orders.html','chat.html','guide.html']){
  if(fs.existsSync(path.join(dest,legacy)))throw Error('Legacy program survived redesign: '+legacy);
 }
-console.log('SOSOKING Daily Check build passed');
+console.log('SOSOKING Portal build passed');

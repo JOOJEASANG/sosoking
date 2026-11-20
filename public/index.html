@@ -1,62 +1,49 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f8f9f4">
-<meta name="description" content="글 대신 체크로 남기는 나의 하루. 식사, 쇼핑, 친구, 화장실, 방귀처럼 아주 사소한 일까지 기록하고 다른 사람이 만든 체크 항목을 가져올 수 있어요.">
-<title>소소킹 · 나의 하루체크 | 체크만 하는 하루 일기</title>
-<meta name="robots" content="index,follow,max-image-preview:large"><link rel="canonical" href="https://sosoking-481e6.web.app/">
-<meta property="og:type" content="website"><meta property="og:site_name" content="소소킹"><meta property="og:title" content="소소킹 · 나의 하루체크"><meta property="og:description" content="오늘 하루, 얼마나 소소했어? 글 대신 체크하고 숫자로 남기는 나만의 하루 일기."><meta property="og:url" content="https://sosoking-481e6.web.app/"><meta property="og:image" content="https://sosoking-481e6.web.app/icons/sosoking-512.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"소소킹 나의 하루체크","applicationCategory":"LifestyleApplication","operatingSystem":"Web","url":"https://sosoking-481e6.web.app/","inLanguage":"ko-KR","isAccessibleForFree":true,"description":"글 대신 체크로 남기는 나의 하루. 오늘 뭘 먹었는지, 몇 번 웃었는지, 화장실은 몇 번 갔는지 기록하고 다른 사람이 만든 소소한 체크 항목도 가져와 보세요. 개인 기록은 기본 비공개입니다.","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}}</script>
-<link rel="icon" type="image/svg+xml" href="/icons/sosoking.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/sosoking-180.png"><link rel="stylesheet" href="/css/site.css"></head>
-<body>
-<a class="skip-link" href="#main">본문으로 이동</a>
-<header class="site-header"><div class="container header-inner">
-<a href="/" class="brand" aria-label="소소킹 나의 하루체크 홈"><img src="/icons/sosoking.svg" alt="" width="42" height="42"><span>소소킹<small>나의 하루체크</small></span></a>
-<nav class="desktop-nav" aria-label="주 메뉴"><button type="button" class="nav-item active" data-tab="today">오늘 체크</button><button type="button" class="nav-item" data-tab="explore">항목 찾기</button><button type="button" class="nav-item" data-tab="history">내 기록</button><button type="button" class="nav-item" data-tab="settings">설정</button></nav>
-<button class="header-install" type="button" data-install-app>앱처럼 사용하기</button>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f7f8fc">
+<meta name="description" content="소소킹은 생활 속 작은 궁금증과 필요한 계산을 해결하는 무료 정보·웹 도구 모음입니다. 문자수, 날짜, 퍼센트, 랜덤 뽑기, 용지규격과 하루체크를 편리하게 사용하세요.">
+<title>소소킹 | 소소한 정보와 유용한 무료 웹 도구</title>
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://sosoking-481e6.web.app/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="소소킹">
+<meta property="og:title" content="소소킹 | 소소한 정보와 유용한 무료 웹 도구">
+<meta property="og:description" content="작은 궁금증은 쉽게, 필요한 도구는 빠르게. 일상에 쓸모 있는 정보와 무료 프로그램.">
+<meta property="og:url" content="https://sosoking-481e6.web.app/"><meta property="og:image" content="https://sosoking-481e6.web.app/icons/sosoking-512.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"소소킹","url":"https://sosoking-481e6.web.app/","inLanguage":"ko-KR","description":"소소한 생활정보와 무료 웹 도구를 모은 사이트"}</script>
+<link rel="icon" type="image/svg+xml" href="/icons/sosoking.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/sosoking-180.png">
+<link rel="stylesheet" href="/css/portal.css"><script src="/js/portal.js" defer></script><script src="/js/pwa-install.js" defer></script>
+</head><body>
+<a class="skip" href="#content">본문 바로가기</a>
+<header class="top"><div class="wrap top-inner">
+<a class="identity" href="/" aria-label="소소킹 홈"><img src="/icons/sosoking.svg" width="42" height="42" alt=""><span>소소킹<small>소소한 정보와 도구</small></span></a>
+<nav aria-label="주 메뉴"><a class="current" aria-current="page" href="/">홈</a><a href="/tools.html">소소한 도구</a><a href="/info.html">소소한 정보</a><a href="/daily.html">하루체크</a></nav>
+<button class="install" type="button" data-install-app>앱처럼 사용하기</button>
 </div></header>
-<main id="main">
-<section id="screen-today" class="screen container" data-screen="today">
-<div class="hero"><div class="hero-copy"><span class="eyebrow">SMALL MOMENTS, MY DAY</span><h1>오늘 하루,<br><em>얼마나 소소했어?</em></h1><p>길게 쓰지 않아도 괜찮아.<br>먹은 것도, 만난 사람도, 방귀 뀐 횟수도<br>그냥 눌러서 남기면 오늘의 일기가 돼.</p><div class="hero-buttons"><button class="btn btn-dark" type="button" id="openCreateHero">+ 나만의 체크 만들기</button><button class="btn btn-white" type="button" data-tab="explore">다른 사람 항목 구경하기</button></div></div><div class="hero-decoration" aria-hidden="true"><div class="hero-note"><div class="note-top"><span>MY LITTLE DAY</span><span>✦</span></div><div class="note-line"><span class="note-checked">✓</span><span>오늘 웃었어?</span></div><div class="note-line"><span class="note-checked">✓</span><span>커피 마셨어?</span></div><div class="note-line"><span class="note-empty">＋</span><span>뭐 재미있는 일 없었어?</span></div><span class="note-doodle">◡̈</span></div></div></div>
-<div class="daily-heading"><div class="date-panel"><div><span class="eyebrow">MY DAILY CHECK</span><h2 id="dateTitle">오늘의 체크</h2><p id="dateSub">오늘을 소소하게 기록해 봐요.</p></div><div class="date-actions"><button class="circle-btn" id="prevDay" aria-label="하루 전">‹</button><input type="date" id="dayPicker" aria-label="날짜 선택"><button class="circle-btn" id="nextDay" aria-label="하루 뒤">›</button></div></div>
-<div class="progress-panel"><div class="progress-text"><span>오늘의 기록</span><strong id="progressLabel">0 / 9</strong></div><div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div><p id="progressHint">하나만 체크해도 충분해요.</p></div></div>
-<div class="section-toolbar"><div><h2>오늘의 작은 일들 <span id="visibleCount"></span></h2><p>숫자는 +/−, 질문은 터치해서 답해 주세요.</p></div><button class="btn btn-outline" id="openCreateInline">+ 항목 추가</button></div>
-<div class="category-chips" id="todayCategories" aria-label="오늘 체크 필터"></div>
-<div id="dailyGrid" class="check-grid" aria-live="polite"></div>
-<div class="add-banner"><span class="banner-star">✧</span><div><strong>생각난 소소한 일이 있어?</strong><p>새 항목을 만들거나 다른 사람이 만든 항목을 가져올 수 있어요.</p></div><button class="btn btn-dark" type="button" id="addBannerBtn">항목 만들기</button></div>
+<main id="content">
+<section class="hero wrap">
+<div class="hero-copy"><span class="kicker">SMALL THINGS, BIG HELP</span>
+<h1>작은 궁금증부터<br><em>가벼운 해결까지.</em></h1>
+<p>대단한 기능이 아니어도 괜찮아요. 문자수를 세거나 날짜를 계산하고, 잠깐 필요한 생활정보를 찾아보세요. 소소하지만 자꾸 찾게 되는 도구들을 모았습니다.</p>
+<form class="searchbar" role="search" id="portalSearch" autocomplete="off"><label for="siteSearch">어떤 도움이 필요하세요?</label><div class="search-input"><span aria-hidden="true">⌕</span><input id="siteSearch" type="search" placeholder="예: 문자수, 날짜, 인쇄, 랜덤" aria-describedby="searchStatus"><button type="submit">찾기</button></div></form>
+<div class="hotwords"><span>바로 가기</span><a href="/tools.html#text">문자수 세기</a><a href="/tools.html#dates">날짜 계산</a><a href="/tools.html#paper">인쇄 사이즈</a></div>
+</div>
+<div class="hero-art" aria-hidden="true"><div class="art-caption">SOSOKING / EVERYDAY UTILS</div><div class="art-main"><span class="art-circle">S</span><div class="art-lines"><span></span><span></span><span></span></div></div><div class="art-pill one">01 · 가볍게</div><div class="art-pill two">02 · 간단하게</div><div class="art-pill three">03 · 바로 사용</div><div class="art-bottom">필요할 때 언제든, 소소킹</div></div>
 </section>
-<section id="screen-explore" class="screen container" data-screen="explore" hidden>
-<div class="subhero"><span class="eyebrow">TOGETHER, LITTLE THINGS</span><h1>남들은 뭘 체크할까?</h1><p>누군가 떠올린 엉뚱한 질문이 내일 내 일기의 단골 항목이 될 수도 있어요.</p></div>
-<div class="privacy-strip"><span class="strip-mark">✓</span><p><strong>공유되는 건 체크 항목뿐이에요.</strong> 누가 어떤 답을 했는지, 개인의 하루 기록은 여기에 공개되지 않습니다.</p></div>
-<div class="explore-tools"><label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="searchCatalog" placeholder="예: 커피, 잠, 친구, 웃음" aria-label="공유 체크 항목 검색"></label><button type="button" class="btn btn-dark" id="openCreateExplore">+ 항목 공유하기</button></div>
-<div class="category-chips" id="exploreCategories" aria-label="항목 탐색 카테고리"></div>
-<div class="catalog-status" id="catalogStatus" role="status">공용 체크 항목을 불러오는 중입니다.</div>
-<div class="catalog-grid" id="catalogGrid"></div>
-</section>
-<section id="screen-history" class="screen container" data-screen="history" hidden>
-<div class="subhero"><span class="eyebrow">LOOK BACK</span><h1>그날의 나는 어땠을까?</h1><p>아무것도 특별하지 않은 날도, 쌓이고 나면 나만의 이야기가 됩니다.</p></div>
-<div class="history-top"><div class="summary-tile"><span>이번 달 기록한 날</span><strong id="monthDays">0일</strong><small>완벽하지 않아도 괜찮아요</small></div><div class="summary-tile"><span>이번 달 체크한 항목</span><strong id="monthChecks">0개</strong><small>작은 기록이 쌓였어요</small></div><div class="summary-tile"><span>이어진 기록</span><strong id="streakCount">0일</strong><small>오늘 또는 어제부터</small></div></div>
-<div class="history-layout"><div class="history-calendar-card"><div class="calendar-head"><h2 id="calendarMonthLabel">이달의 기록</h2><div><button class="circle-btn" id="prevMonth" aria-label="지난달">‹</button><button class="circle-btn" id="nextMonth" aria-label="다음달">›</button></div></div><div class="weekday-row"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div><div class="calendar-grid" id="calendarGrid"></div><p class="calendar-caption">작은 점이 있는 날짜는 기록이 있는 날이에요.</p></div>
-<div class="history-list-card"><h2>최근 기록</h2><div id="recentHistory"></div></div></div>
-</section>
-<section id="screen-settings" class="screen container" data-screen="settings" hidden>
-<div class="subhero"><span class="eyebrow">JUST FOR ME</span><h1>내 기록은 내 것.</h1><p>하루 기록은 이 기기에만 보관됩니다. 소중한 기록은 주기적으로 백업해 주세요.</p></div>
-<div class="settings-grid"><article class="settings-card"><div class="settings-icon">↧</div><h2>기록 백업</h2><p>오늘까지 남긴 기록과 나만의 체크 항목을 JSON 파일로 저장할 수 있어요.</p><button id="exportBackup" type="button" class="btn btn-dark">백업 파일 다운로드</button></article>
-<article class="settings-card"><div class="settings-icon">↥</div><h2>기록 복원</h2><p>이전에 저장한 JSON 백업 파일을 불러옵니다. 현재 기기의 기록은 교체됩니다.</p><label class="btn btn-outline file-button">백업 파일 선택<input type="file" id="importBackup" accept=".json,application/json" hidden></label></article>
-<article class="settings-card"><div class="settings-icon">✎</div><h2>기본 항목 표시</h2><p>나에게 필요 없는 기본 체크 항목은 숨길 수 있어요. 언제든 다시 표시할 수 있습니다.</p><div id="defaultToggles" class="settings-toggles"></div></article>
-<article class="settings-card"><div class="settings-icon">ⓘ</div><h2>데이터와 공유</h2><p>개인의 체크 결과는 브라우저에 저장됩니다. 공용 라이브러리에 직접 공유한 항목의 제목·방식만 서버에 저장됩니다.</p><p class="minor">기기를 바꾸거나 브라우저 데이터를 삭제하면 백업이 없는 개인 기록은 복구하기 어렵습니다. 서버 동기화 기능은 아직 없습니다.</p><button class="btn btn-danger" type="button" id="deleteAll">이 기기의 기록 초기화</button></article></div>
-</section>
-</main>
-<nav class="mobile-nav" aria-label="모바일 메뉴"><button data-tab="today" class="active" type="button"><span>☑</span>오늘</button><button data-tab="explore" type="button"><span>✦</span>항목 찾기</button><button data-tab="history" type="button"><span>▦</span>내 기록</button><button data-tab="settings" type="button"><span>⚙</span>설정</button></nav>
-<footer class="site-footer"><div class="container"><span>SOSOKING · 나의 하루체크</span><span>완벽하지 않아도, 오늘은 기록할 만해.</span></div></footer>
-<dialog id="createDialog" class="create-dialog" aria-labelledby="dialogTitle"><form id="createForm" class="dialog-content"><div class="dialog-head"><div><span class="eyebrow">MAKE YOUR OWN CHECK</span><h2 id="dialogTitle">새로운 체크 만들기</h2></div><button type="button" id="closeDialog" class="close-btn" aria-label="닫기">×</button></div>
-<label class="field"><span>체크 질문</span><input id="itemTitle" maxlength="60" required minlength="2" placeholder="예: 오늘 냉장고 몇 번 열었어?"></label>
-<div class="field"><span>체크 방식</span><div class="kind-choices"><label><input type="radio" name="kind" value="check" checked><span>✓ 했어 / 안 했어</span></label><label><input type="radio" name="kind" value="count"><span>＋ 횟수 세기</span></label><label><input type="radio" name="kind" value="choice"><span>○ 보기 선택</span></label></div></div>
-<label class="field" id="choicesField" hidden><span>선택지 입력 (쉼표로 구분, 2~5개)</span><input id="itemChoices" placeholder="예: 집밥, 외식, 배달"></label>
-<label class="field"><span>카테고리</span><select id="itemCategory"><option>일상</option><option>먹거리</option><option>사람</option><option>재미</option><option>기타</option></select></label>
-<div class="field"><span>어디에 저장할까요?</span><div class="share-choices"><label><input type="radio" name="visibility" value="private" checked><span><strong>나만 사용</strong><small>이 기기의 내 체크 목록에만 추가</small></span></label><label><input type="radio" name="visibility" value="public"><span><strong>모두 함께 사용</strong><small>항목 이름과 방식만 다른 이용자에게 공개 · 24시간에 1개</small></span></label></div></div>
-<div class="dialog-actions"><button type="button" class="btn btn-outline" id="cancelCreate">취소</button><button type="submit" class="btn btn-dark" id="createSubmit">체크 항목 만들기</button></div>
-<p class="form-error" id="createError" role="alert" hidden></p><p class="minor">실명, 전화번호, 민감한 개인정보가 들어간 질문은 공유하지 마세요. 부적절한 항목은 신고를 받아 숨김 처리할 수 있습니다.</p>
-</form></dialog>
-<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<section class="seo-info container"><h2>하루체크는 어떤 서비스인가요?</h2><p>글을 쓰지 않아도 체크박스, 횟수 버튼, 간단한 선택지로 하루를 기록하는 소소한 일기입니다. 기본 체크 항목을 사용하거나 직접 추가하고, 다른 사람이 공유한 체크 항목을 내 일기로 가져올 수 있습니다. 개인정보를 포함한 실제 답변은 서버에 공개하지 않으며 브라우저에 저장됩니다.</p></section>
-<script type="module" src="/js/daily.js"></script><script src="/js/pwa-install.js" defer></script>
+<section class="wrap body-section" id="services"><div class="heading"><div><span class="kicker">SMALL TOOLS</span><h2>바로 쓰는 소소한 도구</h2><p>회원가입이나 설치 없이 브라우저에서 즉시 실행합니다.</p></div><a class="more" href="/tools.html">전체 도구 보기 <span aria-hidden="true">→</span></a></div>
+<div class="cards tool-grid" id="searchItems">
+<a class="tool-card" href="/tools.html#text" data-search="문자수 글자수 공백 단어 바이트 텍스트 띄어쓰기"><span class="symbol s-blue">Aa</span><span class="card-tag">글쓰기</span><h3>문자수 · 바이트 계산</h3><p>공백 포함·제외 글자수와 단어수, UTF-8 바이트까지 한번에.</p><span class="card-link">바로 사용하기 →</span></a>
+<a class="tool-card" href="/tools.html#dates" data-search="날짜 기간 달력 디데이 며칠 일수 계산"><span class="symbol s-violet">31</span><span class="card-tag">일정</span><h3>날짜 간격 계산</h3><p>두 날짜 사이 며칠인지, 시작일을 포함하면 며칠인지 확인.</p><span class="card-link">바로 사용하기 →</span></a>
+<a class="tool-card" href="/tools.html#percent" data-search="퍼센트 비율 할인 금액 인상 인하 백분율"><span class="symbol s-green">%</span><span class="card-tag">계산</span><h3>퍼센트 계산기</h3><p>금액의 일정 비율과 증감 금액을 간단하게 계산.</p><span class="card-link">바로 사용하기 →</span></a>
+<a class="tool-card" href="/tools.html#random" data-search="랜덤 무작위 추첨 당첨자 이름 뽑기 선택"><span class="symbol s-orange">↗</span><span class="card-tag">선택</span><h3>랜덤 이름 뽑기</h3><p>목록을 입력하고 버튼 한 번으로 무작위 하나를 선택.</p><span class="card-link">바로 사용하기 →</span></a>
+<a class="tool-card" href="/tools.html#paper" data-search="A4 A3 B5 B4 종이 인쇄 용지 규격 픽셀 dpi"><span class="symbol s-rose">▤</span><span class="card-tag">디자인</span><h3>용지 크기 · 픽셀</h3><p>A·B 계열 종이 크기와 300dpi 기준 픽셀을 확인.</p><span class="card-link">바로 사용하기 →</span></a>
+<a class="tool-card" href="/daily.html" data-search="하루 체크 일기 기록 생활 재미 개인"><span class="symbol s-yellow">✓</span><span class="card-tag">소소한 재미</span><h3>나의 하루체크</h3><p>작은 하루를 체크하고 돌아보는 기존 소소킹 프로그램.</p><span class="card-link">하루 기록하기 →</span></a>
+</div><p class="empty-result" id="searchStatus" role="status" hidden>검색 결과가 없습니다. 다른 단어로 검색해 보세요.</p></section>
+<section class="wrap body-section"><div class="heading"><div><span class="kicker">LITTLE KNOW-HOW</span><h2>짧게 읽는 소소한 정보</h2><p>일상에서 자주 헷갈리는 내용을 한눈에 정리했습니다.</p></div><a class="more" href="/info.html">모든 정보 보기 <span aria-hidden="true">→</span></a></div>
+<div class="cards info-grid">
+<a class="info-card" href="/info.html#paper"><span class="info-number">01 / 문서·인쇄</span><h3>A4와 B5, 정확히 얼마나 다를까?</h3><p>종이 규격과 ISO·JIS B형 차이를 간단히 알아보세요.</p><span>읽어보기 →</span></a>
+<a class="info-card" href="/info.html#pixels"><span class="info-number">02 / 디지털</span><h3>300dpi와 이미지 픽셀, 무슨 관계일까?</h3><p>인쇄할 때 필요한 해상도의 기본 개념을 정리했습니다.</p><span>읽어보기 →</span></a>
+<a class="info-card" href="/info.html#dates"><span class="info-number">03 / 생활</span><h3>날짜를 셀 때 하루 차이가 나는 이유</h3><p>기간 차이와 양 끝 날짜를 포함한 일수의 차이를 확인하세요.</p><span>읽어보기 →</span></a>
+</div></section>
+<section class="wrap closing"><div><span class="kicker">SO SMALL, SO USEFUL</span><h2>필요할 때마다 찾아오는<br>나만의 작은 도구함.</h2><p>소소킹은 누구나 무료로 사용할 수 있는 가벼운 정보·도구 사이트를 지향합니다. 도구에 입력한 내용은 서버로 전송하지 않습니다.</p></div><a class="cta" href="/tools.html">도구 둘러보기 →</a></section>
+</main><footer class="footer"><div class="wrap foot"><div><strong>SOSOKING</strong><p>소소한 정보와 유용한 도구</p></div><div><a href="/tools.html">도구 모음</a><a href="/info.html">생활정보</a><a href="/daily.html">하루체크</a></div><small>© 2026 소소킹. 정보와 계산 결과는 사용 전 확인해 주세요.</small></div></footer>
 </body></html>
