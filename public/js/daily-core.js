@@ -1,5 +1,6 @@
 export const CATEGORIES=['일상','먹거리','사람','재미','기타'];
 export const KINDS=['check','count','choice'];
+export const SHOPPING_CATEGORIES=['식료품','의류·패션','생활용품','전자제품','뷰티·건강','취미·문화','선물','기타'];
 export const DEFAULT_ITEMS=[
 {id:'d_toilet',title:'오늘 화장실은 몇 번 갔어?',kind:'count',category:'일상',icon:'🚻'},
 {id:'d_poop',title:'똥은 몇 번 쌌어?',kind:'count',category:'재미',icon:'💩'},
@@ -50,7 +51,17 @@ export function normalizeAnswer(item,value){
  if(item.kind==='choice')return Array.isArray(item.options)&&item.options.includes(String(value))?String(value):null;
  return null;
 }
-export function emptyJournal(){return {version:1,days:{},customItems:[],sharedItems:[],selectedSharedIds:[],hiddenDefaultIds:[],hiddenItemIds:[]}}
+export function normalizeShoppingDetail(raw){
+ const types=Array.isArray(raw?.types)?raw.types:[];
+ const valid=[...new Set(types.filter(x=>typeof x==='string'&&SHOPPING_CATEGORIES.includes(x)))].slice(0,SHOPPING_CATEGORIES.length);
+ const note=typeof raw?.note==='string'?raw.note.slice(0,120):'';
+ return {types:valid,note};
+}
+export function shoppingDescription(detail){
+ const valid=normalizeShoppingDetail(detail);
+ return [...valid.types,...(valid.note.trim()?[valid.note.trim()]:[])].join(' · ');
+}
+export function emptyJournal(){return {version:1,days:{},details:{},customItems:[],sharedItems:[],selectedSharedIds:[],hiddenDefaultIds:[],hiddenItemIds:[]}}
 export function cleanJournal(raw){
  if(!raw||typeof raw!=='object')throw Error('올바르지 않은 백업 파일입니다.');
  const out=emptyJournal();
@@ -70,7 +81,7 @@ export function cleanJournal(raw){
  out.selectedSharedIds=[...new Set((Array.isArray(raw.selectedSharedIds)?raw.selectedSharedIds:[]).filter(x=>typeof x==='string'&&/^s_[a-zA-Z0-9_-]{8,110}$/.test(x)))].slice(0,150);
  out.hiddenItemIds=[...new Set((Array.isArray(raw.hiddenItemIds)?raw.hiddenItemIds:[]).filter(x=>typeof x==='string'&&x.length<120))].slice(0,200);
  out.hiddenDefaultIds=[...new Set((Array.isArray(raw.hiddenDefaultIds)?raw.hiddenDefaultIds:[]).filter(x=>DEFAULT_ITEMS.some(item=>item.id===x)))];
- if(raw.days&&typeof raw.days==='object'){
+ if(raw.days&&typeof raw.days==='object'&&!Array.isArray(raw.days)){
   const entries=Object.entries(raw.days).slice(-1000);
   const map=new Map([...DEFAULT_ITEMS,...out.customItems,...out.sharedItems].map(item=>[item.id,item]));
   for(const [day,values] of entries){
@@ -86,6 +97,13 @@ export function cleanJournal(raw){
     if(valid!==null)good[id]=valid;
    }
    if(Object.keys(good).length)out.days[day]=good;
+  }
+ }
+ if(raw.details&&typeof raw.details==='object'&&!Array.isArray(raw.details)){
+  for(const [day,entry] of Object.entries(raw.details).slice(-1000)){
+   if(out.days[day]?.d_shopping!==true||!entry||typeof entry!=='object'||Array.isArray(entry))continue;
+   const detail=normalizeShoppingDetail(entry.d_shopping);
+   if(detail.types.length||detail.note.trim())out.details[day]={d_shopping:detail};
   }
  }
  return out;

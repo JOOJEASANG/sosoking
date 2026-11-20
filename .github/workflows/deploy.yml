@@ -50,7 +50,7 @@ jobs:
       - name: Verify live application and retired programs
         run: |
           curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q '나의 하루체크'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sw.js | grep -q 'sosoking-daily-shell-v3'
+          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sw.js | grep -q 'sosoking-daily-shell-v4'
           for page in event.html old-phone.html roster.html orders.html chat.html guide.html; do
             status=$(curl -sSL -o /dev/null -w '%{http_code}' "https://sosoking-481e6.web.app/$page")
             test "$status" = 404

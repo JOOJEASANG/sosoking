@@ -1,5 +1,5 @@
 /* Cache only public static app shell, never user diaries, Firestore data or authentication. */
-const CACHE='sosoking-daily-shell-v3';
+const CACHE='sosoking-daily-shell-v4';
 const STATIC=['/','/index.html','/css/site.css','/js/daily.js','/js/pwa-install.js',
  '/manifest.webmanifest','/icons/sosoking.svg','/icons/sosoking-180.png',
  '/icons/sosoking-192.png','/icons/sosoking-512.png','/icons/sosoking-maskable-512.png','/favicon-32.png'];
