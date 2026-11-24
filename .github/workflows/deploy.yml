@@ -39,6 +39,48 @@ jobs:
         run: npm install -g firebase-tools@15.24.0
       - if: always()
         run: firebase emulators:exec --only firestore --project demo-sosoking "node scripts/emulator-check.mjs"
+  auto_merge:
+    name: Auto-merge tested owner feature PR
+    needs: [check, integration]
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == github.repository_owner &&
+      github.actor == github.repository_owner &&
+      startsWith(github.event.pull_request.head.ref, 'feature/') &&
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - name: Merge exact tested revision and dispatch main deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          pr="$(gh api "repos/$REPO/pulls/$PR_NUMBER")"
+          test "$(jq -r .state <<<"$pr")" = open
+          test "$(jq -r .draft <<<"$pr")" = false
+          test "$(jq -r .head.sha <<<"$pr")" = "$EXPECTED_HEAD"
+          test "$(jq -r .base.ref <<<"$pr")" = main
+          test "$(jq -r .head.repo.full_name <<<"$pr")" = "$REPO"
+          test "$(jq -r .user.login <<<"$pr")" = "${REPO%%/*}"
+          actual_base="$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)"
+          if [ "$actual_base" != "$EXPECTED_BASE" ]; then
+            echo "::error::Main changed after this PR was tested; retest on the latest main before merging."
+            exit 1
+          fi
+          merged="$(gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/merge" -f sha="$EXPECTED_HEAD" -f merge_method=merge)"
+          test "$(jq -r .merged <<<"$merged")" = true
+          echo "Merged commit: $(jq -r .sha <<<"$merged")"
+          # A GITHUB_TOKEN merge does not trigger push workflows. Dispatch explicitly.
+          gh workflow run deploy.yml --repo "$REPO" --ref main
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [check, integration]

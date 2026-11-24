@@ -39,3 +39,8 @@ https://sosoking-481e6.web.app/
 - 생활정보 사전: 분류 검색과 사용자 생활정보 등록, 정보 요청 게시판. 확인 자료 없는 항목은 빈 상태로 표시. 별도 사진 저장, 알림, 자동 수집은 미구현.
 
 - 단체 행사 준비: 차량·조 정원에 맞춘 자동 배정(초과 인원 별도 표시), 준비물·담당자·완료 체크리스트, 기기 저장, CSV/복사. 실시간 공동 편집은 제공하지 않음.
+
+## 자동 병합 및 배포
+- 저장소 소유자가 이 저장소 내 feature/ 브랜치에서 만든 일반 PR에 한해 check 및 integration 성공 후 자동 병합. 초안, 외부 저장소 PR, 타 계정 실행, 검사 실패, 변경된 head 또는 main은 자동 병합하지 않음.
+- 자동 병합에는 해당 job에만 GitHub Actions write 권한을 부여하며, PR 코드를 checkout하거나 실행하지 않음. 병합 후 main의 deploy.yml을 workflow_dispatch로 실행하여 재검사 및 Firebase 배포. Actions 권한 제한으로 병합/dispatch가 거절되는 경우 실행 로그에 실패로 남김. 외부 기여 PR은 수동 검토.
+- GitHub 기본 auto-merge는 branch protection 필수. 현재 접근 권한으로 설정을 변경할 수 없어 저장소 워크플로 방식으로 구성.
