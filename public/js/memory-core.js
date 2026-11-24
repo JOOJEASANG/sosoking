@@ -6,3 +6,5 @@ export function normalizeMemory(item){const s=(v,max)=>{if(typeof v!=='string'||
 export function nextMemoryDate(item){return item.due||(item.unit==='none'?'':addInterval(item.history[0].date,item.unit,item.interval))}
 export function memoryState(item,today){const last=item.history[0].date,due=nextMemoryDate(item),elapsed=dayDiff(today,last),remaining=due?dayDiff(due,today):null;return {last,due,elapsed,remaining}}
 export function parseMemoryBackup(raw){const d=JSON.parse(raw);if(d?.schema!==1||!Array.isArray(d.items)||d.items.length>500)throw Error('사소한 기억 백업 파일이 아닙니다.');const items=d.items.map(normalizeMemory);if(new Set(items.map(i=>i.id)).size!==items.length)throw Error('기록 ID가 중복됩니다.');return items}
+
+export function elapsedLabel(days){if(days===0)return '오늘';if(days<0)return Math.abs(days)+'일 후';return days>=365?days.toLocaleString('ko-KR')+'일 전 (약 '+(days/365.2425).toFixed(1)+'년)':days+'일 전'}
