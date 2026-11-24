@@ -54,3 +54,10 @@ export function settlePayments(rows){
  while(i<debt.length&&j<credit.length){const amount=Math.min(debt[i].left,credit[j].left);transfers.push({from:debt[i].name,to:credit[j].name,amount});debt[i].left-=amount;credit[j].left-=amount;if(!debt[i].left)i++;if(!credit[j].left)j++}
  return {total,base,extra,people,transfers};
 }
+
+export function allocateGroups(people,groups){
+ if(!Array.isArray(people)||people.length<1||people.length>200||people.some(x=>typeof x!=='string'||!x.trim()||x.length>80)||new Set(people).size!==people.length)throw Error('서로 다른 참가자 이름을 1~200명 입력하세요.');
+ if(!Array.isArray(groups)||!groups.length||groups.length>100||groups.some(x=>!x.name||x.name.length>80||!Number.isInteger(x.capacity)||x.capacity<1||x.capacity>100)||new Set(groups.map(g=>g.name)).size!==groups.length)throw Error('서로 다른 차량·조 이름과 1~100명 정원을 입력하세요.');
+ const assigned=groups.map(g=>({...g,people:[]}));let i=0;for(const person of people){let found=false;for(let j=0;j<assigned.length;j++){let k=(i+j)%assigned.length;if(assigned[k].people.length<assigned[k].capacity){assigned[k].people.push(person);i=(k+1)%assigned.length;found=true;break}}if(!found)return {groups:assigned,unassigned:people.slice(assigned.reduce((s,g)=>s+g.people.length,0))}}
+ return {groups:assigned,unassigned:[]};
+}
