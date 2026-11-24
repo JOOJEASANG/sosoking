@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {chromium} from 'playwright';
+const root=path.resolve('dist-public');
+const types={'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.svg':'image/svg+xml','.json':'application/json','.webmanifest':'application/manifest+json','.xml':'application/xml','.png':'image/png'};
+const server=createServer(async(req,res)=>{try{const pathname=new URL(req.url,'http://localhost').pathname;if(pathname==='/__/firebase/init.json'){res.writeHead(503);res.end('{}');return}const f=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));if(!f.startsWith(root+path.sep))throw Error('bad path');const b=await fs.readFile(f);res.writeHead(200,{'Content-Type':types[path.extname(f)]||'application/octet-stream'});res.end(b)}catch{res.writeHead(404);res.end('Not found')}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const host='http://127.0.0.1:'+server.address().port;
+let browser;
+try{
+ browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});const p=await context.newPage(),errors=[];
+ p.on('pageerror',e=>errors.push(e.message));
+ await p.goto(host+'/');await p.locator('#toolSearch').fill('선박');assert.equal(await p.locator('.tool:visible').count(),1);await p.locator('#toolSearch').fill('');assert.equal(await p.locator('.tool:visible').count(),6);
+ await p.locator('[data-favorite="/event.html"]').click();assert.equal(await p.locator('[data-favorite="/event.html"]').getAttribute('aria-pressed'),'true');
+ await p.goto(host+'/old-phone.html');await p.locator('#oldNumber').fill('011-234-5678');await p.locator('#numberForm button[type="submit"], #numberForm button:not([type])').first().click();await p.locator('.phone-result').waitFor();assert.match(await p.locator('.phone-result').innerText(),/010-5234-5678/);
+ await p.goto(host+'/event.html');await p.locator('[name=mode]').selectOption('dateMulti');assert.equal(await p.locator('#dateOptions').isVisible(),true);
+ await p.goto(host+'/orders.html');await p.locator('#addMenu').click();assert.equal(await p.locator('.order-menu-row').count(),3);await p.locator('#localOrders summary').click();await p.locator('#orderForm [name=item]').fill('테스트 메뉴');await p.locator('#orderForm [name=qty]').fill('2');await p.locator('#orderForm [name=price]').fill('5000');await p.locator('#orderForm button').click();assert.match(await p.locator('#orderTotal').innerText(),/10,000원/);
+ await p.goto(host+'/shift.html');await p.locator('[name=start]').fill('2028-03-01');await p.locator('[name=month]').fill('2028-02');await p.locator('[name=pattern]').fill('주간,야간,휴무');await p.locator('#shiftForm button').click();assert.equal(await p.locator('.day').count(),29);assert.match(await p.locator('.day').last().innerText(),/휴무/);
+ await p.goto(host+'/ferry.html');await p.locator('#newPost').click();assert.equal(await p.locator('#ferryFields').isVisible(),true);assert.equal(await p.locator('[name=departure]').getAttribute('required'),'');
+ await p.goto(host+'/community.html?category=질문·답변');await p.locator('#newPost').click();assert.equal(await p.locator('#postForm [name=category]').inputValue(),'질문·답변');
+ await p.goto(host+'/my.html');assert.match(await p.locator('#favorites').innerText(),/모임/);
+ await p.setViewportSize({width:390,height:844});for(const page of ['','event.html','orders.html','ferry.html','community.html','old-phone.html','shift.html','my.html','help.html']){await p.goto(host+'/'+page);assert.equal(await p.locator('.mobilebar').isVisible(),true,page);const overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);assert.equal(overflow,false,'mobile overflow: '+page)}
+ assert.deepEqual(errors,[]);console.log('PASS: desktop/mobile layout, tool search/favorites, phone conversion, form builders, local orders, shift, ferry and community forms.');
+}finally{await browser?.close();server.close()}
