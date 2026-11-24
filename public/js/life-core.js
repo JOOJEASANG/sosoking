@@ -41,7 +41,7 @@ export const validDate=s=>Number.isFinite(utc(s));
 export function routeStatus(meta,today){if(!meta?.checked)return '확인일 미등록';if(meta.validUntil&&meta.validUntil<today)return '유효기간 경과';const age=(utc(today)-utc(meta.checked))/86400000;return age>90?'재확인 필요':'확인일 등록';}
 export function filterPosts(posts,{category='',region='',search='',departure='',arrival='',sort='latest'}={}){
  const text=x=>String(x??'').toLowerCase(),tokens=text(search).trim().split(/\s+/).filter(Boolean);
- return posts.filter(p=>{const m=p.meta||{},hay=text([p.title,p.body,p.category,m.region,m.departure,m.arrival,m.operator,m.schedule].join(' '));return (!category||p.category===category)&&(!region||m.region===region)&&(!departure||text(m.departure||p.title+' '+p.body).includes(text(departure)))&&(!arrival||text(m.arrival||p.title+' '+p.body).includes(text(arrival)))&&tokens.every(t=>hay.includes(t))}).sort((a,b)=>{if(sort==='checked')return String(b.meta?.checked||'').localeCompare(String(a.meta?.checked||''))||(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0);const d=(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0);return sort==='oldest'?-d:d});
+ return posts.filter(p=>{const m=p.meta||{},hay=text([p.title,p.body,p.category,m.region,m.departure,m.arrival,m.operator,m.schedule,m.returnSchedule,m.area,m.condition,m.infoKind,m.evidence].join(' '));return (!category||p.category===category)&&(!region||m.region===region)&&(!departure||text(m.departure||p.title+' '+p.body).includes(text(departure)))&&(!arrival||text(m.arrival||p.title+' '+p.body).includes(text(arrival)))&&tokens.every(t=>hay.includes(t))}).sort((a,b)=>{if(sort==='checked')return String(b.meta?.checked||'').localeCompare(String(a.meta?.checked||''))||(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0);const d=(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0);return sort==='oldest'?-d:d});
 }
 
 export function settlePayments(rows){
@@ -53,4 +53,11 @@ export function settlePayments(rows){
  const debt=people.filter(p=>p.balance<0).map(p=>({name:p.name,left:-p.balance})),credit=people.filter(p=>p.balance>0).map(p=>({name:p.name,left:p.balance}));let i=0,j=0;const transfers=[];
  while(i<debt.length&&j<credit.length){const amount=Math.min(debt[i].left,credit[j].left);transfers.push({from:debt[i].name,to:credit[j].name,amount});debt[i].left-=amount;credit[j].left-=amount;if(!debt[i].left)i++;if(!credit[j].left)j++}
  return {total,base,extra,people,transfers};
+}
+
+export function allocateGroups(people,groups){
+ if(!Array.isArray(people)||people.length<1||people.length>200||people.some(x=>typeof x!=='string'||!x.trim()||x.length>80)||new Set(people).size!==people.length)throw Error('서로 다른 참가자 이름을 1~200명 입력하세요.');
+ if(!Array.isArray(groups)||!groups.length||groups.length>100||groups.some(x=>!x.name||x.name.length>80||!Number.isInteger(x.capacity)||x.capacity<1||x.capacity>100)||new Set(groups.map(g=>g.name)).size!==groups.length)throw Error('서로 다른 차량·조 이름과 1~100명 정원을 입력하세요.');
+ const assigned=groups.map(g=>({...g,people:[]}));let i=0;for(const person of people){let found=false;for(let j=0;j<assigned.length;j++){let k=(i+j)%assigned.length;if(assigned[k].people.length<assigned[k].capacity){assigned[k].people.push(person);i=(k+1)%assigned.length;found=true;break}}if(!found)return {groups:assigned,unassigned:people.slice(assigned.reduce((s,g)=>s+g.people.length,0))}}
+ return {groups:assigned,unassigned:[]};
 }

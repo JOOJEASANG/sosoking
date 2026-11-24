@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "checked": "2026-11-24",
+  "checked": "2026-11-25",
   "description": "소규모 포구·마을 도선의 공개 자료에 기재된 참고 시각. 실제 운항, 판매, 요금 보장 아님.",
   "rows": [
     {
@@ -617,6 +617,312 @@
             "16:45"
           ],
           "back": []
+        }
+      ]
+    },
+    {
+      "id": "bukji-sachi",
+      "region": "전남",
+      "area": "신안군",
+      "port": "안좌 북지선착장",
+      "island": "사치도",
+      "operator": "사치호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/189",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "약 10분",
+      "fare": "무료 안내",
+      "phone": "",
+      "address": "",
+      "note": "블로그 기재 시각. 출발 전에 운항 여부 확인.",
+      "variants": [
+        {
+          "label": "참고 시간표",
+          "out": [
+            "07:00",
+            "08:10",
+            "09:40",
+            "11:20",
+            "14:40",
+            "17:30"
+          ],
+          "back": [
+            "06:50",
+            "08:00",
+            "09:30",
+            "11:10",
+            "14:30",
+            "17:20"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ungok-okdo",
+      "region": "전남",
+      "area": "신안군",
+      "port": "하의 웅곡",
+      "island": "옥도·우목도",
+      "operator": "옥도호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/189",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "",
+      "fare": "무료 안내",
+      "phone": "",
+      "address": "",
+      "note": "우목도 도착 후 돌아오는 방식으로 안내됨. 귀항 시각 별도 확인.",
+      "variants": [
+        {
+          "label": "오후 운항",
+          "out": [
+            "14:00",
+            "16:00"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "sangtae-gido",
+      "region": "전남",
+      "area": "신안군",
+      "port": "신의 상태서리",
+      "island": "기도",
+      "operator": "기도호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/188",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "약 25분",
+      "fare": "무료 안내",
+      "phone": "",
+      "address": "",
+      "note": "정기 운항 여부 사전 확인.",
+      "variants": [
+        {
+          "label": "참고 시간표",
+          "out": [
+            "09:00",
+            "16:50"
+          ],
+          "back": [
+            "07:50",
+            "15:40"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chukgang-majin",
+      "region": "전남",
+      "area": "신안군",
+      "port": "장산 축강선착장",
+      "island": "마진도",
+      "operator": "마진호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/188",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "약 10분",
+      "fare": "무료 안내",
+      "phone": "",
+      "address": "",
+      "note": "자료상 일출 30분 전~일몰 30분 후에 호출 운항. 탑승 전 운영 주체에 문의.",
+      "variants": [
+        {
+          "label": "호출 운항 · 고정 시각 없음",
+          "out": [],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "yeri-yeongsan",
+      "region": "전남",
+      "area": "신안군",
+      "port": "흑산 예리항",
+      "island": "영산도",
+      "operator": "영산호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/201",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "약 30분",
+      "fare": "관외 5,000원 안내",
+      "phone": "",
+      "address": "",
+      "note": "오후는 수시 운항으로 안내. 운임 및 운항 여부 재확인.",
+      "variants": [
+        {
+          "label": "오전 정기편",
+          "out": [
+            "10:00"
+          ],
+          "back": [
+            "07:50"
+          ]
+        },
+        {
+          "label": "오후 수시편",
+          "out": [],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "yeri-jangdo",
+      "region": "전남",
+      "area": "신안군",
+      "port": "흑산 예리항",
+      "island": "장도",
+      "operator": "대장도호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/201",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "약 30분",
+      "fare": "관외 5,000원 안내",
+      "phone": "",
+      "address": "",
+      "note": "요일별 추가편 확인 필요.",
+      "variants": [
+        {
+          "label": "월~토",
+          "out": [
+            "10:00"
+          ],
+          "back": [
+            "07:45"
+          ]
+        },
+        {
+          "label": "월·수·금 추가편",
+          "out": [
+            "14:40"
+          ],
+          "back": [
+            "13:30"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yeri-domok",
+      "region": "전남",
+      "area": "신안군",
+      "port": "흑산 예리항",
+      "island": "대둔도 도목리",
+      "operator": "엔젤호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/201",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "약 50분",
+      "fare": "일반 대인 5,000원 안내",
+      "phone": "",
+      "address": "",
+      "note": "다물도 등 경유 정류장은 해당 항차 확인 필요.",
+      "variants": [
+        {
+          "label": "기본편",
+          "out": [
+            "09:50",
+            "14:30"
+          ],
+          "back": [
+            "07:30"
+          ]
+        },
+        {
+          "label": "화·목·일 추가 귀항",
+          "out": [],
+          "back": [
+            "12:50"
+          ]
+        },
+        {
+          "label": "월·수·금·토 추가 출항",
+          "out": [
+            "18:00"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "odo-dangsa",
+      "region": "전남",
+      "area": "신안군",
+      "port": "암태 오도선착장",
+      "island": "당사도",
+      "operator": "당사호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/192",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "약 15분",
+      "fare": "",
+      "phone": "",
+      "address": "",
+      "note": "원문에 이른 아침 귀항의 도착 시각만 있어 해당 출발 시각은 생략.",
+      "variants": [
+        {
+          "label": "확인된 출발 시각",
+          "out": [
+            "07:50",
+            "10:50",
+            "13:50",
+            "16:50"
+          ],
+          "back": [
+            "10:30",
+            "13:30",
+            "16:30"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dongri-gosa",
+      "region": "전남",
+      "area": "신안군 신의면",
+      "port": "신의 동리선착장",
+      "island": "고사도·평사도",
+      "operator": "고평사호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/188",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "고사도까지 약 20분",
+      "fare": "무료 안내",
+      "phone": "",
+      "address": "신안군 신의면 상태동리 산 108",
+      "note": "평사도 경유. 기상 및 승객 상황에 따른 변경 가능.",
+      "variants": [
+        {
+          "label": "참고 시간표",
+          "out": [
+            "07:30",
+            "12:20",
+            "16:30"
+          ],
+          "back": [
+            "07:00",
+            "11:50",
+            "16:00"
+          ]
         }
       ]
     }

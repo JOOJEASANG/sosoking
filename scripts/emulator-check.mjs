@@ -29,6 +29,9 @@ try{
  await env.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),'lifePostLimits','owner'),{lastId:postId,at:Timestamp.fromMillis(Date.now()-3600000)}));
  const ferry={...post,category:'선박 시간표',source:'https://example.com',meta:{region:'전남',departure:'A',arrival:'B',operator:'C',schedule:'09:00',checked:'2026-11-24',validUntil:''}};
  batch=writeBatch(owner);batch.set(doc(owner,'lifePosts',ferryId),ferry);batch.set(doc(owner,'lifePostLimits','owner'),{lastId:ferryId,at:serverTimestamp()});await assertSucceeds(batch.commit());
+ await env.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),'lifePostLimits','owner'),{lastId:ferryId,at:Timestamp.fromMillis(Date.now()-3600000)}));
+ const directId='h'.repeat(20);const direct={...ferry,source:'',meta:{...ferry.meta,operator:'',sourceType:'현장',evidence:'현장 안내판 확인',returnSchedule:'10:00',condition:'평일'}};
+ batch=writeBatch(owner);batch.set(doc(owner,'lifePosts',directId),direct);batch.set(doc(owner,'lifePostLimits','owner'),{lastId:directId,at:serverTimestamp()});await assertSucceeds(batch.commit());await assertFails(getDoc(doc(publicDb,'lifePosts',directId)));await assertSucceeds(updateDoc(doc(moderator,'lifePosts',directId),{state:'published'}));await assertSucceeds(getDocs(query(collection(publicDb,'lifePosts'),where('state','==','published'),where('category','==','선박 시간표'))));
  await assertSucceeds(deleteDoc(doc(other,'lifeComments',commentId)));await assertSucceeds(deleteDoc(doc(owner,'lifePosts',postId)));
  console.log('PASS: Firestore emulator compile and community/poll/order access rules.');
 }finally{await env.cleanup()}

@@ -90,24 +90,27 @@ service cloud.firestore {
   function lifeNonempty(x,max){return lifeText(x,max) && x.size()>=1;}
   function lifeDate(x){return x is string && x.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');}
   function lifeMeta(d){
-   return d.meta is map && d.meta.keys().hasOnly(['region','departure','arrival','operator','schedule','checked','validUntil'])
+   return d.meta is map && d.meta.keys().hasOnly(['region','departure','arrival','operator','schedule','checked','validUntil','area','condition','returnSchedule','fare','address','sourceType','evidence','infoKind'])
     && d.meta.region in ['','전국','서울','경기','인천','강원','대전','세종','충북','충남','광주','전북','전남','대구','경북','부산','울산','경남','제주']
     && lifeText(d.meta.departure,60) && lifeText(d.meta.arrival,60) && lifeText(d.meta.operator,80) && lifeText(d.meta.schedule,200)
     && (d.meta.checked=='' || lifeDate(d.meta.checked)) && (d.meta.validUntil=='' || lifeDate(d.meta.validUntil))
-    && (d.category!='선박 시간표' || (lifeNonempty(d.meta.departure,60) && lifeNonempty(d.meta.arrival,60) && lifeNonempty(d.meta.operator,80) && lifeNonempty(d.meta.schedule,200) && lifeDate(d.meta.checked)));
+    && lifeText(d.meta.get('area',''),60) && lifeText(d.meta.get('condition',''),100) && lifeText(d.meta.get('returnSchedule',''),200) && lifeText(d.meta.get('fare',''),100) && lifeText(d.meta.get('address',''),150)
+    && (!('sourceType' in d.meta) || (d.meta.sourceType in ['블로그','현장','전화','지자체','운영사','기타'] && lifeNonempty(d.meta.evidence,300) && (d.meta.sourceType in ['현장','전화','기타'] || d.source!='') && d.meta.region!='' && lifeDate(d.meta.checked)))
+    && (!('infoKind' in d.meta) || (d.category=='생활정보' && d.meta.infoKind in ['마을 교통','섬 이용정보','작은 장터','생활 수리','현장 이용정보']))
+    && (d.category!='선박 시간표' || (lifeNonempty(d.meta.departure,60) && lifeNonempty(d.meta.arrival,60) && lifeNonempty(d.meta.schedule,200) && lifeDate(d.meta.checked)));
   }
   function publishedLifePost(id){return validLifeId(id) && exists(lifePostPath(id)) && get(lifePostPath(id)).data.state=='published';}
   match /lifePosts/{id}{
    allow get,list: if resource.data.state=='published' || (signedIn() && resource.data.owner==request.auth.uid) || moderator();
    allow create: if signedIn() && validLifeId(id) && request.resource.data.keys().hasOnly(['category','title','body','source','meta','state','owner','createdAt'])
     && request.resource.data.owner==request.auth.uid && request.resource.data.state=='pending' && request.resource.data.createdAt==request.time
-    && request.resource.data.category in ['자유게시판','질문·답변','생활정보','선박 시간표','프로그램 요청','오류 제보','공지사항']
+    && request.resource.data.category in ['자유게시판','질문·답변','정보 요청','생활정보','선박 시간표','프로그램 요청','오류 제보','공지사항']
     && (request.resource.data.category!='공지사항' || moderator())
     && lifeNonempty(request.resource.data.title,100) && lifeNonempty(request.resource.data.body,2000)
     && lifeText(request.resource.data.source,400)
     && (request.resource.data.source=='' || request.resource.data.source.matches('^https?://.+'))
     && (!('meta' in request.resource.data) || lifeMeta(request.resource.data))
-    && (request.resource.data.category!='선박 시간표' || ('meta' in request.resource.data && lifeMeta(request.resource.data) && request.resource.data.source!=''))
+    && (request.resource.data.category!='선박 시간표' || ('meta' in request.resource.data && (request.resource.data.source!='' || request.resource.data.meta.get('sourceType','') in ['현장','전화','기타'])))
     && (!exists(lifeLimitPath(request.auth.uid)) || request.time>get(lifeLimitPath(request.auth.uid)).data.at+duration.value(10,'m'))
     && getAfter(lifeLimitPath(request.auth.uid)).data.lastId==id && getAfter(lifeLimitPath(request.auth.uid)).data.at==request.time;
    allow update: if moderator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state']) && request.resource.data.state in ['pending','published','rejected'];

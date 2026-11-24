@@ -29,11 +29,11 @@ test('historical phone rule returns a calculation, not a contact lookup',()=>{
  assert.equal(convertOldNumber('011-234-5678').estimated,'010-5234-5678');assert.equal(convertOldNumber('010-1234-5678').ok,false);assert.equal(convertOldNumber('011-100-1234').ok,false);
 });
 test('each JavaScript module is syntactically valid and portal uses focused services',()=>{
- for(const p of ['life.js','life-core.js','life-shared.js','life-board.js','life-polls.js','life-local.js','phone.js']){
+ for(const p of ['life.js','life-core.js','life-shared.js','life-board.js','life-polls.js','life-local.js','phone.js','local-ferry.js','field-info.js','group-plan.js']){
   const r=spawnSync(process.execPath,['--check','public/js/'+p],{encoding:'utf8'});assert.equal(r.status,0,p+': '+r.stderr);
  }
- const home=fs.readFileSync('public/index.html','utf8');assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,7);assert.match(home,/class="mobilebar"/);
- const ferry=fs.readFileSync('public/ferry.html','utf8');assert.match(ferry,/name="checked"/);assert.match(ferry,/name="departure"/);assert.match(ferry,/mtis\.komsa\.or\.kr/);
+ const home=fs.readFileSync('public/index.html','utf8');assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,8);assert.match(home,/class="mobilebar"/);
+ const ferry=fs.readFileSync('public/ferry.html','utf8');assert.match(ferry,/name="checked"/);assert.match(ferry,/name="departure"/);assert.match(ferry,/localFerryResults/);
  const rules=fs.readFileSync('firestore.rules','utf8');assert.equal((rules.match(/match \/\{document=\*\*\}/g)||[]).length,1);assert.match(rules,/match \/lifeComments\/\{id\}/);assert.match(rules,/match \/lifeReports\/\{id\}/);assert.match(rules,/function validVote/);
 });
 
@@ -44,8 +44,12 @@ test('settlement exactly reconciles every won including indivisible amounts',asy
  assert.throws(()=>settlePayments([{name:'A',paid:1},{name:'A',paid:0}]));
 });
 test('small-port ferry records contain source metadata and separate season and return times',()=>{
- const data=JSON.parse(fs.readFileSync('public/data/local-ferry.json','utf8'));assert.equal(data.rows.length,15);assert.equal(new Set(data.rows.map(r=>r.id)).size,15);assert.ok(data.rows.some(r=>r.sourceType==='블로그'));
- for(const r of data.rows){assert.match(r.sourceUrl,/^https:\/\//);assert.equal(r.checked,'2026-11-24');assert.ok(r.note);assert.ok(r.variants.length);for(const v of r.variants){assert.ok(v.out.length);assert.ok([...v.out,...v.back].every(t=>/^([01]\d|2[0-3]):[0-5]\d$/.test(t)))}}
+ const data=JSON.parse(fs.readFileSync('public/data/local-ferry.json','utf8'));assert.equal(data.rows.length,24);assert.equal(new Set(data.rows.map(r=>r.id)).size,24);assert.ok(data.rows.some(r=>r.sourceType==='블로그'));
+ for(const r of data.rows){assert.match(r.sourceUrl,/^https:\/\//);assert.match(r.checked,/^2026-11-2[45]$/);assert.ok(r.note);assert.ok(r.variants.length);for(const v of r.variants){assert.ok(v.out.length||v.back.length||/호출|수시/.test(v.label));assert.ok([...v.out,...v.back].every(t=>/^([01]\d|2[0-3]):[0-5]\d$/.test(t)))}}
  const jukdo=data.rows.find(r=>r.id==='hongseong-jukdo');assert.equal(jukdo.variants.length,4);assert.ok(jukdo.note.includes('화요일'));assert.ok(!jukdo.variants[0].out.includes('17:00'));
  for(const name of ['index','event','ferry','community','orders','old-phone','shift','my','help','info','settlement']){const html=fs.readFileSync('public/'+name+'.html','utf8');assert.ok(!html.includes('data-nav="ferry"'),name);assert.ok(html.includes('data-nav="info"'),name)}
 });
+
+test('field information has a real source and confirmation date',()=>{const data=JSON.parse(fs.readFileSync('public/data/field-info.json','utf8'));assert.equal(data.rows.length,12);for(const r of data.rows){assert.match(r.source,/^https:/);assert.ok(r.checked&&r.body&&r.kind)}});
+
+test('allocation respects group capacity and reports overflow',async()=>{const {allocateGroups}=await import('../public/js/life-core.js');const a=allocateGroups(['A','B','C','D'],[{name:'1',capacity:1},{name:'2',capacity:2}]);assert.equal(a.groups[0].people.length,1);assert.equal(a.groups[1].people.length,2);assert.deepEqual(a.unassigned,['D']);assert.throws(()=>allocateGroups(['A','A'],[{name:'1',capacity:2}]))});
