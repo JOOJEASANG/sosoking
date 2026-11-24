@@ -29,10 +29,10 @@ test('historical phone rule returns a calculation, not a contact lookup',()=>{
  assert.equal(convertOldNumber('011-234-5678').estimated,'010-5234-5678');assert.equal(convertOldNumber('010-1234-5678').ok,false);assert.equal(convertOldNumber('011-100-1234').ok,false);
 });
 test('each JavaScript module is syntactically valid and portal uses focused services',()=>{
- for(const p of ['life.js','life-core.js','life-shared.js','life-board.js','life-polls.js','life-local.js','phone.js','local-ferry.js','field-info.js','group-plan.js']){
+ for(const p of ['life.js','life-core.js','life-shared.js','life-board.js','life-polls.js','life-local.js','phone.js','local-ferry.js','field-info.js','group-plan.js','memory-core.js','memories.js']){
   const r=spawnSync(process.execPath,['--check','public/js/'+p],{encoding:'utf8'});assert.equal(r.status,0,p+': '+r.stderr);
  }
- const home=fs.readFileSync('public/index.html','utf8');assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,8);assert.match(home,/class="mobilebar"/);
+ const home=fs.readFileSync('public/index.html','utf8');assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,9);assert.match(home,/class="mobilebar"/);
  const ferry=fs.readFileSync('public/ferry.html','utf8');assert.match(ferry,/name="checked"/);assert.match(ferry,/name="departure"/);assert.match(ferry,/localFerryResults/);
  const rules=fs.readFileSync('firestore.rules','utf8');assert.equal((rules.match(/match \/\{document=\*\*\}/g)||[]).length,1);assert.match(rules,/match \/lifeComments\/\{id\}/);assert.match(rules,/match \/lifeReports\/\{id\}/);assert.match(rules,/function validVote/);
 });
@@ -53,3 +53,13 @@ test('small-port ferry records contain source metadata and separate season and r
 test('field information has a real source and confirmation date',()=>{const data=JSON.parse(fs.readFileSync('public/data/field-info.json','utf8'));assert.equal(data.rows.length,12);for(const r of data.rows){assert.match(r.source,/^https:/);assert.ok(r.checked&&r.body&&r.kind)}});
 
 test('allocation respects group capacity and reports overflow',async()=>{const {allocateGroups}=await import('../public/js/life-core.js');const a=allocateGroups(['A','B','C','D'],[{name:'1',capacity:1},{name:'2',capacity:2}]);assert.equal(a.groups[0].people.length,1);assert.equal(a.groups[1].people.length,2);assert.deepEqual(a.unassigned,['D']);assert.throws(()=>allocateGroups(['A','A'],[{name:'1',capacity:2}]))});
+
+test('little memories: month end and leap year, elapsed days, due override, backup validation',async()=>{
+ const {addInterval,memoryState,normalizeMemory,parseMemoryBackup}=await import('../public/js/memory-core.js');
+ assert.equal(addInterval('2026-01-31','month',1),'2026-02-28');assert.equal(addInterval('2028-02-29','year',1),'2029-02-28');assert.equal(addInterval('2026-12-31','day',1),'2027-01-01');
+ const item=normalizeMemory({id:'test',title:'미용실',category:'생활·미용',unit:'month',interval:1,due:'',memo:'',history:[{date:'2026-10-01',amount:null,note:''},{date:'2026-10-31',amount:25000,note:'커트'}]});
+ assert.deepEqual(memoryState(item,'2026-11-25'),{last:'2026-10-31',due:'2026-11-30',elapsed:25,remaining:5});
+ assert.equal(memoryState({...item,due:'2026-11-20'},'2026-11-25').remaining,-5);
+ assert.deepEqual(parseMemoryBackup(JSON.stringify({schema:1,items:[item]})),[item]);
+ assert.throws(()=>parseMemoryBackup(JSON.stringify({schema:1,items:[item,item]})));assert.throws(()=>normalizeMemory({...item,history:[{date:'2026-02-30',amount:null,note:''}]}));
+});

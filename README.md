@@ -44,3 +44,7 @@ https://sosoking-481e6.web.app/
 - 저장소 소유자가 이 저장소 내 feature/ 브랜치에서 만든 일반 PR에 한해 check 및 integration 성공 후 자동 병합. 초안, 외부 저장소 PR, 타 계정 실행, 검사 실패, 변경된 head 또는 main은 자동 병합하지 않음.
 - 자동 병합에는 해당 job에만 GitHub Actions write 권한을 부여하며, PR 코드를 checkout하거나 실행하지 않음. 병합 후 main의 deploy.yml을 workflow_dispatch로 실행하여 재검사 및 Firebase 배포. Actions 권한 제한으로 병합/dispatch가 거절되는 경우 실행 로그에 실패로 남김. 외부 기여 PR은 수동 검토.
 - GitHub 기본 auto-merge는 branch protection 필수. 현재 접근 권한으로 설정을 변경할 수 없어 저장소 워크플로 방식으로 구성.
+
+## 사소한 기억
+- 일회성 구매·가입일 및 반복 생활 기록, 날짜/금액/메모 이력, 경과일과 다음 예정일(일/개월/년 주기 또는 직접 지정), 검색·분류, 오늘 기록, 수정·삭제, JSON 백업/복원·CSV 내보내기. 예시 항목은 선택 시 양식에만 입력됨.
+- 개인 기록은 브라우저 localStorage 전용이며 서버·계정 동기화 및 푸시 알림 없음. 삭제 전 백업 권장. 반복 일정은 마지막 실제 기록 기준이며 월말·윤년을 보정함.
