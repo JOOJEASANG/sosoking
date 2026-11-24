@@ -7,6 +7,7 @@ import {initLocalOrders,initShift} from './life-local.js';
 import {initBoard,recentPosts,loadMyContent,loadModeration,postUrl} from './life-board.js';
 import {initLocalFerry} from './local-ferry.js';
 import {initSettlement} from './life-settlement.js';
+import {initFieldInfo} from './field-info.js';
 const navName=page==='index.html'?(location.hash==='#programs'?'tools':'home'):(page==='ferry.html'||page==='info.html')?'info':page==='community.html'?'community':page==='my.html'?'my':page==='help.html'?'': 'tools';
 function navSync(){let name=page==='index.html'?(location.hash==='#programs'?'tools':'home'):navName;document.querySelectorAll('[data-nav]').forEach(a=>{if(a.dataset.nav===name)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}navSync();addEventListener('hashchange',navSync);
 const favoritesAllowed=new Set(['/old-phone.html','/event.html','/ferry.html','/orders.html','/shift.html','/community.html?category=생활정보','/info.html','/settlement.html']);
@@ -37,3 +38,5 @@ if(page==='my.html')initMy();
 if(page==='ferry.html')initLocalFerry();
 if(page==='settlement.html')initSettlement();
 if(page==='community.html'&&qs.get('search')){$('#postSearch').value=qs.get('search');$('#postSearch').dispatchEvent(new Event('input'));}
+
+if(page==='info.html')initFieldInfo();
