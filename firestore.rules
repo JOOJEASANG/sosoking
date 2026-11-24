@@ -100,12 +100,7 @@ service cloud.firestore {
   }
   match /lifePostLimits/{uid}{
    allow read: if signedIn() && request.auth.uid==uid;
-   function valid(){return signedIn() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['lastId','at']) && request.resource.data.lastId is string && request.resource.data.lastId.matches('^[A-Za-z0-9]{20} is retained in Firestore, not exposed by this redesigned app.
-  // Reinstatement requires the archived code and a deliberate rules migration.
-  match /{document=**} { allow read, write: if false; }
- }
-}
-) && request.resource.data.at==request.time && getAfter(lifePostPath(request.resource.data.lastId)).data.owner==uid && getAfter(lifePostPath(request.resource.data.lastId)).data.createdAt==request.time;}
+   function valid(){return signedIn() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['lastId','at']) && request.resource.data.lastId is string && request.resource.data.lastId.matches('^[A-Za-z0-9]{20}$') && request.resource.data.at==request.time && getAfter(lifePostPath(request.resource.data.lastId)).data.owner==uid && getAfter(lifePostPath(request.resource.data.lastId)).data.createdAt==request.time;}
    allow create: if valid();
    allow update: if valid() && request.time>resource.data.at+duration.value(10,'m');
    allow delete: if false;
@@ -114,12 +109,7 @@ service cloud.firestore {
   match /lifePolls/{id}{
    allow get: if signedIn();
    allow list: if false;
-   allow create: if signedIn() && id.matches('^[A-Za-z0-9]{20} is retained in Firestore, not exposed by this redesigned app.
-  // Reinstatement requires the archived code and a deliberate rules migration.
-  match /{document=**} { allow read, write: if false; }
- }
-}
-) && request.resource.data.keys().hasOnly(['title','mode','options','owner','createdAt','closed'])
+   allow create: if signedIn() && id.matches('^[A-Za-z0-9]{20}$') && request.resource.data.keys().hasOnly(['title','mode','options','owner','createdAt','closed'])
     && request.resource.data.owner==request.auth.uid && request.resource.data.createdAt==request.time && request.resource.data.closed==false
     && request.resource.data.title is string && request.resource.data.title.size()>=1 && request.resource.data.title.size()<=100
     && request.resource.data.mode in ['attendance','date'] && request.resource.data.options is list
