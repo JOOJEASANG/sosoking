@@ -47,15 +47,52 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project sosoking-481e6 --non-interactive
-      - name: Verify live application and retired programs
+      - name: Verify live site and deployed assets
         run: |
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/ | grep -q '소소하지만'
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sw.js | grep -q 'sosoking-life-shell-v1'
-          for page in daily.html event.html old-phone.html orders.html ferry.html community.html shift.html loans.html my.html; do
-            status=$(curl -sSL -o /dev/null -w '%{http_code}' "https://sosoking-481e6.web.app/$page")
-            test "$status" = 200
-          done
-          curl --fail --retry 4 --retry-delay 3 -sSL https://sosoking-481e6.web.app/sitemap.xml | grep -q '<loc>https://sosoking-481e6.web.app/</loc>'
+          node --input-type=module <<'NODE'
+          import {setTimeout as sleep} from 'node:timers/promises';
+          const host = 'https://sosoking-481e6.web.app';
+          const checks = [
+            ['/', 'id="toolSearch"'],
+            ['/sw.js', 'sosoking-life-shell-v1'],
+            ['/daily.html', 'id="dailyGrid"'],
+            ['/event.html', 'id="eventApp"'],
+            ['/old-phone.html', 'id="numberForm"'],
+            ['/orders.html', 'id="orderForm"'],
+            ['/ferry.html', 'id="postList"'],
+            ['/community.html', 'id="postList"'],
+            ['/shift.html', 'id="shiftForm"'],
+            ['/loans.html', 'id="loanForm"'],
+            ['/my.html', 'id="myEvents"'],
+            ['/sitemap.xml', '<loc>https://sosoking-481e6.web.app/</loc>'],
+            ['/js/life.js', 'lifePolls'],
+            ['/css/life.css', '--green:']
+          ];
+          let remaining = checks;
+          for (let attempt = 1; attempt <= 12; attempt++) {
+            const results = await Promise.all(remaining.map(async ([path, marker]) => {
+              try {
+                const url = new URL(path, host);
+                url.searchParams.set('_deploy_verify', process.env.GITHUB_SHA + '-' + attempt);
+                const res = await fetch(url, {headers: {'cache-control': 'no-cache'}, signal: AbortSignal.timeout(15000)});
+                const body = await res.text();
+                const ok = res.status === 200 && body.includes(marker);
+                console.log((ok ? 'PASS' : 'RETRY') + ' ' + path + ' HTTP ' + res.status + (ok ? '' : ' expected content missing or unavailable'));
+                return ok ? null : [path, marker];
+              } catch (err) {
+                console.log('RETRY ' + path + ': ' + err.message);
+                return [path, marker];
+              }
+            }));
+            remaining = results.filter(Boolean);
+            if (!remaining.length) {
+              console.log('All deployed pages and assets verified.');
+              break;
+            }
+            if (attempt < 12) await sleep(5000);
+          }
+          if (remaining.length) throw Error('Live verification failed for: ' + remaining.map(([path]) => path).join(', '));
+          NODE
       - name: Verify shared item protections with synthetic data
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
