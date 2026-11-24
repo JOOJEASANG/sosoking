@@ -80,6 +80,67 @@ service cloud.firestore {
    allow get: if signedIn() && request.auth.uid == uid;
    allow list,create,update,delete: if false;
   }
+
+  function lifePostPath(id){return /databases/$(database)/documents/lifePosts/$(id);}
+  function lifeLimitPath(uid){return /databases/$(database)/documents/lifePostLimits/$(uid);}
+  match /lifePosts/{id}{
+   allow get,list: if resource.data.state=='published' || (signedIn() && resource.data.owner==request.auth.uid) || moderator();
+   allow create: if signedIn() && request.resource.data.keys().hasOnly(['category','title','body','source','state','owner','createdAt'])
+    && request.resource.data.owner==request.auth.uid && request.resource.data.state=='pending' && request.resource.data.createdAt==request.time
+    && request.resource.data.category in ['자유게시판','생활정보','선박 시간표','프로그램 요청','오류 제보']
+    && request.resource.data.title is string && request.resource.data.title.size()>=1 && request.resource.data.title.size()<=100
+    && request.resource.data.body is string && request.resource.data.body.size()>=1 && request.resource.data.body.size()<=2000
+    && request.resource.data.source is string && request.resource.data.source.size()<=400
+    && (request.resource.data.source=='' || request.resource.data.source.matches('^https?://.+'))
+    && (request.resource.data.category!='선박 시간표' || request.resource.data.source!='')
+    && (!exists(lifeLimitPath(request.auth.uid)) || request.time>get(lifeLimitPath(request.auth.uid)).data.at+duration.value(10,'m'))
+    && getAfter(lifeLimitPath(request.auth.uid)).data.lastId==id && getAfter(lifeLimitPath(request.auth.uid)).data.at==request.time;
+   allow update: if moderator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state']) && request.resource.data.state in ['pending','published','rejected'];
+   allow delete: if moderator() || (signedIn() && resource.data.owner==request.auth.uid);
+  }
+  match /lifePostLimits/{uid}{
+   allow read: if signedIn() && request.auth.uid==uid;
+   function valid(){return signedIn() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['lastId','at']) && request.resource.data.lastId is string && request.resource.data.lastId.matches('^[A-Za-z0-9]{20} is retained in Firestore, not exposed by this redesigned app.
+  // Reinstatement requires the archived code and a deliberate rules migration.
+  match /{document=**} { allow read, write: if false; }
+ }
+}
+) && request.resource.data.at==request.time && getAfter(lifePostPath(request.resource.data.lastId)).data.owner==uid && getAfter(lifePostPath(request.resource.data.lastId)).data.createdAt==request.time;}
+   allow create: if valid();
+   allow update: if valid() && request.time>resource.data.at+duration.value(10,'m');
+   allow delete: if false;
+  }
+  function lifePollPath(id){return /databases/$(database)/documents/lifePolls/$(id);}
+  match /lifePolls/{id}{
+   allow get: if signedIn();
+   allow list: if false;
+   allow create: if signedIn() && id.matches('^[A-Za-z0-9]{20} is retained in Firestore, not exposed by this redesigned app.
+  // Reinstatement requires the archived code and a deliberate rules migration.
+  match /{document=**} { allow read, write: if false; }
+ }
+}
+) && request.resource.data.keys().hasOnly(['title','mode','options','owner','createdAt','closed'])
+    && request.resource.data.owner==request.auth.uid && request.resource.data.createdAt==request.time && request.resource.data.closed==false
+    && request.resource.data.title is string && request.resource.data.title.size()>=1 && request.resource.data.title.size()<=100
+    && request.resource.data.mode in ['attendance','date'] && request.resource.data.options is list
+    && request.resource.data.options.size()>=2 && request.resource.data.options.size()<=5
+    && request.resource.data.options[0] is string && request.resource.data.options[0].size()<=35
+    && request.resource.data.options[1] is string && request.resource.data.options[1].size()<=35
+    && (request.resource.data.options.size()<3 || (request.resource.data.options[2] is string && request.resource.data.options[2].size()<=35))
+    && (request.resource.data.options.size()<4 || (request.resource.data.options[3] is string && request.resource.data.options[3].size()<=35))
+    && (request.resource.data.options.size()<5 || (request.resource.data.options[4] is string && request.resource.data.options[4].size()<=35))
+    && (request.resource.data.mode!='attendance' || request.resource.data.options==['참석','불참','미정']);
+   allow update: if signedIn() && resource.data.owner==request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closed']) && request.resource.data.closed is bool;
+   allow delete: if false;
+   match /votes/{uid}{
+    allow get: if signedIn() && (request.auth.uid==uid || get(lifePollPath(id)).data.owner==request.auth.uid);
+    allow list: if signedIn() && get(lifePollPath(id)).data.owner==request.auth.uid;
+    allow create,update: if signedIn() && request.auth.uid==uid && get(lifePollPath(id)).data.closed==false
+     && request.resource.data.keys().hasOnly(['choice','updatedAt']) && request.resource.data.choice is int && request.resource.data.choice>=0
+     && request.resource.data.choice<get(lifePollPath(id)).data.options.size() && request.resource.data.updatedAt==request.time;
+    allow delete: if false;
+   }
+  }
   // Former event/group data is retained in Firestore, not exposed by this redesigned app.
   // Reinstatement requires the archived code and a deliberate rules migration.
   match /{document=**} { allow read, write: if false; }
