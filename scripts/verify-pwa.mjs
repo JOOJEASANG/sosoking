@@ -15,10 +15,10 @@ for(const [file,size] of [['favicon-32.png',32],['icons/sosoking-180.png',180],[
  assert.equal(binary.readUInt32BE(20),size,file);
 }
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-for(const required of ['src="/js/daily.js"','rel="manifest"','apple-touch-icon','data-install-app','id="dailyGrid"','id="catalogGrid"']){
+for(const required of ['src="/js/life.js"','rel="manifest"','apple-touch-icon','data-install-app','id="tools"','id="recentPosts"']){
  assert.ok(html.includes(required),required);
 }
 const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
 assert.match(sw,/request\.method\s*!==\s*'GET'/);
 assert.match(sw,/staticPaths.has\(url.pathname\)/);
-console.log('Daily Check PWA passed');
+const diary=fs.readFileSync(path.join(root,'daily.html'),'utf8'); assert.ok(diary.includes('id="dailyGrid"')); console.log('Life Tools PWA passed');

@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "소소킹 — 나의 하루체크",
-  "short_name": "하루체크",
-  "description": "체크하고, 숫자로 남기고, 다시 꺼내 보는 소소한 하루 일기",
+  "name": "소소킹 — 소소하지만 쓸모 있는 세상",
+  "short_name": "소소킹",
+  "description": "생활 도구와 생활정보 커뮤니티",
   "lang": "ko",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f8f9f4",
-  "theme_color": "#f8f9f4",
+  "background_color": "#f6f8f6",
+  "theme_color": "#f6f8f6",
   "categories": [
     "lifestyle",
     "productivity"

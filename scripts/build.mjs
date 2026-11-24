@@ -18,7 +18,8 @@ for(const size of [32,180,192,512]){
 const maskable=svg.replace('rx="112"','rx="0"');
 fs.writeFileSync(path.join(iconDir,'sosoking-maskable-512.png'),new Resvg(maskable,{fitTo:{mode:'width',value:512}}).render().asPng());
 await build({entryPoints:[path.join(source,'js','daily.js')],outfile:path.join(dest,'js','daily.js'),bundle:true,format:'esm',platform:'browser',target:'es2021',minify:true,legalComments:'none',logLevel:'warning'});
-for(const legacy of ['event.html','old-phone.html','roster.html','orders.html','chat.html','guide.html']){
+await build({entryPoints:[path.join(source,'js','life.js')],outfile:path.join(dest,'js','life.js'),bundle:true,format:'esm',platform:'browser',target:'es2021',minify:true,legalComments:'none',logLevel:'warning'});
+for(const legacy of ['roster.html','chat.html','guide.html']){
  if(fs.existsSync(path.join(dest,legacy)))throw Error('Legacy program survived redesign: '+legacy);
 }
-console.log('SOSOKING Daily Check build passed');
+console.log('SOSOKING Life Tools build passed');

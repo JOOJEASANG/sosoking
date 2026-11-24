@@ -72,12 +72,27 @@ test('shopping details do not enter shared item definitions',()=>{
  assert.deepEqual(cleaned.details['2026-11-20'].d_shopping,{types:['식료품'],note:'직접 입력'});
  assert.ok(!JSON.stringify(cleaned.sharedItems).includes('직접 입력'));
 });
-test('new site serves only a single daily check product',()=>{
- const html=fs.readFileSync('public/index.html','utf8');
+test('daily check remains available as an independent program',()=>{
+ const html=fs.readFileSync('public/daily.html','utf8');
  for(const marker of ['data-screen="today"','data-screen="explore"','data-screen="history"','data-screen="settings"','id="createDialog"','id="dayPicker"','id="dailyGrid"','id="recordedOnly"','id="goToday"'])assert.ok(html.includes(marker),marker);
  const rules=fs.readFileSync('firestore.rules','utf8');
  assert.match(rules,/match \/publicItems\/\{itemId\}/);
  assert.match(rules,/getAfter\(limitPath\(request.auth.uid\)\)/);
  assert.match(rules,/match \/itemReports\/\{reportId\}/);
  assert.match(rules,/allow read, write: if false/);
+});
+
+test('life portal links to each implemented program and keeps existing daily functionality',()=>{
+ const home=fs.readFileSync('public/index.html','utf8');
+ for(const name of ['old-phone','event','ferry','orders','shift','loans','daily','community','my']){
+  assert.ok(home.includes('/'+name+'.html'),name+' is linked');
+  assert.ok(fs.existsSync('public/'+name+'.html'),name+' page exists');
+ }
+ assert.ok(home.includes('id="toolSearch"'));
+ assert.ok(home.includes('id="recentPosts"'));
+ const rules=fs.readFileSync('firestore.rules','utf8');
+ assert.match(rules,/match \/lifePosts\/\{id\}/);
+ assert.match(rules,/request.resource.data.state=='pending'/);
+ assert.match(rules,/match \/lifePolls\/\{id\}/);
+ assert.match(rules,/match \/votes\/\{uid\}/);
 });
