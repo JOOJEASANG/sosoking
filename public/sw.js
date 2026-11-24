@@ -1,6 +1,6 @@
 /* Cache only public static app shell, never user diaries, Firestore data or authentication. */
-const CACHE='sosoking-life-shell-v1';
-const STATIC=['/','/index.html','/daily.html','/old-phone.html','/event.html','/community.html','/ferry.html','/orders.html','/shift.html','/loans.html','/my.html','/css/life.css','/js/life.js','/js/phone.js','/js/phone-rules.js','/css/site.css','/js/daily.js','/js/pwa-install.js',
+const CACHE='sosoking-life-shell-v2';
+const STATIC=['/','/index.html','/daily.html','/old-phone.html','/event.html','/community.html','/ferry.html','/orders.html','/shift.html','/loans.html','/my.html','/help.html','/css/life.css','/js/life.js','/js/phone.js','/js/phone-rules.js','/css/site.css','/js/daily.js','/js/pwa-install.js',
  '/manifest.webmanifest','/icons/sosoking.svg','/icons/sosoking-180.png',
  '/icons/sosoking-192.png','/icons/sosoking-512.png','/icons/sosoking-maskable-512.png','/favicon-32.png'];
 const staticPaths=new Set(STATIC);

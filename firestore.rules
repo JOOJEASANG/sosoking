@@ -81,54 +81,118 @@ service cloud.firestore {
    allow list,create,update,delete: if false;
   }
 
+  function validLifeId(id){return id is string && id.matches('^[A-Za-z0-9]{20}$');}
   function lifePostPath(id){return /databases/$(database)/documents/lifePosts/$(id);}
   function lifeLimitPath(uid){return /databases/$(database)/documents/lifePostLimits/$(uid);}
+  function lifeCommentPath(id){return /databases/$(database)/documents/lifeComments/$(id);}
+  function lifeCommentLimitPath(uid){return /databases/$(database)/documents/lifeCommentLimits/$(uid);}
+  function lifeText(x,max){return x is string && x.size()<=max;}
+  function lifeNonempty(x,max){return lifeText(x,max) && x.size()>=1;}
+  function lifeDate(x){return x is string && x.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');}
+  function lifeMeta(d){
+   return d.meta is map && d.meta.keys().hasOnly(['region','departure','arrival','operator','schedule','checked','validUntil'])
+    && d.meta.region in ['','전국','서울','경기','인천','강원','대전','세종','충북','충남','광주','전북','전남','대구','경북','부산','울산','경남','제주']
+    && lifeText(d.meta.departure,60) && lifeText(d.meta.arrival,60) && lifeText(d.meta.operator,80) && lifeText(d.meta.schedule,200)
+    && (d.meta.checked=='' || lifeDate(d.meta.checked)) && (d.meta.validUntil=='' || lifeDate(d.meta.validUntil))
+    && (d.category!='선박 시간표' || (lifeNonempty(d.meta.departure,60) && lifeNonempty(d.meta.arrival,60) && lifeNonempty(d.meta.operator,80) && lifeNonempty(d.meta.schedule,200) && lifeDate(d.meta.checked)));
+  }
+  function publishedLifePost(id){return validLifeId(id) && exists(lifePostPath(id)) && get(lifePostPath(id)).data.state=='published';}
   match /lifePosts/{id}{
    allow get,list: if resource.data.state=='published' || (signedIn() && resource.data.owner==request.auth.uid) || moderator();
-   allow create: if signedIn() && request.resource.data.keys().hasOnly(['category','title','body','source','state','owner','createdAt'])
+   allow create: if signedIn() && validLifeId(id) && request.resource.data.keys().hasOnly(['category','title','body','source','meta','state','owner','createdAt'])
     && request.resource.data.owner==request.auth.uid && request.resource.data.state=='pending' && request.resource.data.createdAt==request.time
-    && request.resource.data.category in ['자유게시판','생활정보','선박 시간표','프로그램 요청','오류 제보']
-    && request.resource.data.title is string && request.resource.data.title.size()>=1 && request.resource.data.title.size()<=100
-    && request.resource.data.body is string && request.resource.data.body.size()>=1 && request.resource.data.body.size()<=2000
-    && request.resource.data.source is string && request.resource.data.source.size()<=400
+    && request.resource.data.category in ['자유게시판','질문·답변','생활정보','선박 시간표','프로그램 요청','오류 제보','공지사항']
+    && (request.resource.data.category!='공지사항' || moderator())
+    && lifeNonempty(request.resource.data.title,100) && lifeNonempty(request.resource.data.body,2000)
+    && lifeText(request.resource.data.source,400)
     && (request.resource.data.source=='' || request.resource.data.source.matches('^https?://.+'))
-    && (request.resource.data.category!='선박 시간표' || request.resource.data.source!='')
+    && (!('meta' in request.resource.data) || lifeMeta(request.resource.data))
+    && (request.resource.data.category!='선박 시간표' || ('meta' in request.resource.data && lifeMeta(request.resource.data) && request.resource.data.source!=''))
     && (!exists(lifeLimitPath(request.auth.uid)) || request.time>get(lifeLimitPath(request.auth.uid)).data.at+duration.value(10,'m'))
     && getAfter(lifeLimitPath(request.auth.uid)).data.lastId==id && getAfter(lifeLimitPath(request.auth.uid)).data.at==request.time;
    allow update: if moderator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state']) && request.resource.data.state in ['pending','published','rejected'];
    allow delete: if moderator() || (signedIn() && resource.data.owner==request.auth.uid);
   }
   match /lifePostLimits/{uid}{
-   allow read: if signedIn() && request.auth.uid==uid;
-   function valid(){return signedIn() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['lastId','at']) && request.resource.data.lastId is string && request.resource.data.lastId.matches('^[A-Za-z0-9]{20}$') && request.resource.data.at==request.time && getAfter(lifePostPath(request.resource.data.lastId)).data.owner==uid && getAfter(lifePostPath(request.resource.data.lastId)).data.createdAt==request.time;}
+   allow get: if signedIn() && request.auth.uid==uid;
+   function valid(){return signedIn() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['lastId','at']) && validLifeId(request.resource.data.lastId) && request.resource.data.at==request.time && getAfter(lifePostPath(request.resource.data.lastId)).data.owner==uid && getAfter(lifePostPath(request.resource.data.lastId)).data.createdAt==request.time;}
    allow create: if valid();
    allow update: if valid() && request.time>resource.data.at+duration.value(10,'m');
-   allow delete: if false;
+   allow delete,list: if false;
+  }
+  match /lifeComments/{id}{
+   allow get,list: if (resource.data.state=='published' && publishedLifePost(resource.data.postId)) || (signedIn() && resource.data.owner==request.auth.uid) || moderator();
+   allow create: if signedIn() && validLifeId(id) && request.resource.data.keys().hasOnly(['postId','body','owner','state','createdAt'])
+    && request.resource.data.owner==request.auth.uid && request.resource.data.state=='pending' && request.resource.data.createdAt==request.time
+    && lifeNonempty(request.resource.data.body,500) && publishedLifePost(request.resource.data.postId)
+    && (!exists(lifeCommentLimitPath(request.auth.uid)) || request.time>get(lifeCommentLimitPath(request.auth.uid)).data.at+duration.value(1,'m'))
+    && getAfter(lifeCommentLimitPath(request.auth.uid)).data.lastId==id && getAfter(lifeCommentLimitPath(request.auth.uid)).data.at==request.time;
+   allow update: if moderator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state']) && request.resource.data.state in ['pending','published','rejected'];
+   allow delete: if moderator() || (signedIn() && resource.data.owner==request.auth.uid);
+  }
+  match /lifeCommentLimits/{uid}{
+   allow get: if signedIn() && request.auth.uid==uid;
+   function valid(){return signedIn() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['lastId','at']) && validLifeId(request.resource.data.lastId) && request.resource.data.at==request.time && getAfter(lifeCommentPath(request.resource.data.lastId)).data.owner==uid && getAfter(lifeCommentPath(request.resource.data.lastId)).data.createdAt==request.time;}
+   allow create: if valid();
+   allow update: if valid() && request.time>resource.data.at+duration.value(1,'m');
+   allow delete,list: if false;
+  }
+  match /lifeReports/{id}{
+   allow get,list,delete: if moderator();
+   allow create: if signedIn() && request.resource.data.keys().hasOnly(['postId','reporter','reason','detail','createdAt'])
+    && publishedLifePost(request.resource.data.postId) && request.resource.data.reporter==request.auth.uid
+    && id==request.resource.data.postId+'_'+request.auth.uid && request.resource.data.createdAt==request.time
+    && request.resource.data.reason in ['incorrect','privacy','spam','abuse','other'] && lifeText(request.resource.data.detail,300);
+   allow update: if false;
   }
   function lifePollPath(id){return /databases/$(database)/documents/lifePolls/$(id);}
+  function pollOption(x){return lifeNonempty(x,35);}
+  function pollOptions(a){
+   return a is list && a.size()>=2 && a.size()<=5 && a.toSet().size()==a.size()
+    && pollOption(a[0]) && pollOption(a[1])
+    && (a.size()<3 || pollOption(a[2])) && (a.size()<4 || pollOption(a[3])) && (a.size()<5 || pollOption(a[4]));
+  }
+  function numberIn(x,min,max){return x is int && x>=min && x<=max;}
+  function boundedList(a,n,max){
+   return a is list && a.size()==n && n>=2 && n<=5
+    && numberIn(a[0],0,max) && numberIn(a[1],0,max)
+    && (n<3 || numberIn(a[2],0,max)) && (n<4 || numberIn(a[3],0,max)) && (n<5 || numberIn(a[4],0,max));
+  }
+  function pollV2(p){
+   return p.v==2 && p.mode in ['attendance','dateMulti','choice','order']
+    && lifeText(p.detail,500) && (p.deadline==null || (p.deadline is timestamp && p.deadline>request.time))
+    && (p.mode=='order' ? boundedList(p.prices,p.options.size(),1000000) : (p.prices is list && p.prices.size()==0));
+  }
+  function pollOpen(p){return p.closed==false && (!('deadline' in p) || p.deadline==null || p.deadline>request.time);}
+  function validChoices(c,n,multi){
+   return c is list && c.size()>=1 && c.size()<=n && c.size()<=5 && (multi || c.size()==1) && c.toSet().size()==c.size()
+    && numberIn(c[0],0,n-1) && (c.size()<2 || numberIn(c[1],0,n-1)) && (c.size()<3 || numberIn(c[2],0,n-1))
+    && (c.size()<4 || numberIn(c[3],0,n-1)) && (c.size()<5 || numberIn(c[4],0,n-1));
+  }
+  function validVote(p,v){
+   return v.updatedAt==request.time &&
+    (p.get('v',1)==2
+     ? (lifeText(v.alias,40) && (p.mode=='order'
+       ? (v.keys().hasOnly(['alias','quantities','updatedAt']) && boundedList(v.quantities,p.options.size(),999) && !v.quantities.hasOnly([0]))
+       : (v.keys().hasOnly(['alias','choices','party','updatedAt']) && validChoices(v.choices,p.options.size(),p.mode=='dateMulti')
+          && numberIn(v.party,1,99) && ((p.mode=='attendance' && v.choices[0]==0) || v.party==1))))
+     : (v.keys().hasOnly(['choice','updatedAt']) && numberIn(v.choice,0,p.options.size()-1)));
+  }
   match /lifePolls/{id}{
    allow get: if signedIn();
-   allow list: if false;
-   allow create: if signedIn() && id.matches('^[A-Za-z0-9]{20}$') && request.resource.data.keys().hasOnly(['title','mode','options','owner','createdAt','closed'])
+   allow list: if signedIn() && resource.data.owner==request.auth.uid;
+   allow create: if signedIn() && validLifeId(id) && request.resource.data.keys().hasOnly(['v','title','mode','options','prices','detail','deadline','owner','createdAt','closed'])
     && request.resource.data.owner==request.auth.uid && request.resource.data.createdAt==request.time && request.resource.data.closed==false
-    && request.resource.data.title is string && request.resource.data.title.size()>=1 && request.resource.data.title.size()<=100
-    && request.resource.data.mode in ['attendance','date'] && request.resource.data.options is list
-    && request.resource.data.options.size()>=2 && request.resource.data.options.size()<=5
-    && request.resource.data.options[0] is string && request.resource.data.options[0].size()<=35
-    && request.resource.data.options[1] is string && request.resource.data.options[1].size()<=35
-    && (request.resource.data.options.size()<3 || (request.resource.data.options[2] is string && request.resource.data.options[2].size()<=35))
-    && (request.resource.data.options.size()<4 || (request.resource.data.options[3] is string && request.resource.data.options[3].size()<=35))
-    && (request.resource.data.options.size()<5 || (request.resource.data.options[4] is string && request.resource.data.options[4].size()<=35))
-    && (request.resource.data.mode!='attendance' || request.resource.data.options==['참석','불참','미정']);
+    && lifeNonempty(request.resource.data.title,100) && pollOptions(request.resource.data.options)
+    && (request.resource.data.mode!='attendance' || request.resource.data.options==['참석','불참','미정'])
+    && (('v' in request.resource.data) ? pollV2(request.resource.data) : (request.resource.data.keys().hasOnly(['title','mode','options','owner','createdAt','closed']) && request.resource.data.mode in ['attendance','date']));
    allow update: if signedIn() && resource.data.owner==request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closed']) && request.resource.data.closed is bool;
    allow delete: if false;
    match /votes/{uid}{
     allow get: if signedIn() && (request.auth.uid==uid || get(lifePollPath(id)).data.owner==request.auth.uid);
     allow list: if signedIn() && get(lifePollPath(id)).data.owner==request.auth.uid;
-    allow create,update: if signedIn() && request.auth.uid==uid && get(lifePollPath(id)).data.closed==false
-     && request.resource.data.keys().hasOnly(['choice','updatedAt']) && request.resource.data.choice is int && request.resource.data.choice>=0
-     && request.resource.data.choice<get(lifePollPath(id)).data.options.size() && request.resource.data.updatedAt==request.time;
-    allow delete: if false;
+    allow create,update: if signedIn() && request.auth.uid==uid && exists(lifePollPath(id)) && pollOpen(get(lifePollPath(id)).data) && validVote(get(lifePollPath(id)).data,request.resource.data);
+    allow delete: if signedIn() && request.auth.uid==uid;
    }
   }
   // Former event/group data is retained in Firestore, not exposed by this redesigned app.

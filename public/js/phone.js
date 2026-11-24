@@ -7,3 +7,6 @@ form.addEventListener('submit',event=>{
  result.className='result-box success';result.append(text('span','전환 당시 배정 규칙으로 계산한 추정 번호','eyebrow'),text('strong',out.estimated,'phone-result'),text('p',`${out.old} → ${out.estimated}`),text('p',out.disclaimer,'note'));
  const copy=document.createElement('button');copy.type='button';copy.className='btn secondary';copy.textContent='결과 복사';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(out.estimated);copy.textContent='복사했습니다';}catch{copy.textContent='복사할 수 없습니다';}});result.append(copy);
 });
+
+for(const a of document.querySelectorAll('[data-nav="tools"]'))a.setAttribute('aria-current','page');
+const reset=document.createElement('button');reset.type='button';reset.className='secondary';reset.textContent='다시 입력';reset.addEventListener('click',()=>{form.reset();result.hidden=true;result.replaceChildren();input.focus()});form.append(reset);

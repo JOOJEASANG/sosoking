@@ -1,0 +1,34 @@
+import fs from 'node:fs';
+import {initializeTestEnvironment,assertSucceeds,assertFails} from '@firebase/rules-unit-testing';
+import {collection,doc,getDoc,getDocs,query,where,setDoc,updateDoc,deleteDoc,writeBatch,serverTimestamp,Timestamp} from 'firebase/firestore';
+const env=await initializeTestEnvironment({projectId:'demo-sosoking',firestore:{rules:fs.readFileSync('firestore.rules','utf8')}});
+const owner=env.authenticatedContext('owner').firestore(),other=env.authenticatedContext('other').firestore(),moderator=env.authenticatedContext('moderator').firestore(),publicDb=env.unauthenticatedContext().firestore();
+const postId='a'.repeat(20),commentId='b'.repeat(20),pollId='c'.repeat(20),orderId='d'.repeat(20),oldId='e'.repeat(20),dateId='f'.repeat(20),ferryId='g'.repeat(20);
+const post={category:'생활정보',title:'테스트',body:'합성 자료',source:'',state:'pending',owner:'owner',createdAt:serverTimestamp()};
+const poll=(mode,options,prices=[])=>({v:2,title:'합성 조사',mode,options,prices,detail:'테스트',deadline:null,owner:'owner',closed:false,createdAt:serverTimestamp()});
+try{
+ await env.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),'moderators','moderator'),{enabled:true}));
+ await assertFails(setDoc(doc(owner,'lifePosts',postId),post));
+ let batch=writeBatch(owner);batch.set(doc(owner,'lifePosts',postId),post);batch.set(doc(owner,'lifePostLimits','owner'),{lastId:postId,at:serverTimestamp()});await assertSucceeds(batch.commit());
+ await assertFails(getDoc(doc(publicDb,'lifePosts',postId)));await assertSucceeds(getDoc(doc(owner,'lifePosts',postId)));
+ await assertFails(updateDoc(doc(other,'lifePosts',postId),{state:'published'}));await assertSucceeds(updateDoc(doc(moderator,'lifePosts',postId),{state:'published'}));
+ await assertSucceeds(getDocs(query(collection(publicDb,'lifePosts'),where('state','==','published'))));await assertSucceeds(getDocs(query(collection(owner,'lifePosts'),where('owner','==','owner'))));
+ batch=writeBatch(other);batch.set(doc(other,'lifeComments',commentId),{postId,body:'합성 댓글',owner:'other',state:'pending',createdAt:serverTimestamp()});batch.set(doc(other,'lifeCommentLimits','other'),{lastId:commentId,at:serverTimestamp()});await assertSucceeds(batch.commit());
+ await assertFails(getDoc(doc(publicDb,'lifeComments',commentId)));await assertSucceeds(updateDoc(doc(moderator,'lifeComments',commentId),{state:'published'}));
+ await assertSucceeds(getDocs(query(collection(publicDb,'lifeComments'),where('postId','==',postId),where('state','==','published'))));
+ const report=doc(other,'lifeReports',postId+'_other');await assertSucceeds(setDoc(report,{postId,reporter:'other',reason:'incorrect',detail:'합성',createdAt:serverTimestamp()}));await assertFails(getDoc(doc(owner,'lifeReports',postId+'_other')));await assertSucceeds(getDoc(doc(moderator,'lifeReports',postId+'_other')));
+ await assertSucceeds(setDoc(doc(owner,'lifePolls',pollId),poll('attendance',['참석','불참','미정'])));
+ await assertSucceeds(getDocs(query(collection(owner,'lifePolls'),where('owner','==','owner'))));await assertFails(getDocs(collection(other,'lifePolls')));
+ const vote=doc(other,'lifePolls',pollId,'votes','other');await assertSucceeds(setDoc(vote,{alias:'테스트',choices:[0],party:3,updatedAt:serverTimestamp()}));
+ await assertFails(setDoc(vote,{alias:'테스트',choices:[1],party:3,updatedAt:serverTimestamp()}));await assertSucceeds(getDocs(collection(owner,'lifePolls',pollId,'votes')));await assertFails(getDocs(collection(other,'lifePolls',pollId,'votes')));
+ await assertFails(updateDoc(doc(other,'lifePolls',pollId),{closed:true}));await assertSucceeds(updateDoc(doc(owner,'lifePolls',pollId),{closed:true}));await assertFails(setDoc(vote,{alias:'A',choices:[0],party:3,updatedAt:serverTimestamp()}));await assertSucceeds(deleteDoc(vote));
+ await assertSucceeds(setDoc(doc(owner,'lifePolls',orderId),poll('order',['A','B'],[5000,7000])));
+ const ov=doc(other,'lifePolls',orderId,'votes','other');await assertFails(setDoc(ov,{alias:'테스트',quantities:[0,0],updatedAt:serverTimestamp()}));await assertSucceeds(setDoc(ov,{alias:'테스트',quantities:[2,1],updatedAt:serverTimestamp()}));
+ await assertSucceeds(setDoc(doc(owner,'lifePolls',dateId),poll('dateMulti',['A','B','C'])));const dv=doc(other,'lifePolls',dateId,'votes','other');await assertSucceeds(setDoc(dv,{alias:'',choices:[0,2],party:1,updatedAt:serverTimestamp()}));await assertFails(setDoc(dv,{alias:'',choices:[0,0],party:1,updatedAt:serverTimestamp()}));
+ await assertSucceeds(setDoc(doc(owner,'lifePolls',oldId),{title:'이전',mode:'date',options:['A','B'],owner:'owner',closed:false,createdAt:serverTimestamp()}));await assertSucceeds(setDoc(doc(other,'lifePolls',oldId,'votes','other'),{choice:1,updatedAt:serverTimestamp()}));
+ await env.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),'lifePostLimits','owner'),{lastId:postId,at:Timestamp.fromMillis(Date.now()-3600000)}));
+ const ferry={...post,category:'선박 시간표',source:'https://example.com',meta:{region:'전남',departure:'A',arrival:'B',operator:'C',schedule:'09:00',checked:'2026-11-24',validUntil:''}};
+ batch=writeBatch(owner);batch.set(doc(owner,'lifePosts',ferryId),ferry);batch.set(doc(owner,'lifePostLimits','owner'),{lastId:ferryId,at:serverTimestamp()});await assertSucceeds(batch.commit());
+ await assertSucceeds(deleteDoc(doc(other,'lifeComments',commentId)));await assertSucceeds(deleteDoc(doc(owner,'lifePosts',postId)));
+ console.log('PASS: Firestore emulator compile and community/poll/order access rules.');
+}finally{await env.cleanup()}

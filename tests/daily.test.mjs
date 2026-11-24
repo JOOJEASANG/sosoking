@@ -84,10 +84,11 @@ test('daily check remains available as an independent program',()=>{
 
 test('life portal links to each implemented program and keeps existing daily functionality',()=>{
  const home=fs.readFileSync('public/index.html','utf8');
- for(const name of ['old-phone','event','ferry','orders','shift','loans','daily','community','my']){
+ for(const name of ['old-phone','event','ferry','orders','shift','community','my']){
   assert.ok(home.includes('/'+name+'.html'),name+' is linked');
   assert.ok(fs.existsSync('public/'+name+'.html'),name+' page exists');
  }
+ assert.ok(!home.includes('/loans.html')&&!home.includes('/daily.html'),'retired tools not on home');
  assert.ok(home.includes('id="toolSearch"'));
  assert.ok(home.includes('id="recentPosts"'));
  const rules=fs.readFileSync('firestore.rules','utf8');
