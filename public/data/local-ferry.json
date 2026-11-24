@@ -892,6 +892,39 @@
           ]
         }
       ]
+    },
+    {
+      "id": "dongri-gosa",
+      "region": "전남",
+      "area": "신안군 신의면",
+      "port": "신의 동리선착장",
+      "island": "고사도·평사도",
+      "operator": "고평사호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/188",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-25",
+      "duration": "고사도까지 약 20분",
+      "fare": "무료 안내",
+      "phone": "",
+      "address": "신안군 신의면 상태동리 산 108",
+      "note": "평사도 경유. 기상 및 승객 상황에 따른 변경 가능.",
+      "variants": [
+        {
+          "label": "참고 시간표",
+          "out": [
+            "07:30",
+            "12:20",
+            "16:30"
+          ],
+          "back": [
+            "07:00",
+            "11:50",
+            "16:00"
+          ]
+        }
+      ]
     }
   ]
 }

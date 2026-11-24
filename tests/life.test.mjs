@@ -44,12 +44,12 @@ test('settlement exactly reconciles every won including indivisible amounts',asy
  assert.throws(()=>settlePayments([{name:'A',paid:1},{name:'A',paid:0}]));
 });
 test('small-port ferry records contain source metadata and separate season and return times',()=>{
- const data=JSON.parse(fs.readFileSync('public/data/local-ferry.json','utf8'));assert.equal(data.rows.length,23);assert.equal(new Set(data.rows.map(r=>r.id)).size,23);assert.ok(data.rows.some(r=>r.sourceType==='블로그'));
+ const data=JSON.parse(fs.readFileSync('public/data/local-ferry.json','utf8'));assert.equal(data.rows.length,24);assert.equal(new Set(data.rows.map(r=>r.id)).size,24);assert.ok(data.rows.some(r=>r.sourceType==='블로그'));
  for(const r of data.rows){assert.match(r.sourceUrl,/^https:\/\//);assert.match(r.checked,/^2026-11-2[45]$/);assert.ok(r.note);assert.ok(r.variants.length);for(const v of r.variants){assert.ok(v.out.length||v.back.length||/호출|수시/.test(v.label));assert.ok([...v.out,...v.back].every(t=>/^([01]\d|2[0-3]):[0-5]\d$/.test(t)))}}
  const jukdo=data.rows.find(r=>r.id==='hongseong-jukdo');assert.equal(jukdo.variants.length,4);assert.ok(jukdo.note.includes('화요일'));assert.ok(!jukdo.variants[0].out.includes('17:00'));
  for(const name of ['index','event','ferry','community','orders','old-phone','shift','my','help','info','settlement']){const html=fs.readFileSync('public/'+name+'.html','utf8');assert.ok(!html.includes('data-nav="ferry"'),name);assert.ok(html.includes('data-nav="info"'),name)}
 });
 
-test('field information has a real source and confirmation date',()=>{const data=JSON.parse(fs.readFileSync('public/data/field-info.json','utf8'));assert.equal(data.rows.length,9);for(const r of data.rows){assert.match(r.source,/^https:/);assert.ok(r.checked&&r.body&&r.kind)}});
+test('field information has a real source and confirmation date',()=>{const data=JSON.parse(fs.readFileSync('public/data/field-info.json','utf8'));assert.equal(data.rows.length,12);for(const r of data.rows){assert.match(r.source,/^https:/);assert.ok(r.checked&&r.body&&r.kind)}});
 
 test('allocation respects group capacity and reports overflow',async()=>{const {allocateGroups}=await import('../public/js/life-core.js');const a=allocateGroups(['A','B','C','D'],[{name:'1',capacity:1},{name:'2',capacity:2}]);assert.equal(a.groups[0].people.length,1);assert.equal(a.groups[1].people.length,2);assert.deepEqual(a.unassigned,['D']);assert.throws(()=>allocateGroups(['A','A'],[{name:'1',capacity:2}]))});
