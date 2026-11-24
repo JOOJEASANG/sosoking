@@ -50,6 +50,54 @@ try{
  const reportFields={itemId:st(id),reporterUid:st(other.localId),reason:st('spam')};
  await commit(other.idToken,[{update:{name:reportName,fields:reportFields},updateTransforms:[stamp('createdAt')]}]);
  await request(root+'/itemReports/'+id+'_'+other.localId,owner.idToken,{expect:403});
+ // New service smoke checks, using only temporary records.
+ const baseName='projects/'+project+'/databases/(default)/documents/';
+ const makeId=()=>randomBytes(10).toString('hex');
+ const n=x=>({integerValue:String(x)}), b=x=>({booleanValue:x}), arr=x=>({arrayValue:{values:x}}), nul={nullValue:null};
+ const tempNames=[];
+ const temp=(path)=>{const name=baseName+path;tempNames.push(name);return name};
+ const make=(name,fields,stampField='createdAt')=>({update:{name,fields},updateTransforms:[stamp(stampField)]});
+ const patch=(name,fields)=>({update:{name,fields},updateMask:{fieldPaths:Object.keys(fields)}});
+ const postId=makeId(),postName=temp('lifePosts/'+postId),postQuota=temp('lifePostLimits/'+owner.localId);
+ const commentId=makeId(),commentName=temp('lifeComments/'+commentId),commentQuota=temp('lifeCommentLimits/'+other.localId);
+ const reportId=postId+'_'+other.localId,reportPath=temp('lifeReports/'+reportId);
+ const pollId=makeId(),pollName=temp('lifePolls/'+pollId),voteName=temp('lifePolls/'+pollId+'/votes/'+other.localId);
+ const orderId=makeId(),orderName=temp('lifePolls/'+orderId),orderVote=temp('lifePolls/'+orderId+'/votes/'+other.localId);
+ const postFields={category:st('생활정보'),title:st('자동 검사 전용 생활정보'),body:st('합성 데이터'),source:st(''),state:st('pending'),owner:st(owner.localId)};
+ const voteFields={alias:st('테스트'),choices:arr([n(0)]),party:n(3)};
+ const pollFields=(mode,opts,prices)=>({v:n(2),title:st('자동 검사 전용 조사'),mode:st(mode),options:arr(opts.map(st)),prices:arr(prices.map(n)),detail:st('검사'),deadline:nul,owner:st(owner.localId),closed:b(false)});
+ try{
+  await commit(owner.idToken,[make(postName,postFields)],403);
+  await commit(owner.idToken,[make(postName,postFields),make(postQuota,{lastId:st(postId)},'at')]);
+  await request(root+'/lifePosts/'+postId,null,{expect:403});
+  await request(root+'/lifePosts/'+postId,owner.idToken);
+  await commit(other.idToken,[patch(postName,{state:st('published')})],403);
+  await commit(adminToken,[patch(postName,{state:st('published')})]);
+  await request(root+'/lifePosts/'+postId,null);
+  await commit(other.idToken,[make(commentName,{postId:st(postId),body:st('자동 검사 전용 댓글'),owner:st(other.localId),state:st('pending')}),make(commentQuota,{lastId:st(commentId)},'at')]);
+  await request(root+'/lifeComments/'+commentId,null,{expect:403});
+  await commit(adminToken,[patch(commentName,{state:st('published')})]);
+  await request(root+'/lifeComments/'+commentId,null);
+  await commit(other.idToken,[make(reportPath,{postId:st(postId),reporter:st(other.localId),reason:st('incorrect'),detail:st('합성 신고')})]);
+  await request(root+'/lifeReports/'+reportId,owner.idToken,{expect:403});
+  await commit(owner.idToken,[make(pollName,pollFields('attendance',['참석','불참','미정'],[]))]);
+  await commit(other.idToken,[make(voteName,voteFields,'updatedAt')]);
+  await request(root+'/lifePolls/'+pollId+'/votes',owner.idToken);
+  await request(root+'/lifePolls/'+pollId+'/votes',other.idToken,{expect:403});
+  await commit(other.idToken,[patch(pollName,{closed:b(true)})],403);
+  await commit(owner.idToken,[patch(pollName,{closed:b(true)})]);
+  await commit(other.idToken,[make(voteName,voteFields,'updatedAt')],403);
+  await request(root+'/lifePolls/'+pollId+'/votes/'+other.localId,other.idToken,{method:'DELETE'});
+  await commit(owner.idToken,[make(orderName,pollFields('order',['메뉴A','메뉴B'],[5000,7000]))]);
+  await commit(other.idToken,[make(orderVote,{alias:st('테스트'),quantities:arr([n(0),n(0)])},'updatedAt')],403);
+  await commit(other.idToken,[make(orderVote,{alias:st('테스트'),quantities:arr([n(2),n(1)])},'updatedAt')]);
+  await request(root+'/lifePolls/'+orderId+'/votes',owner.idToken);
+  console.log('PASS: moderated posts/comments, private reports, private attendance/order responses, close/withdraw, nonzero quantities.');
+ }finally{
+  for(const name of [...tempNames].reverse()){
+   try{const response=await fetch('https://firestore.googleapis.com/v1/'+name,{method:'DELETE',headers:{authorization:'Bearer '+adminToken}});if(response.status!==200&&response.status!==404)console.error('Synthetic life cleanup failed',response.status,name.split('/').slice(-2).join('/'))}catch(e){console.error('Synthetic life cleanup failed',String(e))}
+  }
+ }
  console.log('PASS: old data blocked; shared item needs quota; public question readable; 24h duplicate blocked; reports private.');
 }finally{
  for(const name of [reportName,secondName,itemName,quotaName]){
