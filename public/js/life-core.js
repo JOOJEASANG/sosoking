@@ -43,3 +43,14 @@ export function filterPosts(posts,{category='',region='',search='',departure='',
  const text=x=>String(x??'').toLowerCase(),tokens=text(search).trim().split(/\s+/).filter(Boolean);
  return posts.filter(p=>{const m=p.meta||{},hay=text([p.title,p.body,p.category,m.region,m.departure,m.arrival,m.operator,m.schedule].join(' '));return (!category||p.category===category)&&(!region||m.region===region)&&(!departure||text(m.departure||p.title+' '+p.body).includes(text(departure)))&&(!arrival||text(m.arrival||p.title+' '+p.body).includes(text(arrival)))&&tokens.every(t=>hay.includes(t))}).sort((a,b)=>{if(sort==='checked')return String(b.meta?.checked||'').localeCompare(String(a.meta?.checked||''))||(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0);const d=(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0);return sort==='oldest'?-d:d});
 }
+
+export function settlePayments(rows){
+ if(!Array.isArray(rows)||rows.length<2||rows.length>30)throw Error('참여자는 2~30명이어야 합니다.');
+ const names=rows.map(r=>clean(r.name));if(names.some(n=>!n||n.length>40)||new Set(names).size!==names.length)throw Error('서로 다른 참여자 이름을 입력하세요.');
+ const paid=rows.map(r=>r.paid);if(paid.some(x=>!Number.isSafeInteger(x)||x<0||x>1000000000))throw Error('결제액은 0~10억원의 정수로 입력하세요.');
+ const total=paid.reduce((s,x)=>s+x,0),base=Math.floor(total/rows.length),extra=total%rows.length;
+ const people=rows.map((r,i)=>({name:names[i],paid:paid[i],share:base+(i<extra?1:0),balance:paid[i]-base-(i<extra?1:0)}));
+ const debt=people.filter(p=>p.balance<0).map(p=>({name:p.name,left:-p.balance})),credit=people.filter(p=>p.balance>0).map(p=>({name:p.name,left:p.balance}));let i=0,j=0;const transfers=[];
+ while(i<debt.length&&j<credit.length){const amount=Math.min(debt[i].left,credit[j].left);transfers.push({from:debt[i].name,to:credit[j].name,amount});debt[i].left-=amount;credit[j].left-=amount;if(!debt[i].left)i++;if(!credit[j].left)j++}
+ return {total,base,extra,people,transfers};
+}

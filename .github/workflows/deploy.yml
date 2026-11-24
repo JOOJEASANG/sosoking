@@ -74,12 +74,15 @@ jobs:
           const host = 'https://sosoking-481e6.web.app';
           const checks = [
             ['/', 'id="toolSearch"'],
-            ['/sw.js', 'sosoking-life-shell-v2'],
+            ['/sw.js', 'sosoking-life-shell-v3'],
             ['/daily.html', 'id="dailyGrid"'],
             ['/event.html', 'id="eventApp"'],
             ['/old-phone.html', 'id="numberForm"'],
             ['/orders.html', 'id="sharedOrderApp"'],
-            ['/ferry.html', 'id="postList"'],
+            ['/ferry.html', 'id="localFerryResults"'],
+            ['/info.html', '작은 섬 배시간표'],
+            ['/settlement.html', 'id="settleForm"'],
+            ['/data/local-ferry.json', 'hongseong-jukdo'],
             ['/community.html', 'id="postList"'],
             ['/shift.html', 'id="shiftForm"'],
             ['/loans.html', '이전 대여 기록'],
