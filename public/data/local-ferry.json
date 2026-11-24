@@ -1,0 +1,624 @@
+{
+  "schema": 1,
+  "checked": "2026-11-24",
+  "description": "소규모 포구·마을 도선의 공개 자료에 기재된 참고 시각. 실제 운항, 판매, 요금 보장 아님.",
+  "rows": [
+    {
+      "id": "hongseong-jukdo",
+      "region": "충남",
+      "area": "홍성군",
+      "port": "남당항",
+      "island": "죽도",
+      "operator": "홍주해운",
+      "sourceName": "인포다이브 · 홍성군 관광안내 인용",
+      "sourceUrl": "https://info.diveinsight.net/hongseong-jukdo-ferry/",
+      "published": "2026-09-27",
+      "sourceType": "블로그",
+      "checked": "2026-11-24",
+      "duration": "약 15분",
+      "fare": "성인 왕복 12,000원 (자료 기준)",
+      "phone": "041-631-0103",
+      "address": "홍성군 서부면 남당항로213번길 25-60",
+      "note": "매주 화요일 휴항. 5~10월만 17시 추가편. 평일 14시 출발 후 복귀 시각은 15:30으로 안내됨. 블로그의 군청 인용 자료로 현장 확인 필요.",
+      "variants": [
+        {
+          "label": "평일(월·수·목·금), 11~4월",
+          "out": [
+            "09:00",
+            "11:00",
+            "13:00",
+            "14:00",
+            "16:00"
+          ],
+          "back": [
+            "09:30",
+            "11:30",
+            "13:30",
+            "15:30",
+            "16:30"
+          ]
+        },
+        {
+          "label": "평일(월·수·목·금), 5~10월",
+          "out": [
+            "09:00",
+            "11:00",
+            "13:00",
+            "14:00",
+            "16:00",
+            "17:00"
+          ],
+          "back": [
+            "09:30",
+            "11:30",
+            "13:30",
+            "15:30",
+            "16:30",
+            "17:30"
+          ]
+        },
+        {
+          "label": "주말·공휴일, 11~4월",
+          "out": [
+            "08:30",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00"
+          ],
+          "back": [
+            "09:30",
+            "10:30",
+            "11:30",
+            "12:30",
+            "13:30",
+            "14:30",
+            "15:30",
+            "16:30"
+          ]
+        },
+        {
+          "label": "주말·공휴일, 5~10월",
+          "out": [
+            "08:30",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+            "17:00"
+          ],
+          "back": [
+            "09:30",
+            "10:30",
+            "11:30",
+            "12:30",
+            "13:30",
+            "14:30",
+            "15:30",
+            "16:30",
+            "17:30"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "janggohang-gukhwa",
+      "region": "충남",
+      "area": "당진시",
+      "port": "장고항",
+      "island": "국화도",
+      "operator": "국화훼리호",
+      "sourceName": "화성특례시 도선운항 안내",
+      "sourceUrl": "https://www.hscity.go.kr/www/partInfo/trnsportEnvrn/islandTrnsportInfo/piltgTrnsportSchdul.jsp",
+      "published": null,
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "성인 왕복 12,000원",
+      "phone": "010-4311-0432",
+      "address": "",
+      "note": "도선 시간표의 계절 구분에 따름. 물때·현장 운항 확인.",
+      "variants": [
+        {
+          "label": "비수기 11/15~3/14",
+          "out": [
+            "08:30",
+            "11:00",
+            "14:00",
+            "17:00"
+          ],
+          "back": [
+            "08:10",
+            "10:40",
+            "13:40",
+            "16:40"
+          ]
+        },
+        {
+          "label": "성수기 3/15~11/14",
+          "out": [
+            "08:00",
+            "10:00",
+            "12:00",
+            "14:00",
+            "16:00",
+            "18:00"
+          ],
+          "back": [
+            "07:40",
+            "09:40",
+            "11:40",
+            "13:40",
+            "15:40",
+            "17:40"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gungpyeong-gukhwa",
+      "region": "경기",
+      "area": "화성시",
+      "port": "궁평항",
+      "island": "국화도·입파도",
+      "operator": "서해도선1호",
+      "sourceName": "화성특례시 도선운항 안내",
+      "sourceUrl": "https://www.hscity.go.kr/www/partInfo/trnsportEnvrn/islandTrnsportInfo/piltgTrnsportSchdul.jsp",
+      "published": null,
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "성인 왕복 24,000원",
+      "phone": "010-8274-4050",
+      "address": "",
+      "note": "화요일 휴무. 비수기 전화 확인 필수. 입파도 기항은 원문 확인. 성수기 14:00은 수시편(7/31~8/15 정기 운항). 귀항 방향 시각은 별도 확인.",
+      "variants": [
+        {
+          "label": "비수기 10/9~3/31",
+          "out": [
+            "09:00",
+            "11:00",
+            "15:00"
+          ],
+          "back": []
+        },
+        {
+          "label": "성수기 4/1~10/8",
+          "out": [
+            "09:00",
+            "11:00",
+            "14:00",
+            "16:00"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "jeongok-ippa",
+      "region": "경기",
+      "area": "화성시",
+      "port": "전곡항",
+      "island": "입파도",
+      "operator": "경기도선호",
+      "sourceName": "화성특례시 도선운항 안내",
+      "sourceUrl": "https://www.hscity.go.kr/www/partInfo/trnsportEnvrn/islandTrnsportInfo/piltgTrnsportSchdul.jsp",
+      "published": null,
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "성인 왕복 24,000원",
+      "phone": "031-357-4556",
+      "address": "",
+      "note": "11시(입파도 12시)는 수시 운항이며 7~9월 주말에는 정기 운항. 단체 수시운항 문의.",
+      "variants": [
+        {
+          "label": "정기편",
+          "out": [
+            "09:00",
+            "13:00",
+            "16:00"
+          ],
+          "back": [
+            "10:00",
+            "14:00",
+            "17:00"
+          ]
+        },
+        {
+          "label": "수시편",
+          "out": [
+            "11:00"
+          ],
+          "back": [
+            "12:00"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seonsu-boleum",
+      "region": "인천",
+      "area": "강화군",
+      "port": "선수선착장",
+      "island": "볼음도·아차도·주문도(느리)",
+      "operator": "도선",
+      "sourceName": "인천 섬포털",
+      "sourceUrl": "https://isum.incheon.go.kr/tourGuide/guide.do?idxTab=4&key=2406190003",
+      "published": null,
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "",
+      "phone": "",
+      "address": "",
+      "note": "섬별 기항 및 복귀편은 선사에 확인. 공개 안내 적용기간 미표기.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "08:50",
+            "12:50",
+            "16:20"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "seonsu-jumun",
+      "region": "인천",
+      "area": "강화군",
+      "port": "선수선착장",
+      "island": "주문도(살곶이)",
+      "operator": "도선",
+      "sourceName": "인천 섬포털",
+      "sourceUrl": "https://isum.incheon.go.kr/tourGuide/guide.do?idxTab=4&key=2406190003",
+      "published": null,
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "약 45분",
+      "fare": "",
+      "phone": "",
+      "address": "",
+      "note": "직항 안내. 돌아오는 시각은 확인 필요.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "07:30",
+            "13:00",
+            "16:30"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "hari-seogeom",
+      "region": "인천",
+      "area": "강화군",
+      "port": "석모도 하리선착장",
+      "island": "미법도·서검도",
+      "operator": "도선",
+      "sourceName": "인천 섬포털",
+      "sourceUrl": "https://isum.incheon.go.kr/tourGuide/guide.do?idxTab=4&key=2406190003",
+      "published": null,
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "",
+      "phone": "",
+      "address": "",
+      "note": "경유 항로. 돌아오는 시각은 확인 필요.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "08:00",
+            "13:00",
+            "17:10"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "sinyang-yeonhong",
+      "region": "전남",
+      "area": "고흥군",
+      "port": "신양선착장",
+      "island": "연홍도",
+      "operator": "연홍호",
+      "sourceName": "전남 가고 싶은 섬",
+      "sourceUrl": "https://www.jndadohae.com/?sid=131",
+      "published": null,
+      "sourceType": "관광 안내",
+      "checked": "2026-11-24",
+      "duration": "약 5분",
+      "fare": "왕복 5,000원",
+      "phone": "010-8585-0769",
+      "address": "고흥군 금산면 대신로 276",
+      "note": "동계 마지막 출항 17:35. 복귀 시각은 매표 시 확인.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "08:00",
+            "09:50",
+            "11:05",
+            "12:35",
+            "14:35",
+            "16:05",
+            "18:05"
+          ],
+          "back": []
+        },
+        {
+          "label": "동계",
+          "out": [
+            "08:00",
+            "09:50",
+            "11:05",
+            "12:35",
+            "14:35",
+            "16:05",
+            "17:35"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "hoedong-geumho",
+      "region": "전남",
+      "area": "진도군",
+      "port": "회동항",
+      "island": "금호도",
+      "operator": "금다리호",
+      "sourceName": "진도군청 운항시간표",
+      "sourceUrl": "https://jindo.go.kr/home/sub.cs?m=919",
+      "published": "2026-11-03",
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "대인 3,000원(공개 도선료)",
+      "phone": "010-3117-5064",
+      "address": "",
+      "note": "매월 말일 전날 휴무. 현금 지급, 물때에 따른 승선 위치 확인.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "09:10",
+            "10:40",
+            "13:30",
+            "15:30",
+            "17:30"
+          ],
+          "back": [
+            "08:10",
+            "10:00",
+            "12:30",
+            "14:30",
+            "16:30"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chopyeong-modo",
+      "region": "전남",
+      "area": "진도군",
+      "port": "초평항",
+      "island": "모도",
+      "operator": "모세호",
+      "sourceName": "진도군청 운항시간표",
+      "sourceUrl": "https://jindo.go.kr/home/sub.cs?m=919",
+      "published": "2026-11-03",
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "대인 3,000원(공개 도선료)",
+      "phone": "010-2168-4042",
+      "address": "",
+      "note": "매월 마지막 주 토·일 휴무. 현금 지급, 승선 위치 사전 확인.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "09:00",
+            "13:00",
+            "15:00",
+            "17:20"
+          ],
+          "back": [
+            "08:30",
+            "12:30",
+            "14:30",
+            "16:50"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dangdu-neungsan",
+      "region": "전남",
+      "area": "신안군",
+      "port": "하의도 당두선착장",
+      "island": "능산도",
+      "operator": "망뫼호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/199",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-24",
+      "duration": "약 5분",
+      "fare": "무료(블로그 안내)",
+      "phone": "",
+      "address": "신안군 하의면 대리 529-46",
+      "note": "하의도에서 환승하는 소형 도선. 블로그 자료로 운항과 요금 재확인 필수.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "07:20",
+            "08:40",
+            "10:50",
+            "12:40",
+            "14:40",
+            "16:10"
+          ],
+          "back": [
+            "07:10",
+            "08:30",
+            "10:40",
+            "12:30",
+            "14:30",
+            "16:00"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dangdu-jangjae",
+      "region": "전남",
+      "area": "신안군",
+      "port": "하의도 당두선착장",
+      "island": "장재도",
+      "operator": "석동호",
+      "sourceName": "오늘의이슈 여행정보",
+      "sourceUrl": "https://wkdtjf1004.tistory.com/199",
+      "published": "2026-11-04",
+      "sourceType": "블로그",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "무료(블로그 안내)",
+      "phone": "",
+      "address": "신안군 하의면 대리 529-46",
+      "note": "하의도에서 환승. 블로그 자료로 운항 재확인 필수.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "07:35",
+            "09:05",
+            "12:05",
+            "16:15"
+          ],
+          "back": [
+            "07:30",
+            "09:00",
+            "12:00",
+            "16:10"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nokdong-hwado",
+      "region": "전남",
+      "area": "고흥군",
+      "port": "녹동항",
+      "island": "상화도·하화도(고흥)",
+      "operator": "도선",
+      "sourceName": "한국관광공사 대한민국 구석구석",
+      "sourceUrl": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=607f079c-d9eb-4b0c-a63c-48989a1923eb",
+      "published": null,
+      "sourceType": "관광 안내",
+      "checked": "2026-11-24",
+      "duration": "왕복 약 10~20분",
+      "fare": "",
+      "phone": "",
+      "address": "",
+      "note": "여수의 동명 섬과 구분. 관광공사 안내 시각이며 복귀편과 운항 여부 확인.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "10:00",
+            "13:00",
+            "16:00"
+          ],
+          "back": []
+        }
+      ]
+    },
+    {
+      "id": "jangseungpo-jisim",
+      "region": "경남",
+      "area": "거제시",
+      "port": "장승포항",
+      "island": "지심도",
+      "operator": "지심도 터미널",
+      "sourceName": "지심도 터미널",
+      "sourceUrl": "https://jisimdoro.com/",
+      "published": null,
+      "sourceType": "운영사",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "",
+      "phone": "",
+      "address": "",
+      "note": "16:30 들어가는 마지막 배는 숙박객만 이용. 운영사 예약 안내 확인.",
+      "variants": [
+        {
+          "label": "일반 안내",
+          "out": [
+            "08:30",
+            "10:30",
+            "12:30",
+            "14:30",
+            "16:30"
+          ],
+          "back": [
+            "08:50",
+            "10:50",
+            "12:50",
+            "14:50",
+            "16:50"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jisepo-jisim",
+      "region": "경남",
+      "area": "거제시",
+      "port": "지세포항",
+      "island": "지심도",
+      "operator": "지세포 도선",
+      "sourceName": "거제시 관광 도선 안내",
+      "sourceUrl": "https://www.geoje.go.kr/user/ship/view.geoje?basicSection=A03&basicSid=1667&menuCd=DOM_000008502004004000&pageIndex=1&searchKeyword=&searchType=",
+      "published": null,
+      "sourceType": "지자체",
+      "checked": "2026-11-24",
+      "duration": "",
+      "fare": "일반 성인 왕복 14,000원",
+      "phone": "055-682-5572",
+      "address": "거제시 일운면 지세포해안로 89-19",
+      "note": "거제시 안내와 장승포 운영사 안내가 다를 수 있어 현재 운항 여부를 먼저 문의. 복귀 시간 미확인.",
+      "variants": [
+        {
+          "label": "주중·주말 안내",
+          "out": [
+            "08:45",
+            "10:45",
+            "12:45",
+            "14:45",
+            "16:45"
+          ],
+          "back": []
+        }
+      ]
+    }
+  ]
+}
