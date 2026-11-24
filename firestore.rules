@@ -110,7 +110,7 @@ service cloud.firestore {
     && lifeText(request.resource.data.source,400)
     && (request.resource.data.source=='' || request.resource.data.source.matches('^https?://.+'))
     && (!('meta' in request.resource.data) || lifeMeta(request.resource.data))
-    && (request.resource.data.category!='선박 시간표' || ('meta' in request.resource.data && lifeMeta(request.resource.data) && (request.resource.data.source!='' || request.resource.data.meta.get('sourceType','') in ['현장','전화','기타'])))
+    && (request.resource.data.category!='선박 시간표' || ('meta' in request.resource.data && (request.resource.data.source!='' || request.resource.data.meta.get('sourceType','') in ['현장','전화','기타'])))
     && (!exists(lifeLimitPath(request.auth.uid)) || request.time>get(lifeLimitPath(request.auth.uid)).data.at+duration.value(10,'m'))
     && getAfter(lifeLimitPath(request.auth.uid)).data.lastId==id && getAfter(lifeLimitPath(request.auth.uid)).data.at==request.time;
    allow update: if moderator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state']) && request.resource.data.state in ['pending','published','rejected'];

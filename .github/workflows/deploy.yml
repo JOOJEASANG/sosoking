@@ -40,7 +40,7 @@ jobs:
       - if: always()
         run: firebase emulators:exec --only firestore --project demo-sosoking "node scripts/emulator-check.mjs"
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [check, integration]
     runs-on: ubuntu-latest
     timeout-minutes: 20
