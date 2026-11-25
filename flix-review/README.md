@@ -4,3 +4,6 @@
 - Actions의 flix-review artifact에서 candidates.json 및 health.json을 내려받습니다. 데이터는 7일 후 만료됩니다. 이미 등록한 영상은 후보에서 제외하고 상태만 점검합니다. 자동 삭제/공개는 하지 않습니다.
 - approvals.example.json을 복사하여 실제 후보 ID, 작품·회차·장르·언어·검토자 등을 입력하고 승인할 항목만 approved:true로 바꿉니다. node scripts/flix-catalog-review.mjs approvals.json 실행 시 flix-review/approved-catalog.json 생성. 원본 catalog는 수정하지 않습니다. 검토 후 기존 public/flix/catalog.json과 diff를 확인하고 PR로 등록합니다.
 - 기존 사이트는 archive/pre-flix-2026-11-26에 보존. Firestore 데이터와 규칙은 변경하지 않습니다. 관리자 웹 화면 및 대규모 자동 분류는 아직 별도 단계입니다.
+
+## 로컬 관리자 화면
+저장소를 내려받고 루트에서 `node scripts/flix-admin.mjs` 실행 후 http://127.0.0.1:8765 접속. 카탈로그와 수집 결과 JSON을 불러와 작품·회차 편집, 삭제, 후보 승인 및 검증된 JSON 내보내기를 수행합니다. 저장소 권한이 있는 운영자가 PR로 공개합니다. 로컬 전용이며 공개 호스팅이나 Firebase 인증/규칙을 변경하지 않습니다.
