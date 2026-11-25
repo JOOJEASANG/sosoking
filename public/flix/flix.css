@@ -8,3 +8,11 @@
 .quick-tools{display:flex;gap:8px;margin:10px 0}.quick-tools button{background:#272933;border-color:#ffffff25;font-size:14px}.episode-placeholder{display:grid;place-items:center;width:112px;aspect-ratio:16/9;background:#272933;border-radius:6px;flex:none}.spoiler-setting{display:block;margin:10px 0}#myTools{background:var(--panel);border-radius:12px;padding:16px;margin:18px 0}#myTools button{margin-right:8px}.shared-link{background:var(--panel);padding:18px;border-radius:12px;margin-bottom:16px}@media(max-width:760px){.episode-placeholder{width:87px}}
 /* Shared AI play-button identity; preserve the original artwork proportions. */
 .topbar .brand{flex:0 1 auto;min-width:0;max-width:330px}.brand-logo{display:block;width:clamp(210px,27vw,330px);height:auto;max-width:100%;object-fit:contain}.topbar #mainNav{flex:0 0 auto}.topbar #topSearch{flex:none}@media(max-width:760px){.topbar .brand{max-width:calc(100% - 52px);flex:0 1 auto}.brand-logo{width:min(280px,100%);max-height:54px}.topbar #mainNav{width:100%}}
+
+/* Fullscreen video gets all available height when site controls are idle. The
+   narrow external handle is outside the official player, never an overlay. */
+#cinemaScreen{min-width:0;position:relative}#cinemaReveal{flex:none;align-self:stretch;min-width:24px;width:24px;min-height:44px;padding:0;border:0;border-radius:0;background:#101116;color:#a9a9b4;font-size:23px;line-height:1}
+#cinema:fullscreen #cinemaScreen,#cinema.cinema-fallback #cinemaScreen{display:flex;flex:1;min-height:0;min-width:0;width:100%;align-items:stretch;justify-content:center}
+#cinema:fullscreen #playerWrap,#cinema.cinema-fallback #playerWrap{min-height:0;min-width:0;flex:1;max-width:none;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#cinema:fullscreen #playerWrap iframe,#cinema.cinema-fallback #playerWrap iframe{display:block;width:100%;height:100%;min-height:0}
+#cinema.controls-hidden #cinemaBar,#cinema.controls-hidden #cinemaHint{display:none}
