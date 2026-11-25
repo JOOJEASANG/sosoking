@@ -15,7 +15,7 @@ for(const [file,size] of [['favicon-32.png',32],['icons/sosoking-180.png',180],[
  assert.equal(binary.readUInt32BE(20),size,file);
 }
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-for(const required of ['src="/js/life.js"','rel="manifest"','apple-touch-icon','data-install-app','id="tools"','id="recentPosts"']){
+for(const required of ['src="/js/life.js"','rel="manifest"','apple-touch-icon','data-install-app','class="portal-links"','class="home-search"']){
  assert.ok(html.includes(required),required);
 }
 const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
