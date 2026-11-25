@@ -1,0 +1,40 @@
+name: AI video candidate collection
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sosoking-ai-candidate-collection
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Collect candidates and playback eligibility
+        id: collect
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          if [ -z "$YOUTUBE_API_KEY" ]; then
+            echo 'YouTube Data API key is not configured; collection skipped.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'collected=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          node scripts/flix-collect.mjs
+          echo 'collected=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.collect.outputs.collected == 'true'
+        with:
+          name: flix-review
+          path: |
+            flix-review/candidates.json
+            flix-review/health.json
+          retention-days: 7
+          if-no-files-found: error
