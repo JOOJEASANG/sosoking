@@ -115,8 +115,10 @@ jobs:
           import {setTimeout as sleep} from 'node:timers/promises';
           const host = 'https://sosoking-481e6.web.app';
           const checks = [
-            ['/', 'id="toolSearch"'],
-            ['/sw.js', 'sosoking-life-shell-v5'],
+            ['/', 'class="portal-links"'],
+            ['/tools.html', 'id="toolSearch"'],
+            ['/election.html', 'id="electionApp"'],
+            ['/sw.js', 'sosoking-life-shell-v6'],
             ['/daily.html', 'id="dailyGrid"'],
             ['/event.html', 'id="eventApp"'],
             ['/old-phone.html', 'id="numberForm"'],

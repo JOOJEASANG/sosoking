@@ -198,6 +198,35 @@ service cloud.firestore {
     allow delete: if signedIn() && request.auth.uid==uid;
    }
   }
+  function electionPath(id){return /databases/$(database)/documents/lifeElections/$(id);}
+  function electionData(id){return get(electionPath(id)).data;}
+  function electionOwner(id){return signedIn() && electionData(id).owner==request.auth.uid;}
+  function electionCodePath(id,code){return /databases/$(database)/documents/lifeElections/$(id)/codes/$(code);}
+  function electionCode(id,code){return signedIn() && code.matches('^[0-9a-f]{64}$') && exists(electionCodePath(id,code)) && get(electionCodePath(id,code)).data.enabled==true;}
+  function electionCandidates(a){return a is list && a.size()>=1 && a.size()<=5 && a.toSet().size()==a.size() && lifeNonempty(a[0],35) && (a.size()<2||lifeNonempty(a[1],35)) && (a.size()<3||lifeNonempty(a[2],35)) && (a.size()<4||lifeNonempty(a[3],35)) && (a.size()<5||lifeNonempty(a[4],35));}
+  match /lifeElections/{id}{
+   allow get: if signedIn();
+   allow list: if signedIn() && resource.data.owner==request.auth.uid;
+   allow create: if signedIn() && validLifeId(id) && request.resource.data.keys().hasOnly(['title','role','owner','phase','candidates','count','createdAt']) && request.resource.data.owner==request.auth.uid && request.resource.data.phase=='nomination' && request.resource.data.candidates==[] && lifeNonempty(request.resource.data.title,100) && lifeNonempty(request.resource.data.role,40) && numberIn(request.resource.data.count,2,100) && request.resource.data.createdAt==request.time;
+   allow update: if signedIn() && resource.data.owner==request.auth.uid && ((resource.data.phase=='nomination' && request.resource.data.phase=='voting' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phase','candidates']) && electionCandidates(request.resource.data.candidates)) || (resource.data.phase=='voting' && request.resource.data.phase=='closed' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phase'])));
+   allow delete: if false;
+   match /codes/{code}{
+    allow get: if signedIn();
+    allow list: if electionOwner(id);
+    allow create: if signedIn() && code.matches('^[0-9a-f]{64}$') && request.resource.data.keys().hasOnly(['enabled']) && request.resource.data.enabled==true && !exists(electionPath(id)) && getAfter(electionPath(id)).data.owner==request.auth.uid && getAfter(electionPath(id)).data.phase=='nomination';
+    allow update,delete: if false;
+   }
+   match /nominations/{code}{
+    allow get,list: if electionOwner(id);
+    allow create: if electionCode(id,code) && electionData(id).phase=='nomination' && request.resource.data.keys().hasOnly(['name','note']) && lifeNonempty(request.resource.data.name,35) && lifeText(request.resource.data.note,150);
+    allow update,delete: if false;
+   }
+   match /ballots/{code}{
+    allow get,list: if electionOwner(id) && electionData(id).phase=='closed';
+    allow create: if electionCode(id,code) && electionData(id).phase=='voting' && request.resource.data.keys().hasOnly(['choice']) && numberIn(request.resource.data.choice,-1,(electionData(id).candidates.size()==1?1:electionData(id).candidates.size()-1));
+    allow update,delete: if false;
+   }
+  }
   // Former event/group data is retained in Firestore, not exposed by this redesigned app.
   // Reinstatement requires the archived code and a deliberate rules migration.
   match /{document=**} { allow read, write: if false; }

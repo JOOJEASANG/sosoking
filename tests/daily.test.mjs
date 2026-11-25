@@ -83,14 +83,14 @@ test('daily check remains available as an independent program',()=>{
 });
 
 test('life portal links to each implemented program and keeps existing daily functionality',()=>{
- const home=fs.readFileSync('public/index.html','utf8');
+ const home=fs.readFileSync('public/index.html','utf8'),catalog=fs.readFileSync('public/tools.html','utf8');
  for(const name of ['old-phone','event','ferry','orders','shift','community','my']){
-  assert.ok(home.includes('/'+name+'.html'),name+' is linked');
+  assert.ok((home+catalog).includes('/'+name+'.html'),name+' is linked');
   assert.ok(fs.existsSync('public/'+name+'.html'),name+' page exists');
  }
  assert.ok(!home.includes('/loans.html')&&!home.includes('/daily.html'),'retired tools not on home');
- assert.ok(home.includes('id="toolSearch"'));
- assert.ok(home.includes('id="recentPosts"'));
+ assert.ok(catalog.includes('id="toolSearch"'));
+ assert.ok(home.includes('class="portal-links"'));
  const rules=fs.readFileSync('firestore.rules','utf8');
  assert.match(rules,/match \/lifePosts\/\{id\}/);
  assert.match(rules,/request.resource.data.state=='pending'/);

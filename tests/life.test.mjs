@@ -29,10 +29,10 @@ test('historical phone rule returns a calculation, not a contact lookup',()=>{
  assert.equal(convertOldNumber('011-234-5678').estimated,'010-5234-5678');assert.equal(convertOldNumber('010-1234-5678').ok,false);assert.equal(convertOldNumber('011-100-1234').ok,false);
 });
 test('each JavaScript module is syntactically valid and portal uses focused services',()=>{
- for(const p of ['life.js','life-core.js','life-shared.js','life-board.js','life-polls.js','life-local.js','phone.js','local-ferry.js','field-info.js','group-plan.js','memory-core.js','memories.js']){
+ for(const p of ['life.js','life-core.js','life-shared.js','life-board.js','life-polls.js','life-local.js','phone.js','local-ferry.js','field-info.js','group-plan.js','memory-core.js','memories.js','election-core.js','election.js']){
   const r=spawnSync(process.execPath,['--check','public/js/'+p],{encoding:'utf8'});assert.equal(r.status,0,p+': '+r.stderr);
  }
- const home=fs.readFileSync('public/index.html','utf8');assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,9);assert.match(home,/class="mobilebar"/);
+ const home=fs.readFileSync('public/index.html','utf8');const catalog=fs.readFileSync('public/tools.html','utf8');assert.equal((catalog.match(/class="tool" data-tool=/g)||[]).length,10);assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,0);assert.match(home,/소<\/b>소한 불편/);assert.match(home,/class="mobilebar"/);
  const ferry=fs.readFileSync('public/ferry.html','utf8');assert.match(ferry,/name="checked"/);assert.match(ferry,/name="departure"/);assert.match(ferry,/localFerryResults/);
  const rules=fs.readFileSync('firestore.rules','utf8');assert.equal((rules.match(/match \/\{document=\*\*\}/g)||[]).length,1);assert.match(rules,/match \/lifeComments\/\{id\}/);assert.match(rules,/match \/lifeReports\/\{id\}/);assert.match(rules,/function validVote/);
 });
@@ -63,3 +63,6 @@ test('little memories: month end and leap year, elapsed days, due override, back
  assert.deepEqual(parseMemoryBackup(JSON.stringify({schema:1,items:[item]})),[item]);
  assert.throws(()=>parseMemoryBackup(JSON.stringify({schema:1,items:[item,item]})));assert.throws(()=>normalizeMemory({...item,history:[{date:'2026-02-30',amount:null,note:''}]}));
 });
+
+test('individual burden settlement balances and validates total',async()=>{const {settlePayments}=await import('../public/js/life-core.js');const s=settlePayments([{name:'A',paid:10000,share:3000},{name:'B',paid:0,share:7000}],true);assert.deepEqual(s.transfers,[{from:'B',to:'A',amount:7000}]);assert.throws(()=>settlePayments([{name:'A',paid:10000,share:0},{name:'B',paid:0,share:0}],true))});
+test('election tally handles abstention, ties and one-candidate approval',async()=>{const {candidateNames,countElection,makeCode,codeHash}=await import('../public/js/election-core.js');assert.deepEqual(candidateNames(' A\nB '),['A','B']);assert.throws(()=>candidateNames('A\nA'));assert.match(countElection(['A','B'],[0,1,-1]).summary,/동점/);assert.equal(countElection(['A'],[0,0,1,-1]).summary,'찬성 과반');assert.equal(countElection(['A'],[-1]).summary,'유효표 없음');const code=makeCode();assert.match(code,/^[0-9a-f]{32}$/);assert.match(await codeHash(code),/^[0-9a-f]{64}$/);assert.equal(await codeHash(code),await codeHash(code.toUpperCase()));await assert.rejects(codeHash('bad'))});

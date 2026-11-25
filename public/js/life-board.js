@@ -2,7 +2,8 @@ import {collection,doc,getDoc,getDocs,query,where,orderBy,limit,setDoc,updateDoc
 import {$,page,qs,node,btn,link,db,user,list,save,copy,share,empty,dateText,actionRow,errText} from './life-shared.js';
 import {clean,validId,validDate,dateKey,routeStatus,filterPosts} from './life-core.js';
 export const categories=['자유게시판','질문·답변','정보 요청','생활정보','선박 시간표','프로그램 요청','오류 제보','공지사항'];
-const catLabel=c=>c||'전체 게시글';
+const groups={'자유게시판':['자유게시판'],'정보 요청':['정보 요청','질문·답변'],'생활정보':['생활정보','선박 시간표'],'프로그램 요청':['프로그램 요청','오류 제보']};
+const catLabel=c=>({'생활정보':'정보 공유','프로그램 요청':'서비스 제안'})[c]||c||'전체 게시글';
 const reasons={'incorrect':'잘못된 정보','privacy':'개인정보 노출','spam':'광고·스팸','abuse':'부적절한 내용','other':'기타'};
 export const postUrl=p=>(p.category==='선박 시간표'?'/ferry.html':'/community.html')+'?post='+p.id;
 const isFerry=p=>p.category==='선박 시간표';
@@ -46,9 +47,9 @@ async function detail(id){const target=$('#postDetail');if(!target||!validId(id)
  }catch(e){empty(target,'게시글이 공개되지 않았거나 삭제되었습니다.')}
 }
 export function initBoard(){const ferry=page==='ferry.html',filter=$('#boardFilter');const initial=categories.includes(qs.get('category'))?qs.get('category'):'';if(filter)filter.value=initial;const target=$('#postList'),more=$('#morePosts'),counter=$('#boardCount');let data=[],shown=12,failed=false,seq=0;
- const render=()=>{if(failed)return;const category=ferry?'선박 시간표':filter.value;const items=filterPosts(ferry?data.filter(p=>!p.meta?.sourceType):data,{category,region:$('#regionFilter').value,search:$('#postSearch').value,departure:$('#departFilter')?.value||'',arrival:$('#arriveFilter')?.value||'',sort:$('#postSort').value});$('#boardTitle').textContent=ferry?'항로 찾아보기':catLabel(category);counter.textContent='검색 결과 '+items.length+'건'+(data.length>=200?' · 최대 200건 조회':'');target.replaceChildren();if(!items.length)empty(target,ferry?'조건에 맞는 운항 정보가 없습니다. 알고 있는 항로를 제보해 주세요.':'해당 게시판의 공개 글이 없습니다. 첫 글을 남겨보세요.');for(const p of items.slice(0,shown))target.append(postEntry(p,{preview:true,actions:ferry}));more.hidden=items.length<=shown;document.querySelectorAll('[data-board-cat]').forEach(b=>{const yes=b.dataset.boardCat===category;b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes))})};
+ const render=()=>{if(failed)return;const category=ferry?'선박 시간표':filter.value;const pool=ferry?data.filter(p=>!p.meta?.sourceType):data.filter(p=>!category||(groups[category]||[category]).includes(p.category));const items=filterPosts(pool,{category:ferry?category:'',region:$('#regionFilter').value,search:$('#postSearch').value,departure:$('#departFilter')?.value||'',arrival:$('#arriveFilter')?.value||'',sort:$('#postSort').value});$('#boardTitle').textContent=ferry?'항로 찾아보기':catLabel(category);counter.textContent='검색 결과 '+items.length+'건'+(data.length>=200?' · 최대 200건 조회':'');target.replaceChildren();if(!items.length)empty(target,ferry?'조건에 맞는 운항 정보가 없습니다. 알고 있는 항로를 제보해 주세요.':'해당 게시판의 공개 글이 없습니다. 첫 글을 남겨보세요.');for(const p of items.slice(0,shown))target.append(postEntry(p,{preview:true,actions:ferry}));more.hidden=items.length<=shown;document.querySelectorAll('[data-board-cat]').forEach(b=>{const yes=b.dataset.boardCat===category;b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes))})};
  async function refresh(){const n=++seq;failed=false;target.replaceChildren(node('p','불러오는 중입니다.'));try{const next=await published();if(n!==seq)return;data=next;shown=12;render()}catch(e){if(n!==seq)return;failed=true;counter.textContent='연결 오류';empty(target,'정보를 불러오지 못했습니다. 새로고침을 눌러 다시 시도하세요.');more.hidden=true}}
- if(filter){for(const cat of ['',...categories]){const b=btn(catLabel(cat),()=>{filter.value=cat;shown=12;render()});b.dataset.boardCat=cat;$('#boardCategories').append(b)}}
+ if(filter){for(const cat of ['',...Object.keys(groups)]){const b=btn(catLabel(cat),()=>{filter.value=cat;shown=12;render()});b.dataset.boardCat=cat;$('#boardCategories').append(b)}}
  for(const id of ['#boardFilter','#regionFilter','#postSearch','#departFilter','#arriveFilter','#postSort'])$(id)?.addEventListener(id.includes('Search')||id.includes('depart')||id.includes('arrive')?'input':'change',()=>{shown=12;render()});more.addEventListener('click',()=>{shown+=12;render()});$('#refreshPosts').addEventListener('click',refresh);
  bindForm(ferry,filter);refresh();if(qs.get('post'))detail(qs.get('post'));
 }
