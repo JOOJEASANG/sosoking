@@ -1,5 +1,5 @@
-import {$,page,node,btn,list,read,save,empty,csv,download,metric,actionRow} from './life-shared.js';
-import {dateKey,makeShift,shiftIcs,won,uniqueOptions,clean} from './life-core.js';
+import {$,node,btn,list,save,empty,csv,actionRow} from './life-shared.js';
+import {won,clean} from './life-core.js';
 export function initLocalOrders(){
  const form=$('#orderForm');if(!form)return;let editing=-1;
  function grouped(rows){let m=new Map();for(const r of rows){let key=JSON.stringify([r.item,r.price]);let x=m.get(key)||{item:r.item,qty:0,price:r.price};x.qty+=r.qty;m.set(key,x)}return [...m.values()]}
@@ -7,11 +7,4 @@ export function initLocalOrders(){
  render();form.addEventListener('submit',e=>{e.preventDefault();const item=clean(form.elements.namedItem('item').value),qty=Number(form.elements.qty.value),price=Number(form.elements.price.value);if(!item||!Number.isInteger(qty)||qty<1||qty>100000||!Number.isInteger(price)||price<0||price>100000000)return;let rows=list('orders');if(editing>=0&&editing<rows.length)rows[editing]={item,qty,price};else rows.push({item,qty,price});if(save('orders',rows)){editing=-1;form.reset();form.querySelector('button').textContent='주문 추가';render()}});
  $('#orderCSV').addEventListener('click',()=>csv('sosoking-orders.csv',[['상품','수량','단가','금액'],...grouped(list('orders')).map(r=>[r.item,r.qty,r.price,r.qty*r.price])]));
  if(list('orders').length&&!$('#localOrders').hidden)$('#localOrders').open=true;
-}
-export function initShift(){
- const f=$('#shiftForm');if(!f)return;const today=dateKey(new Date()),saved=read('shift-settings',{});f.elements.start.value=saved?.start||today;f.elements.month.value=today.slice(0,7);f.elements.pattern.value=saved?.pattern||f.elements.pattern.value;let days=[];
- function render(){try{const pattern=String(f.elements.pattern.value).split(',').map(clean).filter(Boolean);days=makeShift(f.elements.start.value,f.elements.month.value,pattern);save('shift-settings',{start:f.elements.start.value,pattern:f.elements.pattern.value});const el=$('#shiftResult'),metrics=node('div',undefined,'metrics'),count=new Map();for(const d of days)count.set(d.kind,(count.get(d.kind)||0)+1);for(const [kind,num] of count)metrics.append(metric(kind,num+'일'));const grid=node('div',undefined,'calendar');for(const d of ['일','월','화','수','목','금','토'])grid.append(node('div',d,'weekday'));for(let i=0;i<days[0].weekday;i++)grid.append(node('div'));for(const d of days){const box=node('div',undefined,'day');box.dataset.kind=d.kind;if(d.date===today)box.classList.add('today');box.append(node('b',Number(d.date.slice(-2))),node('span',d.kind));grid.append(box)}el.replaceChildren(node('h2',f.elements.month.value.replace('-','년 ')+'월 근무표'),metrics,grid)}catch(e){days=[];empty($('#shiftResult'),e.message)}}
- f.addEventListener('submit',e=>{e.preventDefault();render()});$('#shiftPreset').addEventListener('change',e=>{if(e.target.value){f.elements.pattern.value=e.target.value;render()}});
- function move(n){let [y,m]=f.elements.month.value.split('-').map(Number);if(!Number.isFinite(y)||!Number.isFinite(m))return;const d=new Date(y,m-1+n,1);f.elements.month.value=dateKey(d).slice(0,7);render()}
- $('#todayShift')?.addEventListener('click',()=>{f.elements.month.value=today.slice(0,7);render()});$('#shiftCSV')?.addEventListener('click',()=>{if(days.length)csv('근무표-'+f.elements.month.value+'.csv',[['날짜','근무'],...days.map(d=>[d.date,d.kind])])});$('#prevShift').addEventListener('click',()=>move(-1));$('#nextShift').addEventListener('click',()=>move(1));$('#printShift').addEventListener('click',()=>{if(days.length)window.print()});$('#exportShift').addEventListener('click',()=>{if(days.length)download('sosoking-shift-'+f.elements.month.value+'.ics',shiftIcs(days),'text/calendar;charset=utf-8')});render();
 }

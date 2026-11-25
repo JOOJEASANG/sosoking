@@ -3,7 +3,7 @@ import {GoogleAuthProvider,linkWithPopup,signInWithPopup,signOut} from 'firebase
 import {$,page,qs,node,btn,link,user,list,save,copy,empty,download,actionRow,dateText,errText} from './life-shared.js';
 import {validId} from './life-core.js';
 import {initPolls} from './life-polls.js';
-import {initLocalOrders,initShift} from './life-local.js';
+import {initLocalOrders} from './life-local.js';
 import {initBoard,recentPosts,loadMyContent,loadModeration,postUrl} from './life-board.js';
 import {initLocalFerry} from './local-ferry.js';
 import {initSettlement} from './life-settlement.js';
@@ -35,7 +35,6 @@ if(page==='tools.html')initHome();
 if(page==='community.html'||page==='ferry.html')initBoard();
 if(page==='event.html'||page==='orders.html')initPolls();
 if(page==='orders.html')initLocalOrders();
-if(page==='shift.html')initShift();
 if(page==='my.html')initMy();
 
 if(page==='ferry.html')initLocalFerry();

@@ -118,7 +118,7 @@ jobs:
             ['/', 'class="portal-links"'],
             ['/tools.html', 'id="toolSearch"'],
             ['/election.html', 'id="electionApp"'],
-            ['/sw.js', 'sosoking-life-shell-v7'],
+            ['/sw.js', 'sosoking-life-shell-v8'],
             ['/daily.html', 'id="dailyGrid"'],
             ['/event.html', 'id="eventApp"'],
             ['/old-phone.html', 'id="numberForm"'],
@@ -131,7 +131,7 @@ jobs:
             ['/data/local-ferry.json', 'hongseong-jukdo'],
             ['/data/field-info.json', '마을 교통'],
             ['/community.html', 'id="postList"'],
-            ['/shift.html', 'id="shiftForm"'],
+
             ['/loans.html', '이전 대여 기록'],
             ['/help.html', '개인정보 및 데이터 안내'],
             ['/my.html', 'id="myEvents"'],
@@ -163,6 +163,8 @@ jobs:
             if (attempt < 12) await sleep(5000);
           }
           if (remaining.length) throw Error('Live verification failed for: ' + remaining.map(([path]) => path).join(', '));
+          const removed = await fetch(host + '/shift.html?_deploy_verify=' + process.env.GITHUB_SHA, {headers:{'cache-control':'no-cache'}});
+          if (removed.status !== 404) throw Error('Removed shift page must return 404, got ' + removed.status);
           NODE
       - name: Verify shared item protections with synthetic data
         env:
