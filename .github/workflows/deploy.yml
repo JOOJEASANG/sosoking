@@ -64,23 +64,50 @@ jobs:
           EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          pr="$(gh api "repos/$REPO/pulls/$PR_NUMBER")"
-          test "$(jq -r .state <<<"$pr")" = open
-          test "$(jq -r .draft <<<"$pr")" = false
-          test "$(jq -r .head.sha <<<"$pr")" = "$EXPECTED_HEAD"
-          test "$(jq -r .base.ref <<<"$pr")" = main
-          test "$(jq -r .head.repo.full_name <<<"$pr")" = "$REPO"
-          test "$(jq -r .user.login <<<"$pr")" = "${REPO%%/*}"
-          actual_base="$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)"
-          if [ "$actual_base" != "$EXPECTED_BASE" ]; then
-            echo "::error::Main changed after this PR was tested; retest on the latest main before merging."
-            exit 1
-          fi
-          merged="$(gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/merge" -f sha="$EXPECTED_HEAD" -f merge_method=merge)"
-          test "$(jq -r .merged <<<"$merged")" = true
-          echo "Merged commit: $(jq -r .sha <<<"$merged")"
-          # A GITHUB_TOKEN merge does not trigger push workflows. Dispatch explicitly.
-          gh workflow run deploy.yml --repo "$REPO" --ref main
+          # Retry only API transport/invalid JSON failures. Recheck exact head and base before merge.
+          read_json() {
+            local response
+            for attempt in 1 2 3 4 5; do
+              if response="$(gh api "$@")" && jq -e 'type == "object"' >/dev/null 2>&1 <<<"$response"; then
+                printf '%s\n' "$response"
+                return 0
+              fi
+              sleep $((attempt * 2))
+            done
+            return 1
+          }
+          merged_ok=false
+          for attempt in 1 2 3 4 5; do
+            pr="$(read_json "repos/$REPO/pulls/$PR_NUMBER")"
+            test "$(jq -r .head.sha <<<"$pr")" = "$EXPECTED_HEAD"
+            test "$(jq -r .base.ref <<<"$pr")" = main
+            test "$(jq -r .head.repo.full_name <<<"$pr")" = "$REPO"
+            test "$(jq -r .user.login <<<"$pr")" = "${REPO%%/*}"
+            if [ "$(jq -r .merged <<<"$pr")" = true ]; then
+              merged_ok=true
+              break
+            fi
+            test "$(jq -r .state <<<"$pr")" = open
+            test "$(jq -r .draft <<<"$pr")" = false
+            actual_base="$(read_json "repos/$REPO/git/ref/heads/main" | jq -er .object.sha)"
+            if [ "$actual_base" != "$EXPECTED_BASE" ]; then
+              echo "::error::Main changed after tests. Retest on latest main."
+              exit 1
+            fi
+            if merged="$(gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/merge" -f sha="$EXPECTED_HEAD" -f merge_method=merge)" && jq -e '.merged == true' >/dev/null 2>&1 <<<"$merged"; then
+              merged_ok=true
+              echo "Merged commit: $(jq -r .sha <<<"$merged")"
+              break
+            fi
+            sleep $((attempt * 2))
+          done
+          test "$merged_ok" = true
+          # GITHUB_TOKEN merge does not trigger push workflows. Dispatch main explicitly.
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run deploy.yml --repo "$REPO" --ref main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [check, integration]
@@ -118,7 +145,7 @@ jobs:
             ['/', 'class="portal-links"'],
             ['/tools.html', 'id="toolSearch"'],
             ['/election.html', 'id="electionApp"'],
-            ['/sw.js', 'sosoking-life-shell-v9'],
+            ['/sw.js', 'sosoking-life-shell-v10'],
             ['/daily.html', 'id="dailyGrid"'],
             ['/event.html', 'id="eventApp"'],
             ['/old-phone.html', 'id="numberForm"'],
