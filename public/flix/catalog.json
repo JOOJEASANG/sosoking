@@ -64,6 +64,102 @@
         "start": 5260
       }
     ],
-    "addedAt": "2026-11-26"
+    "addedAt": "2026-11-26",
+    "type": "드라마"
+  },
+  {
+    "id": "glab-omnibus",
+    "title": "AI 복수극·로맨스 옴니버스",
+    "creator": "G-LAB (Laboratorium Hantu)",
+    "genre": "로맨스·스릴러",
+    "type": "드라마",
+    "status": "완결",
+    "language": "한국어",
+    "addedAt": "2026-11-26",
+    "description": "제작자가 공개한 9편의 독립 이야기 모음. 원본 타임라인으로 선택합니다.",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "내가 죽인 남자가 살아있다",
+        "videoId": "b_YLl439CE0",
+        "start": 0,
+        "end": 1480
+      },
+      {
+        "number": 2,
+        "title": "타로카드 속 남자",
+        "videoId": "b_YLl439CE0",
+        "start": 1480,
+        "end": 2924
+      },
+      {
+        "number": 3,
+        "title": "국밥집 며느리와 시어머니",
+        "videoId": "b_YLl439CE0",
+        "start": 2924,
+        "end": 3345
+      },
+      {
+        "number": 4,
+        "title": "다시 사랑한다 말할까?",
+        "videoId": "b_YLl439CE0",
+        "start": 3345,
+        "end": 5261
+      },
+      {
+        "number": 5,
+        "title": "세상에서 가장 차가운 도장",
+        "videoId": "b_YLl439CE0",
+        "start": 5261,
+        "end": 6242
+      },
+      {
+        "number": 6,
+        "title": "시월드 유산의 아픔",
+        "videoId": "b_YLl439CE0",
+        "start": 6242,
+        "end": 7462
+      },
+      {
+        "number": 7,
+        "title": "붉은 달 지는 밤 황제는 울었다",
+        "videoId": "b_YLl439CE0",
+        "start": 7462,
+        "end": 8936
+      },
+      {
+        "number": 8,
+        "title": "침묵의 식탁",
+        "videoId": "b_YLl439CE0",
+        "start": 8936,
+        "end": 10006
+      },
+      {
+        "number": 9,
+        "title": "가면의 신부",
+        "videoId": "b_YLl439CE0",
+        "start": 10006
+      }
+    ]
+  },
+  {
+    "id": "today-love",
+    "title": "오늘, 사랑하며 살고있나요?",
+    "creator": "My first praise",
+    "genre": "로맨스",
+    "type": "영화",
+    "status": "완결",
+    "language": "한국어",
+    "addedAt": "2026-11-26",
+    "description": "오늘의 소중함을 돌아보는 AI 단편영화.",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "본편",
+        "videoId": "CF2HKjJrOEo",
+        "start": 0,
+        "publishedAt": "2026-05-11"
+      }
+    ]
   }
 ]
