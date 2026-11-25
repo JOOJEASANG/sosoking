@@ -1,0 +1,68 @@
+[
+  {
+    "id": "seocho-24",
+    "title": "서초동 24시",
+    "creator": "소통남",
+    "genre": "범죄·스릴러",
+    "status": "완결",
+    "language": "한국어",
+    "description": "8부작 AI 법정 드라마 통합본. 제작자가 공개한 회차별 챕터를 기준으로 탐색합니다.",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "법과 정의, 그리고 명함",
+        "videoId": "gW58QTOplF0",
+        "start": 0,
+        "end": 802
+      },
+      {
+        "number": 2,
+        "title": "1심의 무게, 돈으로 산 방패",
+        "videoId": "gW58QTOplF0",
+        "start": 802,
+        "end": 1754
+      },
+      {
+        "number": 3,
+        "title": "위험한 퍼즐 조각, 과거의 그림자",
+        "videoId": "gW58QTOplF0",
+        "start": 1754,
+        "end": 2567
+      },
+      {
+        "number": 4,
+        "title": "법정의 의혹, 일기장의 진실",
+        "videoId": "gW58QTOplF0",
+        "start": 2567,
+        "end": 3353
+      },
+      {
+        "number": 5,
+        "title": "법정의 증언, 무죄의 경계에서",
+        "videoId": "gW58QTOplF0",
+        "start": 3353,
+        "end": 3887
+      },
+      {
+        "number": 6,
+        "title": "진실의 균열, 대법원의 문턱",
+        "videoId": "gW58QTOplF0",
+        "start": 3887,
+        "end": 4558
+      },
+      {
+        "number": 7,
+        "title": "양심의 무게, 진실의 시작",
+        "videoId": "gW58QTOplF0",
+        "start": 4558,
+        "end": 5260
+      },
+      {
+        "number": 8,
+        "title": "정의의 끝, 진실의 승리",
+        "videoId": "gW58QTOplF0",
+        "start": 5260
+      }
+    ]
+  }
+]
