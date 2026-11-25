@@ -1,0 +1,70 @@
+name: AI영상 링크 등록 및 검토
+on:
+  workflow_dispatch:
+    inputs:
+      links:
+        description: '유튜브 영상·재생목록·채널 URL (여러 개는 공백으로 구분)'
+        required: true
+        type: string
+      approved:
+        description: '직접 시청·AI 제작·권리·언어·회차 순서를 확인했습니다 (등록 초안 생성)'
+        required: true
+        default: false
+        type: boolean
+      work_id:
+        description: '작품 ID (기존 작품이면 동일 ID, 신규 영문 ID)'
+        required: false
+        type: string
+      work_title:
+        description: '신규 작품 제목'
+        required: false
+        type: string
+      genre:
+        description: '신규 작품 장르'
+        required: false
+        type: string
+      work_type:
+        description: '신규 작품 종류'
+        type: choice
+        options: [드라마, 영화, 애니메이션]
+      status:
+        description: '신규 작품 상태'
+        type: choice
+        options: [연재 중, 완결]
+      description:
+        description: '신규 작품 소개'
+        required: false
+        type: string
+permissions:
+  contents: read
+jobs:
+  review:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify and prepare draft
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          VIDEO_LINKS: ${{ inputs.links }}
+          REGISTER_APPROVED: ${{ inputs.approved }}
+          WORK_ID: ${{ inputs.work_id }}
+          WORK_TITLE: ${{ inputs.work_title }}
+          WORK_GENRE: ${{ inputs.genre }}
+          WORK_TYPE: ${{ inputs.work_type }}
+          WORK_STATUS: ${{ inputs.status }}
+          WORK_DESCRIPTION: ${{ inputs.description }}
+        run: node scripts/flix-link-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flix-link-review
+          path: |
+            flix-review/link-review.json
+            flix-review/approved-catalog.json
+          retention-days: 7
+          if-no-files-found: ignore
