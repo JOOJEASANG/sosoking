@@ -1,0 +1,16 @@
+[
+  {
+    "approved": false,
+    "videoId": "REPLACE_ID",
+    "workId": "work-slug",
+    "workTitle": "작품명",
+    "episodeTitle": "본편 제목",
+    "genre": "사극",
+    "type": "드라마",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "직접 검토한 작품 소개",
+    "number": 1,
+    "reviewedBy": "관리자"
+  }
+]
