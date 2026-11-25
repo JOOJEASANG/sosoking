@@ -33,5 +33,15 @@ try{
  const directId='h'.repeat(20);const direct={...ferry,source:'',meta:{...ferry.meta,operator:'',sourceType:'현장',evidence:'현장 안내판 확인',returnSchedule:'10:00',condition:'평일'}};
  batch=writeBatch(owner);batch.set(doc(owner,'lifePosts',directId),direct);batch.set(doc(owner,'lifePostLimits','owner'),{lastId:directId,at:serverTimestamp()});await assertSucceeds(batch.commit());await assertFails(getDoc(doc(publicDb,'lifePosts',directId)));await assertSucceeds(updateDoc(doc(moderator,'lifePosts',directId),{state:'published'}));await assertSucceeds(getDocs(query(collection(publicDb,'lifePosts'),where('state','==','published'),where('category','==','선박 시간표'))));
  await assertSucceeds(deleteDoc(doc(other,'lifeComments',commentId)));await assertSucceeds(deleteDoc(doc(owner,'lifePosts',postId)));
+ const electionId='v'.repeat(20),codeA='a'.repeat(64),codeB='b'.repeat(64),election=doc(owner,'lifeElections',electionId);
+ const ballot=doc(other,'lifeElections',electionId,'ballots',codeA);
+ const electionBatch=writeBatch(owner);electionBatch.set(election,{title:'테스트 단체',role:'회장',owner:'owner',phase:'nomination',candidates:[],count:2,createdAt:serverTimestamp()});for(const code of [codeA,codeB])electionBatch.set(doc(owner,'lifeElections',electionId,'codes',code),{enabled:true});await assertSucceeds(electionBatch.commit());
+ await assertFails(getDocs(collection(other,'lifeElections',electionId,'codes')));
+ await assertFails(setDoc(doc(other,'lifeElections',electionId,'nominations','c'.repeat(64)),{name:'A',note:''}));
+ const nom=doc(other,'lifeElections',electionId,'nominations',codeA);await assertSucceeds(setDoc(nom,{name:'A',note:''}));await assertFails(setDoc(nom,{name:'B',note:''}));await assertFails(getDoc(nom));
+ await assertFails(setDoc(ballot,{choice:0}));await assertFails(updateDoc(doc(other,'lifeElections',electionId),{phase:'voting',candidates:['A','B']}));
+ await assertSucceeds(updateDoc(election,{phase:'voting',candidates:['A','B']}));await assertFails(updateDoc(election,{candidates:['B','A']}));await assertFails(setDoc(doc(owner,'lifeElections',electionId,'codes','c'.repeat(64)),{enabled:true}));
+ await assertFails(setDoc(ballot,{choice:3}));await assertSucceeds(setDoc(ballot,{choice:0}));await assertFails(setDoc(ballot,{choice:1}));await assertFails(getDocs(collection(owner,'lifeElections',electionId,'ballots')));await assertFails(getDoc(ballot));
+ await assertSucceeds(updateDoc(election,{phase:'closed'}));await assertSucceeds(getDocs(collection(owner,'lifeElections',electionId,'ballots')));await assertFails(getDocs(collection(other,'lifeElections',electionId,'ballots')));await assertFails(setDoc(doc(other,'lifeElections',electionId,'ballots',codeB),{choice:1}));await assertFails(updateDoc(election,{phase:'voting'}));
  console.log('PASS: Firestore emulator compile and community/poll/order access rules.');
 }finally{await env.cleanup()}

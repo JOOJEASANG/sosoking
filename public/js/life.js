@@ -10,6 +10,7 @@ import {initSettlement} from './life-settlement.js';
 import {initFieldInfo} from './field-info.js';
 import {initGroupPlan} from './group-plan.js';
 import {initMemories} from './memories.js';
+import {initElection} from './election.js';
 const navName=page==='index.html'?(location.hash==='#programs'?'tools':'home'):(page==='ferry.html'||page==='info.html')?'info':page==='community.html'?'community':page==='my.html'?'my':page==='help.html'?'': 'tools';
 function navSync(){let name=page==='index.html'?(location.hash==='#programs'?'tools':'home'):navName;document.querySelectorAll('[data-nav]').forEach(a=>{if(a.dataset.nav===name)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}navSync();addEventListener('hashchange',navSync);
 const favoritesAllowed=new Set(['/old-phone.html','/event.html','/ferry.html','/orders.html','/shift.html','/community.html?category=생활정보','/info.html','/settlement.html','/group-plan.html','/memories.html','/election.html']);
@@ -46,3 +47,5 @@ if(page==='info.html'){const k=$('#fieldKind');if(qs.get('kind')&&[...k.options]
 if(page==='group-plan.html')initGroupPlan();
 
 if(page==='memories.html')initMemories();
+
+if(page==='election.html')initElection();
