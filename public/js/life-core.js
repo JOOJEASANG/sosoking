@@ -23,20 +23,6 @@ export function aggregatePoll(poll,votes){
  return {counts,people,rows,responses:votes.length,quantity,total};
 }
 function utc(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return NaN;let t=Date.parse(s+'T00:00:00Z');return Number.isFinite(t)&&new Date(t).toISOString().slice(0,10)===s?t:NaN}
-export function makeShift(start,month,pattern){
- const base=utc(start);if(!Number.isFinite(base)||!/^\d{4}-\d{2}$/.test(month)||!Array.isArray(pattern)||pattern.length<1||pattern.length>31||pattern.some(x=>!x||x.length>20))throw Error('날짜와 근무 패턴을 확인하세요.');
- const first=utc(month+'-01');if(!Number.isFinite(first))throw Error('조회 월을 확인하세요.');
- const d=new Date(first),out=[];while(d.toISOString().slice(0,7)===month){let delta=Math.round((+d-base)/86400000),index=((delta%pattern.length)+pattern.length)%pattern.length;out.push({date:d.toISOString().slice(0,10),weekday:d.getUTCDay(),kind:pattern[index]});d.setUTCDate(d.getUTCDate()+1)}return out;
-}
-export function shiftIcs(days,stamp=new Date()){
- const esc=s=>String(s).replaceAll('\\','\\\\').replaceAll('\r','').replaceAll('\n','\\n').replaceAll(';','\\;').replaceAll(',','\\,');
- const compact=s=>s.replaceAll('-','');
- const now=stamp.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
- const next=s=>new Date(utc(s)+86400000).toISOString().slice(0,10);
- const rows=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SOSOKING//Shift Calendar//KO','CALSCALE:GREGORIAN'];
- for(const d of days)rows.push('BEGIN:VEVENT','UID:shift-'+compact(d.date)+'@sosoking','DTSTAMP:'+now,'DTSTART;VALUE=DATE:'+compact(d.date),'DTEND;VALUE=DATE:'+compact(next(d.date)),'SUMMARY:'+esc(d.kind),'END:VEVENT');
- return [...rows,'END:VCALENDAR',''].join('\r\n');
-}
 export const validDate=s=>Number.isFinite(utc(s));
 export function routeStatus(meta,today){if(!meta?.checked)return '확인일 미등록';if(meta.validUntil&&meta.validUntil<today)return '유효기간 경과';const age=(utc(today)-utc(meta.checked))/86400000;return age>90?'재확인 필요':'확인일 등록';}
 export function filterPosts(posts,{category='',region='',search='',departure='',arrival='',sort='latest'}={}){
