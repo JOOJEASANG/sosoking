@@ -76,7 +76,7 @@
     "status": "완결",
     "language": "한국어",
     "addedAt": "2026-11-26",
-    "description": "제작자가 공개한 9편의 독립 이야기 모음. 원본 타임라인으로 선택합니다.",
+    "description": "9개의 독립 이야기로 구성된 정주행 통합본입니다. 회차 버튼은 제작자가 공개한 원본 챕터로 이동합니다.",
     "episodes": [
       {
         "number": 1,
@@ -140,7 +140,8 @@
         "videoId": "b_YLl439CE0",
         "start": 10006
       }
-    ]
+    ],
+    "sourcePublishedAt": "2026-09-04"
   },
   {
     "id": "today-love",
@@ -160,6 +161,7 @@
         "start": 0,
         "publishedAt": "2026-05-11"
       }
-    ]
+    ],
+    "sourcePublishedAt": "2026-05-11"
   }
 ]
