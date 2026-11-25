@@ -10,3 +10,5 @@ form.addEventListener('submit',event=>{
 
 for(const a of document.querySelectorAll('[data-nav="tools"]'))a.setAttribute('aria-current','page');
 const reset=document.createElement('button');reset.type='button';reset.className='secondary';reset.textContent='다시 입력';reset.addEventListener('click',()=>{form.reset();result.hidden=true;result.replaceChildren();input.focus()});form.append(reset);
+
+const bulk=document.querySelector('#bulkNumberForm');if(bulk){const target=document.querySelector('#bulkResult'),copyBtn=document.querySelector('#bulkCopy');bulk.addEventListener('submit',e=>{e.preventDefault();const lines=document.querySelector('#bulkNumbers').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);if(lines.length>100){target.textContent='최대 100개까지 계산할 수 있습니다.';copyBtn.hidden=true;return}target.textContent=lines.map(x=>{const r=convertOldNumber(x);return x+' → '+(r.ok?r.estimated:'변환 규칙 없음')}).join('\n');copyBtn.hidden=!lines.length});copyBtn.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(target.textContent);copyBtn.textContent='복사했습니다'}catch{copyBtn.textContent='직접 선택해 복사하세요'}})}
