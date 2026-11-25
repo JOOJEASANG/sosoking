@@ -16,3 +16,6 @@
 #cinema:fullscreen #playerWrap,#cinema.cinema-fallback #playerWrap{min-height:0;min-width:0;flex:1;max-width:none;overflow:hidden;display:flex;align-items:center;justify-content:center}
 #cinema:fullscreen #playerWrap iframe,#cinema.cinema-fallback #playerWrap iframe{display:block;width:100%;height:100%;min-height:0}
 #cinema.controls-hidden #cinemaBar,#cinema.controls-hidden #cinemaHint{display:none}
+
+/* Tablet headers, touch hit targets and overflow hardening. */
+#cinemaReveal{width:32px;min-width:32px}#cinemaBar button{min-height:44px}#notice button{margin-left:8px}.topbar{min-width:0}.brand-logo{min-width:0}.work strong,.episode-copy strong{overflow-wrap:anywhere}.rail{overscroll-behavior-x:contain}#playerWrap iframe{display:block}.watching #topSearch{visibility:hidden}@media(min-width:761px) and (max-width:1050px){.topbar{gap:10px}.topbar #mainNav{gap:0}.topbar nav button{padding:8px;gap:4px;font-size:12px}.topbar nav svg{width:18px;height:18px}.brand-logo{width:clamp(170px,24vw,270px)}}@media(max-width:360px){#mainNav button{font-size:10px}#cinemaBar button{font-size:13px}#watch .actions{gap:6px}}
