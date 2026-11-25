@@ -118,7 +118,7 @@ jobs:
             ['/', 'class="portal-links"'],
             ['/tools.html', 'id="toolSearch"'],
             ['/election.html', 'id="electionApp"'],
-            ['/sw.js', 'sosoking-life-shell-v6'],
+            ['/sw.js', 'sosoking-life-shell-v7'],
             ['/daily.html', 'id="dailyGrid"'],
             ['/event.html', 'id="eventApp"'],
             ['/old-phone.html', 'id="numberForm"'],

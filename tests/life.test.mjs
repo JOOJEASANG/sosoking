@@ -32,7 +32,7 @@ test('each JavaScript module is syntactically valid and portal uses focused serv
  for(const p of ['life.js','life-core.js','life-shared.js','life-board.js','life-polls.js','life-local.js','phone.js','local-ferry.js','field-info.js','group-plan.js','memory-core.js','memories.js','election-core.js','election.js']){
   const r=spawnSync(process.execPath,['--check','public/js/'+p],{encoding:'utf8'});assert.equal(r.status,0,p+': '+r.stderr);
  }
- const home=fs.readFileSync('public/index.html','utf8');const catalog=fs.readFileSync('public/tools.html','utf8');assert.equal((catalog.match(/class="tool" data-tool=/g)||[]).length,10);assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,0);assert.match(home,/소<\/b>소한 불편/);assert.match(home,/class="mobilebar"/);
+ const home=fs.readFileSync('public/index.html','utf8');const catalog=fs.readFileSync('public/tools.html','utf8');assert.equal((catalog.match(/class="tool" data-tool=/g)||[]).length,9);assert.ok(!catalog.includes('data-favorite="/shift.html"'));assert.match(catalog,/언제 했더라\?/);assert.equal((home.match(/class="tool" data-tool=/g)||[]).length,0);assert.match(home,/소<\/b>소한 불편/);assert.match(home,/class="mobilebar"/);
  const ferry=fs.readFileSync('public/ferry.html','utf8');assert.match(ferry,/name="checked"/);assert.match(ferry,/name="departure"/);assert.match(ferry,/localFerryResults/);
  const rules=fs.readFileSync('firestore.rules','utf8');assert.equal((rules.match(/match \/\{document=\*\*\}/g)||[]).length,1);assert.match(rules,/match \/lifeComments\/\{id\}/);assert.match(rules,/match \/lifeReports\/\{id\}/);assert.match(rules,/function validVote/);
 });

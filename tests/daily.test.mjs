@@ -84,7 +84,7 @@ test('daily check remains available as an independent program',()=>{
 
 test('life portal links to each implemented program and keeps existing daily functionality',()=>{
  const home=fs.readFileSync('public/index.html','utf8'),catalog=fs.readFileSync('public/tools.html','utf8');
- for(const name of ['old-phone','event','ferry','orders','shift','community','my']){
+ for(const name of ['old-phone','event','ferry','orders','community','my']){
   assert.ok((home+catalog).includes('/'+name+'.html'),name+' is linked');
   assert.ok(fs.existsSync('public/'+name+'.html'),name+' page exists');
  }
