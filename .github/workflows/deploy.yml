@@ -22,7 +22,7 @@ jobs:
       - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs && npm run build
       - run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1
       - run: npx playwright install --with-deps chromium
-      - run: node scripts/flix-smoke.mjs
+      - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs
   auto_merge:
     name: Auto-merge tested owner feature PR
     needs: [check]
