@@ -11,7 +11,7 @@ import {initFieldInfo} from './field-info.js';
 import {initGroupPlan} from './group-plan.js';
 import {initMemories} from './memories.js';
 import {initElection} from './election.js';
-const navName=page==='index.html'?(location.hash==='#programs'?'tools':'home'):(page==='ferry.html'||page==='info.html')?'info':page==='community.html'?'community':page==='my.html'?'my':page==='help.html'?'': 'tools';
+const navName=page==='index.html'?(location.hash==='#programs'?'tools':'home'):(['ferry.html','info.html','bus.html','local-info.html'].includes(page))?'info':page==='community.html'?'community':page==='my.html'?'my':page==='help.html'?'': 'tools';
 function navSync(){let name=page==='index.html'?(location.hash==='#programs'?'tools':'home'):navName;document.querySelectorAll('[data-nav]').forEach(a=>{if(a.dataset.nav===name)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}navSync();addEventListener('hashchange',navSync);
 const favoritesAllowed=new Set(['/old-phone.html','/event.html','/ferry.html','/orders.html','/community.html?category=생활정보','/info.html','/settlement.html','/group-plan.html','/memories.html','/election.html']);
 function initHome(){let filter='';function apply(){const search=$('#toolSearch').value.trim().toLowerCase().split(/\s+/).filter(Boolean);let count=0;document.querySelectorAll('[data-tool]').forEach(n=>{const hay=n.dataset.tool.toLowerCase();n.hidden=!(n.dataset.tool.includes(filter)&&search.every(s=>hay.includes(s)))||(!search.length&&n.closest('#lifeInfo')!==null);if(!n.hidden)count++});$('#noTools').hidden=count>0;document.querySelectorAll('.catalog-group').forEach(g=>{g.hidden=![...g.querySelectorAll('[data-tool]')].some(t=>!t.hidden)})}$('#toolSearch').addEventListener('input',apply);document.querySelectorAll('[data-filter]').forEach(n=>n.addEventListener('click',()=>{filter=n.dataset.filter;document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b===n);b.setAttribute('aria-pressed',String(b===n))});apply()}));document.querySelectorAll('[data-favorite]').forEach(n=>{const path=n.dataset.favorite;function sync(){const on=list('favorites').some(f=>f.path===path);n.textContent=on?'★':'☆';n.setAttribute('aria-pressed',String(on))}sync();n.addEventListener('click',()=>{let a=list('favorites');if(a.some(f=>f.path===path))a=a.filter(f=>f.path!==path);else a.push({path,title:n.closest('.tool').querySelector('h3').textContent});save('favorites',a);sync()})});$('#toolSearch').value=qs.get('q')||'';apply()}
@@ -41,7 +41,8 @@ if(page==='ferry.html')initLocalFerry();
 if(page==='settlement.html')initSettlement();
 if(page==='community.html'&&qs.get('search')){$('#postSearch').value=qs.get('search');$('#postSearch').dispatchEvent(new Event('input'));}
 
-if(page==='info.html'){const k=$('#fieldKind');if(qs.get('kind')&&[...k.options].some(x=>x.value===qs.get('kind')))k.value=qs.get('kind');initFieldInfo();}
+if(page==='info.html'&&qs.get('kind')){const next=new URL(qs.get('kind')==='마을 교통'?'/bus.html':'/local-info.html',location.origin);next.search=location.search;location.replace(next.href)}
+if(page==='bus.html'||page==='local-info.html'){const k=$('#fieldKind');if(qs.get('kind')&&[...k.options].some(x=>x.value===qs.get('kind')))k.value=qs.get('kind');initFieldInfo();}
 
 if(page==='group-plan.html')initGroupPlan();
 
