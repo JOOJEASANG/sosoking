@@ -35,3 +35,6 @@ Firebase Hosting의 https://sosoking-481e6.web.app/admin/ 에서 이메일/비�
 
 ## YouTube 소통 및 스튜디오 UI
 Google Cloud OAuth 동의 화면과 웹 애플리케이션 OAuth 클라이언트를 생성합니다. 승인된 JavaScript 원본은 https://sosoking-481e6.web.app 입니다. GitHub repository Variables에 YOUTUBE_OAUTH_CLIENT_ID를 넣습니다. 공개 댓글 및 통계 조회용으로 별도의 YouTube Data API v3 전용 HTTP referrer 제한 키를 발급하고 https://sosoking-481e6.web.app/*만 허용한 후 YOUTUBE_PUBLIC_API_KEY 변수에 넣습니다. 기존 서버 YOUTUBE_API_KEY secret을 절대로 공개 브라우저 키로 재사용하지 않습니다. 다음 Hosting 배포에서 공개 클라이언트 ID와 제한 키가 youtube-config.json에 반영됩니다. OAuth 클라이언트 secret은 필요 없으며 소스 또는 변수에 넣지 않습니다. Google 테스트 사용자 및 외부 공개 앱 검증, 도메인 소유 확인, 실제 운영자 연락처와 개인정보 안내 검토가 완료되어야 일반 사용자 공개를 시작할 수 있습니다. 설정이 없으면 연결/공개 조회가 제한되며 원본 유튜브 링크와 시청은 계속 가능합니다. 토큰은 메모리 전용, 댓글/답글/좋아요는 사용자 명시 행동만 전송, 원본 API 결과는 DB 미저장. 통합본은 동일 영상 댓글/좋아요 공유. 공개 API 한도 관리 및 실제 계정 테스트 필요.
+
+## 자동 수집 품질 기준
+연재형 본편은 회차 표시 및 5분 이상, 회차 통합본은 10분 이상, 회차 없는 인기 본편은 10분 이상 및 조회수 3,000회 이상으로 제한. 쇼츠·숏폼·단편 표기·예고편·하이라이트·제작 강의 등 제외. 회차 추적에는 조회수 하한을 적용하지 않아 공개 직후 신규 본편을 놓치지 않도록 합니다. 자동 후보는 연재형 우선, 조회수 순으로 정렬. YouTube Data API는 쇼츠를 별도 확정 분류하는 필드를 제공하지 않으므로 재생시간 및 제목/태그를 이용합니다. 수동 링크 등록과 이미 공개된 목록 및 재생 상태 검사는 그대로 유지합니다. 정책 버전 변경 시 기존 후보 재검사 및 신규 검색을 실시합니다.
