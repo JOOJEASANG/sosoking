@@ -5,3 +5,10 @@
 - 천군: https://www.youtube.com/watch?v=O24sXs7pUko 및 https://crateh.com/ko/watch/youtube%3AuPPpyHgqmBI (3화 외부 재생 제한 표시로 이후 회차 보류)
 - 기타: https://crateh.com/ko/browse?sort=views 및 각 videoId의 원본 링크.
 - HWARANG: ZERO는 AI 제작 표기가 불확실하여 이번 공개 목록에서 제외.
+
+- 재난문자: https://crateh.com/ko/watch/youtube%3AIM1Lce12FDs
+- 글로리아 판타지아: https://crateh.com/ko/watch/youtube%3AoIVa5mHf4QU
+- 마인: https://crateh.com/ko/watch/youtube%3AeGqNwn3rhgI
+- 큰놈을 들였다: https://crateh.com/ko/watch/youtube%3A75sLvGAcPeA
+- 물 밖에서: https://crateh.com/ko/watch/youtube%3AlGoULfayfXY (3화 이후는 보류)
+- MOODFRAME: https://crateh.com/ko/watch/youtube%3Ah0sgkIMYgvQ 및 https://crateh.com/ko/watch/youtube%3A9-c_KuilA0U

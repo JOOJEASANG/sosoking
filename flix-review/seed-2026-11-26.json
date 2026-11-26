@@ -313,5 +313,192 @@
         "duration": 102
       }
     ]
+  },
+  {
+    "id": "disaster-alert",
+    "title": "재난문자",
+    "creator": "JJ플라이트",
+    "genre": "스릴러·드라마",
+    "type": "영화",
+    "status": "완결",
+    "language": "한국어",
+    "description": "위기 속 사람들의 판단과 불안을 다룬 AI 영화 두 편.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "재난문자",
+        "videoId": "IM1Lce12FDs",
+        "start": 0,
+        "duration": 960,
+        "publishedAt": "2025-11-14"
+      },
+      {
+        "number": 2,
+        "title": "재난문자 2 : 지하철",
+        "videoId": "S9o3MzrYi7g",
+        "start": 0,
+        "duration": 1000
+      }
+    ]
+  },
+  {
+    "id": "gloria-fantasia",
+    "title": "글로리아 판타지아",
+    "creator": "뚜라셀",
+    "genre": "판타지·코미디",
+    "type": "애니메이션",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "판타지 세계를 배경으로 펼쳐지는 AI 애니메이션. 공개 1~4화 모아보기.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1~4화 모아보기",
+        "videoId": "oIVa5mHf4QU",
+        "start": 0,
+        "duration": 1920
+      }
+    ]
+  },
+  {
+    "id": "mine-mecha",
+    "title": "마인 MINE",
+    "creator": "ROUNDY FILM (라운디필름)",
+    "genre": "SF·드라마",
+    "type": "영화",
+    "status": "완결",
+    "language": "한국어",
+    "description": "메카를 소재로 한 국내 AI SF 단편영화.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "본편",
+        "videoId": "eGqNwn3rhgI",
+        "start": 0,
+        "duration": 1061
+      }
+    ]
+  },
+  {
+    "id": "big-guest",
+    "title": "큰놈을 들였다",
+    "creator": "MORAK STUDIO",
+    "genre": "로맨스·코미디",
+    "type": "드라마",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "시대극 분위기의 AI 로맨스 드라마.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "월하문정",
+        "videoId": "75sLvGAcPeA",
+        "start": 0,
+        "duration": 439
+      },
+      {
+        "number": 2,
+        "title": "화전장심",
+        "videoId": "0L2GfyQD7iM",
+        "start": 0,
+        "duration": 530,
+        "publishedAt": "2026-10-09"
+      },
+      {
+        "number": 3,
+        "title": "정심난장",
+        "videoId": "ur4grfZpBoQ",
+        "start": 0,
+        "duration": 663,
+        "publishedAt": "2026-10-16"
+      },
+      {
+        "number": 4,
+        "title": "풍우상의",
+        "videoId": "qSBuXnaHIgM",
+        "start": 0,
+        "duration": 854
+      },
+      {
+        "number": 5,
+        "title": "해람동행",
+        "videoId": "ik_MqBn6CI0",
+        "start": 0,
+        "duration": 680
+      }
+    ]
+  },
+  {
+    "id": "out-of-water",
+    "title": "물 밖에서",
+    "creator": "MOVENDstudios",
+    "genre": "로맨스·드라마",
+    "type": "드라마",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "제작자가 공개한 AI 로맨스 시리즈. 확인된 연속 회차부터 제공합니다.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1화",
+        "videoId": "lGoULfayfXY",
+        "start": 0,
+        "duration": 600
+      },
+      {
+        "number": 2,
+        "title": "2화",
+        "videoId": "Ku6IgXV6Zxg",
+        "start": 0,
+        "duration": 600
+      }
+    ]
+  },
+  {
+    "id": "stolen-restaurant",
+    "title": "남편과 식당을 빼앗은 동창",
+    "creator": "MOODFRAME",
+    "genre": "가족·드라마",
+    "type": "영화",
+    "status": "완결",
+    "language": "한국어",
+    "description": "배신 이후 자신의 삶을 다시 일으키는 주인공의 단편 드라마.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "본편",
+        "videoId": "h0sgkIMYgvQ",
+        "start": 0,
+        "duration": 615,
+        "publishedAt": "2026-11-07"
+      }
+    ]
+  },
+  {
+    "id": "ring-and-wife",
+    "title": "반지 빼라던 남편의 최후",
+    "creator": "MOODFRAME",
+    "genre": "로맨스·드라마",
+    "type": "영화",
+    "status": "완결",
+    "language": "한국어",
+    "description": "관계의 반전과 주인공의 새로운 삶을 그린 단편 드라마.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "본편",
+        "videoId": "9-c_KuilA0U",
+        "start": 0,
+        "duration": 552,
+        "publishedAt": "2026-10-24"
+      }
+    ]
   }
 ]
