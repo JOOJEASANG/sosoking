@@ -35,26 +35,39 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
    assert.equal(columns,width<=900?1:2);
  }
 
- // Mobile menu, edit dock and collapsible episode editor. No production auth or writes.
+ // Mobile menu, edit dock and collapsible episode editor. Load the real
+ // editor with a local catalog fixture: draft state must come from actual
+ // input/change events, not a synthetic status that a blur can overwrite.
  await page.setViewportSize({width:390,height:844});
  await page.locator('#studioNav [data-panel=works]').click();
+ await page.evaluate(async()=>{
+   const admin=await import('/admin/admin.js');
+   const items=await (await fetch('/catalog.json')).json();
+   admin.setOnlineCatalog(items);
+   if(!admin.selectWorkForEditing(items[0].id))throw Error('Fixture selection failed');
+   document.querySelector('#publish').disabled=false;
+ });
  const dock=page.locator('#studioMobileDock');
  assert.ok(await dock.isVisible());
  assert.ok(await page.locator('#mobilePublish').isDisabled());
- await page.locator('#editor [name=title]').fill('임시 모바일 편집');
- // Empty catalog fixture has no initialized baseline; dispatch the same UI event
- // that real admin edits emit to test the presentation and forwarding.
- await page.evaluate(()=>document.dispatchEvent(new CustomEvent('studio-draft-state',{detail:{editing:true,draft:false}})));
+ const existing=page.locator('#episodes article').first();
+ assert.equal(await existing.locator('details').getAttribute('open'),null);
+ const originalTitle=await page.locator('#editor [name=title]').inputValue();
+ await page.locator('#editor [name=title]').fill(originalTitle+' 모바일 편집');
  assert.match(await page.locator('#mobileDraftState').textContent(),/미저장/);
  await page.locator('#studioNav [data-panel=review]').click();
  assert.ok(await dock.isVisible());
  assert.equal(await page.locator('#mobileSave').textContent(),'편집으로 이동');
+ assert.ok(await page.locator('#mobilePublish').isDisabled());
  await page.locator('#mobileSave').click();
  assert.equal(await page.locator('#studioTitle').textContent(),'작품 및 회차');
- await page.evaluate(()=>{window.testSubmitCount=0;document.querySelector('#editor').requestSubmit=()=>window.testSubmitCount++});
+ assert.equal(await page.locator('#editor [name=title]').inputValue(),originalTitle+' 모바일 편집');
  await page.locator('#mobileSave').click();
- assert.equal(await page.evaluate(()=>window.testSubmitCount),1);
- await page.evaluate(()=>{const b=document.querySelector('#publish');b.disabled=false;window.testPublishCount=0;b.onclick=()=>window.testPublishCount++;document.dispatchEvent(new CustomEvent('studio-draft-state',{detail:{editing:false,draft:true}}))});
+ await page.waitForFunction(()=>document.querySelector('#mobileDraftState').textContent==='공개 반영 대기');
+ const draftTitle=await page.evaluate(async()=>{const admin=await import('/admin/admin.js');return admin.getOnlineCatalog()[0].title});
+ assert.equal(draftTitle,originalTitle+' 모바일 편집');
+ // Mock only the actual publishing handler; never contact production.
+ await page.evaluate(()=>{const b=document.querySelector('#publish');window.testPublishCount=0;b.onclick=()=>window.testPublishCount++});
  await page.locator('#mobilePublish').click();
  assert.equal(await page.evaluate(()=>window.testPublishCount),1);
  await page.locator('#addEpisode').click();
