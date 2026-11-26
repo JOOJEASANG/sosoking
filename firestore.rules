@@ -228,8 +228,24 @@ service cloud.firestore {
    }
   }
   // BEGIN FLIX ADMIN RULES
+  function flixAdminEmail() {
+   return signedIn() && request.auth.token.get('email_verified',false) == true
+    && request.auth.token.get('email','') is string
+    ? request.auth.token.get('email','') : '';
+  }
+  function flixAdminMarker(p) {
+   return exists(p) && get(p).data.get('enabled',true) != false;
+  }
   function flixAdmin() {
-   return signedIn() && exists(/databases/$(database)/documents/flixAdmins/$(request.auth.uid));
+   return signedIn() && (
+    flixAdminMarker(/databases/$(database)/documents/admins/$(request.auth.uid))
+    || (flixAdminEmail() != '' && flixAdminMarker(/databases/$(database)/documents/admins/$(flixAdminEmail())))
+    || flixAdminMarker(/databases/$(database)/documents/flixAdmins/$(request.auth.uid))
+   );
+  }
+  match /admins/{adminId} {
+   allow get: if signedIn() && (request.auth.uid == adminId || flixAdminEmail() == adminId);
+   allow list, create, update, delete: if false;
   }
   match /flixAdmins/{uid} {
    allow get: if signedIn() && request.auth.uid == uid;
