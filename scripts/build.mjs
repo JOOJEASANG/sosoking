@@ -38,7 +38,7 @@ console.log('Online admin and public catalog client built');
 
 await bundle({entryPoints:['scripts/flix-analytics.mjs'],outfile:path.join(dest,'viewer-analytics.js'),bundle:true,format:'esm',platform:'browser',minify:true});
 
-const seoCatalog=JSON.parse(fs.readFileSync(process.env.FLIX_SEO_CATALOG||path.join(src,'catalog.json'),'utf8'));const seoUrls=generateSeo(dest,seoCatalog);console.log('SEO pages:',seoUrls.length);
+const seoCatalog=JSON.parse(fs.readFileSync(process.env.FLIX_SEO_CATALOG||path.join(src,'catalog.json'),'utf8'));if(process.env.FLIX_SEO_CATALOG)fs.writeFileSync(path.join(dest,'catalog.json'),JSON.stringify(seoCatalog));const seoUrls=generateSeo(dest,seoCatalog);console.log('SEO pages:',seoUrls.length);
 
 await bundle({entryPoints:['scripts/flix-viewer-stats.mjs'],outfile:path.join(dest,'viewer-stats.js'),bundle:true,format:'esm',platform:'browser',minify:true});
 
