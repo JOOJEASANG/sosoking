@@ -24,7 +24,7 @@ jobs:
       - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs scripts/flix-track-series.test.mjs scripts/flix-seo.test.mjs scripts/flix-stats-core.test.mjs && npm run build
       - run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1 @firebase/rules-unit-testing@4.0.1
       - run: npx playwright install --with-deps chromium
-      - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs && node scripts/flix-online-admin-smoke.mjs
+      - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs && node scripts/flix-online-admin-smoke.mjs && node scripts/flix-social-smoke.mjs
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '21'}
       - run: npx --yes firebase-tools@15.24.0 emulators:exec --project demo-sosoking --only firestore 'node --test scripts/flix-admin-rules.test.mjs'
@@ -85,6 +85,8 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          YOUTUBE_OAUTH_CLIENT_ID: ${{ vars.YOUTUBE_OAUTH_CLIENT_ID }}
+          YOUTUBE_PUBLIC_API_KEY: ${{ vars.YOUTUBE_PUBLIC_API_KEY }}
         run: |
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
           umask 077
@@ -97,7 +99,7 @@ jobs:
       - name: Verify live root
         run: |
           for i in $(seq 1 12); do
-            if curl -fsS "https://sosoking-481e6.web.app/?verify=$GITHUB_SHA-$i" | grep -q 'flix.js?v=stats12' && curl -fsS "https://sosoking-481e6.web.app/admin/?verify=$GITHUB_SHA-$i" | grep -q 'id="authPanel"' && curl -fsS "https://sosoking-481e6.web.app/sitemap.xml?verify=$GITHUB_SHA-$i" | grep -q '/works/'; then exit 0; fi
+            if curl -fsS "https://sosoking-481e6.web.app/?verify=$GITHUB_SHA-$i" | grep -q 'flix.js?v=studio13' && curl -fsS "https://sosoking-481e6.web.app/admin/?verify=$GITHUB_SHA-$i" | grep -q 'id="authPanel"' && curl -fsS "https://sosoking-481e6.web.app/sitemap.xml?verify=$GITHUB_SHA-$i" | grep -q '/works/'; then exit 0; fi
             sleep 5
           done
           exit 1

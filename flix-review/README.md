@@ -32,3 +32,6 @@ Firebase Hosting의 https://sosoking-481e6.web.app/admin/ 에서 이메일/비�
 
 ## 방문 및 시청 통계
 관리자 대시보드에서 이용 통계를 확인합니다. Firebase Authentication의 익명 로그인 공급자 활성화가 필요합니다. 방문자는 회원가입이나 이메일 입력 없이 시청하며 통계를 허용한 경우에만 별도 익명 Firebase 인증 식별자로 기록합니다. 60초 간격의 제한된 heartbeat, 최근 120초 신호를 기준으로 동시 접속과 재생 중 브라우저를 근사합니다. 전경 페이지에서 재생 상태일 때만 시간을 누적하며 종료 직전 일부 구간, 백그라운드 재생, 네트워크 장애는 누락될 수 있습니다. 한국시간 날짜 기준으로 오늘, 최근 7일 및 30일 지표와 작품별 재생시간 순위를 집계합니다. 동의 취소 시 수집 중지, 기존 익명 지표는 35일 기준 예약 삭제. 관리자만 타 브라우저 통계 읽기 가능. Firestore 비용 보호를 위한 속도 제한 및 관리자 조회 상한이 적용되며, 여러 브라우저/기기·쿠키 삭제와 미동의 사용자는 정확한 실제 사람 수와 차이가 있습니다. Analytics가 설정되면 유입 경로와 기기 통계는 Firebase 콘솔에서 확인 가능합니다.
+
+## YouTube 소통 및 스튜디오 UI
+Google Cloud OAuth 동의 화면과 웹 애플리케이션 OAuth 클라이언트를 생성합니다. 승인된 JavaScript 원본은 https://sosoking-481e6.web.app 입니다. GitHub repository Variables에 YOUTUBE_OAUTH_CLIENT_ID를 넣습니다. 공개 댓글 및 통계 조회용으로 별도의 YouTube Data API v3 전용 HTTP referrer 제한 키를 발급하고 https://sosoking-481e6.web.app/*만 허용한 후 YOUTUBE_PUBLIC_API_KEY 변수에 넣습니다. 기존 서버 YOUTUBE_API_KEY secret을 절대로 공개 브라우저 키로 재사용하지 않습니다. 다음 Hosting 배포에서 공개 클라이언트 ID와 제한 키가 youtube-config.json에 반영됩니다. OAuth 클라이언트 secret은 필요 없으며 소스 또는 변수에 넣지 않습니다. Google 테스트 사용자 및 외부 공개 앱 검증, 도메인 소유 확인, 실제 운영자 연락처와 개인정보 안내 검토가 완료되어야 일반 사용자 공개를 시작할 수 있습니다. 설정이 없으면 연결/공개 조회가 제한되며 원본 유튜브 링크와 시청은 계속 가능합니다. 토큰은 메모리 전용, 댓글/답글/좋아요는 사용자 명시 행동만 전송, 원본 API 결과는 DB 미저장. 통합본은 동일 영상 댓글/좋아요 공유. 공개 API 한도 관리 및 실제 계정 테스트 필요.
