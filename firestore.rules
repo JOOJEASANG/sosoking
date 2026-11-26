@@ -285,6 +285,23 @@ service cloud.firestore {
    allow get: if flixAdmin();
    allow list, write: if false;
   }
+  match /flixAutomation/refresh {
+   allow get: if flixAdmin();
+   allow list, delete: if false;
+   function validRefresh() {
+    return flixAdmin() && request.resource.data.keys().hasOnly(['owner','id','status','requestedAt'])
+      && request.resource.data.keys().hasAll(['owner','id','status','requestedAt'])
+      && request.resource.data.owner == request.auth.uid
+      && request.resource.data.id is string && request.resource.data.id.matches('^[a-zA-Z0-9-]{16,80}$')
+      && request.resource.data.status == 'pending' && request.resource.data.requestedAt == request.time;
+   }
+   allow create: if validRefresh();
+   allow update: if validRefresh() && request.time >= resource.data.requestedAt + duration.value(60,'m');
+  }
+  match /flixPublic/recommendations {
+   allow get: if true;
+   allow list, write: if false;
+  }
   // Consent-based viewer metrics. Browser identifiers are private to their owner and administrators.
   function flixViewer() {
    return signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
