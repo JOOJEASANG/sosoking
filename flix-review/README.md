@@ -26,3 +26,6 @@ Firebase Hosting의 https://sosoking-481e6.web.app/admin/ 에서 이메일/비�
 
 ## 검색 최적화
 메인 페이지의 실제 HTML에 공개 작품 목록 및 WebSite 구조화 데이터를 넣고 /works/, /category/drama/, /category/film/, /category/animation/ 및 작품별 /works/{id}/ 페이지를 생성합니다. sitemap.xml에는 공개 작품 및 실제로 생성된 분류 주소만 포함합니다. 작품 페이지는 소개 및 회차 탐색 페이지이며 재생은 기존 플레이어 링크로 이동합니다. 실제 영상 업로드일 등이 불확실한 영상에 VideoObject를 생성하지 않습니다. main Hosting 배포 시 Firestore의 현재 공개 카탈로그를 읽어서 검색용 HTML과 사이트맵을 생성하며 매일 예약 배포로 갱신합니다. 공개/숨김 변경은 다음 갱신 전까지 검색용 페이지에 남을 수 있습니다. 검색 노출과 순위는 보장하지 않습니다. 네이버/구글에 제출: https://sosoking-481e6.web.app/sitemap.xml. 기존 소유 확인 방식은 유지하고 인증 토큰을 임의 생성하지 않습니다.
+
+## 기존 관리자 계정 호환
+기존 Firebase admins 컬렉션의 UID 문서 또는 인증된 이메일과 정확히 동일한 문서 ID를 사용합니다. flixAdmins의 UID 문서도 호환 유지됩니다. enabled:false인 문서는 권한으로 인정하지 않습니다. 관리자 문서는 콘솔/신뢰된 서버에서만 관리하며 클라이언트는 자신의 문서만 조회하고 관리자 문서를 생성·수정할 수 없습니다. 기존 컬렉션 및 문서는 삭제, 복사 또는 이름 변경하지 않습니다. 이메일 등록 방식의 링크 조회 워커는 서비스 계정의 Firebase Authentication 사용자 조회 권한도 필요합니다.
