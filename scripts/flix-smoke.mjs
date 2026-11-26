@@ -25,6 +25,15 @@ import {chromium} from 'playwright';import http from 'node:http';import fs from 
    if(await page.locator('#cinema').evaluate(el=>el.classList.contains('cinema-fallback')))await page.locator('#full').click();
    await page.locator('#episodes .episode').first().waitFor();
    await audit(width+'x'+height+' watch');
+   if(width===320){
+     const first=page.locator('#episodes .episode').first();
+     const img=first.locator('img');
+     await img.evaluate(el=>{el.onerror?.();el.removeAttribute('src');el.classList.add('unavailable-thumb')});
+     const oldTitle=await first.locator('.episode-copy strong').textContent();
+     await first.locator('.episode-copy strong').evaluate(el=>el.textContent='긴회차제목'.repeat(35)+'A'.repeat(80));
+     await audit('320px failed image + very long episode title');
+     await first.locator('.episode-copy strong').evaluate((el,text)=>el.textContent=text,oldTitle);
+   }
    await page.locator('#spoiler').check();
    await audit(width+'x'+height+' spoiler');
    await page.locator('#spoiler').uncheck();
@@ -41,5 +50,19 @@ import {chromium} from 'playwright';import http from 'node:http';import fs from 
  await audit('320px SEO work detail');
  await page.goto(base+'/creators/');
  await audit('320px SEO creator list');
- console.log('Viewer responsive geometry: nine viewport sizes, eight tabs, watch, spoiler, reverse, social and SEO detail passed');
+
+ // Touch/coarse-pointer mode also uses the bottom menu beyond the normal
+ // mobile-width breakpoint (e.g. a wide foldable or tablet).
+ const touch=await browser.newPage({viewport:{width:1100,height:700},hasTouch:true,isMobile:true});
+ try{
+   await touch.route('https://i.ytimg.com/**',r=>r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360"><rect width="480" height="360" fill="#333"/></svg>'}));
+   await touch.goto(base);await touch.locator('#hero').waitFor({state:'visible'});
+   assert.ok(await touch.evaluate(()=>matchMedia('(hover:none) and (pointer:coarse)').matches));
+   for(const [width,height] of [[1100,700],[390,844],[844,390]]){
+     await touch.setViewportSize({width,height});
+     const g=await touch.locator('#mainNav').evaluate(el=>({bottom:el.getBoundingClientRect().bottom,height:innerHeight,position:getComputedStyle(el).position,scroll:document.documentElement.scrollWidth,width:innerWidth}));
+     assert.equal(g.position,'fixed');assert.ok(Math.abs(g.bottom-g.height)<=2,JSON.stringify(g));assert.ok(g.scroll<=g.width+1,JSON.stringify(g));
+   }
+ }finally{await touch.close()}
+  console.log('Viewer responsive geometry: nine viewport sizes, eight tabs, watch, spoiler, reverse, social and SEO detail passed');
  console.log('Mobile viewer smoke passed (mock player; no live video claim)')}finally{await browser.close();server.close()}
