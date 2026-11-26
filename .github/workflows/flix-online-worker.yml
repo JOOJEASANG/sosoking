@@ -1,0 +1,39 @@
+name: 온라인 영상 조회 및 신규 회차 추적
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      force_scan:
+        description: '정기 주기를 기다리지 않고 회차 검색'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: flix-online-worker
+  cancel-in-progress: false
+jobs:
+  worker:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund && npm install --no-save --package-lock=false --no-audit --no-fund firebase-admin@13
+      - name: Process admin requests and track approved series
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/flix-worker.json
+          FORCE_SCAN: ${{ inputs.force_scan }}
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS"' EXIT
+          node scripts/flix-online-worker.mjs
