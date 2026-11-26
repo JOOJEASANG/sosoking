@@ -227,6 +227,29 @@ service cloud.firestore {
     allow update,delete: if false;
    }
   }
+  // BEGIN FLIX ADMIN RULES
+  function flixAdmin() {
+   return signedIn() && exists(/databases/$(database)/documents/flixAdmins/$(request.auth.uid));
+  }
+  match /flixAdmins/{uid} {
+   allow get: if signedIn() && request.auth.uid == uid;
+   allow list, create, update, delete: if false;
+  }
+  match /flixPublic/catalog {
+   allow get: if true;
+   allow list, delete: if false;
+   function validCatalog() {
+    return request.resource.data.keys().hasOnly(['json','revision','updatedAt'])
+      && request.resource.data.keys().hasAll(['json','revision','updatedAt'])
+      && request.resource.data.json is string
+      && request.resource.data.json.size() <= 700000
+      && request.resource.data.revision is int
+      && request.resource.data.updatedAt == request.time;
+   }
+   allow create: if flixAdmin() && validCatalog() && request.resource.data.revision == 1;
+   allow update: if flixAdmin() && validCatalog() && request.resource.data.revision == resource.data.revision + 1;
+  }
+  // END FLIX ADMIN RULES
   // Former event/group data is retained in Firestore, not exposed by this redesigned app.
   // Reinstatement requires the archived code and a deliberate rules migration.
   match /{document=**} { allow read, write: if false; }

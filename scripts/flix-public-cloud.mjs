@@ -1,0 +1,2 @@
+import {getFirestore,doc,getDocFromServer} from 'firebase/firestore';import {firebaseApp} from './flix-firebase-client.mjs';import {validateCatalog} from './flix-catalog-validation.mjs';
+export async function readPublicCatalog(){const db=getFirestore(await firebaseApp());const snap=await getDocFromServer(doc(db,'flixPublic','catalog'));if(!snap.exists())return null;const data=snap.data();return validateCatalog(JSON.parse(data.json))}
