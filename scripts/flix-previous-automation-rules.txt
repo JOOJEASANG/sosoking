@@ -1,0 +1,43 @@
+  // BEGIN FLIX ADMIN RULES
+  function flixAdmin() {
+   return signedIn() && exists(/databases/$(database)/documents/flixAdmins/$(request.auth.uid));
+  }
+  match /flixAdmins/{uid} {
+   allow get: if signedIn() && request.auth.uid == uid;
+   allow list, create, update, delete: if false;
+  }
+  match /flixPublic/catalog {
+   allow get: if true;
+   allow list, delete: if false;
+   function validCatalog() {
+    return request.resource.data.keys().hasOnly(['json','revision','updatedAt'])
+      && request.resource.data.keys().hasAll(['json','revision','updatedAt'])
+      && request.resource.data.json is string
+      && request.resource.data.json.size() <= 700000
+      && request.resource.data.revision is int
+      && request.resource.data.updatedAt == request.time;
+   }
+   allow create: if flixAdmin() && validCatalog() && request.resource.data.revision == 1;
+   allow update: if flixAdmin() && validCatalog() && request.resource.data.revision == resource.data.revision + 1;
+  }
+  match /flixAutomation/lookup {
+   allow get: if flixAdmin();
+   allow list, delete: if false;
+   function validLookup() {
+    return request.resource.data.keys().hasOnly(['owner','id','links','status','requestedAt'])
+      && request.resource.data.keys().hasAll(['owner','id','links','status','requestedAt'])
+      && request.resource.data.owner == request.auth.uid
+      && request.resource.data.id is string && request.resource.data.id.matches('^[a-zA-Z0-9-]{16,80}$')
+      && request.resource.data.links is string && request.resource.data.links.size() > 0 && request.resource.data.links.size() <= 12000
+      && request.resource.data.status == 'pending' && request.resource.data.requestedAt == request.time;
+   }
+   allow create: if flixAdmin() && validLookup();
+   allow update: if flixAdmin() && validLookup()
+    && ((resource.data.status != 'pending' && request.time > resource.data.requestedAt + duration.value(1,'m'))
+        || request.time > resource.data.requestedAt + duration.value(30,'m'));
+  }
+  match /flixAutomation/report {
+   allow get: if flixAdmin();
+   allow list, write: if false;
+  }
+  // END FLIX ADMIN RULES
