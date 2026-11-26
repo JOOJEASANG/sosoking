@@ -1,0 +1,5 @@
+import {entrySource} from './discovery-core.js?v=discovery20';
+// Only with pre-existing analytics consent, carry a coarse external entry category across internal SEO links.
+try{if(JSON.parse(localStorage.getItem('sosoking.flix.analyticsConsent')||'false')===true){const source=entrySource(document.referrer,location.href);if(source!=='internal')sessionStorage.setItem('sosoking.entrySource',JSON.stringify({source,at:Date.now()}))}else sessionStorage.removeItem('sosoking.entrySource')}catch{}
+const p=new URLSearchParams(location.search),ep=p.get('ep'),play=document.getElementById('seoPlay');
+if(play&&/^[1-9]\d{0,4}$/.test(ep||'')){const href=new URL(play.href,location.origin),work=href.searchParams.get('work');if(href.origin===location.origin&&href.pathname==='/'&&/^[a-z0-9][a-z0-9-]{0,79}$/.test(work||'')){href.searchParams.set('ep',ep);play.href=href.href;const row=[...document.querySelectorAll('[data-episode]')].find(x=>x.dataset.episode===ep);play.textContent=row?'공유된 '+ep+'회차 시청하기':'공유된 '+ep+'회차 최신 등록 상태 확인';if(row){row.classList.add('shared-episode');row.setAttribute('aria-current','true')}}}
