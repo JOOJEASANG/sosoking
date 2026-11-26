@@ -14,3 +14,47 @@
 #healthList article{margin:10px 0;padding:12px;border:1px solid #43404b;border-radius:10px;background:#1b1c25}#healthList article p{margin:6px 0;font-size:13px}#healthList article a{margin-left:4px}#healthList article button{font-size:12px;min-height:36px}
 
 #workSearch{width:min(100%,340px);min-height:44px}#works{max-width:100%;min-height:44px}#editState,.editor-help{font-size:13px;color:var(--studio-muted);margin:8px 0}#studioDraft{font-size:12px;color:#f0b0be;padding:0 0 8px}#cloudStatus{font-size:13px;color:#bec2cd;margin:0 0 10px;overflow-wrap:anywhere}#studioNav button{min-height:44px}#studioActions button{min-height:44px}@media(max-width:520px){#studioNav{scroll-padding:8px}#studioActions{gap:6px}#studioActions button{white-space:normal;line-height:1.4}.candidate-filters #query{flex-basis:100%;width:100%;min-width:0}.candidate-filters select{flex:1;min-width:0}.candidate-actions button{min-height:44px}.studio-sidebar{padding:6px}}
+
+/* The authenticated workspace must shrink independently of long menu labels,
+   selects, filenames and generated video metadata. Never clip page overflow. */
+.workspace-shell,.studio-sidebar,.studio-content,#studioNav,#studioActions,.studio-title>div,
+section[data-studio-panel],#editor,#episodes,#linkResults,#candidates,.candidate-group,
+.candidate-detail,.curation-row>a,.link-row>div{min-width:0}
+.studio-content,.studio-sidebar{overflow-wrap:anywhere}
+.studio-content button,.studio-content select,.studio-sidebar button{max-width:100%}
+.studio-content button,.studio-sidebar button{white-space:normal;overflow-wrap:anywhere}
+.studio-content input:not([type=checkbox]),.studio-content select,.studio-content textarea{min-width:0;max-width:100%}
+#studioActions button{min-width:0}
+@media(max-width:900px){
+  .workspace-shell{grid-template-columns:minmax(0,1fr)}
+  .studio-sidebar,.studio-content{width:100%;max-width:100%}
+  .studio-sidebar nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible;gap:6px}
+  .studio-sidebar button{min-width:0;text-align:center;white-space:normal;padding:8px 6px;line-height:1.35}
+  #workspace{margin-top:16px}
+  .studio-authenticated #authPanel{max-width:100%;padding:10px 12px}
+}
+@media(max-width:520px){
+  body{padding:0 10px calc(24px + env(safe-area-inset-bottom,0px))}
+  .adminhead{gap:8px}
+  .adminhead img{min-width:0;max-width:58%}
+  .studio-sidebar nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .studio-sidebar button{font-size:13px;min-height:44px}
+  .studio-title h1{font-size:23px}
+  section[data-studio-panel]{padding:12px}
+  #studioActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #studioActions button{width:100%;font-size:13px;min-height:44px}
+  #editor{grid-template-columns:minmax(0,1fr)}
+  #workSearch,#works,.candidate-filters #query,.candidate-filters select{width:100%;max-width:100%}
+  .candidate-filters{display:grid;grid-template-columns:minmax(0,1fr)}
+  .candidate-actions button,.candidate-detail button,.curation-row button,#healthList article button,#intakeList article button{min-height:44px}
+  .curation-row{flex-wrap:wrap}
+  .link-row{grid-template-columns:auto minmax(0,1fr)}
+  #editor>fieldset{padding:10px}
+  .stat-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,auto)}
+  .stat-row strong{overflow-wrap:anywhere;min-width:0}
+  #authPanel input,.studio-content input:not([type=checkbox]),.studio-content select,.studio-content textarea{font-size:16px}
+}
+@media(max-width:360px){
+  .stats-grid{grid-template-columns:minmax(0,1fr)}
+  #studioActions{grid-template-columns:minmax(0,1fr)}
+}
