@@ -1,0 +1,5 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {rankWorks} from './flix-recommendations.mjs';
+const w=(id,videoId,extra={})=>({id,episodes:[{videoId}],...extra}),now=Date.parse('2026-11-26'),metadata=new Map([['a',{viewCount:200000,likeCount:10000,publishedAt:'2026-11-20'}],['b',{viewCount:2000,likeCount:100,publishedAt:'2026-11-20'}]]);
+test('hidden excluded, missing watch fallback',()=>{const r=rankWorks([w('a','a'),w('b','b'),w('hidden','a',{hidden:true})],metadata,null,now);assert.deepEqual(r.ranked,['a','b']);assert.deepEqual(r.popular,['a','b']);assert.equal(r.popularSource,'youtube')});
+test('watch ranking and new arrivals',()=>{const r=rankWorks([w('a','a'),w('b','b',{addedAt:'2026-11-25'})],metadata,[{workId:'b',watchSeconds:500}],now);assert.equal(r.popularSource,'watch');assert.deepEqual(r.popular,['b']);assert.deepEqual(r.newWorks,['b'])});
+test('duplicate chapters do not multiply views',()=>{const r=rankWorks([w('a','a'),{id:'b',episodes:Array.from({length:10},()=>({videoId:'b'}))}],metadata,[],now);assert.deepEqual(r.popular,['a','b'])});

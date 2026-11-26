@@ -4,3 +4,5 @@
 @media(max-width:520px){#authPanel{padding:22px;margin-top:40px}#authPanel h2{font-size:25px}.studio-title{align-items:flex-start;flex-direction:column}#studioActions{width:100%}#studioActions button{flex:1;font-size:12px}#editor{grid-template-columns:1fr}#editor>*{grid-column:1/-1}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-grid article{padding:11px}.stats-grid strong{font-size:19px}.stat-row{gap:5px}.stat-row strong{font-size:11px}.adminhead .backlink{font-size:11px}}
 
 #passwordToggle{display:block;margin:-5px 0 10px auto;background:transparent;border:0;color:var(--studio-muted);font-size:12px;padding:2px 5px;min-height:32px}.yt-reply{min-height:36px}
+
+#candidateRefreshPanel{padding:14px;background:#11141b;border:1px solid var(--studio-border);border-radius:10px;margin:14px 0}#candidateRefresh{background:#b72d48;border-color:#e45b73}.candidate-filters,.candidate-pages{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.candidate-filters #query{flex:1;min-width:140px}.candidate-pages{justify-content:center;margin-top:16px}.candidate-pages span{color:var(--studio-muted)}
