@@ -1,0 +1,139 @@
+  // BEGIN FLIX ADMIN RULES
+  function flixAdminEmail() {
+   return signedIn() && request.auth.token.get('email_verified',false) == true
+    && request.auth.token.get('email','') is string
+    ? request.auth.token.get('email','') : '';
+  }
+  function flixAdminMarker(p) {
+   return exists(p) && get(p).data.get('enabled',true) != false;
+  }
+  function flixAdmin() {
+   return signedIn() && (
+    flixAdminMarker(/databases/$(database)/documents/admins/$(request.auth.uid))
+    || (flixAdminEmail() != '' && flixAdminMarker(/databases/$(database)/documents/admins/$(flixAdminEmail())))
+    || flixAdminMarker(/databases/$(database)/documents/flixAdmins/$(request.auth.uid))
+   );
+  }
+  match /admins/{adminId} {
+   allow get: if signedIn() && (request.auth.uid == adminId || flixAdminEmail() == adminId);
+   allow list, create, update, delete: if false;
+  }
+  match /flixAdmins/{uid} {
+   allow get: if signedIn() && request.auth.uid == uid;
+   allow list, create, update, delete: if false;
+  }
+  match /flixPublic/catalog {
+   allow get: if true;
+   allow list, delete: if false;
+   function validCatalog() {
+    return request.resource.data.keys().hasOnly(['json','revision','updatedAt'])
+      && request.resource.data.keys().hasAll(['json','revision','updatedAt'])
+      && request.resource.data.json is string
+      && request.resource.data.json.size() <= 700000
+      && request.resource.data.revision is int
+      && request.resource.data.updatedAt == request.time;
+   }
+   allow create: if flixAdmin() && validCatalog() && request.resource.data.revision == 1;
+   allow update: if flixAdmin() && validCatalog() && request.resource.data.revision == resource.data.revision + 1;
+  }
+  match /flixAutomation/lookup {
+   allow get: if flixAdmin();
+   allow list, delete: if false;
+   function validLookup() {
+    return request.resource.data.keys().hasOnly(['owner','id','links','status','requestedAt'])
+      && request.resource.data.keys().hasAll(['owner','id','links','status','requestedAt'])
+      && request.resource.data.owner == request.auth.uid
+      && request.resource.data.id is string && request.resource.data.id.matches('^[a-zA-Z0-9-]{16,80}$')
+      && request.resource.data.links is string && request.resource.data.links.size() > 0 && request.resource.data.links.size() <= 12000
+      && request.resource.data.status == 'pending' && request.resource.data.requestedAt == request.time;
+   }
+   allow create: if flixAdmin() && validLookup();
+   allow update: if flixAdmin() && validLookup()
+    && ((resource.data.status != 'pending' && request.time > resource.data.requestedAt + duration.value(1,'m'))
+        || request.time > resource.data.requestedAt + duration.value(30,'m'));
+  }
+  match /flixAutomation/report {
+   allow get: if flixAdmin();
+   allow list, write: if false;
+  }
+  match /flixAutomation/refresh {
+   allow get: if flixAdmin();
+   allow list, delete: if false;
+   function validRefresh() {
+    return flixAdmin() && request.resource.data.keys().hasOnly(['owner','id','status','requestedAt'])
+      && request.resource.data.keys().hasAll(['owner','id','status','requestedAt'])
+      && request.resource.data.owner == request.auth.uid
+      && request.resource.data.id is string && request.resource.data.id.matches('^[a-zA-Z0-9-]{16,80}$')
+      && request.resource.data.status == 'pending' && request.resource.data.requestedAt == request.time;
+   }
+   allow create: if validRefresh();
+   allow update: if validRefresh() && request.time >= resource.data.requestedAt + duration.value(60,'m');
+  }
+  match /flixAutomation/curation {
+   allow get: if flixAdmin();
+   allow list, delete: if false;
+   allow create, update: if flixAdmin()
+     && request.resource.data.keys().hasOnly(['excluded','trusted','updatedAt'])
+     && request.resource.data.keys().hasAll(['excluded','trusted','updatedAt'])
+     && request.resource.data.excluded is list && request.resource.data.excluded.size() <= 500
+     && request.resource.data.trusted is list && request.resource.data.trusted.size() <= 100
+     && request.resource.data.updatedAt == request.time;
+  }
+  match /flixPublic/recommendations {
+   allow get: if true;
+   allow list, write: if false;
+  }
+  // Consent-based viewer metrics. Browser identifiers are private to their owner and administrators.
+  function flixViewer() {
+   return signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+  }
+  function flixDay() {
+   return int((request.time.toMillis() + 32400000) / 86400000);
+  }
+  function flixDailyPath() {
+   return /databases/$(database)/documents/flixViewerDays/$(request.auth.uid + '_' + string(flixDay()));
+  }
+  match /flixViewerDays/{id} {
+   allow get: if flixAdmin() || (flixViewer() && id == request.auth.uid + '_' + string(flixDay()));
+   allow list: if flixAdmin();
+   allow delete: if false;
+   function validDay() {
+    let d = request.resource.data;
+    return flixViewer() && id == request.auth.uid + '_' + string(flixDay())
+     && d.keys().hasOnly(['uid','day','firstDay','activeSeconds','watchSeconds','playing','updatedAt'])
+     && d.keys().hasAll(['uid','day','firstDay','activeSeconds','watchSeconds','playing','updatedAt'])
+     && d.uid == request.auth.uid && d.day == flixDay()
+     && d.firstDay is int && d.firstDay >= 20000 && d.firstDay <= d.day
+     && d.activeSeconds is int && d.activeSeconds >= 0 && d.activeSeconds <= 86400
+     && d.watchSeconds is int && d.watchSeconds >= 0 && d.watchSeconds <= d.activeSeconds
+     && d.playing is bool && d.updatedAt == request.time;
+   }
+   allow create: if validDay() && request.resource.data.activeSeconds <= 65;
+   allow update: if validDay() && request.time >= resource.data.updatedAt + duration.value(45,'s')
+    && request.resource.data.firstDay == resource.data.firstDay
+    && request.resource.data.activeSeconds >= resource.data.activeSeconds
+    && request.resource.data.activeSeconds <= resource.data.activeSeconds + 65
+    && request.resource.data.watchSeconds >= resource.data.watchSeconds
+    && request.resource.data.watchSeconds - resource.data.watchSeconds <= request.resource.data.activeSeconds - resource.data.activeSeconds;
+  }
+  match /flixViewerWorkDays/{id} {
+   allow get: if flixAdmin() || (flixViewer() && id.matches('^' + request.auth.uid + '_' + string(flixDay()) + '_[a-z0-9][a-z0-9-]{0,79}$'));
+   allow list: if flixAdmin();
+   allow delete: if false;
+   function validWork() {
+    let d = request.resource.data;
+    return flixViewer() && d.keys().hasOnly(['uid','day','workId','watchSeconds','updatedAt'])
+     && d.keys().hasAll(['uid','day','workId','watchSeconds','updatedAt'])
+     && d.uid == request.auth.uid && d.day == flixDay()
+     && d.workId is string && d.workId.matches('^[a-z0-9][a-z0-9-]{0,79}$')
+     && id == request.auth.uid + '_' + string(flixDay()) + '_' + d.workId
+     && d.watchSeconds is int && d.watchSeconds > 0 && d.watchSeconds <= 86400 && d.updatedAt == request.time
+     && existsAfter(flixDailyPath()) && getAfter(flixDailyPath()).data.updatedAt == request.time
+     && d.watchSeconds <= getAfter(flixDailyPath()).data.watchSeconds;
+   }
+   allow create: if validWork() && request.resource.data.watchSeconds <= 65;
+   allow update: if validWork() && request.time >= resource.data.updatedAt + duration.value(45,'s')
+    && request.resource.data.watchSeconds >= resource.data.watchSeconds
+    && request.resource.data.watchSeconds <= resource.data.watchSeconds + 65;
+  }
+  // END FLIX ADMIN RULES

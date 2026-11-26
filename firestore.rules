@@ -308,6 +308,40 @@ service cloud.firestore {
      && request.resource.data.trusted is list && request.resource.data.trusted.size() <= 100
      && request.resource.data.updatedAt == request.time;
   }
+  // Private intake: one submission per anonymous browser identity per KST day.
+  match /flixSubmissions/{id} {
+   allow get: if flixAdmin() || (flixViewer() && id == request.auth.uid + '_' + string(flixDay()));
+   allow list: if flixAdmin();
+   allow delete: if false;
+   allow create: if flixViewer() && id == request.auth.uid + '_' + string(flixDay())
+    && request.resource.data.keys().hasOnly(['uid','day','kind','videoId','status','createdAt'])
+    && request.resource.data.keys().hasAll(['uid','day','kind','videoId','status','createdAt'])
+    && request.resource.data.uid == request.auth.uid && request.resource.data.day == flixDay()
+    && request.resource.data.kind in ['suggestion','creator']
+    && request.resource.data.videoId is string && request.resource.data.videoId.matches('^[A-Za-z0-9_-]{11}$')
+    && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
+   allow update: if flixAdmin()
+    && resource.data.status == 'pending'
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedAt'])
+    && request.resource.data.status in ['reviewed','declined']
+    && request.resource.data.reviewedAt == request.time;
+  }
+  // Optional push subscription: private token, no public read or list.
+  match /flixPushSubscriptions/{uid} {
+   allow get, delete: if flixViewer() && request.auth.uid == uid;
+   allow list: if false;
+   function validPush() {
+    let d = request.resource.data;
+    return flixViewer() && request.auth.uid == uid
+     && d.keys().hasOnly(['token','seen','day','updatedAt'])
+     && d.keys().hasAll(['token','seen','day','updatedAt'])
+     && d.token is string && d.token.size() >= 20 && d.token.size() <= 4096
+     && d.seen is map && d.seen.size() <= 20
+     && d.day == flixDay() && d.updatedAt == request.time;
+   }
+   allow create: if validPush();
+   allow update: if validPush() && request.time >= resource.data.updatedAt + duration.value(60,'s');
+  }
   match /flixPublic/recommendations {
    allow get: if true;
    allow list, write: if false;
