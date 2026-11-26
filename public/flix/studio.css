@@ -46,3 +46,49 @@ body{letter-spacing:-.2px}header.topbar{backdrop-filter:blur(18px);border-color:
 }
 @media(max-width:360px){.site-chrome #mainNav button{font-size:10px}}
 #siteFooter #seoDiscovery[hidden]{display:none!important}
+
+/* Thumbnail HTML dimensions describe the source (480x360), not its rendered
+   size. Override both axes so 16:9 slots stay stable even before image load. */
+.work .art img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;max-width:100%}
+.episode-panel .episode{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;min-width:0}
+.episode-panel .episode img,.episode-panel .episode-placeholder{display:block;width:82px;height:46.125px;aspect-ratio:16/9;object-fit:cover;flex:none;align-self:center;max-width:100%;border-radius:6px}
+.episode-panel .episode-placeholder{display:grid;place-items:center}
+.episode-panel .episode-copy,.episode-panel .episode-play{min-width:0}
+.episode-panel .episode-copy strong,.episode-panel .episode-copy .meta{overflow-wrap:anywhere}
+.hero-copy,.hero-actions,.hero-controls,.section-head h2,.watch-main,.social-body,.binge-heading>div,#submitWorkForm{min-width:0}
+.hero-copy h1,.hero-meta,.hero-description,.section-head h2,#pageTitle,.binge-heading h2,#creator,.work .meta,.social-toolbar a,.site-footer,.creator-original{overflow-wrap:anywhere}
+.hero-controls{flex-wrap:wrap}
+#cinemaTitle{min-width:0}
+#filters select{max-width:100%;min-width:0}
+#submitWorkForm{grid-template-columns:minmax(0,1fr)}
+#submitKind,#submitLink{min-width:0}
+#submitWorkButton{max-width:100%;white-space:normal}
+#ytComment{min-width:0}
+@media(max-width:1000px){
+ .watch-layout{grid-template-columns:minmax(0,1fr)}
+ .episode-panel .episode img,.episode-panel .episode-placeholder{width:96px;height:54px}
+ .episode-panel .episode{min-height:72px}
+ #cinemaBar{flex-wrap:wrap}
+ main{padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+ .site-footer{padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+}
+@media(max-width:600px){
+ #watch .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #watch .actions button{width:100%;min-height:44px}
+ #watch .actions label{grid-column:1/-1;overflow-wrap:anywhere}
+ #filters label{margin:0}
+ #filters select{min-height:44px}
+ #search,#submitLink,#submitKind,.social-body textarea{font-size:16px}
+ .chips button{min-height:44px}
+ .section-head{flex-wrap:wrap}
+ .hero-actions button{min-width:0;white-space:normal}
+}
+@media(max-width:360px){
+ .episode-panel .episode img,.episode-panel .episode-placeholder{width:80px;height:45px}
+ .episode-panel .episode{gap:6px;min-height:64px}
+ .local-stat-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:1000px),(display-mode:standalone),(display-mode:minimal-ui),(hover:none) and (pointer:coarse){
+ .site-chrome header.topbar{padding-top:max(10px,env(safe-area-inset-top,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+ .site-chrome #mainNav{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
+}
