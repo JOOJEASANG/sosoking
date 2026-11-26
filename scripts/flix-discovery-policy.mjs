@@ -1,5 +1,5 @@
 import {durationSeconds} from './flix-catalog-validation.mjs';
-export const POLICY_VERSION='long-form-v4';
+export const POLICY_VERSION='long-form-v5';
 export const MIN_EPISODE_SECONDS=300,MIN_FEATURE_SECONDS=600,MIN_FEATURE_VIEWS=3000;
 const excluded=/(?:#\s*)?shorts\b|쇼츠|숏폼|숏츠|예고|티저|trailer|teaser|하이라이트|highlight|비하인드|behind\s*the\s*scenes|메이킹|making\s*of|리액션|reaction|튜토리얼|tutorial|제작\s*(?:방법|과정|강의|툴)|뮤직비디오|music\s*video|(?:^|\s)MV(?:\s|$)|뉴스|news\b/i;
 const shortFilm=/단편|short\s*film|short\s*movie/i;
