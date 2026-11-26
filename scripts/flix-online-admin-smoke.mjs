@@ -20,6 +20,7 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
    await page.setViewportSize({width,height:844});
    for(const panel of ['overview','works','links','review','intake','ops','backup']){
      const tab=page.locator('#studioNav button[data-panel="'+panel+'"]');
+     if(width<=600&&['intake','ops','backup'].includes(panel))await page.locator('#studioMore').click();
      await tab.click();
      assert.equal(await tab.getAttribute('aria-pressed'),'true');
      assert.ok(await page.locator('section[data-studio-panel="'+panel+'"]').first().isVisible());
@@ -33,6 +34,61 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
    const columns=await page.locator('.workspace-shell').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);
    assert.equal(columns,width<=900?1:2);
  }
+
+ // Mobile menu, edit dock and collapsible episode editor. Load the real
+ // editor with a local catalog fixture: draft state must come from actual
+ // input/change events, not a synthetic status that a blur can overwrite.
+ await page.setViewportSize({width:390,height:844});
+ await page.locator('#studioNav [data-panel=works]').click();
+ await page.evaluate(async()=>{
+   const admin=await import('/admin/admin.js');
+   const items=await (await fetch('/catalog.json')).json();
+   admin.setOnlineCatalog(items);
+   if(!admin.selectWorkForEditing(items[0].id))throw Error('Fixture selection failed');
+   document.querySelector('#publish').disabled=false;
+ });
+ const dock=page.locator('#studioMobileDock');
+ assert.ok(await dock.isVisible());
+ assert.ok(await page.locator('#mobilePublish').isDisabled());
+ const existing=page.locator('#episodes article').first();
+ assert.equal(await existing.locator('details').getAttribute('open'),null);
+ const originalTitle=await page.locator('#editor [name=title]').inputValue();
+ await page.locator('#editor [name=title]').fill(originalTitle+' 모바일 편집');
+ assert.match(await page.locator('#mobileDraftState').textContent(),/미저장/);
+ await page.locator('#studioNav [data-panel=review]').click();
+ assert.ok(await dock.isVisible());
+ assert.equal(await page.locator('#mobileSave').textContent(),'편집으로 이동');
+ assert.ok(await page.locator('#mobilePublish').isDisabled());
+ await page.locator('#mobileSave').click();
+ assert.equal(await page.locator('#studioTitle').textContent(),'작품 및 회차');
+ assert.equal(await page.locator('#editor [name=title]').inputValue(),originalTitle+' 모바일 편집');
+ await page.locator('#mobileSave').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileDraftState').textContent==='공개 반영 대기');
+ const draftTitle=await page.evaluate(async()=>{const admin=await import('/admin/admin.js');return admin.getOnlineCatalog()[0].title});
+ assert.equal(draftTitle,originalTitle+' 모바일 편집');
+ // Mock only the actual publishing handler; never contact production.
+ await page.evaluate(()=>{const b=document.querySelector('#publish');window.testPublishCount=0;b.onclick=()=>window.testPublishCount++});
+ await page.locator('#mobilePublish').click();
+ assert.equal(await page.evaluate(()=>window.testPublishCount),1);
+ await page.locator('#addEpisode').click();
+ const episode=page.locator('#episodes article').last(),details=episode.locator('details');
+ assert.equal(await details.getAttribute('open'),'');
+ await episode.locator('[data-field=title]').fill('모바일 테스트 회차');
+ assert.match(await episode.locator('summary').textContent(),/모바일 테스트 회차/);
+ await episode.locator('summary').click();
+ assert.equal(await details.getAttribute('open'),null);
+ assert.ok(await episode.locator('[data-field=title]').isHidden());
+ await episode.locator('summary').click();
+ assert.equal(await episode.locator('[data-field=title]').inputValue(),'모바일 테스트 회차');
+ await page.locator('#studioMore').click();
+ assert.ok(await page.locator('#studioMoreMenu').isVisible());
+ await page.keyboard.press('Escape');
+ assert.ok(await page.locator('#studioMoreMenu').isHidden());
+ await page.evaluate(()=>{document.activeElement.blur();window.scrollTo(0,document.documentElement.scrollHeight)});
+ const nav=await page.locator('.studio-sidebar').evaluate(el=>({bottom:el.getBoundingClientRect().bottom,viewport:innerHeight,position:getComputedStyle(el).position}));
+ assert.equal(nav.position,'fixed');assert.ok(Math.abs(nav.bottom-nav.viewport)<=2);
+ await page.setViewportSize({width:1280,height:800});
+ assert.ok(await dock.isHidden());assert.ok(await page.locator('#studioNav [data-panel=backup]').isVisible());
  assert.equal(errors.length,0,errors.join('; '));
  console.log('Admin workspace responsive layout passed for all seven panels at eight viewport widths');
  }finally{await browser?.close();server.close()}
