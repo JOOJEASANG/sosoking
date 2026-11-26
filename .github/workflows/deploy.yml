@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm install --no-audit --no-fund
-      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs && npm run build
+      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs scripts/flix-track-series.test.mjs && npm run build
       - run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1 @firebase/rules-unit-testing@4.0.1
       - run: npx playwright install --with-deps chromium
       - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs && node scripts/flix-online-admin-smoke.mjs
@@ -92,7 +92,7 @@ jobs:
       - name: Verify live root
         run: |
           for i in $(seq 1 12); do
-            if curl -fsS "https://sosoking-481e6.web.app/?verify=$GITHUB_SHA-$i" | grep -q 'flix.js?v=admin6' && curl -fsS "https://sosoking-481e6.web.app/admin/?verify=$GITHUB_SHA-$i" | grep -q 'id="authPanel"'; then exit 0; fi
+            if curl -fsS "https://sosoking-481e6.web.app/?verify=$GITHUB_SHA-$i" | grep -q 'flix.js?v=ops7' && curl -fsS "https://sosoking-481e6.web.app/admin/?verify=$GITHUB_SHA-$i" | grep -q 'id="authPanel"'; then exit 0; fi
             sleep 5
           done
           exit 1

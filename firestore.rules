@@ -249,6 +249,32 @@ service cloud.firestore {
    allow create: if flixAdmin() && validCatalog() && request.resource.data.revision == 1;
    allow update: if flixAdmin() && validCatalog() && request.resource.data.revision == resource.data.revision + 1;
   }
+  match /flixAutomation/lookup {
+   allow get: if flixAdmin();
+   allow list, delete: if false;
+   function validLookup() {
+    return request.resource.data.keys().hasOnly(['owner','id','links','status','requestedAt'])
+      && request.resource.data.keys().hasAll(['owner','id','links','status','requestedAt'])
+      && request.resource.data.owner == request.auth.uid
+      && request.resource.data.id is string && request.resource.data.id.matches('^[a-zA-Z0-9-]{16,80}
+  // Former event/group data is retained in Firestore, not exposed by this redesigned app.
+  // Reinstatement requires the archived code and a deliberate rules migration.
+  match /{document=**} { allow read, write: if false; }
+ }
+}
+)
+      && request.resource.data.links is string && request.resource.data.links.size() > 0 && request.resource.data.links.size() <= 12000
+      && request.resource.data.status == 'pending' && request.resource.data.requestedAt == request.time;
+   }
+   allow create: if flixAdmin() && validLookup();
+   allow update: if flixAdmin() && validLookup()
+    && ((resource.data.status != 'pending' && request.time > resource.data.requestedAt + duration.value(1,'m'))
+        || request.time > resource.data.requestedAt + duration.value(30,'m'));
+  }
+  match /flixAutomation/report {
+   allow get: if flixAdmin();
+   allow list, write: if false;
+  }
   // END FLIX ADMIN RULES
   // Former event/group data is retained in Firestore, not exposed by this redesigned app.
   // Reinstatement requires the archived code and a deliberate rules migration.
