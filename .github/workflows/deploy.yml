@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm install --no-audit --no-fund
-      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs scripts/flix-track-series.test.mjs scripts/flix-discovery-policy.test.mjs scripts/flix-seo.test.mjs scripts/flix-stats-core.test.mjs && npm run build
+      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs scripts/flix-track-series.test.mjs scripts/flix-discovery-policy.test.mjs scripts/flix-catalog-cleanup-policy.test.mjs scripts/flix-seo.test.mjs scripts/flix-stats-core.test.mjs && npm run build
       - run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1 @firebase/rules-unit-testing@4.0.1
       - run: npx playwright install --with-deps chromium
       - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs && node scripts/flix-online-admin-smoke.mjs && node scripts/flix-social-smoke.mjs
@@ -85,6 +85,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_OAUTH_CLIENT_ID: ${{ vars.YOUTUBE_OAUTH_CLIENT_ID }}
           YOUTUBE_PUBLIC_API_KEY: ${{ vars.YOUTUBE_PUBLIC_API_KEY }}
         run: |
@@ -92,6 +93,7 @@ jobs:
           umask 077
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
           trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS"' EXIT
+          node scripts/flix-catalog-cleanup.mjs
           node scripts/flix-seo-snapshot.mjs "$RUNNER_TEMP/flix-seo-catalog.json"
           FLIX_SEO_CATALOG="$RUNNER_TEMP/flix-seo-catalog.json" npm run build
           rm -f "$RUNNER_TEMP/flix-seo-catalog.json"
