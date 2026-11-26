@@ -3,6 +3,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {Resvg} from '@resvg/resvg-js';
 import {build as bundle} from 'esbuild';
+import {generateSeo} from './flix-seo.mjs';
 const src='public/flix',dest='dist-public';
 const asset=fs.readFileSync(path.join(src,'brand-icon-source.jpg'));
 const logo=fs.readFileSync(path.join(src,'brand-logo.webp'));
@@ -33,3 +34,5 @@ await bundle({entryPoints:['scripts/flix-public-cloud.mjs'],outfile:path.join(de
 console.log('Online admin and public catalog client built');
 
 await bundle({entryPoints:['scripts/flix-analytics.mjs'],outfile:path.join(dest,'viewer-analytics.js'),bundle:true,format:'esm',platform:'browser',minify:true});
+
+const seoCatalog=JSON.parse(fs.readFileSync(process.env.FLIX_SEO_CATALOG||path.join(src,'catalog.json'),'utf8'));const seoUrls=generateSeo(dest,seoCatalog);console.log('SEO pages:',seoUrls.length);
