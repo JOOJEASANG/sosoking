@@ -1,0 +1,32 @@
+name: 시청 통계 보관기간 관리
+on:
+  schedule:
+    - cron: '23 19 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: flix-stats-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund && npm install --no-save --package-lock=false --no-audit --no-fund firebase-admin@13
+      - name: Remove expired viewer metric rows
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/flix-stats.json
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS"' EXIT
+          node scripts/flix-stats-cleanup.mjs

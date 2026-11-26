@@ -1,7 +1,7 @@
 const $=id=>document.getElementById(id);
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem('sosoking.flix.'+key))??fallback}catch{return fallback}};
 const write=(key,value)=>{try{localStorage.setItem('sosoking.flix.'+key,JSON.stringify(value))}catch{$('notice').textContent='이 브라우저에서는 시청 기록을 저장할 수 없습니다.'}};
-let viewerAnalytics=null,analyticsConsent=read('analyticsConsent',false)===true;
+let viewerStats=null,statsEpoch=0;let viewerAnalytics=null,analyticsConsent=read('analyticsConsent',false)===true;
 let type='',catalog=[],saved=read('saved',[]),history=read('history',{}),tab='home',genre='',current=null,index=0,player=null,scroll=0,ticker=null,version=0,finished=false;
 if(!Array.isArray(saved))saved=[];saved=[...new Set(saved.filter(x=>typeof x==='string'))];if(!history||typeof history!=='object'||Array.isArray(history))history={};history=Object.fromEntries(Object.entries(history).filter(([k,v])=>v&&Number.isFinite(v.time)&&v.time>=0&&Number.isFinite(v.updated)&&typeof v.done==='boolean'));
 const node=(tag,txt,cls)=>{const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;if(cls)e.className=cls;return e};
@@ -61,4 +61,7 @@ document.addEventListener('keydown',e=>{if(isCinema()&&e.key!=='Escape'&&e.targe
 
 function analyticsLabel(){const b=$('analyticsToggle');b.textContent=analyticsConsent?'선택적 이용 통계 끄기':'선택적 이용 통계 허용';b.setAttribute('aria-pressed',String(analyticsConsent))}
 async function trackViewer(event,workId){if(!analyticsConsent)return;try{viewerAnalytics??=import('/viewer-analytics.js');const m=await viewerAnalytics;if(analyticsConsent)await m.recordViewer(event,workId,()=>analyticsConsent)}catch{}}
-$('analyticsToggle').onclick=async()=>{analyticsConsent=!analyticsConsent;write('analyticsConsent',analyticsConsent);analyticsLabel();if(analyticsConsent)trackViewer('viewer_opt_in');else if(viewerAnalytics){try{(await viewerAnalytics).disableViewer()}catch{}}};analyticsLabel();if(analyticsConsent)trackViewer('viewer_open');
+async function syncViewerStats(){const stamp=++statsEpoch;try{if(analyticsConsent){viewerStats??=import('/viewer-stats.js');const m=await viewerStats;if(stamp===statsEpoch&&analyticsConsent)await m.startViewerStats(()=>({playing:!!current&&!finished&&cinemaPlaying,workId:current?.id}),()=>analyticsConsent&&stamp===statsEpoch)}else if(viewerStats){const m=await viewerStats;if(stamp===statsEpoch&&!analyticsConsent)await m.stopViewerStats()}}catch{}}
+$('analyticsToggle').onclick=async()=>{analyticsConsent=!analyticsConsent;write('analyticsConsent',analyticsConsent);analyticsLabel();syncViewerStats();if(analyticsConsent)trackViewer('viewer_opt_in');else if(viewerAnalytics){try{(await viewerAnalytics).disableViewer()}catch{}}};
+window.addEventListener('storage',async e=>{if(e.key!=='sosoking.flix.analyticsConsent'&&e.key!==null)return;const allowed=read('analyticsConsent',false)===true;if(allowed===analyticsConsent)return;analyticsConsent=allowed;analyticsLabel();syncViewerStats();if(!allowed&&viewerAnalytics){try{(await viewerAnalytics).disableViewer()}catch{}}});
+analyticsLabel();if(analyticsConsent){syncViewerStats();trackViewer('viewer_open');}

@@ -1,0 +1,3 @@
+import {initializeApp,applicationDefault} from 'firebase-admin/app';import {getFirestore} from 'firebase-admin/firestore';import {dayOf} from './flix-stats-core.mjs';
+initializeApp({credential:applicationDefault(),projectId:'sosoking-481e6'});const db=getFirestore(),cutoff=dayOf()-34;
+for(const name of ['flixViewerDays','flixViewerWorkDays']){let total=0;for(let i=0;i<20;i++){const s=await db.collection(name).where('day','<',cutoff).orderBy('day').limit(400).get();if(s.empty)break;const batch=db.batch();for(const d of s.docs)batch.delete(d.ref);await batch.commit();total+=s.size;if(s.size<400)break}console.log(name+': expired rows deleted '+total+(total===8000?' (remaining backlog will be handled by future runs)':''))}
