@@ -49,3 +49,8 @@ if(publicApiKey&&!/^[A-Za-z0-9_-]{20,100}$/.test(publicApiKey))throw Error('Inva
 fs.writeFileSync(path.join(dest,'youtube-config.json'),JSON.stringify({clientId,publicApiKey}));
 
 await bundle({entryPoints:['scripts/flix-intake-client.mjs'],outfile:path.join(dest,'intake-client.js'),bundle:true,format:'esm',platform:'browser',minify:true});
+
+const pushKey=process.env.FLIX_PUSH_ENABLED==='true'?(process.env.FLIX_PUSH_VAPID_KEY||'').trim():'';
+if(pushKey&&!/^[A-Za-z0-9_-]{80,120}$/.test(pushKey))throw Error('Invalid public VAPID key');
+fs.writeFileSync(path.join(dest,'push-config.json'),JSON.stringify({enabled:!!pushKey,vapidKey:pushKey}));
+await bundle({entryPoints:['scripts/flix-push-client.mjs'],outfile:path.join(dest,'push-client.js'),bundle:true,format:'esm',platform:'browser',minify:true});

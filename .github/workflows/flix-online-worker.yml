@@ -29,6 +29,7 @@ jobs:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/flix-worker.json
+          FLIX_PUSH_ENABLED: ${{ vars.FLIX_PUSH_ENABLED }}
           FORCE_SCAN: ${{ inputs.force_scan }}
         run: |
           set -euo pipefail
