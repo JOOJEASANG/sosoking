@@ -128,3 +128,25 @@ jobs:
           if [ "$decision" = unchanged ]; then echo 'Admin rules already applied'; exit 0; fi
           test "$decision" = apply
           npx --yes firebase-tools@15.24.0 deploy --only firestore:rules --project sosoking-481e6 --non-interactive
+
+  catalog_seed:
+    name: Merge curated initial expansion without overwriting admin edits
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [admin_rules]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm install --no-audit --no-fund && npm install --no-save --package-lock=false --no-audit --no-fund firebase-admin@13
+      - name: Merge only new works once
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/flix-seed.json
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS"' EXIT
+          node scripts/flix-seed-import.mjs

@@ -163,5 +163,320 @@
       }
     ],
     "sourcePublishedAt": "2026-05-11"
+  },
+  {
+    "id": "general-at-work",
+    "title": "장군님 출근하십니다",
+    "creator": "씬나루 AI Studio",
+    "genre": "판타지·코미디",
+    "type": "드라마",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "고대의 장군이 백성을 위해 현대에서 일을 시작하는 차원이동 드라마.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "과거에서 돈 벌러 왔습니다",
+        "videoId": "m6Se7V8zp7I",
+        "start": 0,
+        "duration": 418
+      },
+      {
+        "number": 2,
+        "title": "장군이 하루 벌었더니",
+        "videoId": "xqeOhzcujVY",
+        "start": 0,
+        "duration": 432
+      },
+      {
+        "number": 3,
+        "title": "연기하랬더니 진짜 장군이 왔다",
+        "videoId": "SQY6yUgHB_4",
+        "start": 0,
+        "duration": 406
+      },
+      {
+        "number": 4,
+        "title": "고딩들이 사람을 잘못 건드렸다",
+        "videoId": "r516sNUrh50",
+        "start": 0,
+        "duration": 732
+      },
+      {
+        "number": 5,
+        "title": "생애 첫 데이트",
+        "videoId": "nP4ZWQ8rC2o",
+        "start": 0,
+        "duration": 1040
+      },
+      {
+        "number": 6,
+        "title": "6화",
+        "videoId": "7pGe_M0i5G8",
+        "start": 0,
+        "duration": 639
+      },
+      {
+        "number": 7,
+        "title": "7화",
+        "videoId": "A5SRELBJH_8",
+        "start": 0,
+        "duration": 678
+      },
+      {
+        "number": 8,
+        "title": "8화",
+        "videoId": "hf3PoOmUfzA",
+        "start": 0,
+        "duration": 653
+      },
+      {
+        "number": 9,
+        "title": "장군이 현대에서 살아가는 법",
+        "videoId": "6J-LIYu-N-w",
+        "start": 0,
+        "duration": 698
+      },
+      {
+        "number": 10,
+        "title": "고대 장군과 프로 격투기 선수",
+        "videoId": "dbIOpo83904",
+        "start": 0,
+        "duration": 704
+      },
+      {
+        "number": 11,
+        "title": "프로 격투기 선수마저 놀란 장군",
+        "videoId": "t6bsJ_rf4sE",
+        "start": 0,
+        "duration": 744
+      },
+      {
+        "number": 12,
+        "title": "절체절명의 위기",
+        "videoId": "C0xQApgVtR8",
+        "start": 0,
+        "duration": 1553
+      }
+    ]
+  },
+  {
+    "id": "chanryong",
+    "title": "찬룡 (篡龍)",
+    "creator": "투모로우 TO:MORROW",
+    "genre": "사극·판타지",
+    "type": "드라마",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "이무기가 왕이 된 조선을 배경으로 펼쳐지는 판타지 사극. 초반 회차는 제작자 통합본으로 제공됩니다.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1~6화 몰아보기",
+        "videoId": "kq8suKRpa7s",
+        "start": 0,
+        "duration": 3127
+      },
+      {
+        "number": 2,
+        "title": "7~11화 몰아보기",
+        "videoId": "OTBu4rrp0s8",
+        "start": 0,
+        "duration": 3374
+      },
+      {
+        "number": 3,
+        "title": "12화 · 요괴의 왕",
+        "videoId": "IHAA6BiNOPk",
+        "start": 0
+      },
+      {
+        "number": 4,
+        "title": "13화 · 구미호의 귀환",
+        "videoId": "si-H-oyyj1s",
+        "start": 0
+      },
+      {
+        "number": 5,
+        "title": "14화 · 도깨비 방망이",
+        "videoId": "IcDdSwJLq7k",
+        "start": 0
+      },
+      {
+        "number": 6,
+        "title": "15화 · 장화홍련",
+        "videoId": "DFkuw6XwNiM",
+        "start": 0
+      }
+    ]
+  },
+  {
+    "id": "cheongun-1636",
+    "title": "천군 : 타임슬립 1636",
+    "creator": "AI박스",
+    "genre": "사극·SF",
+    "type": "드라마",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "현대 대한민국 군인들이 병자호란 시기의 조선으로 이동하는 가상 역사 시리즈. 우선 확인된 앞부분만 등록.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1화",
+        "videoId": "O24sXs7pUko",
+        "start": 0,
+        "duration": 819
+      },
+      {
+        "number": 2,
+        "title": "2화",
+        "videoId": "uPPpyHgqmBI",
+        "start": 0,
+        "duration": 686
+      }
+    ]
+  },
+  {
+    "id": "steel-fist",
+    "title": "강철주먹",
+    "creator": "전쟁극장 Films",
+    "genre": "액션·드라마",
+    "type": "드라마",
+    "status": "완결",
+    "language": "한국어",
+    "description": "사회악에 맞서는 주인공의 이야기. 제작자 공개 1~5화 통합본.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1~5화 전편 몰아보기",
+        "videoId": "t2Pn4iqciNU",
+        "start": 0,
+        "duration": 2719
+      }
+    ]
+  },
+  {
+    "id": "steel-rose",
+    "title": "강철장미",
+    "creator": "전쟁극장 Films",
+    "genre": "액션·드라마",
+    "type": "드라마",
+    "status": "완결",
+    "language": "한국어",
+    "description": "부패와 조직 폭력에 맞서는 주인공의 액션 드라마. 제작자 공개 1~4화 통합본.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1~4화 전편 몰아보기",
+        "videoId": "X-7YS9ePTi0",
+        "start": 0,
+        "duration": 2406
+      }
+    ]
+  },
+  {
+    "id": "drunken-tiger",
+    "title": "취호권 시즌 1",
+    "creator": "본거 또 보고",
+    "genre": "무협·액션",
+    "type": "드라마",
+    "status": "완결",
+    "language": "한국어",
+    "description": "조선 무협을 소재로 한 AI 드라마 시즌 1 통합본.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1~3화 몰아보기",
+        "videoId": "5dOUveXPrdg",
+        "start": 0,
+        "duration": 1909
+      }
+    ]
+  },
+  {
+    "id": "nameless-645",
+    "title": "무명 : 645년 안시성",
+    "creator": "조선클립",
+    "genre": "사극·SF",
+    "type": "드라마",
+    "status": "완결",
+    "language": "한국어",
+    "description": "현대 공병대가 안시성 전투 시대로 이동하는 가상 역사 이야기.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1~4화 전편 몰아보기",
+        "videoId": "yXehM7hbaMo",
+        "start": 0,
+        "duration": 3105
+      }
+    ]
+  },
+  {
+    "id": "yeojin",
+    "title": "여진 토멸",
+    "creator": "쇠꼬비 검프",
+    "genre": "사극·액션",
+    "type": "영화",
+    "status": "완결",
+    "language": "한국어",
+    "description": "고려의 여진 정벌과 척준경을 소재로 한 AI 사극.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "본편",
+        "videoId": "VKwK-vwmKL8",
+        "start": 0,
+        "duration": 3535
+      }
+    ]
+  },
+  {
+    "id": "iron-beauty",
+    "title": "철의미녀",
+    "creator": "AI드라마극장",
+    "genre": "액션·드라마",
+    "type": "드라마",
+    "status": "연재 중",
+    "language": "한국어",
+    "description": "특임대 출신 주인공의 액션 드라마.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "1화",
+        "videoId": "vbQklHEGiEs",
+        "start": 0,
+        "duration": 520
+      }
+    ]
+  },
+  {
+    "id": "timeslip-1592",
+    "title": "타임슬립 1592",
+    "creator": "AI박스",
+    "genre": "SF·사극",
+    "type": "영화",
+    "status": "완결",
+    "language": "한국어",
+    "description": "현대 군대가 조선으로 이동한다는 설정의 짧은 AI 영화.",
+    "addedAt": "2026-11-26",
+    "episodes": [
+      {
+        "number": 1,
+        "title": "본편",
+        "videoId": "nTtPMvWVjm0",
+        "start": 0,
+        "duration": 102
+      }
+    ]
   }
 ]
