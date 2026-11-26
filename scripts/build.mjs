@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {Resvg} from '@resvg/resvg-js';
+import {build as bundle} from 'esbuild';
 const src='public/flix',dest='dist-public';
 const asset=fs.readFileSync(path.join(src,'brand-icon-source.jpg'));
 const logo=fs.readFileSync(path.join(src,'brand-logo.webp'));
@@ -17,3 +18,16 @@ fs.writeFileSync(path.join(dest,'icons','ai-brand-maskable-512.png'),render(512,
 // Keep old icon URLs compatible for previously installed PWA clients.
 for(const size of [192,512])fs.copyFileSync(path.join(dest,'icons','ai-brand-'+size+'.png'),path.join(dest,'icons','flix-'+size+'.png'));
 console.log('FLIX build and brand asset verification passed');
+
+const adminDir=path.join(dest,'admin');fs.mkdirSync(adminDir,{recursive:true});
+const common=fs.readFileSync('flix-review/admin/index.html','utf8');
+const login='<header class="adminhead"><a href="/" class="backlink">← 시청 사이트</a><img src="/brand-logo.webp" alt="소소킹 AI영상 플레이어"></header><section id="authPanel"><h2>관리자 로그인</h2><p id="authMessage" role="status">로그인 정보를 확인하는 중입니다.</p><form id="loginForm"><label>이메일 <input id="email" type="email" autocomplete="username" required></label><label>비밀번호 <input id="password" type="password" autocomplete="current-password" required></label><button id="loginButton" type="submit" disabled>로그인</button></form><button id="googleLogin" disabled>Google 계정 로그인</button><p id="accountInfo" hidden></p><button id="logout" hidden>로그아웃</button></section>';
+const adminHtml=common.replace('<html lang="ko">','<html lang="ko" data-admin-mode="online">').replace('<title>소소킹 로컬 관리자</title>','<meta name="robots" content="noindex,nofollow"><title>소소킹 온라인 관리자</title>').replace('<h1>소소킹 작품 관리</h1><p>내 PC 전용 관리자 편집 도구입니다. 공개 사이트나 Firebase에는 직접 저장하지 않습니다. 검토한 카탈로그를 내려받아 GitHub PR로 반영하세요.</p>',login+'<main id="workspace" hidden><h1>작품 및 회차 관리</h1><p>변경 저장으로 편집한 후 공개 반영을 눌러 시청 사이트를 업데이트합니다.</p><section><h2>운영 상태</h2><p id="cloudStatus" role="status"></p><button id="publish">검증 후 홈페이지 공개 반영</button><button id="reloadCloud">공개 목록 새로 불러오기</button><a href="https://github.com/JOOJEASANG/sosoking/actions" target="_blank" rel="noopener noreferrer">자동 수집 및 등록 검토 (GitHub)</a></section>').replace('개별 영상, 여러 링크, 재생목록, 채널 주소를 입력하세요. 키가 없는 경우 개별 영상 ID만 가져오고 제목·제작자는 직접 확인해야 합니다.','개별 영상 또는 여러 링크를 입력하세요. 현재 온라인 페이지에서는 영상 ID를 추출하며 제목·제작자·재생 가능 여부는 직접 확인해야 합니다. 재생목록·채널 API 조회는 GitHub 등록 검토에서 가능합니다.').replace('검증 후 카탈로그 내려받기','검증 후 카탈로그 백업').replace('<script type="module" src="./admin.js"></script></html>','</main><script type="module" src="./online.js"></script></html>').replace('</style>','[hidden]{display:none!important}.adminhead{display:flex;align-items:center;justify-content:space-between;gap:12px}.adminhead img{width:230px;height:auto;max-width:60%}input,select,textarea{box-sizing:border-box;max-width:100%}label input:not([type=checkbox]),label textarea{display:block;width:100%;max-width:560px;margin:6px 0 12px}#publish{background:#a92139;border-color:#ff6571;font-weight:700}button{min-height:44px}#accountInfo{overflow-wrap:anywhere}.backlink{white-space:nowrap}#cloudStatus{white-space:pre-wrap}</style>');
+if(!adminHtml.includes('id="workspace"')||!adminHtml.includes('id="publish"'))throw Error('Admin template mismatch');
+fs.writeFileSync(path.join(adminDir,'index.html'),adminHtml);
+fs.copyFileSync('flix-review/admin/admin.js',path.join(adminDir,'admin.js'));
+const validationSource=fs.readFileSync('scripts/flix-catalog-review.mjs','utf8');
+fs.writeFileSync(path.join(adminDir,'validation.js'),validationSource.slice(validationSource.indexOf('export const validId'),validationSource.indexOf('if(process.argv[1]')));
+await bundle({entryPoints:['flix-review/admin/online.js'],outfile:path.join(adminDir,'online.js'),bundle:true,format:'esm',platform:'browser',external:['./admin.js'],minify:true});
+await bundle({entryPoints:['scripts/flix-public-cloud.mjs'],outfile:path.join(dest,'cloud-catalog.js'),bundle:true,format:'esm',platform:'browser',minify:true});
+console.log('Online admin and public catalog client built');
