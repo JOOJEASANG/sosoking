@@ -7,3 +7,5 @@ body{letter-spacing:-.2px}header.topbar{backdrop-filter:blur(18px);border-color:
 @media(max-width:1000px){#hero{min-height:350px;border-radius:14px}.watch-layout{grid-template-columns:1fr;gap:14px}.episode-panel #episodes{max-height:none}.watch-heading{gap:10px;align-items:flex-start}.watch-heading #back{padding:8px;font-size:12px}.watch-heading h2{font-size:19px}.section{margin-bottom:24px}.episode-panel{padding:12px}.social-body{padding-inline:12px}}
 @media(max-width:480px){.rail{grid-auto-columns:66%}.hero-copy{padding:18px}.hero-copy h1{font-size:29px}.watch-heading{flex-direction:column}.social-toolbar{gap:8px}.social-panel summary{padding:13px}.social-body button{max-width:100%}}
 @media(prefers-reduced-motion:reduce){.work{transition:none}}
+
+.hero-controls{display:flex;gap:6px;margin-top:14px}.hero-controls button{min-width:28px;min-height:30px;padding:3px 7px;background:#171921b0;border-color:#ffffff30;font-size:12px}.hero-controls button[aria-pressed=true]{background:#f1f2f5;color:#111;border-color:#fff}
