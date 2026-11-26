@@ -1,0 +1,3 @@
+// Shared episode selection enhances the crawlable work page without creating duplicate indexed pages.
+const p=new URLSearchParams(location.search),ep=p.get('ep'),play=document.getElementById('seoPlay');
+if(play&&/^\d{1,5}$/.test(ep||'')){const row=[...document.querySelectorAll('[data-episode]')].find(x=>x.dataset.episode===ep);const a=row?.querySelector('a');if(a){const href=new URL(a.href,location.origin);if(href.origin===location.origin&&href.pathname==='/'){play.href=href.href;play.textContent='공유된 '+ep+'회차 시청하기';row.classList.add('shared-episode');row.setAttribute('aria-current','true')}}}
