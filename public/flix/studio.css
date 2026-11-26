@@ -18,3 +18,14 @@ body{letter-spacing:-.2px}header.topbar{backdrop-filter:blur(18px);border-color:
 
 /* Final responsive navigation: secondary tools remain reachable from every browsing tab. */
 #quickTools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:4px 0}#quickTools button{font-size:13px;min-height:44px;padding:8px 12px;white-space:normal;overflow-wrap:anywhere}#quickTools button[aria-pressed=true]{background:#372630;border-color:var(--accent)}.binge-hub{margin-top:12px}.budget-buttons button,.hero-controls button{min-height:44px}.watch-heading>div{min-width:0}.episode-copy{overflow-wrap:anywhere}#playbackFallback{font-size:13px;overflow-wrap:anywhere}.calendar-row button{min-height:44px} @media(max-width:1000px){header.topbar #topSearch{display:none}.topbar .brand{max-width:100%}#quickTools{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,105px),1fr));gap:6px}#quickTools button{font-size:12px;padding:6px;line-height:1.3}.hero-controls button{min-width:38px}#watch .actions button{flex:1 1 auto;min-width:0;white-space:normal}.watch-heading{gap:8px}#cinemaBar{gap:5px}#cinemaBar button{padding-inline:9px}} @media(max-width:360px){#quickTools{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-copy h1{font-size:27px}.hero-actions button{min-width:0}.episode{gap:6px}.episode img{width:74px}}
+
+/* A filtered ancestor creates a containing block for fixed descendants. Keep mobile/PWA navigation anchored to the viewport, not the sticky header. */
+@media (max-width:1000px), (display-mode:standalone){
+ header.topbar{backdrop-filter:none;-webkit-backdrop-filter:none;background:#0b0c10;min-height:62px;justify-content:space-between;padding:10px 16px;z-index:35}
+ .topbar #mainNav{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;max-width:100%;min-width:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:#14151a;border-top:1px solid #ffffff20;padding:4px 4px 8px;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:30;backdrop-filter:none;-webkit-backdrop-filter:none}
+ .topbar #mainNav button{flex-direction:column;justify-content:center;gap:3px;min-height:52px;min-width:0;padding:5px 0;font-size:11px;white-space:nowrap}
+ .topbar #mainNav button[aria-pressed=true]{color:#ff6e7e;background:none}
+ .topbar #topSearch{display:none}.topbar .brand{max-width:100%}
+ body{padding-bottom:67px;padding-bottom:calc(67px + env(safe-area-inset-bottom))}body.watching{padding-bottom:0}.watching #mainNav{visibility:hidden}
+}
+@media(max-width:360px){.topbar #mainNav button{font-size:10px}}
