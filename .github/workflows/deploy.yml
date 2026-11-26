@@ -19,10 +19,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm install --no-audit --no-fund
-      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs && npm run build
-      - run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1
+      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs && npm run build
+      - run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1 @firebase/rules-unit-testing@4.0.1
       - run: npx playwright install --with-deps chromium
-      - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs
+      - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs && node scripts/flix-online-admin-smoke.mjs
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - run: npx --yes firebase-tools@15.24.0 emulators:exec --project demo-sosoking --only firestore 'node --test scripts/flix-admin-rules.test.mjs'
   auto_merge:
     name: Auto-merge tested owner feature PR
     needs: [check]
@@ -89,7 +92,39 @@ jobs:
       - name: Verify live root
         run: |
           for i in $(seq 1 12); do
-            if curl -fsS "https://sosoking-481e6.web.app/?verify=$GITHUB_SHA-$i" | grep -q 'flix.js?v=audit5'; then exit 0; fi
+            if curl -fsS "https://sosoking-481e6.web.app/?verify=$GITHUB_SHA-$i" | grep -q 'flix.js?v=admin6' && curl -fsS "https://sosoking-481e6.web.app/admin/?verify=$GITHUB_SHA-$i" | grep -q 'id="authPanel"'; then exit 0; fi
             sleep 5
           done
           exit 1
+
+  admin_rules:
+    name: Apply narrowly scoped admin rules only after live-baseline verification
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [deploy]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Compare active rules and apply only the new admin paths
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS" "$RUNNER_TEMP/flix-active-rules.json"' EXIT
+          gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS" --quiet >/dev/null
+          token="$(gcloud auth print-access-token)"
+          echo "::add-mask::$token"
+          api="https://firebaserules.googleapis.com/v1"
+          release="$(curl -fsS -H "Authorization: Bearer $token" "$api/projects/sosoking-481e6/releases/cloud.firestore")"
+          ruleset="$(jq -er .rulesetName <<< "$release")"
+          [[ "$ruleset" == projects/sosoking-481e6/rulesets/* ]]
+          curl -fsS -H "Authorization: Bearer $token" "$api/$ruleset" > "$RUNNER_TEMP/flix-active-rules.json"
+          decision="$(node scripts/flix-rules-guard.mjs "$RUNNER_TEMP/flix-active-rules.json")"
+          if [ "$decision" = unchanged ]; then echo 'Admin rules already applied'; exit 0; fi
+          test "$decision" = apply
+          npx --yes firebase-tools@15.24.0 deploy --only firestore:rules --project sosoking-481e6 --non-interactive
