@@ -59,6 +59,6 @@ $('cinema').addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&e.tar
 $('cinemaBar').addEventListener('focusout',()=>queueMicrotask(()=>{if(!$('cinemaBar').contains(document.activeElement))revealCinema()}));
 document.addEventListener('keydown',e=>{if(isCinema()&&e.key!=='Escape'&&e.target!==$('cinemaReveal'))revealCinema()});
 
-function analyticsLabel(){const b=$('analyticsToggle');b.textContent=analyticsConsent?'익명 이용 통계 끄기':'익명 이용 통계 허용';b.setAttribute('aria-pressed',String(analyticsConsent))}
+function analyticsLabel(){const b=$('analyticsToggle');b.textContent=analyticsConsent?'선택적 이용 통계 끄기':'선택적 이용 통계 허용';b.setAttribute('aria-pressed',String(analyticsConsent))}
 async function trackViewer(event,workId){if(!analyticsConsent)return;try{viewerAnalytics??=import('/viewer-analytics.js');const m=await viewerAnalytics;if(analyticsConsent)await m.recordViewer(event,workId,()=>analyticsConsent)}catch{}}
 $('analyticsToggle').onclick=async()=>{analyticsConsent=!analyticsConsent;write('analyticsConsent',analyticsConsent);analyticsLabel();if(analyticsConsent)trackViewer('viewer_opt_in');else if(viewerAnalytics){try{(await viewerAnalytics).disableViewer()}catch{}}};analyticsLabel();if(analyticsConsent)trackViewer('viewer_open');
