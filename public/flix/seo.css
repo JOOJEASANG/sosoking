@@ -15,3 +15,11 @@
 .seo-page header nav{flex-shrink:0;font-size:13px}.seo-page .seo-thumb{aspect-ratio:16/9;object-fit:cover}.seo-episode-meta{display:block;color:#b6b8c5;font-size:12px;margin:4px 0}.seo-episodes .shared-episode{background:#24202c;border-left:3px solid #e85c78;padding-left:9px}.seo-page .seo-list a{font-weight:600}.seo-page .seo-list a:focus-visible,.seo-page .seo-play:focus-visible{outline:2px solid #ffb3c1;outline-offset:4px}
 
 @media(max-width:360px){.seo-page header nav{font-size:12px;white-space:normal}.seo-page header img{max-width:48vw}.seo-page header{gap:8px}}
+
+/* Explicit source dimensions must not stretch the responsive detail image. */
+.seo-page .seo-thumb{width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+.seo-page header>a{min-width:0;flex:0 1 auto}
+.seo-page header img{max-width:100%;height:auto}
+.seo-page header nav{min-width:0;flex-shrink:1;flex-wrap:wrap}
+.seo-page main{min-width:0;overflow-wrap:anywhere}
+@media(max-width:360px){.seo-page header img{width:min(240px,48vw);max-width:100%}}
