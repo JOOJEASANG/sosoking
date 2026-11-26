@@ -308,6 +308,24 @@ service cloud.firestore {
      && request.resource.data.trusted is list && request.resource.data.trusted.size() <= 100
      && request.resource.data.updatedAt == request.time;
   }
+  // Private intake: one submission per anonymous browser identity per KST day.
+  match /flixSubmissions/{id} {
+   allow get: if flixAdmin() || (flixViewer() && id == request.auth.uid + '_' + string(flixDay()));
+   allow list: if flixAdmin();
+   allow delete: if false;
+   allow create: if flixViewer() && id == request.auth.uid + '_' + string(flixDay())
+    && request.resource.data.keys().hasOnly(['uid','day','kind','videoId','status','createdAt'])
+    && request.resource.data.keys().hasAll(['uid','day','kind','videoId','status','createdAt'])
+    && request.resource.data.uid == request.auth.uid && request.resource.data.day == flixDay()
+    && request.resource.data.kind in ['suggestion','creator']
+    && request.resource.data.videoId is string && request.resource.data.videoId.matches('^[A-Za-z0-9_-]{11}$')
+    && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
+   allow update: if flixAdmin()
+    && resource.data.status == 'pending'
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedAt'])
+    && request.resource.data.status in ['reviewed','declined']
+    && request.resource.data.reviewedAt == request.time;
+  }
   match /flixPublic/recommendations {
    allow get: if true;
    allow list, write: if false;
