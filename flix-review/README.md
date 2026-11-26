@@ -23,3 +23,6 @@ Firebase Hosting의 https://sosoking-481e6.web.app/admin/ 에서 이메일/비�
 운영 보고서에는 신규 AI 작품 검색 후보 및 재생 제한 검사 결과도 표시합니다. 일반 작품은 관리자 검토 후 등록하며, 이용 통계는 Firebase Analytics가 연결되어 있고 시청자가 선택적으로 통계를 허용한 경우에만 이벤트를 기록합니다. 별도 이용자 ID나 시청 이력을 통계 이벤트에 넣지 않으며 실제 통계는 Firebase 콘솔에서 확인합니다. Analytics 미설정 시 통계 수집 없이 시청 가능합니다.
 
 기존 후보 수집 workflow는 중복 API 사용 방지를 위해 수동 실행 전용으로 전환합니다. 온라인 운영 worker가 정기 검색과 재생 검사, 추적을 담당합니다. YouTube API 쿼터 및 GitHub 예약 실행 지연에 따라 실제 처리 시간이 달라지며, 검색 범위를 넘는 작품은 수동 검토가 필요합니다.
+
+## 검색 최적화
+메인 페이지의 실제 HTML에 공개 작품 목록 및 WebSite 구조화 데이터를 넣고 /works/, /category/drama/, /category/film/, /category/animation/ 및 작품별 /works/{id}/ 페이지를 생성합니다. sitemap.xml에는 공개 작품 및 실제로 생성된 분류 주소만 포함합니다. 작품 페이지는 소개 및 회차 탐색 페이지이며 재생은 기존 플레이어 링크로 이동합니다. 실제 영상 업로드일 등이 불확실한 영상에 VideoObject를 생성하지 않습니다. main Hosting 배포 시 Firestore의 현재 공개 카탈로그를 읽어서 검색용 HTML과 사이트맵을 생성하며 매일 예약 배포로 갱신합니다. 공개/숨김 변경은 다음 갱신 전까지 검색용 페이지에 남을 수 있습니다. 검색 노출과 순위는 보장하지 않습니다. 네이버/구글에 제출: https://sosoking-481e6.web.app/sitemap.xml. 기존 소유 확인 방식은 유지하고 인증 토큰을 임의 생성하지 않습니다.
