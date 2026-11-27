@@ -302,10 +302,11 @@ service cloud.firestore {
    allow get: if flixAdmin();
    allow list, delete: if false;
    allow create, update: if flixAdmin()
-     && request.resource.data.keys().hasOnly(['excluded','trusted','updatedAt'])
+     && request.resource.data.keys().hasOnly(['excluded','trusted','held','updatedAt'])
      && request.resource.data.keys().hasAll(['excluded','trusted','updatedAt'])
      && request.resource.data.excluded is list && request.resource.data.excluded.size() <= 500
      && request.resource.data.trusted is list && request.resource.data.trusted.size() <= 100
+     && request.resource.data.get('held',[]) is list && request.resource.data.get('held',[]).size() <= 500
      && request.resource.data.updatedAt == request.time;
   }
   // Private intake: one submission per anonymous browser identity per KST day.

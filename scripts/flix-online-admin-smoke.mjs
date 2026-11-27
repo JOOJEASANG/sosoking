@@ -108,6 +108,16 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  assert.ok(await page.locator('#trackAuto').isChecked());
  await page.locator('#mobileSave').click();
  await page.waitForFunction(()=>document.querySelector('#mobileDraftState').textContent==='공개 반영 대기');
+
+ // Instant review UI uses real plan with mocked publication callback; never writes production.
+ await page.evaluate(async()=>{const admin=await import('/admin/admin.js'),{quickReviewPlan,currentReviewGroups}=await import('/admin/quick-review.js');admin.markCatalogPublished();const cs=[1,2].map(n=>({title:'AI 드라마 즉시등록작 '+n+'화',creator:'테스트 채널',channelId:'UC'+'a'.repeat(22),videoId:'bbbbbbb000'+n,checkedAt:new Date().toISOString(),publishedAt:'2026-11-20',duration:'PT8M',verifiedPublic:true,autoKind:'드라마',typeHint:'review',discoveryKind:'series'}));admin.setOnlineCandidates(cs);admin.connectQuickPublish(async selections=>{const groups=currentReviewGroups(cs).filter(g=>selections.some(x=>x.key===g.key));const r=quickReviewPlan(admin.getOnlineCatalog(),groups);admin.acceptQuickCatalog(r.items);return r.published})});
+ await page.locator('#studioNav [data-panel=review]').click();
+ await page.locator('#quickAll').click();
+ assert.match(await page.locator('#quickCount').textContent(),/1개 작품 선택/);
+ page.once('dialog',d=>d.accept());
+ await page.locator('#quickRegister').click();
+ await page.waitForFunction(()=>document.querySelector('#curationStatus').textContent.includes('공개 완료'));
+ assert.equal(await page.evaluate(async()=>{const a=await import('/admin/admin.js');return a.getOnlineCatalog().find(w=>w.title==='AI 드라마 즉시등록작').episodes.length}),2);
  await page.setViewportSize({width:1280,height:800});
  assert.ok(await dock.isHidden());assert.ok(await page.locator('#studioNav [data-panel=backup]').isVisible());
  assert.equal(errors.length,0,errors.join('; '));
