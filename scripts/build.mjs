@@ -34,6 +34,7 @@ fs.copyFileSync('flix-review/admin/admin.js',path.join(adminDir,'admin.js'));fs.
 const validationSource=fs.readFileSync('scripts/flix-catalog-review.mjs','utf8');
 fs.writeFileSync(path.join(adminDir,'validation.js'),validationSource.slice(validationSource.indexOf('export const validId'),validationSource.indexOf('if(process.argv[1]')));
 await bundle({entryPoints:['flix-review/admin/online.js'],outfile:path.join(adminDir,'online.js'),bundle:true,format:'esm',platform:'browser',external:['./admin.js'],minify:true});
+await bundle({entryPoints:['scripts/flix-member-auth.mjs'],outfile:path.join(dest,'member-auth.js'),bundle:true,format:'esm',platform:'browser',minify:true});
 await bundle({entryPoints:['scripts/flix-public-cloud.mjs'],outfile:path.join(dest,'cloud-catalog.js'),bundle:true,format:'esm',platform:'browser',minify:true});
 console.log('Online admin and public catalog client built');
 
