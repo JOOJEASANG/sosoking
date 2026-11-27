@@ -6,3 +6,7 @@ test('current stats baseline is accepted exactly',()=>{const old=p.replace(/^  \
 test('refresh rules baseline accepted exactly',()=>{const old=p.replace(/^  \/\/ BEGIN FLIX ADMIN RULES\n[\s\S]*?^  \/\/ END FLIX ADMIN RULES\n/m,()=>fs.readFileSync('scripts/flix-previous-refresh-rules.txt','utf8'));assert.equal(checkRules(p,old),'apply');assert.throws(()=>checkRules(p,old+'\n// unrelated'),/differ/)});
 test('curation rules baseline accepted exactly',()=>{const old=p.replace(/^  \/\/ BEGIN FLIX ADMIN RULES\n[\s\S]*?^  \/\/ END FLIX ADMIN RULES\n/m,()=>fs.readFileSync('scripts/flix-previous-curation-rules.txt','utf8'));assert.equal(checkRules(p,old),'apply');assert.throws(()=>checkRules(p,old+'\n// unrelated'),/differ/)});
 test('pre-review rules are accepted without unrelated edits',()=>{const old=p.replace(/^  \/\/ BEGIN FLIX ADMIN RULES\n[\s\S]*?^  \/\/ END FLIX ADMIN RULES\n/m,()=>fs.readFileSync('scripts/flix-previous-review-rules.txt','utf8'));assert.equal(checkRules(p,old),'apply');assert.throws(()=>checkRules(p,old+'\n// unrelated'),/differ/)});
+test('quick review baseline can upgrade without permitting unrelated changes',()=>{
+ const old=p.replace(/^  \/\/ BEGIN FLIX ADMIN RULES\n[\s\S]*?^  \/\/ END FLIX ADMIN RULES\n/m,()=>fs.readFileSync('scripts/flix-previous-quick-review-rules.txt','utf8'));
+ assert.equal(checkRules(p,old),'apply');assert.throws(()=>checkRules(p,old+'\n// unrelated'),/differ/);
+});

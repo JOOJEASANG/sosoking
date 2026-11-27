@@ -1,0 +1,21 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import * as core from './flix-stats-core.mjs';
+test('admin reopen reuses aggregates and isolates cache by account and day',async()=>{
+ let now=Date.parse('2026-11-27T03:00:00Z'),reads=0;const nodes=new Map(),storage=new Map();
+ const element=()=>({style:{},hidden:false,textContent:'',append(){},replaceChildren(){}});
+ const document={visibilityState:'visible',getElementById:id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)},createElement:element,addEventListener(){},removeEventListener(){}};
+ const args={...core,dayOf:(ms=now)=>core.dayOf(ms),document,sessionStorage:{getItem:key=>storage.get(key),setItem:(key,v)=>storage.set(key,v)},Date:class extends Date{static now(){return now}},MutationObserver:class{observe(){}disconnect(){}},setInterval:()=>1,clearInterval:()=>{},collection:()=>({}),query:()=>({}),where:()=>({}),orderBy:()=>({}),limit:()=>({}),Timestamp:{fromMillis:x=>x},getDocsFromServer:async()=>{reads++;return {size:0,empty:true,docs:[]}}};
+ const source=(await fs.readFile(new URL('../flix-review/admin/viewer-dashboard.js',import.meta.url),'utf8')).replace(/import\s+[^;]+;/g,'').replace(/export /g,'');
+ const connect=await new (Object.getPrototypeOf(async function(){}).constructor)(...Object.keys(args),source+'\nreturn connectViewerDashboard;')(...Object.values(args));
+ const settle=()=>new Promise(r=>setImmediate(r));
+ let stop=connect({},()=>true,()=>[],'owner');await settle();assert.equal(reads,3);stop();
+ stop=connect({},()=>true,()=>[],'owner');await settle();assert.equal(reads,3);
+ now+=61000;document.getElementById('statsRefresh').onclick();await settle();assert.equal(reads,5,'manual refresh re-queries totals, not recent live count');stop();
+ stop=connect({},()=>true,()=>[],'another');await settle();assert.equal(reads,8);stop();
+ now+=86400000;stop=connect({},()=>true,()=>[],'owner');await settle();assert.equal(reads,11);stop();
+ assert.ok([...storage.values()].every(raw=>!raw.includes('"uid"')),'only aggregates are cached');
+ storage.set('sosoking.admin.stats.v1.owner.all',JSON.stringify({day:core.dayOf(now),at:now,m:{}}));
+ stop=connect({},()=>true,()=>[],'owner');await settle();assert.equal(reads,13,'corrupt cached totals are fetched again');stop();
+});

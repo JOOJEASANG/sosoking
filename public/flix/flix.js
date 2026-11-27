@@ -1,3 +1,4 @@
+import {cachedRecord,CATALOG_CACHE} from './data-cache.js?v=cost30';
 import {dayKey,timePicks,calendarEntries,episodeCoverage,newSavedEpisodes,episodeFingerprint,monthReport,preferencePicks,reconcileHistory} from './binge-core.js?v=stable18';
 import {submissionVideoId} from './intake-core.js?v=service17';
 import {shareUrl} from './discovery-core.js?v=discovery20';
@@ -38,7 +39,7 @@ if(tab==='submit'){out.hidden=true}else if(tab==='hall'){const byId=new Map(item
 renderBinge(home);if(tab!=='submit'&&!out.children.length)out.append(node('p',tab==='my'?'아직 보관한 작품이나 시청 기록이 없습니다.':'조건에 맞는 작품이 없습니다.','empty'))}
 let lastPersistAt=0,hasPlayed=false,playbackFailed=false;function persist(done=false,force=true){if(playbackFailed||!current||!player||typeof player.getCurrentTime!=='function'||(!done&&!hasPlayed))return;const e=current.episodes[index],k=epKey(current,e),previous=history[k];let t;try{t=player.getCurrentTime()}catch{return}if(!Number.isFinite(t))return;const start=e.start||0,end=e.end||Infinity;if(done)t=Math.max(start,Math.min(t,end));if(t<start||(!done&&t<start+2&&!previous))return;if(!force&&Date.now()-lastPersistAt<5000)return;lastPersistAt=Date.now();history[k]={time:Math.min(t,end),done:done||Boolean(previous?.done),updated:Date.now(),fingerprint:episodeFingerprint(e)};write('history',history)}
 function dispose(){flushLocalWatch();playbackFailed=false;$('retryVideo').hidden=true;$('skipFailed').hidden=true;$('playbackFallback').hidden=true;hasPlayed=false;lastPersistAt=0;cinemaPlaying=false;cinemaNearEnd=false;revealCinema(false);clearInterval(ticker);ticker=null;if(player){try{player.destroy()}catch{}player=null}$('playerWrap').replaceChildren(node('div'));$('playerWrap').firstChild.id='player'}
-let api;let cinemaRequest=0,autoLandscape=false,landscapeDismissed=false;const landscapeWatch=matchMedia('(orientation:landscape) and (max-width:1000px) and (max-height:600px), (orientation:landscape) and (pointer:coarse) and (max-height:600px)');
+let api;let cinemaRequest=0,autoLandscape=false,landscapeDismissed=false;const landscapeWatch=matchMedia('(orientation:landscape) and (pointer:coarse) and (max-height:600px)');
 function getApi(){if(window.YT?.Player)return Promise.resolve(window.YT);if(!api)api=new Promise((resolve,reject)=>{const s=node('script');s.src='https://www.youtube.com/iframe_api';let timer;function fail(message){clearTimeout(timer);s.remove();reject(Error(message))}window.onYouTubeIframeAPIReady=()=>{clearTimeout(timer);resolve(window.YT)};s.onerror=()=>fail('플레이어 로딩 실패');timer=setTimeout(()=>fail('플레이어 연결 시간 초과'),15000);document.head.append(s)}).catch(e=>{api=null;throw e});return api}
 function openWork(w,selected=null){trackViewer('work_open',w.id);if(current)closeWatch();scroll=window.scrollY;current=w;const last=progress(w);index=selected??last?.i??w.episodes.findIndex(e=>!history[epKey(w,e)]?.done);if(index<0)index=0;$('listing').hidden=true;document.querySelector('.intro').hidden=true;$('watch').hidden=false;$('myTools').hidden=true;$('personalPanel').hidden=true;$('calendarPanel').hidden=true;$('submitPanel').hidden=true;document.body.classList.add('watching');window.scrollTo(0,0);landscapeDismissed=false;syncLandscape();loadEpisode(index,true);if(tvMode)$('back').focus()}
 function playbackFailure(code){if(!current)return;persist();playbackFailed=true;clearInterval(ticker);ticker=null;const reason=({2:'원본 영상 주소를 확인해주세요.',5:'플레이어에서 영상 재생을 지원하지 않습니다.',100:'원본이 삭제되었거나 비공개 상태입니다.',101:'제작자가 외부 재생을 제한했습니다.',150:'제작자가 외부 재생을 제한했습니다.',153:'플레이어 연결 정보가 올바르지 않습니다.'})[code]||'영상 재생에 실패했습니다. 연결 또는 원본 상태를 확인해주세요.';cinemaPlaying=false;cinemaNearEnd=false;$('nextPrompt').hidden=true;revealCinema(false);$('retryVideo').hidden=false;$('skipFailed').hidden=!(current&&index+1<current.episodes.length);$('playbackFallback').hidden=false;$('fallbackOriginal').href=$('original').href;$('playerStatus').textContent=reason;$('cinemaHint').textContent=reason+' 다시 재생하거나 다음 회차를 선택할 수 있습니다.'}
@@ -53,7 +54,65 @@ $('shareWork').onclick=async()=>{if(!current)return;let known=[];try{known=JSON.
 $('exportHistory').onclick=()=>{const a=node('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({version:1,saved,history})],{type:'application/json'}));a.download='sosoking-viewing-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 $('importHistory').onclick=()=>$('historyFile').click();$('historyFile').onchange=async()=>{const f=$('historyFile').files[0];if(!f)return;try{if(f.size>1000000)throw Error();const x=JSON.parse(await f.text());if(x.version!==1||!Array.isArray(x.saved)||!x.history||typeof x.history!=='object')throw Error();const ids=new Set(catalog.map(w=>w.id)),keys=new Set(catalog.flatMap(w=>w.episodes.map(e=>epKey(w,e))));saved=[...new Set([...saved,...x.saved.filter(v=>ids.has(v))])];const imported=reconcileHistory(catalog,x.history);for(const [k,v] of Object.entries(imported)){if(ids.has(k.slice(0,k.indexOf(':')))&&(!history[k]||v.updated>history[k].updated))history[k]=v}history=reconcileHistory(catalog,history);saveFavorites();write('history',history);render();$('notice').textContent='시청 기록을 복원했습니다.'}catch{$('notice').textContent='올바른 백업 파일인지 확인하세요.'}finally{$('historyFile').value=''}};
 let installEvent;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;$('installApp').hidden=false});$('installApp').onclick=async()=>{if(installEvent){await installEvent.prompt();installEvent=null;$('installApp').hidden=true}};
-try{const staticData=fetch('./catalog.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('catalog');return r.json()}).catch(()=>null);const cloud=import('/cloud-catalog.js');const onlineData=cloud.then(m=>m.readPublicCatalog()).catch(()=>null);const onlineRecommendations=cloud.then(m=>m.readRecommendations()).catch(()=>null);let timer;const live=await Promise.race([onlineData,new Promise(resolve=>{timer=setTimeout(()=>resolve(null),3500)})]);clearTimeout(timer);const data=live??await staticData;if(!Array.isArray(data))throw Error('catalog');catalog=data.filter(w=>w&&w.hidden!==true&&typeof w.id==='string'&&typeof w.title==='string'&&typeof w.genre==='string'&&Array.isArray(w.episodes)&&w.episodes.length&&w.episodes.every(e=>e&&validId(e.videoId)&&Number.isInteger(e.number)&&typeof e.title==='string'));history=reconcileHistory(catalog,history);write('history',history);saveFavorites();const genres=['',...new Set(catalog.map(w=>w.genre))];genres.forEach(g=>{const b=btn(g||'전체 장르',()=>{genre=g;render()});b.dataset.genre=g;$('genres').append(b)});['','드라마','영화','애니메이션'].forEach(t=>{const b=btn(t||'전체',()=>{type=t;render()});b.dataset.type=t;$('types').append(b)});render();onlineRecommendations.then(data=>{if(data){recommendations=data;heroIndex=0;if(!current&&!new URLSearchParams(location.search).has('work'))render()}}).catch(()=>{});setInterval(()=>{const list=recommendedWorks();if(!tvMode&&!current&&tab==='home'&&!type&&!genre&&!document.hidden&&!catalog.some(w=>w.featuredFixed)&&list.length>1&&!$('hero').matches(':hover')&&!$('hero').contains(document.activeElement)&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){heroIndex=(heroIndex+1)%list.length;hero(list[heroIndex])}},12000);const params=new URLSearchParams(location.search),linked=catalog.find(w=>w.id===params.get('work'));if(linked){const i=linked.episodes.findIndex(e=>String(e.number)===params.get('ep'));const prompt=node('section',undefined,'shared-link');prompt.append(node('h2','공유된 작품 · '+linked.title));if(params.has('ep')&&i<0)prompt.append(node('p','요청한 회차는 현재 공개 목록에 없습니다. 작품에서 다른 회차를 선택할 수 있습니다.','meta'));prompt.append(btn(i>=0?'▶ 공유 회차 시청하기':'▶ 작품 보기',()=>openWork(linked,i<0?null:i)));$('listing').prepend(prompt)}else if(params.has('work'))$('notice').textContent='공유된 작품이 현재 공개 목록에 없습니다.'}catch{$('notice').textContent='작품 목록을 불러오지 못했습니다. 연결 상태를 확인해 주세요.';$('notice').append(btn('다시 시도',()=>location.reload()))}
+let catalogSignature='',catalogReady=false,catalogLoadToken=0,lastManualRefresh=0;
+function showSharedWork(){
+ if(current)return;
+ const params=new URLSearchParams(location.search),id=params.get('work');if(!id)return;
+ const linked=catalog.find(w=>w.id===id);
+ if(!linked){$('notice').textContent='공유된 작품이 현재 공개 목록에 없습니다.';return;}
+ if($('notice').textContent.startsWith('공유된 작품'))$('notice').textContent='';
+ const i=linked.episodes.findIndex(e=>String(e.number)===params.get('ep'));
+ const prompt=node('section',undefined,'shared-link');prompt.append(node('h2','공유된 작품 · '+linked.title));
+ if(params.has('ep')&&i<0)prompt.append(node('p','요청한 회차는 현재 공개 목록에 없습니다. 작품에서 다른 회차를 선택할 수 있습니다.','meta'));
+ prompt.append(btn(i>=0?'▶ 공유 회차 시청하기':'▶ 작품 보기',()=>openWork(linked,i<0?null:i)));$('listing').prepend(prompt);
+}
+function applyCatalog(data,{authoritative=true}={}){
+ if(!Array.isArray(data))return false;
+ const next=data.filter(w=>w&&w.hidden!==true&&typeof w.id==='string'&&typeof w.title==='string'&&typeof w.genre==='string'&&Array.isArray(w.episodes)&&w.episodes.length&&w.episodes.every(e=>e&&validId(e.videoId)&&Number.isInteger(e.number)&&typeof e.title==='string'));
+ const signature=JSON.stringify(next);if(catalogReady&&signature===catalogSignature){if(authoritative){history=reconcileHistory(catalog,history);write('history',history);saveFavorites();}return true;}
+ const playingWork=current?.id,playingEntry=current?episodeFingerprint(current.episodes[index]):null;
+ catalog=next;catalogSignature=signature;catalogReady=true;
+ if($('notice').textContent.startsWith('작품 목록을 불러오지 못했습니다.'))$('notice').textContent='';
+ if(authoritative){history=reconcileHistory(catalog,history);write('history',history);saveFavorites();}
+ const genres=['',...new Set(catalog.map(w=>w.genre))];if(!genres.includes(genre))genre='';
+ $('genres').replaceChildren();for(const g of genres){const b=btn(g||'전체 장르',()=>{genre=g;render()});b.dataset.genre=g;$('genres').append(b)}
+ if(current){
+  const updated=catalog.find(w=>w.id===playingWork),updatedIndex=updated?.episodes.findIndex(e=>episodeFingerprint(e)===playingEntry)??-1;
+  if(!updated||updatedIndex<0){closeWatch();$('notice').textContent='공개 목록이 변경되어 재생을 종료했습니다. 다른 작품이나 회차를 선택해주세요.';}
+  else{current=updated;index=updatedIndex;renderEpisodes();}
+ }else{render();showSharedWork();}
+ return true;
+}
+for(const t of ['','드라마','영화','애니메이션']){const b=btn(t||'전체',()=>{type=t;render()});b.dataset.type=t;$('types').append(b)}
+let publicCloud;const cloudClient=()=>publicCloud??=import('/cloud-catalog.js').catch(error=>{publicCloud=null;throw error});
+// Local copies are provisional. A slow authoritative response still replaces them.
+const cachedCatalog=cachedRecord(CATALOG_CACHE,24*3600000)?.value;
+if(Array.isArray(cachedCatalog))applyCatalog(cachedCatalog,{authoritative:false});
+const bootToken=++catalogLoadToken;
+const onlineData=cloudClient().then(m=>m.readPublicCatalog()).catch(()=>null);
+let liveApplied=false;
+onlineData.then(data=>{if(bootToken===catalogLoadToken&&Array.isArray(data)){liveApplied=true;applyCatalog(data)}});
+cloudClient().then(m=>m.readRecommendations()).then(data=>{if(bootToken!==catalogLoadToken||!data)return;recommendations=data;heroIndex=0;if(catalogReady&&!current){render();showSharedWork()}}).catch(()=>{});
+void (async()=>{try{
+ const staticData=fetch('./catalog.json',{cache:'no-cache',signal:AbortSignal.timeout(10000)}).then(r=>{if(!r.ok)throw Error('catalog');return r.json()}).catch(()=>null);
+ let timer;await Promise.race([onlineData,new Promise(resolve=>{timer=setTimeout(resolve,3500)})]);clearTimeout(timer);
+ if(!liveApplied&&!catalogReady&&bootToken===catalogLoadToken){const fallback=await staticData;if(!liveApplied&&!catalogReady&&bootToken===catalogLoadToken)applyCatalog(fallback,{authoritative:false});}
+ if(!catalogReady)throw Error('catalog');
+}catch{if(!catalogReady){$('notice').textContent='작품 목록을 불러오지 못했습니다. 연결 상태를 확인해 주세요.';}}})();
+$('refreshCatalog').onclick=async()=>{
+ const b=$('refreshCatalog'),status=$('catalogRefreshStatus');if(b.disabled)return;
+ if(Date.now()-lastManualRefresh<60000){status.textContent='방금 확인한 목록입니다. 잠시 후 다시 확인해주세요.';return;}
+ const token=++catalogLoadToken;lastManualRefresh=Date.now();b.disabled=true;status.textContent='최신 목록 확인 중…';
+ try{
+  const m=await cloudClient();const data=await m.readPublicCatalog({force:true});
+  if(token!==catalogLoadToken)return;if(!Array.isArray(data))throw Error('catalog');
+  applyCatalog(data);status.textContent='최신 목록을 확인했습니다.';
+  m.readRecommendations({force:true}).then(value=>{if(token===catalogLoadToken&&value){recommendations=value;if(!current){render();showSharedWork()}}}).catch(()=>{});
+ }catch{status.textContent='최신 목록을 확인하지 못했습니다. 연결 상태를 확인해주세요.';}finally{b.disabled=false;}
+};
+window.addEventListener('storage',e=>{if(e.key!==CATALOG_CACHE)return;const row=cachedRecord(CATALOG_CACHE,24*3600000);if(row&&Array.isArray(row.value)){catalogLoadToken++;applyCatalog(row.value)}});
+setInterval(()=>{const list=recommendedWorks();if(!tvMode&&!current&&tab==='home'&&!type&&!genre&&!document.hidden&&!catalog.some(w=>w.featuredFixed)&&list.length>1&&!$('hero').matches(':hover')&&!$('hero').contains(document.activeElement)&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){heroIndex=(heroIndex+1)%list.length;hero(list[heroIndex])}},12000);
+
 function showNext(remaining){const next=current?.episodes[index+1],b=$('nextPrompt');b.hidden=!next||!Number.isFinite(remaining)||remaining>20;const near=!b.hidden;if(near)b.textContent='다음 '+next.number+'화 ▶'+(remaining>0?' · '+Math.ceil(remaining)+'초':'');if(near!==cinemaNearEnd){cinemaNearEnd=near;revealCinema(!near)}}
 function isCinema(){return document.fullscreenElement===$('cinema')||$('cinema').classList.contains('cinema-fallback')}
 async function enterCinema(){const el=$('cinema');if(isCinema()||!current)return;const request=++cinemaRequest;try{if(!el.requestFullscreen)throw Error('unsupported');await el.requestFullscreen();if(request!==cinemaRequest||!current){if(document.fullscreenElement===el)await document.exitFullscreen().catch(()=>{});return}try{if(matchMedia('(pointer:coarse)').matches)await screen.orientation?.lock?.('landscape');if(request!==cinemaRequest||!current)screen.orientation?.unlock?.()}catch{} }catch{if(!current||request!==cinemaRequest)return;el.classList.add('cinema-fallback');document.body.classList.add('cinema-open');$('cinemaHint').textContent='가로로 돌리면 더 넓게 시청할 수 있습니다.'}syncCinema()}

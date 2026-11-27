@@ -1,4 +1,11 @@
 export const DAY_MS=86400000,SEOUL_OFFSET=32400000;
+export const STATS_FLUSH_MS=300000,LIVE_WINDOW_MS=360000,STATS_BATCH_MAX=305;
+export function statsPayload(bucket){
+ const active=Math.min(STATS_BATCH_MAX,Math.max(0,Math.floor(bucket.active||0))),watch=Math.min(active,Math.max(0,Math.floor(bucket.watch||0)));
+ let remaining=watch;
+ const works=Object.entries(bucket.works||{}).filter(([id,n])=>/^[a-z0-9][a-z0-9-]{0,79}$/.test(id)&&Number.isFinite(n)&&n>0).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,n])=>{const seconds=Math.min(remaining,Math.floor(n));remaining-=seconds;return [id,seconds]}).filter(([,n])=>n>0);
+ return {active,watch,works};
+}
 export const dayOf=(ms=Date.now())=>Math.floor((ms+SEOUL_OFFSET)/DAY_MS);
 export const dayLabel=day=>new Date(day*DAY_MS).toISOString().slice(0,10);
 export function summarizeStats(rows,works,today=dayOf(),now=Date.now()){
@@ -7,7 +14,7 @@ export function summarizeStats(rows,works,today=dayOf(),now=Date.now()){
  const k=row.day+':'+row.uid;if(daily.has(k))continue;daily.set(k,row);
  const seen=browsers.get(row.uid)||{firstDay:row.firstDay,days:new Set(),watch:0,active:0};seen.firstDay=Math.min(seen.firstDay,row.firstDay);seen.days.add(row.day);seen.watch+=row.watchSeconds||0;seen.active+=row.activeSeconds||0;browsers.set(row.uid,seen);
  if(row.day===today){todayRows.push(row);totalActive+=row.activeSeconds||0;totalWatch+=row.watchSeconds||0}
- if(row.updatedMs>=now-120000&&row.updatedMs<=now+10000){const old=live.get(row.uid);if(!old||row.updatedMs>old.updatedMs)live.set(row.uid,row)}
+ if(row.updatedMs>=now-LIVE_WINDOW_MS&&row.updatedMs<=now+10000){const old=live.get(row.uid);if(!old||row.updatedMs>old.updatedMs)live.set(row.uid,row)}
  }
  const trend=Array.from({length:7},(_,i)=>{const day=today-6+i;return {day,label:dayLabel(day).slice(5),visitors:[...daily.values()].filter(x=>x.day===day).length}});
  const rankings=new Map();for(const x of works){if(!x||typeof x.workId!=='string'||x.day<today-6||x.day>today||x.watchSeconds<=0)continue;const row=rankings.get(x.workId)||{id:x.workId,watchSeconds:0,users:new Set()};row.watchSeconds+=x.watchSeconds;row.users.add(x.uid);rankings.set(x.workId,row)}
