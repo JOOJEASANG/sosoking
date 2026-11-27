@@ -27,7 +27,16 @@ try{
  await page.goto(base+'/?work='+first.id+'&ep='+first.episodes[0].number);
  await page.getByRole('button',{name:'▶ 공유 회차 시청하기',exact:true}).waitFor();
  assert.ok(await page.evaluate(id=>JSON.parse(localStorage.getItem('sosoking.flix.saved')).includes(id),added.id),'provisional catalog must preserve favorites missing from the static snapshot');
- await page.setViewportSize({width:1280,height:800});assert.equal(await page.locator('#mainNav').evaluate(e=>getComputedStyle(e).position),'static');await page.setViewportSize({width:900,height:500});
+ await page.setViewportSize({width:1280,height:800});assert.equal(await page.locator('#mainNav').evaluate(e=>getComputedStyle(e).position),'static');
+ const header=await page.evaluate(()=>['.brand','#mainNav','#topSearch','#memberAccount'].map(selector=>{const r=document.querySelector(selector).getBoundingClientRect();return{top:r.top,bottom:r.bottom,left:r.left,right:r.right}}));
+ assert.ok(Math.max(...header.map(r=>r.top))<Math.min(...header.map(r=>r.bottom)),'desktop account must stay on the primary header row');
+ assert.ok(header.every(r=>r.left>=0&&r.right<=1280),'desktop header must fit the viewport');
+ const pause=page.locator('.hero-pause');await pause.click();assert.equal(await pause.getAttribute('aria-pressed'),'true');
+ await page.getByRole('button',{name:'작품',exact:true}).click();await page.getByRole('button',{name:'홈',exact:true}).click();
+ assert.equal(await page.locator('.hero-pause').getAttribute('aria-pressed'),'true','carousel preference must survive rerender');
+ // Return to the explicit shared-work prompt for the playback regression below.
+ await page.goto(base+'/?work='+first.id+'&ep='+first.episodes[0].number);await page.getByRole('button',{name:'▶ 공유 회차 시청하기',exact:true}).waitFor();
+await page.setViewportSize({width:900,height:500});
  await page.getByRole('button',{name:'▶ 공유 회차 시청하기',exact:true}).click();
  await page.waitForFunction(()=>window.mockPlayer);
  assert.equal(await page.locator('#cinema').evaluate(e=>e.classList.contains('cinema-fallback')),false,'small desktop must not enter cinema automatically');

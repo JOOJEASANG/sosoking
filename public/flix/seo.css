@@ -23,3 +23,6 @@
 .seo-page header nav{min-width:0;flex-shrink:1;flex-wrap:wrap}
 .seo-page main{min-width:0;overflow-wrap:anywhere}
 @media(max-width:360px){.seo-page header img{width:min(240px,48vw);max-width:100%}}
+
+/* Shared information pages and footer remain readable on small screens. */
+.site-footer{font-size:13px}.site-footer .seo-nav a,.site-footer summary,.site-footer #analyticsToggle,.seo-page header nav,.original-link{font-size:14px}.site-footer .seo-nav a{display:inline-flex;align-items:center;min-height:44px}.site-footer summary{padding:10px 0}.site-footer #analyticsToggle{min-height:44px}.seo-page main{line-height:1.75}.seo-page a:focus-visible,.seo-page summary:focus-visible{outline:3px solid #ffa6b7;outline-offset:3px}.seo-episode-meta{font-size:13px}.seo-episodes li a{display:inline-block;padding-block:8px}
