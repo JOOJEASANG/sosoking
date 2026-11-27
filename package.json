@@ -8,15 +8,24 @@
   },
   "scripts": {
     "dev": "npm run build && node scripts/serve.mjs",
-    "test": "node --test",
-    "check": "node --test",
-    "build": "node scripts/build.mjs"
+    "test": "node scripts/test-unit.mjs",
+    "check": "npm test && npm run build",
+    "build": "node scripts/build.mjs",
+    "test:browser": "node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs && node scripts/flix-online-admin-smoke.mjs && node scripts/flix-social-smoke.mjs && node scripts/flix-member-smoke.mjs && node scripts/flix-cost-smoke.mjs",
+    "test:rules": "npx --yes firebase-tools@15.24.0 emulators:exec --project demo-sosoking --only firestore 'node --test scripts/flix-admin-rules.test.mjs'"
   },
   "dependencies": {
     "firebase": "11.10.0"
   },
   "devDependencies": {
     "esbuild": "0.25.12",
-    "@resvg/resvg-js": "2.6.2"
+    "@resvg/resvg-js": "2.6.2",
+    "@firebase/rules-unit-testing": "4.0.1",
+    "playwright": "1.56.1",
+    "firebase-admin": "13.10.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.5",
+    "uuid": "11.1.1"
   }
 }

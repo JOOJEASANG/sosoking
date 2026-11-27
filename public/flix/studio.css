@@ -124,3 +124,5 @@ header.topbar .brand{margin-right:auto;max-width:330px;flex:0 1 auto}
 #memberAccount [hidden],#memberDialog [hidden]{display:none!important}
 @media(max-width:600px){header.topbar{gap:8px}header.topbar .brand{max-width:calc(100% - 90px);min-width:0}#memberAccount{padding:6px 8px;max-width:88px;min-height:44px;gap:4px}#memberAvatar,#memberIcon{width:26px;height:26px}#memberAccount #memberLabel{max-width:45px;font-size:12px}#memberAccount[data-signed-in=true] #memberLabel{display:none}#memberAccount[data-signed-in=true]{width:44px;padding:5px}}
 @media(max-width:360px){.member-dialog-inner{padding:30px 16px 20px}#memberAccount{max-width:82px}#memberName{font-size:19px}}
+
+.catalog-refresh{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:24px 0}.watching .catalog-refresh{display:none}

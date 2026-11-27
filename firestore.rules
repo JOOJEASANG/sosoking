@@ -265,6 +265,17 @@ service cloud.firestore {
    allow create: if flixAdmin() && validCatalog() && request.resource.data.revision == 1;
    allow update: if flixAdmin() && validCatalog() && request.resource.data.revision == resource.data.revision + 1;
   }
+  // Small admin publication signal lets the worker skip downloading the full catalog/report while idle.
+  match /flixAutomation/catalogSignal {
+   allow get: if flixAdmin();
+   allow list,delete: if false;
+   allow create,update: if flixAdmin()
+    && request.resource.data.keys().hasOnly(['revision','updatedAt'])
+    && request.resource.data.revision is int
+    && request.resource.data.updatedAt == request.time
+    && getAfter(/databases/$(database)/documents/flixPublic/catalog).data.revision == request.resource.data.revision
+    && getAfter(/databases/$(database)/documents/flixPublic/catalog).data.updatedAt == request.time;
+  }
   match /flixAutomation/lookup {
    allow get: if flixAdmin();
    allow list, delete: if false;
@@ -372,11 +383,12 @@ service cloud.firestore {
      && d.watchSeconds is int && d.watchSeconds >= 0 && d.watchSeconds <= d.activeSeconds
      && d.playing is bool && d.updatedAt == request.time;
    }
-   allow create: if validDay() && request.resource.data.activeSeconds <= 65;
+   allow create: if validDay() && request.resource.data.activeSeconds <= 305;
    allow update: if validDay() && request.time >= resource.data.updatedAt + duration.value(45,'s')
     && request.resource.data.firstDay == resource.data.firstDay
     && request.resource.data.activeSeconds >= resource.data.activeSeconds
-    && request.resource.data.activeSeconds <= resource.data.activeSeconds + 65
+    && request.resource.data.activeSeconds <= resource.data.activeSeconds + 305
+    && request.resource.data.activeSeconds - resource.data.activeSeconds <= int((request.time.toMillis() - resource.data.updatedAt.toMillis()) / 1000) + 5
     && request.resource.data.watchSeconds >= resource.data.watchSeconds
     && request.resource.data.watchSeconds - resource.data.watchSeconds <= request.resource.data.activeSeconds - resource.data.activeSeconds;
   }
@@ -395,10 +407,10 @@ service cloud.firestore {
      && existsAfter(flixDailyPath()) && getAfter(flixDailyPath()).data.updatedAt == request.time
      && d.watchSeconds <= getAfter(flixDailyPath()).data.watchSeconds;
    }
-   allow create: if validWork() && request.resource.data.watchSeconds <= 65;
+   allow create: if validWork() && request.resource.data.watchSeconds <= 305;
    allow update: if validWork() && request.time >= resource.data.updatedAt + duration.value(45,'s')
     && request.resource.data.watchSeconds >= resource.data.watchSeconds
-    && request.resource.data.watchSeconds <= resource.data.watchSeconds + 65;
+    && request.resource.data.watchSeconds <= resource.data.watchSeconds + 305;
   }
   // END FLIX ADMIN RULES
   // Former event/group data is retained in Firestore, not exposed by this redesigned app.

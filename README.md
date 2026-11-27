@@ -2,6 +2,8 @@
 
 https://sosoking-481e6.web.app/
 
+현재 서비스는 AI 영상 시청 사이트입니다. 실제 배포 코드는 `public/flix`, 관리자 코드는 `flix-review/admin`에 있습니다. 아래 초기 버전 설명은 변경 이력입니다. 최신 비용·안정성 변경과 검사 방법은 [2026-11-27 점검 기록](docs/firebase-cost-review-2026-11-27.md)을 참고하세요.
+
 생활 도구·생활정보 커뮤니티 초기 버전. 기존 하루체크는 /daily.html로 이동하며 기존 localStorage 키와 Firestore 규칙 유지. 기존 행사 데이터는 접근 차단 상태 유지, 삭제하지 않음. 기존 프로그램 백업 archive/pre-daily-check-2026-11-19, 하루체크 기준 커밋 48992d4a11a9daed94f5f71223cb9e55403c69d4.
 
 ## 초기 기능
