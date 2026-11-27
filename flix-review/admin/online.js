@@ -5,6 +5,7 @@ import {initStudio,showStudio} from './studio-layout.js';
 import {connectViewerDashboard} from './viewer-dashboard.js';
 import {lookupLinks,parseYouTubeLinks} from '../../scripts/flix-link-lookup.mjs';
 import {healthSummary} from '../../scripts/flix-operations-core.mjs';
+import {validateCatalog} from '../../scripts/flix-catalog-validation.mjs';
 import {quickReviewPlan,currentReviewGroups} from '../../public/flix/quick-review.js';
 import {cleanCuration} from '../../public/flix/curation-core.js';
 import {hasEditorChanges,hasCatalogChanges,markCatalogPublished,selectWorkForEditing,connectQuickPublish,acceptQuickCatalog,connectCuration,setCuration,connectOnlineLookup,setOnlineCatalog,getOnlineCatalog,setOnlineLookupResult,setOnlineCandidates,setOnlineHealth} from './admin.js';
@@ -35,8 +36,8 @@ function connectAutomation(uid,token){for(const stop of unsubscribers)stop();uns
   const items=snap.exists()?JSON.parse(d.json):fallback;
   const known=new Set(items.flatMap(w=>w.episodes.map(e=>e.videoId)));
   const groups=currentReviewGroups(JSON.parse(r.review||'[]').filter(c=>!known.has(c.videoId)),settings.data());
-  const selected=keys.map(k=>groups.find(g=>g.key===k));if(selected.some(g=>!g)||!selected.length)throw Error('후보가 변경되었거나 자동 등록되었습니다. 최신 목록을 확인하세요.');
-  const plan=quickReviewPlan(items,selected,settings.data());const json=JSON.stringify(plan.items);
+  const selected=keys.map(k=>groups.find(g=>g.key===k.key&&JSON.stringify(g.items.map(c=>c.videoId))===JSON.stringify(k.ids)));if(selected.some(g=>!g)||!selected.length)throw Error('후보가 변경되었거나 자동 등록되었습니다. 최신 목록을 확인하세요.');
+  const plan=quickReviewPlan(items,selected,settings.data());const json=JSON.stringify(validateCatalog(plan.items));
   if(new TextEncoder().encode(json).length>700000)throw Error('목록 저장 한도 초과');
   const rev=(d?.revision||0)+1;tx.set(ref,{json,revision:rev,updatedAt:serverTimestamp()});return {...plan,rev};
  });
