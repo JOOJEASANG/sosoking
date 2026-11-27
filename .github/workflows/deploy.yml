@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm install --no-audit --no-fund
-      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs scripts/flix-track-series.test.mjs scripts/flix-discovery-policy.test.mjs scripts/flix-auto-publish.test.mjs scripts/flix-catalog-cleanup-policy.test.mjs scripts/flix-recommendations.test.mjs scripts/flix-binge.test.mjs scripts/flix-curation.test.mjs scripts/flix-intake.test.mjs scripts/flix-push.test.mjs scripts/flix-operations-core.test.mjs scripts/flix-seo.test.mjs scripts/flix-discovery-share.test.mjs scripts/flix-stats-core.test.mjs && npm run build
+      - run: node --test scripts/flix.test.mjs scripts/flix-catalog-review.test.mjs scripts/flix-link-lookup.test.mjs scripts/flix-rules-guard.test.mjs scripts/flix-track-series.test.mjs scripts/flix-discovery-policy.test.mjs scripts/flix-auto-publish.test.mjs scripts/flix-catalog-cleanup-policy.test.mjs scripts/flix-recommendations.test.mjs scripts/flix-binge.test.mjs scripts/flix-curation.test.mjs scripts/flix-quick-review.test.mjs scripts/flix-intake.test.mjs scripts/flix-push.test.mjs scripts/flix-operations-core.test.mjs scripts/flix-seo.test.mjs scripts/flix-discovery-share.test.mjs scripts/flix-stats-core.test.mjs && npm run build
       - run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1 @firebase/rules-unit-testing@4.0.1
       - run: npx playwright install --with-deps chromium
       - run: node scripts/flix-smoke.mjs && node scripts/flix-admin-smoke.mjs && node scripts/flix-online-admin-smoke.mjs && node scripts/flix-social-smoke.mjs && node scripts/flix-member-smoke.mjs
