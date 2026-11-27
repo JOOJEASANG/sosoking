@@ -31,9 +31,9 @@ export function autoPublishWorks(items,candidates,settings={},now=Date.now()){
  for(const group of groupCandidates(candidates,clean)){
   if(published.length>=AUTO_WORK_LIMIT)break;
   const rows=group.items;
-  if(group.workId||!rows.length||rows.length>20||rows.some(c=>used.has(c.videoId)||!fresh(c,now)||c.autoKind!==rows[0].autoKind||c.channelId!==rows[0].channelId||c.creator!==rows[0].creator))continue;
+  if(group.workId||!rows.length||rows.length>20||rows.some(c=>clean.held.includes(c.videoId)||used.has(c.videoId)||!fresh(c,now)||c.autoKind!==rows[0].autoKind||c.channelId!==rows[0].channelId||c.creator!==rows[0].creator))continue;
   const first=rows[0],series=batchEligible(group,1)&&rows.every(c=>classifyCandidate(c)==='series')&&first.autoKind!=='영화';
-  const feature=rows.length===1&&classifyCandidate(first)==='popular'&&['영화','애니메이션'].includes(first.autoKind)&&/본편|장편|완결|full\s*(?:film|movie)|feature\s*film/i.test(first.title);
+  const feature=rows.length===1&&((classifyCandidate(first)==='popular'&&['영화','애니메이션'].includes(first.autoKind)&&/본편|장편|완결|full\s*(?:film|movie)|feature\s*film/i.test(first.title))||classifyCandidate(first)==='series-compilation');
   if(!series&&!feature)continue;
   if(series&&rows.length<2&&!trusted.has(first.channelId))continue;
   const title=String(group.title||first.title).trim();
