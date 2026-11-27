@@ -95,3 +95,7 @@ body{letter-spacing:-.2px}header.topbar{backdrop-filter:blur(18px);border-color:
 
 /* Aspect-ratio plus the old 200px minimum height expands narrow players beyond the card. */
 #playerWrap{width:100%;min-width:0;min-height:0;aspect-ratio:16/9}
+
+/* Theater mode is opt-in on desktop/portrait; rotation on compact screens uses the existing non-overlay player container. */
+#cinema:fullscreen,#cinema.cinema-fallback{padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);box-sizing:border-box}
+#cinema:fullscreen #cinemaBar,#cinema.cinema-fallback #cinemaBar{padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
