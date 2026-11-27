@@ -87,6 +87,27 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  await page.evaluate(()=>{document.activeElement.blur();window.scrollTo(0,document.documentElement.scrollHeight)});
  const nav=await page.locator('.studio-sidebar').evaluate(el=>({bottom:el.getBoundingClientRect().bottom,viewport:innerHeight,position:getComputedStyle(el).position}));
  assert.equal(nav.position,'fixed');assert.ok(Math.abs(nav.bottom-nav.viewport)<=2);
+
+ // Use a mocked worker result, but real admin draft creation and validation.
+ await page.locator('#studioNav [data-panel=links]').click();
+ assert.ok(await page.locator('#seriesLookup').isVisible());
+ await page.evaluate(async()=>{const admin=await import('/admin/admin.js');admin.connectOnlineLookup(async input=>{window.lookupRequest=input;return null});document.querySelector('#links').value='https://youtu.be/aaaaaaa0001'});
+ await page.locator('#seriesLookup').click();
+ assert.equal(await page.evaluate(()=>window.lookupRequest),'series:https://youtu.be/aaaaaaa0001');
+ await page.evaluate(async()=>{const admin=await import('/admin/admin.js');const items=[1,2,3].map(n=>({title:'AI 드라마 검증작 '+n+'화',creator:'테스트 채널',videoId:'aaaaaaa000'+n,episodeHint:n,duration:'PT8M',publishedAt:'2026-11-20',source:'https://youtu.be/aaaaaaa000'+n,autoKind:'드라마'}));admin.setOnlineLookupResult({verified:true,items,rejected:[],channels:[],playlists:[],series:{matchTitle:'AI 드라마 검증작',count:3,complete:true,warnings:[]}})});
+ await page.locator('#reviewed').check();
+ await page.locator('#linkResults input[type=checkbox]').nth(1).uncheck();
+ await page.locator('#newFromLinks').click();
+ assert.match(await page.locator('#lookupStatus').textContent(),/연속된 회차/);
+ await page.locator('#linkResults input[type=checkbox]').nth(1).check();
+ page.once('dialog',d=>d.accept());
+ await page.locator('#newFromLinks').click();
+ assert.equal(await page.locator('#editor [name=title]').inputValue(),'AI 드라마 검증작');
+ assert.equal(await page.locator('#episodes article').count(),3);
+ assert.ok(await page.locator('#trackEnabled').isChecked());
+ assert.ok(await page.locator('#trackAuto').isChecked());
+ await page.locator('#mobileSave').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileDraftState').textContent==='공개 반영 대기');
  await page.setViewportSize({width:1280,height:800});
  assert.ok(await dock.isHidden());assert.ok(await page.locator('#studioNav [data-panel=backup]').isVisible());
  assert.equal(errors.length,0,errors.join('; '));
