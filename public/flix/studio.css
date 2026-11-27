@@ -132,7 +132,7 @@ header.topbar .brand{margin-right:auto;max-width:330px;flex:0 1 auto}
 .skip-link:focus{transform:translateY(0)}
 #mainContent:focus,#pageTitle:focus,#watchTitle:focus{outline:none}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #ffa6b7;outline-offset:3px}
-#hero{aspect-ratio:2.8}.hero-description{max-width:48ch;line-height:1.65}.hero-controls{gap:8px}.hero-controls button{min-width:44px}.hero-controls .hero-pause{font-size:13px;padding-inline:12px}
+#hero{width:100%;max-width:100%;min-width:0;aspect-ratio:2.8}.hero-description{max-width:48ch;line-height:1.65}.hero-controls{gap:8px}.hero-controls button{min-width:44px}.hero-controls .hero-pause{font-size:13px;padding-inline:12px}
 .work .meta,.episode-panel .episode-copy .meta,.social-panel summary small,.social-body .meta,.yt-comment small,.binge-heading p,.local-stat-grid small,#episodeCoverage{font-size:13px}
 .episode-panel label,.episode-panel .episode-copy strong,#watch .actions button,.social-toolbar button,.yt-account button,#ytSubmit,#ytMore,.binge-heading button,.budget-buttons button,.calendar-row button,.binge-panel label,#quickTools button,.watch-heading #back{font-size:14px}
 .episode-panel label{display:block;line-height:1.6;padding:6px 0}.episode-panel .episode-play{min-height:44px}.social-body label{font-size:14px}.social-toolbar a{font-size:13px}
