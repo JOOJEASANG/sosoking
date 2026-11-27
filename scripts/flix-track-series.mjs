@@ -7,3 +7,18 @@ export function trackPlan(catalog,workId,seed,found,registeredMetadata=null){val
 const used=new Set(catalog.flatMap(x=>x.episodes.map(e=>e.videoId))),groups=new Map();for(const c of found){const id=episodeIdentity(c.title);if(!isFullEpisode(c)||!id||id.series!==identity.series||id.number<=w.episodes.length||c.channelId!==seed.channelId||c.creator!==seed.creator||c.typeHint!=='review'||used.has(c.videoId)||!(durationSeconds(c.duration)>0)||!c.publishedAt)continue;const g=groups.get(id.number)||new Map();g.set(c.videoId,{...c,episodeHint:id.number,workId:w.id});groups.set(id.number,g)}
 const append=[],review=[];if(registeredMetadata&&!verifyRegisteredSeries(w,registeredMetadata)){for(const g of groups.values())review.push(...g.values());return {append,review,reason:'registered-series-mismatch'}}let n=w.episodes.length+1;while(groups.has(n)&&groups.get(n).size===1){const c=[...groups.get(n).values()][0];append.push(c);groups.delete(n++);}for(const g of groups.values())review.push(...g.values());return {append,review,reason:review.length?'gap-or-ambiguous':'ok'};}
 export function applyTrackPlan(catalog,workId,plan){const next=structuredClone(catalog),w=next.find(x=>x.id===workId);if(!w||w.hidden===true||w.tracking?.autoPublish!==true||w.tracking?.enabled!==true||w.status!=='연재 중')return next;for(const c of plan.append){if(c.episodeHint!==w.episodes.length+1)throw Error('Nonconsecutive tracked episode');w.episodes.push({number:c.episodeHint,title:c.title,videoId:c.videoId,start:0,duration:durationSeconds(c.duration),publishedAt:c.publishedAt.slice(0,10)})}return validateCatalog(next)}
+
+/** A manual seed lookup uses the same exact matching rule as automatic tracking.
+ * Return only the verified consecutive prefix and explain gaps/ambiguity. */
+export function seriesLookupResult(seed,found,{excluded=[],truncated=false,rejected=[]}={}){
+ const id=episodeIdentity(seed?.title),matchTitle=String(seed?.title||'').replace(/(?:\bEP(?:ISODE)?\.?\s*\d{1,3}(?!\d)|(?:제\s*)?\d{1,3}\s*화(?![가-힣\d]))/i,'').replace(/^[\s|:·._-]+|[\s|:·._-]+$/g,'').trim();
+ const blocked=new Set(excluded);
+ if(!id||id.number!==1||!isFullEpisode(seed)||seed.verifiedPublic!==true||!seed.channelId||!seed.creator||!matchTitle||matchTitle.length>200||blocked.has(seed.videoId))throw Error('재생 가능한 본편 1화 링크를 입력하세요. 회차 번호와 제목이 명확해야 합니다.');
+ const groups=new Map([[1,new Map([[seed.videoId,{...seed,episodeHint:1}]])]]);
+ for(const c of found){const x=episodeIdentity(c.title);if(!x||x.series!==id.series||c.creator!==seed.creator||c.channelId!==seed.channelId||c.verifiedPublic!==true||!isFullEpisode(c)||c.typeHint!=='review'||blocked.has(c.videoId))continue;const g=groups.get(x.number)||new Map();g.set(c.videoId,{...c,episodeHint:x.number});groups.set(x.number,g)}
+ const items=[];let n=1;
+ while(groups.get(n)?.size===1&&items.length<100){items.push([...groups.get(n).values()][0]);groups.delete(n++);}
+ if(!items.length)throw Error('동일 작품의 1화 후보가 여러 개입니다. 개별 영상 등록으로 확인하세요.');
+ const warnings=[];if(groups.size)warnings.push('누락 또는 복수 후보가 있어 연속으로 확인된 회차까지만 표시합니다.');if(truncated||items.length===100)warnings.push('검색 범위에 제한이 있어 전체 공개 회차를 보장하지 않습니다.');
+ return {verified:true,items,rejected,channels:[],playlists:[],series:{matchTitle,count:items.length,complete:!warnings.length,warnings}};
+}
