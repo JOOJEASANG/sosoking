@@ -99,3 +99,28 @@ body{letter-spacing:-.2px}header.topbar{backdrop-filter:blur(18px);border-color:
 /* Theater mode is opt-in on desktop/portrait; rotation on compact screens uses the existing non-overlay player container. */
 #cinema:fullscreen,#cinema.cinema-fallback{padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);box-sizing:border-box}
 #cinema:fullscreen #cinemaBar,#cinema.cinema-fallback #cinemaBar{padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+
+/* Optional Google member account: guest navigation remains available. */
+header.topbar .brand{margin-right:auto;max-width:330px;flex:0 1 auto}
+#memberAccount{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:44px;max-width:190px;flex:0 0 auto;padding:6px 10px;border-radius:24px;background:#ffffff08;border:1px solid #ffffff21;color:var(--ink)}
+#memberAccount #memberLabel{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+#memberAvatar,#memberIcon{width:30px;height:30px;flex:none;border-radius:50%;object-fit:cover}
+#memberIcon{display:grid;place-items:center;background:#30343e;color:#ddd}
+#memberIcon svg{width:19px;height:19px}
+#memberDialog{color:var(--ink);background:#15171e;border:1px solid #363944;border-radius:20px;padding:0;width:min(420px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;box-sizing:border-box}
+#memberDialog::backdrop{background:#000b}
+.member-dialog-inner{position:relative;padding:32px 24px 24px;text-align:center}
+#memberClose{position:absolute;right:8px;top:8px;min-width:44px;min-height:44px;font-size:24px;line-height:1;border:0;background:transparent}
+.member-large-icon{display:grid;place-items:center;margin:0 auto 16px;width:76px;height:76px}
+#memberLargeAvatar,#memberLargeIcon{width:76px;height:76px;border-radius:50%;object-fit:cover}
+#memberLargeIcon{display:grid;place-items:center;background:#30343e}
+#memberLargeIcon svg{width:44px;height:44px}
+#memberName{font-size:21px;margin:8px 0 12px;overflow-wrap:anywhere}
+#memberGuest p,#memberSignedIn p,#memberDialog small,#memberStatus{color:var(--muted);font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+#memberGoogle,#memberLogout{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;margin:16px 0 10px;font-size:14px}
+#memberGoogle{background:#fff;color:#202124;border-color:#dadce0;font-weight:600}
+#memberGoogle svg{width:20px;height:20px;flex:none}
+#memberStatus:empty{display:none}
+#memberAccount [hidden],#memberDialog [hidden]{display:none!important}
+@media(max-width:600px){header.topbar{gap:8px}header.topbar .brand{max-width:calc(100% - 90px);min-width:0}#memberAccount{padding:6px 8px;max-width:88px;min-height:44px;gap:4px}#memberAvatar,#memberIcon{width:26px;height:26px}#memberAccount #memberLabel{max-width:45px;font-size:12px}#memberAccount[data-signed-in=true] #memberLabel{display:none}#memberAccount[data-signed-in=true]{width:44px;padding:5px}}
+@media(max-width:360px){.member-dialog-inner{padding:30px 16px 20px}#memberAccount{max-width:82px}#memberName{font-size:19px}}
