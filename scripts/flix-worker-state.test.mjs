@@ -21,10 +21,10 @@ test('idle scans wait six hours, with publication, retry and manual exceptions',
 // Run the actual worker with an in-memory Admin SDK. No production credentials or reads.
 async function runWorker(initial={},env={},fetchImpl=async()=>({ok:false,status:503})){
  const source=await fs.readFile(new URL('./flix-online-worker.mjs',import.meta.url),'utf8');
- const rows=new Map(Object.entries(initial)),reads=[],writes=[],logs=[];
+ const rows=new Map(Object.entries(initial)),reads=[],writes=[],logs=[],projections=[];
  const snap=path=>({exists:rows.has(path),data:()=>rows.get(path)});
  const ref=path=>({path,get:async()=>{reads.push(path);return snap(path)},set:async value=>{writes.push(path);rows.set(path,value)}});
- const db={doc:ref,runTransaction:async fn=>fn({get:r=>r.get(),set:(r,v)=>{writes.push(r.path);rows.set(r.path,v)}}),collection:()=>{const q={where:()=>q,limit:()=>q,get:async()=>({size:0,docs:[]})};return q}};
+ const db={doc:ref,getAll:async(r,{fieldMask})=>{reads.push(r.path);projections.push({path:r.path,fieldMask});const row=rows.get(r.path);return [{exists:rows.has(r.path),data:()=>row&&Object.fromEntries(fieldMask.filter(k=>k in row).map(k=>[k,row[k]]))}]},runTransaction:async fn=>fn({get:r=>r.get(),set:(r,v)=>{writes.push(r.path);rows.set(r.path,v)}}),collection:()=>{const q={where:()=>q,limit:()=>q,get:async()=>({size:0,docs:[]})};return q}};
  const process={env,exitCode:0};
  const args={fs,process,initializeApp:()=>{},applicationDefault:()=>({}),getFirestore:()=>db,FieldValue:{serverTimestamp:()=>stamp(Date.now())},Timestamp:{fromMillis:stamp},getAuth:()=>({getUser:async()=>({disabled:false})}),fetch:fetchImpl,console:{log:(...x)=>logs.push(x),error:(...x)=>logs.push(x)},dispatchPush:async()=>{throw Error('Unexpected push')}};
  for(const match of source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)){
@@ -34,13 +34,14 @@ async function runWorker(initial={},env={},fetchImpl=async()=>({ok:false,status:
  }
  const body=source.replace(/import\s+[^;]+;/g,'');
  await new (Object.getPrototypeOf(async function(){}).constructor)(...Object.keys(args),body)(...Object.values(args));
- return {reads,writes,rows,exitCode:process.exitCode,logs};
+ return {reads,writes,rows,exitCode:process.exitCode,logs,projections};
 }
 test('idle worker reads only four small queue/state documents and writes nothing',async()=>{
  const state={policyVersion:POLICY_VERSION,state:'ok',checkedAt:stamp(Date.now()),signalRevision:0};
- const r=await runWorker({'flixAutomation/scanState':state});
+ const r=await runWorker({'flixAutomation/scanState':state,'flixAutomation/lookup':{status:'done',owner:'admin',id:'previous-request',requestedAt:stamp(Date.now()),result:'x'.repeat(600000)}});
  assert.deepEqual(r.reads.sort(),['flixAutomation/catalogSignal','flixAutomation/lookup','flixAutomation/refresh','flixAutomation/scanState']);
  assert.deepEqual(r.writes,[]);assert.equal(r.exitCode,0);
+ assert.deepEqual(r.projections,[{path:'flixAutomation/lookup',fieldMask:['status','owner','id','requestedAt','links']}]);
 });
 test('missing API key is a failed execution, then idle retries avoid heavy reads',async()=>{
  const r=await runWorker({'flixPublic/catalog':{json:'[]',revision:1}});
@@ -53,4 +54,13 @@ test('API error yields partial failure and a bounded retry instead of a green ru
  const r=await runWorker({'flixPublic/catalog':{json:'[]',revision:1}},{YOUTUBE_API_KEY:'test-only'});
  assert.equal(r.exitCode,1);assert.equal(r.rows.get('flixAutomation/report').state,'partial');
  assert.ok(r.rows.get('flixAutomation/scanState').retryAfter.toMillis()>Date.now());
+});
+
+test('pending admin lookup retains request fields and reports a missing key rather than silently skipping',async()=>{
+ const now=Date.now(),state={policyVersion:POLICY_VERSION,state:'ok',checkedAt:stamp(now),signalRevision:0};
+ const lookup={owner:'admin',id:'request-1234567890',status:'pending',links:'abcdefghijk',requestedAt:stamp(now)};
+ const r=await runWorker({'flixAutomation/scanState':state,'flixAutomation/lookup':lookup,'admins/admin':{enabled:true}});
+ assert.equal(r.exitCode,1);const result=r.rows.get('flixAutomation/lookup');
+ assert.equal(result.id,lookup.id);assert.equal(result.status,'error');assert.match(result.error,/YOUTUBE_API_KEY/);
+ assert.deepEqual(r.projections,[{path:'flixAutomation/lookup',fieldMask:['status','owner','id','requestedAt','links']}]);
 });
