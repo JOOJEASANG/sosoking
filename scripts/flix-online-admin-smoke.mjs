@@ -153,6 +153,23 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  const dockAlignment=await page.evaluate(()=>{const content=document.querySelector('.studio-content').getBoundingClientRect(),dock=document.querySelector('#studioMobileDock').getBoundingClientRect();return Math.abs(content.left-dock.left)+Math.abs(content.right-dock.right)});
  assert.ok(dockAlignment<=2,'desktop action dock must align with editor content');
 
+ // Exclude non-registerable candidates and delete registered works via mocked writes.
+ await page.evaluate(async()=>{const a=await import('/admin/admin.js');a.setOnlineCatalog(await(await fetch('/catalog.json')).json());a.connectCuration(async(kind,ids,add)=>{window.moderationExcluded=ids;return {excluded:add?ids:[],held:[],trusted:[]}});a.setOnlineCandidates([{title:'일반 영상 테스트',creator:'테스트 채널',videoId:'ccccccc0001',duration:'PT8M',discoveryKind:'popular'}]);a.connectWorkDelete(async ids=>{window.deletedWorks=ids;const old=a.getOnlineCatalog();a.acceptQuickCatalog(old.filter(w=>!ids.includes(w.id)));return {count:ids.length,removed:1}})});
+ await page.locator('#studioNav [data-panel=review]').click();
+ await page.locator('#excludeAll').click();
+ page.once('dialog',d=>d.accept());
+ await page.locator('#excludeSelected').click();
+ await page.waitForFunction(()=>document.querySelector('#curationStatus').textContent.includes('수집 제외 완료'));
+ assert.deepEqual(await page.evaluate(()=>window.moderationExcluded),['ccccccc0001']);
+ assert.equal(await page.locator('#candidates .candidate-group').count(),0);
+ await page.locator('#studioNav [data-panel=works]').click();
+ await page.evaluate(async()=>{const a=await import('/admin/admin.js');a.selectWorkForEditing(a.getOnlineCatalog()[0].id)});
+ const deleteId=await page.locator('#works').inputValue();
+ page.once('dialog',d=>d.accept());
+ await page.locator('#removeWork').click();
+ await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('삭제 완료'));
+ assert.deepEqual(await page.evaluate(()=>window.deletedWorks),[deleteId]);
+ assert.ok(await page.evaluate(async()=>!(await import('/admin/admin.js')).getOnlineCatalog().some(w=>w.id===window.deletedWorks[0])));
  assert.equal(errors.length,0,errors.join('; '));
  console.log('Admin workspace responsive layout passed for all seven panels at eight viewport widths');
  }finally{await browser?.close();server.close()}
