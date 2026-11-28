@@ -61,6 +61,19 @@ await page.getByRole('button',{name:'홈',exact:true}).click();await page.getByR
    await audit(width+'x'+height+' social');
    await page.locator('#back').click();
  }
+ // Keep the viewer footer on the same centered shell and content edges,
+ // including wide desktop monitors; mobile must still fill the viewport.
+ await page.getByRole('button',{name:'홈',exact:true}).click();
+ for(const width of [320,390,1000,1050,1051,1280,1440,1920,2560]){
+   await page.setViewportSize({width,height:900});
+   const geometry=await page.evaluate(()=>{
+     const edges=el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {left:r.left,right:r.right,width:r.width,contentLeft:r.left+parseFloat(s.paddingLeft),contentRight:r.right-parseFloat(s.paddingRight)}};
+     return {main:edges(document.querySelector('#mainContent')),footer:edges(document.querySelector('#siteFooter')),vw:document.documentElement.clientWidth};
+   });
+   const {main,footer,vw}=geometry;
+   assert.ok(Math.abs(main.left-footer.left)<=1&&Math.abs(main.right-footer.right)<=1&&Math.abs(main.contentLeft-footer.contentLeft)<=1&&Math.abs(main.contentRight-footer.contentRight)<=1,'footer/main alignment '+width+' '+JSON.stringify(geometry));
+   assert.ok(Math.abs(main.width-Math.min(vw,width>=1051?1320:1180))<=1,'preserve viewer shell '+width+' '+JSON.stringify(geometry));
+ }
  await page.setViewportSize({width:320,height:700});
  await page.goto(base+'/works/seocho-24/?ep=2');
  await page.locator('.seo-thumb').waitFor();
