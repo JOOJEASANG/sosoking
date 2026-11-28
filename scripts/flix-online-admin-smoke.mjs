@@ -87,6 +87,10 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  await page.evaluate(()=>{document.activeElement.blur();window.scrollTo(0,document.documentElement.scrollHeight)});
  const nav=await page.locator('.studio-sidebar').evaluate(el=>({bottom:el.getBoundingClientRect().bottom,viewport:innerHeight,position:getComputedStyle(el).position}));
  assert.equal(nav.position,'fixed');assert.ok(Math.abs(nav.bottom-nav.viewport)<=2);
+ const dockBounds=await dock.evaluate(el=>el.getBoundingClientRect().toJSON());
+ const navBounds=await page.locator('.studio-sidebar').evaluate(el=>el.getBoundingClientRect().toJSON());
+ assert.ok(dockBounds.bottom<=navBounds.top+1,'mobile save buttons must not be covered by navigation');
+
 
  // Use a mocked worker result, but real admin draft creation and validation.
  await page.locator('#studioNav [data-panel=links]').click();
@@ -120,6 +124,35 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  assert.equal(await page.evaluate(async()=>{const a=await import('/admin/admin.js');return a.getOnlineCatalog().find(w=>w.title==='AI 드라마 즉시등록작').episodes.length}),2);
  await page.setViewportSize({width:1280,height:800});
  assert.ok(await dock.isHidden());assert.ok(await page.locator('#studioNav [data-panel=backup]').isVisible());
+ // Desktop keeps the same actions available for long episode lists.
+ await page.locator('#studioNav [data-panel=works]').click();
+ await page.evaluate(async()=>{const admin=await import('/admin/admin.js');const items=await(await fetch('/catalog.json')).json();admin.setOnlineCatalog(items);admin.selectWorkForEditing(items[0].id)});
+ assert.ok(await dock.isVisible());assert.ok(await page.locator('#mobileSave').isDisabled());
+ assert.equal(await page.locator('#episodes details[open]').count(),0);
+ await page.locator('#expandEpisodes').click();
+ assert.equal(await page.locator('#episodes details[open]').count(),await page.locator('#episodes article').count());
+ await page.locator('#collapseEpisodes').click();assert.equal(await page.locator('#episodes details[open]').count(),0);
+ await page.locator('#workSearch').fill('없는 작품 필터');
+ assert.match(await page.locator('#workSearchStatus').textContent(),/검색 결과 0개/);
+ assert.equal(await page.locator('#works').inputValue(),'seocho-24','search must preserve the active editor');
+ await page.locator('#workSearch').fill('');
+ const firstTitle=page.locator('#episodes article').first().locator('[data-field=title]');
+ await page.locator('#episodes article summary').first().click();
+ const episodeTitle=await firstTitle.inputValue();await firstTitle.fill('');
+ await page.locator('#collapseEpisodes').click();await page.locator('#mobileSave').click();
+ assert.ok(await firstTitle.isVisible(),'required invalid input must expand its episode');
+ await firstTitle.fill(episodeTitle);
+ await page.locator('#editor [name=title]').fill('초안 보존 검증');await page.locator('#mobileSave').click();
+ assert.match(await page.locator('#workflowHint').textContent(),/공개 반영/);
+ assert.ok(await page.locator('#mobilePublish').isEnabled());
+ await page.locator('#studioNav [data-panel=backup]').click();
+ page.once('dialog',d=>d.dismiss());
+ await page.locator('#catalogFile').setInputFiles({name:'empty-catalog.json',mimeType:'application/json',buffer:Buffer.from('[]')});
+ await page.waitForFunction(()=>document.querySelector('#catalogFile').value==='');
+ assert.ok(await page.evaluate(async()=>(await import('/admin/admin.js')).getOnlineCatalog().some(w=>w.title==='초안 보존 검증')),'cancelled import must keep the unpublished draft');
+ const dockAlignment=await page.evaluate(()=>{const content=document.querySelector('.studio-content').getBoundingClientRect(),dock=document.querySelector('#studioMobileDock').getBoundingClientRect();return Math.abs(content.left-dock.left)+Math.abs(content.right-dock.right)});
+ assert.ok(dockAlignment<=2,'desktop action dock must align with editor content');
+
  assert.equal(errors.length,0,errors.join('; '));
  console.log('Admin workspace responsive layout passed for all seven panels at eight viewport widths');
  }finally{await browser?.close();server.close()}

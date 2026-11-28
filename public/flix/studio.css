@@ -34,8 +34,8 @@ body{letter-spacing:-.2px}header.topbar{backdrop-filter:blur(18px);border-color:
 .site-chrome{position:sticky;top:0;z-index:35;min-width:0;background:#0b0c10;border-bottom:1px solid #ffffff12;filter:none;backdrop-filter:none;transform:none;contain:none}
 .site-chrome header.topbar{position:static;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;min-width:0}
 @media(min-width:1001px) and (display-mode:browser) and (hover:hover), (min-width:1001px) and (display-mode:browser) and (pointer:fine){
- .site-chrome{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px max(16px,calc((100% - 1288px)/2));min-height:66px}
- .site-chrome header.topbar{display:contents}.site-chrome .brand{grid-column:1;grid-row:1}.site-chrome #mainNav{grid-column:2;grid-row:1;position:static;justify-content:center;flex-wrap:nowrap;min-width:0;gap:3px}.site-chrome #topSearch{grid-column:3;grid-row:1}
+ .site-chrome{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:10px max(16px,calc((100% - 1288px)/2));min-height:66px}
+ .site-chrome header.topbar{display:contents}.site-chrome .brand{grid-column:1;grid-row:1}.site-chrome #mainNav{grid-column:2;grid-row:1;position:static;justify-content:center;flex-wrap:nowrap;min-width:0;gap:3px}.site-chrome #topSearch{grid-column:3;grid-row:1}.site-chrome #memberAccount{grid-column:4;grid-row:1}
 }
 @media(max-width:1000px), (display-mode:standalone), (display-mode:minimal-ui), (hover:none) and (pointer:coarse){
  .site-chrome{display:block;padding:0;min-height:0}.site-chrome header.topbar{display:flex;justify-content:space-between;min-height:62px;padding:10px 16px;background:#0b0c10}
@@ -126,3 +126,25 @@ header.topbar .brand{margin-right:auto;max-width:330px;flex:0 1 auto}
 @media(max-width:360px){.member-dialog-inner{padding:30px 16px 20px}#memberAccount{max-width:82px}#memberName{font-size:19px}}
 
 .catalog-refresh{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:24px 0}.watching .catalog-refresh{display:none}
+
+/* Viewer usability: readable secondary text, explicit focus, and local search feedback. */
+.skip-link{position:fixed;top:8px;left:16px;z-index:1200;transform:translateY(-150%);padding:12px 18px;border-radius:8px;background:#fff;color:#111;font-weight:700}
+.skip-link:focus{transform:translateY(0)}
+#mainContent:focus,#pageTitle:focus,#watchTitle:focus{outline:none}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #ffa6b7;outline-offset:3px}
+#hero{width:100%;max-width:100%;min-width:0;aspect-ratio:2.8}.hero-description{max-width:48ch;line-height:1.65}.hero-controls{gap:8px}.hero-controls button{min-width:44px}.hero-controls .hero-pause{font-size:13px;padding-inline:12px}
+.work .meta,.episode-panel .episode-copy .meta,.social-panel summary small,.social-body .meta,.yt-comment small,.binge-heading p,.local-stat-grid small,#episodeCoverage{font-size:13px}
+.episode-panel label,.episode-panel .episode-copy strong,#watch .actions button,.social-toolbar button,.yt-account button,#ytSubmit,#ytMore,.binge-heading button,.budget-buttons button,.calendar-row button,.binge-panel label,#quickTools button,.watch-heading #back{font-size:14px}
+.episode-panel label{display:block;line-height:1.6;padding:6px 0}.episode-panel .episode-play{min-height:44px}.social-body label{font-size:14px}.social-toolbar a{font-size:13px}
+.search-field{display:flex;gap:8px;align-items:center;max-width:760px;margin:8px 0 18px}.intro .search-field input{flex:1;min-width:0;margin:0;padding:14px 16px}.search-field button{flex:none;background:#222632}
+#searchArea>label{font-size:14px;color:var(--muted);margin-top:4px}.result-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding-top:12px;border-top:1px solid var(--studio-border)}
+#resultSummary{margin:0;color:#c9ccd6;font-size:14px;overflow-wrap:anywhere}.result-toolbar button{font-size:14px;background:transparent}
+.empty-state,.catalog-loading{padding:clamp(24px,6vw,56px) 20px;text-align:center;background:#14161e;border:1px solid var(--studio-border);border-radius:16px;margin:16px 0 28px}.empty-state h2{font-size:22px;margin:0 0 10px}.empty-state p,.catalog-loading p{color:var(--muted);margin:8px 0 20px}.empty-state button{background:#b72d48;border-color:#e45b73}.catalog-loading strong{font-size:20px}.catalog-loading p{margin-bottom:0}
+#quickTools button{color:#c7cbd6;background:transparent;border-color:#ffffff1a}#quickTools button:hover{background:#222631;color:#fff}.binge-hub{background:#13161e}.binge-heading h2{font-size:20px}
+.catalog-refresh{border-top:1px solid var(--studio-border);padding-top:20px}.catalog-refresh button{font-size:14px}.catalog-refresh .meta{font-size:13px}
+@media(min-width:1001px){.site-chrome #mainNav button{padding-inline:12px}.hero-copy{padding:36px}.episode-panel{position:sticky;top:110px}.episode-panel #episodes{max-height:min(650px,65vh)}}
+@media(max-width:1000px),(display-mode:standalone),(display-mode:minimal-ui),(hover:none) and (pointer:coarse){.site-chrome #mainNav button{font-size:12px;min-height:54px}.site-chrome #memberAccount{grid-column:auto;grid-row:auto}}
+@media(max-width:600px){#hero{aspect-ratio:auto;min-height:360px}.hero-copy{padding:22px 18px}.hero-copy h1{font-size:30px}.hero-art:after{background:linear-gradient(0deg,#0c0d12 0%,#0c0d12cf 40%,#0c0d1240 100%)}.hero-description{font-size:14px}.hero-controls{gap:6px}.hero-controls button{min-width:40px}#quickTools{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;gap:8px;padding-bottom:10px}#quickTools button{flex:none;white-space:nowrap;padding:8px 12px;font-size:14px}.binge-heading h2{font-size:18px}.search-field{gap:6px}.search-field button{padding-inline:10px;font-size:14px}#filters{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px}#filters label{font-size:14px}#filters select{width:100%}.result-toolbar{align-items:flex-start}.result-toolbar button{min-height:44px}.empty-state{padding:32px 18px}.empty-state h2{font-size:20px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{scroll-behavior:auto!important}}
+
+#search::-webkit-search-cancel-button{display:none}
